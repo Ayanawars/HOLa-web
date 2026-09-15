@@ -891,7 +891,7 @@
     const overlordFallback=document.getElementById('overlordFallback');
     const overlordCanvas=document.getElementById('overlordCanvas');
     const heroineCanvas=document.getElementById('heroineCanvas');
-    const useSamsungCanvas=/SamsungBrowser/i.test(navigator.userAgent);
+    const useSamsungCanvas=/Android/i.test(navigator.userAgent);
 
     if(useSamsungCanvas)document.documentElement.classList.add('samsung-video-fix');
 
