@@ -158,6 +158,51 @@
       opacity:0;
     }
 
+    .hero__character-canvas { display:none; }
+
+    .samsung-video-fix .hero video {
+      width:1px !important;
+      height:1px !important;
+      left:-9999px !important;
+      right:auto !important;
+      bottom:auto !important;
+      opacity:0 !important;
+      pointer-events:none;
+    }
+
+    .samsung-video-fix .hero__character-canvas.is-playing {
+      position:absolute;
+      display:block;
+      object-fit:contain;
+      pointer-events:auto;
+      touch-action:manipulation;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .samsung-video-fix .hero__overlord-canvas {
+      z-index:2;
+      left:-18%;
+      bottom:-3%;
+      width:86%;
+      height:64%;
+      filter:drop-shadow(8px 7px 10px rgba(48,27,5,.38));
+    }
+
+    .samsung-video-fix .hero__girl-canvas {
+      z-index:3;
+      right:-2%;
+      bottom:0;
+      width:81%;
+      height:52%;
+      filter:drop-shadow(-8px 6px 10px rgba(63,31,2,.32));
+    }
+
+    .samsung-video-fix .hero__girl-fallback,
+    .samsung-video-fix .hero__overlord-fallback {
+      pointer-events:auto;
+      cursor:pointer;
+    }
+
     .hero__girl:focus-visible {
       outline:3px solid #79eaff;
       outline-offset:-5px;
@@ -586,6 +631,8 @@
       .hero__logo { top:9%; width:52%; }
       .hero__girl,.hero__girl-fallback { right:-3%; bottom:0; width:84%; height:51%; }
       .hero__overlord,.hero__overlord-fallback { left:-21%; bottom:-3%; width:90%; height:63%; }
+      .samsung-video-fix .hero__girl-canvas { right:-3%; width:84%; height:51%; }
+      .samsung-video-fix .hero__overlord-canvas { left:-21%; width:90%; height:63%; }
       .language__toggle { width:34px; height:34px; }
       .language__current { width:22px; height:22px; }
       .admin-link { width:34px; height:34px; }
@@ -621,12 +668,14 @@
       <div class="hero__logo-shadow" aria-hidden="true"></div>
       <img class="hero__logo" src="hola-s3-logo.png" alt="HOLa — Heroes of Last Area, Alliance Tracker, Last War S3 Golden Kingdom">
       <img class="hero__overlord-fallback" id="overlordFallback" src="hola-s3-overlord.png" alt="" aria-hidden="true">
+      <canvas class="hero__character-canvas hero__overlord-canvas" id="overlordCanvas" aria-hidden="true"></canvas>
       <video class="hero__overlord" id="overlordVideo" muted playsinline preload="auto"
         poster="hola-s3-overlord.png" role="button" tabindex="0"
         aria-label="Reproducir rugido del Gorila Overlord">
         <source src="hola-overlord-roar.webm" type="video/webm">
       </video>
       <img class="hero__girl-fallback" id="heroineFallback" src="hola-s3-heroine-idle.png" alt="" aria-hidden="true">
+      <canvas class="hero__character-canvas hero__girl-canvas" id="heroineCanvas" aria-hidden="true"></canvas>
       <video class="hero__girl" id="heroineVideo" muted playsinline preload="auto"
         poster="hola-s3-heroine-idle.png" role="button" tabindex="0"
         aria-label="Activar el poder de la heroína egipcia">
@@ -840,6 +889,29 @@
 
     const overlordVideo=document.getElementById('overlordVideo');
     const overlordFallback=document.getElementById('overlordFallback');
+    const overlordCanvas=document.getElementById('overlordCanvas');
+    const heroineCanvas=document.getElementById('heroineCanvas');
+    const useSamsungCanvas=/SamsungBrowser/i.test(navigator.userAgent);
+
+    if(useSamsungCanvas)document.documentElement.classList.add('samsung-video-fix');
+
+    function renderVideoOnCanvas(video,canvas,maxWidth){
+      if(!useSamsungCanvas)return;
+      const width=Math.min(maxWidth,video.videoWidth||maxWidth);
+      const ratio=(video.videoHeight||width)/(video.videoWidth||width);
+      canvas.width=width;
+      canvas.height=Math.round(width*ratio);
+      canvas.classList.add('is-playing');
+      const context=canvas.getContext('2d',{alpha:true});
+      const draw=()=>{
+        if(video.readyState>=2){
+          context.clearRect(0,0,canvas.width,canvas.height);
+          context.drawImage(video,0,0,canvas.width,canvas.height);
+        }
+        if(!video.paused&&!video.ended)requestAnimationFrame(draw);
+      };
+      requestAnimationFrame(draw);
+    }
 
     function replayOverlord(withSound=true){
       overlordVideo.pause();
@@ -850,6 +922,7 @@
       const playback=overlordVideo.play();
       if(playback)playback.catch(()=>{
         overlordVideo.classList.remove('is-playing');
+        overlordCanvas.classList.remove('is-playing');
         overlordFallback.classList.remove('is-hidden');
       });
     }
@@ -873,6 +946,7 @@
       const playback=heroineVideo.play();
       if(playback)playback.catch(()=>{
         heroineVideo.classList.remove('is-playing');
+        heroineCanvas.classList.remove('is-playing');
         heroineFallback.classList.remove('is-hidden');
       });
     }
@@ -891,11 +965,18 @@
 
     overlordVideo.addEventListener('click',playBothCharacters);
     heroineVideo.addEventListener('click',playBothCharacters);
+    overlordVideo.addEventListener('play',()=>renderVideoOnCanvas(overlordVideo,overlordCanvas,360));
+    heroineVideo.addEventListener('play',()=>renderVideoOnCanvas(heroineVideo,heroineCanvas,480));
+    overlordFallback.addEventListener('click',playBothCharacters);
+    heroineFallback.addEventListener('click',playBothCharacters);
+    overlordCanvas.addEventListener('click',playBothCharacters);
+    heroineCanvas.addEventListener('click',playBothCharacters);
     overlordVideo.addEventListener('keydown',activateBothWithKeyboard);
     heroineVideo.addEventListener('keydown',activateBothWithKeyboard);
 
     overlordVideo.addEventListener('ended',()=>{
       overlordVideo.classList.remove('is-playing');
+      overlordCanvas.classList.remove('is-playing');
       overlordFallback.classList.remove('is-hidden');
     });
 
@@ -903,6 +984,7 @@
       if(heroineMode!=='power')return;
       heroineMode='idle';
       heroineVideo.classList.remove('is-playing');
+      heroineCanvas.classList.remove('is-playing');
       heroineFallback.classList.remove('is-hidden');
       heroineVideo.src=heroineIdle;
       heroineVideo.muted=true;
@@ -921,6 +1003,7 @@
       const playback=heroineVideo.play();
       if(playback)playback.catch(()=>{
         heroineVideo.classList.remove('is-playing');
+        heroineCanvas.classList.remove('is-playing');
         heroineFallback.classList.remove('is-hidden');
       });
     },{once:true});
