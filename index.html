@@ -113,6 +113,51 @@
       -webkit-tap-highlight-color:transparent;
     }
 
+    .hero__girl-fallback,
+    .hero__overlord-fallback {
+      position:absolute;
+      user-select:none;
+      pointer-events:none;
+    }
+
+    .hero__girl-fallback {
+      z-index:2;
+      right:-2%;
+      bottom:0;
+      width:81%;
+      height:52%;
+      object-fit:contain;
+      object-position:right bottom;
+      filter:drop-shadow(-8px 6px 10px rgba(63,31,2,.32));
+    }
+
+    .hero__overlord-fallback {
+      z-index:1;
+      left:-18%;
+      bottom:-3%;
+      width:86%;
+      height:64%;
+      object-fit:contain;
+      object-position:left bottom;
+      filter:drop-shadow(8px 7px 10px rgba(48,27,5,.38));
+    }
+
+    .hero__girl,
+    .hero__overlord {
+      opacity:0;
+    }
+
+    .hero__girl.is-playing,
+    .hero__overlord.is-playing {
+      opacity:1;
+      animation:none;
+    }
+
+    .hero__girl-fallback.is-hidden,
+    .hero__overlord-fallback.is-hidden {
+      opacity:0;
+    }
+
     .hero__girl:focus-visible {
       outline:3px solid #79eaff;
       outline-offset:-5px;
@@ -539,8 +584,8 @@
 
     @media (max-width:370px) {
       .hero__logo { top:9%; width:52%; }
-      .hero__girl { right:-3%; bottom:0; width:84%; height:51%; }
-      .hero__overlord { left:-21%; bottom:-3%; width:90%; height:63%; }
+      .hero__girl,.hero__girl-fallback { right:-3%; bottom:0; width:84%; height:51%; }
+      .hero__overlord,.hero__overlord-fallback { left:-21%; bottom:-3%; width:90%; height:63%; }
       .language__toggle { width:34px; height:34px; }
       .language__current { width:22px; height:22px; }
       .admin-link { width:34px; height:34px; }
@@ -575,11 +620,13 @@
       <img class="hero__scene" src="hola-s3-background-square.png" alt="Egipto al atardecer con pirámides y vehículos militares">
       <div class="hero__logo-shadow" aria-hidden="true"></div>
       <img class="hero__logo" src="hola-s3-logo.png" alt="HOLa — Heroes of Last Area, Alliance Tracker, Last War S3 Golden Kingdom">
+      <img class="hero__overlord-fallback" id="overlordFallback" src="hola-s3-overlord.png" alt="" aria-hidden="true">
       <video class="hero__overlord" id="overlordVideo" muted playsinline preload="auto"
         poster="hola-s3-overlord.png" role="button" tabindex="0"
         aria-label="Reproducir rugido del Gorila Overlord">
         <source src="hola-overlord-roar.webm" type="video/webm">
       </video>
+      <img class="hero__girl-fallback" id="heroineFallback" src="hola-s3-heroine-idle.png" alt="" aria-hidden="true">
       <video class="hero__girl" id="heroineVideo" muted playsinline preload="auto"
         poster="hola-s3-heroine-idle.png" role="button" tabindex="0"
         aria-label="Activar el poder de la heroína egipcia">
@@ -792,18 +839,25 @@
     });
 
     const overlordVideo=document.getElementById('overlordVideo');
+    const overlordFallback=document.getElementById('overlordFallback');
 
     function replayOverlord(withSound=true){
       overlordVideo.pause();
       overlordVideo.currentTime=0;
       overlordVideo.muted=!withSound;
+      overlordVideo.classList.add('is-playing');
+      overlordFallback.classList.add('is-hidden');
       const playback=overlordVideo.play();
-      if(playback)playback.catch(()=>{});
+      if(playback)playback.catch(()=>{
+        overlordVideo.classList.remove('is-playing');
+        overlordFallback.classList.remove('is-hidden');
+      });
     }
 
     window.addEventListener('load',()=>replayOverlord(false),{once:true});
 
     const heroineVideo=document.getElementById('heroineVideo');
+    const heroineFallback=document.getElementById('heroineFallback');
     const heroineIdle='hola-heroine-idle.webm';
     const heroinePower='hola-heroine-power.webm';
     let heroineMode='idle';
@@ -814,8 +868,13 @@
       heroineVideo.src=heroinePower;
       heroineVideo.muted=false;
       heroineVideo.currentTime=0;
+      heroineVideo.classList.add('is-playing');
+      heroineFallback.classList.add('is-hidden');
       const playback=heroineVideo.play();
-      if(playback)playback.catch(()=>{});
+      if(playback)playback.catch(()=>{
+        heroineVideo.classList.remove('is-playing');
+        heroineFallback.classList.remove('is-hidden');
+      });
     }
 
     function playBothCharacters(){
@@ -835,9 +894,16 @@
     overlordVideo.addEventListener('keydown',activateBothWithKeyboard);
     heroineVideo.addEventListener('keydown',activateBothWithKeyboard);
 
+    overlordVideo.addEventListener('ended',()=>{
+      overlordVideo.classList.remove('is-playing');
+      overlordFallback.classList.remove('is-hidden');
+    });
+
     heroineVideo.addEventListener('ended',()=>{
       if(heroineMode!=='power')return;
       heroineMode='idle';
+      heroineVideo.classList.remove('is-playing');
+      heroineFallback.classList.remove('is-hidden');
       heroineVideo.src=heroineIdle;
       heroineVideo.muted=true;
       heroineVideo.addEventListener('loadeddata',()=>{
@@ -850,8 +916,13 @@
     window.addEventListener('load',()=>{
       heroineMode='idle';
       heroineVideo.muted=true;
+      heroineVideo.classList.add('is-playing');
+      heroineFallback.classList.add('is-hidden');
       const playback=heroineVideo.play();
-      if(playback)playback.catch(()=>{});
+      if(playback)playback.catch(()=>{
+        heroineVideo.classList.remove('is-playing');
+        heroineFallback.classList.remove('is-hidden');
+      });
     },{once:true});
 
     applyLanguage('es');
