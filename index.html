@@ -801,14 +801,6 @@
       if(playback)playback.catch(()=>{});
     }
 
-    overlordVideo.addEventListener('click',()=>replayOverlord(true));
-    overlordVideo.addEventListener('keydown',event=>{
-      if(event.key==='Enter'||event.key===' '){
-        event.preventDefault();
-        replayOverlord(true);
-      }
-    });
-
     window.addEventListener('load',()=>replayOverlord(false),{once:true});
 
     const heroineVideo=document.getElementById('heroineVideo');
@@ -826,13 +818,22 @@
       if(playback)playback.catch(()=>{});
     }
 
-    heroineVideo.addEventListener('click',playHeroinePower);
-    heroineVideo.addEventListener('keydown',event=>{
+    function playBothCharacters(){
+      replayOverlord(true);
+      playHeroinePower();
+    }
+
+    function activateBothWithKeyboard(event){
       if(event.key==='Enter'||event.key===' '){
         event.preventDefault();
-        playHeroinePower();
+        playBothCharacters();
       }
-    });
+    }
+
+    overlordVideo.addEventListener('click',playBothCharacters);
+    heroineVideo.addEventListener('click',playBothCharacters);
+    overlordVideo.addEventListener('keydown',activateBothWithKeyboard);
+    heroineVideo.addEventListener('keydown',activateBothWithKeyboard);
 
     heroineVideo.addEventListener('ended',()=>{
       if(heroineMode!=='power')return;
