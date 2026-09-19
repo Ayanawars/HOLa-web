@@ -304,7 +304,7 @@
       min-height:35vh;
       position:relative;
       z-index:4;
-      padding:1px 10px 42px;
+      padding:8px 10px 42px;
       background:
         radial-gradient(circle at 50% 0,rgba(255,255,255,.88),transparent 250px),
         linear-gradient(180deg,#fff8e7,#f7e2b9);
@@ -314,7 +314,7 @@
       position:relative;
       isolation:isolate;
       min-height:0;
-      margin-top:-45px;
+      margin-top:12px;
       padding:12px 13px 2px;
       filter:drop-shadow(0 9px 13px rgba(79,44,5,.24));
     }
@@ -486,6 +486,8 @@
     }
 
     .event-card {
+      text-decoration:none;
+      color:inherit;
       position:relative;
       aspect-ratio:16/9;
       overflow:hidden;
@@ -571,6 +573,180 @@
       -webkit-text-stroke:.22px #573106;
     }
 
+
+
+    /* UPCOMING EVENTS — SERVER TIME */
+    .event-card__schedule {
+      position:absolute;
+      z-index:3;
+      left:7px;
+      right:7px;
+      bottom:7px;
+      min-height:24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:5px 7px;
+      border:1px solid rgba(255,219,116,.72);
+      border-radius:8px;
+      background:linear-gradient(90deg,rgba(7,35,58,.92),rgba(15,72,104,.88));
+      color:#fff6d5;
+      box-shadow:0 3px 10px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.09);
+      font:900 clamp(7px,1.85vw,10px)/1 system-ui,sans-serif;
+      letter-spacing:.035em;
+      text-transform:uppercase;
+      text-align:center;
+      text-shadow:0 1px 2px rgba(0,0,0,.85);
+      white-space:nowrap;
+    }
+    .event-card__schedule[hidden] { display:none; }
+    .event-card__server { color:#68d7ff; margin-left:3px; }
+
+    /* QUICK ACCESS */
+    .quick-access {
+      margin-top:18px;
+      padding:14px 10px 12px;
+      border:1px solid rgba(233,182,64,.58);
+      border-radius:24px;
+      background:rgba(255,253,246,.92);
+      box-shadow:0 10px 22px rgba(94,55,8,.15);
+    }
+
+    .quick-access__heading {
+      margin:0 3px 11px;
+      color:#123f72;
+      font-size:clamp(16px,4.5vw,22px);
+      line-height:1;
+      text-transform:uppercase;
+    }
+
+    .quick-access__card {
+      position:relative;
+      min-height:92px;
+      padding:13px 15px 13px 13px;
+      display:grid;
+      grid-template-columns:64px minmax(0,1fr) 28px;
+      align-items:center;
+      gap:12px;
+      overflow:hidden;
+      isolation:isolate;
+      border:1px solid rgba(255,218,103,.95);
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 87% 13%,rgba(121,234,255,.28),transparent 34%),
+        linear-gradient(135deg,#063a6b 0%,#087fc5 52%,#0ea7c3 100%);
+      box-shadow:
+        0 7px 15px rgba(16,70,112,.23),
+        inset 0 0 0 1px rgba(255,255,255,.15),
+        inset 0 -14px 28px rgba(0,38,80,.22);
+      color:#fff;
+      text-decoration:none;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .quick-access__card::before {
+      content:"";
+      position:absolute;
+      z-index:-1;
+      inset:0;
+      opacity:.23;
+      background:
+        linear-gradient(60deg,transparent 0 44%,rgba(255,222,120,.28) 44% 46%,transparent 46% 100%),
+        linear-gradient(-60deg,transparent 0 62%,rgba(255,255,255,.16) 62% 64%,transparent 64% 100%);
+      background-size:60px 60px,74px 74px;
+      pointer-events:none;
+    }
+
+    .quick-access__card::after {
+      content:"";
+      position:absolute;
+      top:7px;
+      right:8px;
+      bottom:7px;
+      left:8px;
+      border:1px solid rgba(255,232,163,.23);
+      border-radius:12px;
+      pointer-events:none;
+    }
+
+    .quick-access__card:hover,
+    .quick-access__card:focus-visible {
+      outline:none;
+      transform:translateY(-1px);
+      box-shadow:
+        0 10px 20px rgba(16,70,112,.28),
+        0 0 0 2px rgba(255,212,81,.28),
+        inset 0 0 0 1px rgba(255,255,255,.17);
+    }
+
+    .quick-access__icon {
+      width:64px;
+      height:64px;
+      display:grid;
+      place-items:center;
+      border:2px solid rgba(255,219,101,.95);
+      border-radius:50%;
+      background:
+        radial-gradient(circle at 50% 34%,rgba(255,255,255,.20),transparent 38%),
+        linear-gradient(145deg,#0a5f9d,#04335f);
+      box-shadow:
+        inset 0 0 0 3px rgba(255,245,199,.11),
+        0 4px 12px rgba(0,24,57,.35);
+    }
+
+    .quick-access__icon svg {
+      width:37px;
+      height:37px;
+      display:block;
+      fill:none;
+      stroke:#ffe080;
+      stroke-width:2.5;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      filter:drop-shadow(0 1px 2px rgba(0,22,50,.6));
+    }
+
+    .quick-access__copy {
+      min-width:0;
+      position:relative;
+      z-index:1;
+    }
+
+    .quick-access__title {
+      display:block;
+      margin:0;
+      color:#fff7dc;
+      font-family:"Cinzel",Georgia,serif;
+      font-size:clamp(18px,5.2vw,25px);
+      font-weight:900;
+      line-height:1;
+      text-transform:uppercase;
+      text-shadow:0 2px 3px rgba(0,27,61,.75);
+    }
+
+    .quick-access__subtitle {
+      display:block;
+      margin-top:5px;
+      color:#cfefff;
+      font-size:clamp(11px,3vw,14px);
+      font-weight:700;
+      line-height:1.15;
+    }
+
+    .quick-access__arrow {
+      position:relative;
+      z-index:1;
+      width:28px;
+      height:38px;
+      display:grid;
+      place-items:center;
+      color:#ffe080;
+      font-size:34px;
+      font-weight:300;
+      line-height:1;
+      text-shadow:0 2px 3px rgba(0,28,60,.6);
+    }
+
     @media (max-width:370px) {
       .hero__logo { top:6%; width:49.4%; }
       .hero__girl { right:-1%; bottom:0; width:42.2%; height:45.8%; }
@@ -579,12 +755,17 @@
       .language__current { width:22px; height:22px; }
       .admin-link { width:34px; height:34px; }
       .admin-link img { width:29px; height:29px; }
-      .overview { min-height:0; margin-top:-42px; padding-inline:11px; }
+      .overview { min-height:0; margin-top:10px; padding-inline:11px; }
       .overview__crest { flex-basis:46px; height:52px; }
       .overview__traits { padding-left:55px; gap:4px; font-size:10px; }
       .events { padding-inline:8px; }
       .events__grid { gap:6px; }
       .event-card { border-radius:10px; }
+      .quick-access { padding-inline:8px; }
+      .quick-access__card { grid-template-columns:56px minmax(0,1fr) 22px; gap:9px; min-height:84px; padding:11px 11px 11px 10px; }
+      .quick-access__icon { width:56px; height:56px; }
+      .quick-access__icon svg { width:33px; height:33px; }
+      .quick-access__arrow { width:22px; font-size:30px; }
     }
 
     @media (min-width:700px) {
@@ -597,10 +778,171 @@
       .hero__logo { animation:logo-in .65s ease-out both; }
       .hero__girl { animation:girl-in .7s .08s ease-out both; }
       .hero__overlord { animation:overlord-in .72s .38s ease-out both; }
+      .quick-access__card { transition:transform .18s ease,box-shadow .18s ease; }
       @keyframes logo-in { from { opacity:0; transform:translate(-50%,-10px) scale(.96); } }
       @keyframes girl-in { from { opacity:0; transform:translate(18px,12px); } }
       @keyframes overlord-in { from { opacity:0; transform:translate(-22px,13px) scale(.95); } }
     }
+  
+
+    /* ===== BANNER ENCUESTA HOLa — S3 ===== */
+    .survey-promo {
+      position:relative;
+      z-index:12;
+      padding:12px 12px 2px;
+      margin-top:-18px;
+    }
+    .survey-promo__card {
+      position:relative;
+      display:grid;
+      grid-template-columns:64px minmax(0,1fr) 30px;
+      gap:12px;
+      align-items:center;
+      min-height:118px;
+      padding:15px 14px 14px 13px;
+      overflow:hidden;
+      color:#133f67;
+      text-decoration:none;
+      border:1px solid rgba(190,139,35,.62);
+      border-radius:19px;
+      background:
+        linear-gradient(90deg,rgba(61,189,229,.08),transparent 24%,transparent 76%,rgba(222,174,55,.10)),
+        linear-gradient(180deg,#fffdf6 0%,#f9f0d9 100%);
+      box-shadow:0 10px 24px rgba(94,62,12,.16),inset 0 1px 0 rgba(255,255,255,.95);
+      -webkit-tap-highlight-color:transparent;
+    }
+    .survey-promo__card::before {
+      content:"";
+      position:absolute;
+      inset:5px;
+      border:1px solid rgba(207,161,62,.32);
+      border-radius:14px;
+      pointer-events:none;
+    }
+    .survey-promo__card::after {
+      content:"☥  ·  𓂀  ·  ☥";
+      position:absolute;
+      right:48px;
+      top:8px;
+      color:rgba(176,121,25,.15);
+      font:700 15px/1 Georgia,serif;
+      letter-spacing:.15em;
+      pointer-events:none;
+    }
+    .survey-promo__icon {
+      position:relative;
+      z-index:1;
+      display:grid;
+      place-items:center;
+      width:62px;
+      height:72px;
+      border-radius:15px 15px 12px 12px;
+      border:1px solid rgba(193,139,31,.52);
+      background:linear-gradient(160deg,#fff9df,#ecd28c);
+      box-shadow:inset 0 0 0 4px rgba(255,255,255,.38),0 5px 12px rgba(130,83,8,.14);
+    }
+    .survey-promo__icon svg { width:38px; height:38px; stroke:#0b87c3; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+    .survey-promo__content { position:relative; z-index:1; min-width:0; }
+    .survey-promo__eyebrow {
+      display:block;
+      margin-bottom:3px;
+      color:#b27a17;
+      font-size:9px;
+      font-weight:900;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+    .survey-promo__title {
+      display:block;
+      color:#0e4e7c;
+      font-family:Georgia,"Times New Roman",serif;
+      font-size:18px;
+      line-height:1.08;
+      font-weight:900;
+      letter-spacing:.015em;
+    }
+    .survey-promo__text {
+      display:block;
+      margin-top:5px;
+      color:#5d6e79;
+      font-size:11px;
+      line-height:1.32;
+      font-weight:650;
+    }
+    .survey-promo__cta {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:9px;
+      min-height:30px;
+      padding:0 12px;
+      border-radius:999px;
+      color:#fff;
+      background:linear-gradient(100deg,#078fc9,#3bc4e7);
+      box-shadow:0 4px 10px rgba(6,136,190,.20),inset 0 1px 0 rgba(255,255,255,.35);
+      font-size:9px;
+      font-weight:900;
+      letter-spacing:.055em;
+      text-transform:uppercase;
+    }
+    .survey-promo__arrow {
+      position:relative;
+      z-index:1;
+      display:grid;
+      place-items:center;
+      width:28px;
+      height:44px;
+      color:#c58c22;
+      font:400 34px/1 Arial,sans-serif;
+    }
+    .survey-promo__progress {
+      grid-column:1 / -1;
+      position:relative;
+      z-index:1;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:7px 10px;
+      align-items:center;
+      margin-top:-2px;
+      padding:0 4px 0 3px;
+    }
+    .survey-promo__progress-track {
+      height:6px;
+      overflow:hidden;
+      border-radius:999px;
+      background:rgba(14,78,124,.12);
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+    }
+    .survey-promo__progress-fill {
+      display:block;
+      width:0%;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,#0a93c9,#44c8df,#e2b744);
+      transition:width .35s ease;
+    }
+    .survey-promo__progress-text {
+      color:#806223;
+      font-size:9px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .survey-promo__card:focus-visible { outline:3px solid rgba(29,173,221,.45); outline-offset:2px; }
+    @media (max-width:390px) {
+      .survey-promo { padding-inline:8px; }
+      .survey-promo__card { grid-template-columns:55px minmax(0,1fr) 22px; gap:9px; padding:12px 10px; min-height:112px; }
+      .survey-promo__icon { width:54px; height:64px; }
+      .survey-promo__icon svg { width:33px; height:33px; }
+      .survey-promo__title { font-size:16px; }
+      .survey-promo__text { font-size:10px; }
+      .survey-promo__cta { font-size:8px; padding-inline:9px; }
+      .survey-promo__progress-text { font-size:8px; }
+    }
+    @media (prefers-reduced-motion:no-preference) {
+      .survey-promo__card { transition:transform .18s ease,box-shadow .18s ease; }
+      .survey-promo__card:hover { transform:translateY(-1px); box-shadow:0 13px 28px rgba(94,62,12,.20),inset 0 1px 0 rgba(255,255,255,.95); }
+    }
+
   </style>
 </head>
 <body>
@@ -628,7 +970,7 @@
         <source src="heroine-power-v2.webm" type="video/webm">
       </video>
 
-      <a class="admin-link" href="admin-center-hola_login.html" aria-label="Centro de administración" data-i18n-aria="adminCenter">
+      <a class="admin-link" href="admin-login.html" aria-label="Centro de administración" data-i18n-aria="adminCenter">
         <img src="hola-admin-gear.png" alt="">
       </a>
 
@@ -650,6 +992,30 @@
       </div>
       <div class="hero__edge" aria-hidden="true"></div>
     </header>
+
+    <section class="survey-promo" aria-label="Encuesta de jugadores" data-i18n-aria="surveyBannerAria">
+      <a class="survey-promo__card" href="survey.html" aria-label="Completar o actualizar encuesta" data-i18n-aria="openSurvey">
+        <span class="survey-promo__icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path d="M15 7h18a4 4 0 0 1 4 4v26a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4V11a4 4 0 0 1 4-4Z"></path>
+            <path d="M18 4h12v7H18z"></path>
+            <path d="m17 24 4 4 10-11"></path>
+            <path d="M17 34h14"></path>
+          </svg>
+        </span>
+        <span class="survey-promo__content">
+          <span class="survey-promo__eyebrow" data-i18n="surveyBannerEyebrow">MISIÓN DE ALIANZA</span>
+          <strong class="survey-promo__title" data-i18n="surveyBannerTitle">Actualiza tu perfil HOLa</strong>
+          <span class="survey-promo__text" data-i18n="surveyBannerText">Mantén al día tu THP, squads y perfil de miembro.</span>
+          <span class="survey-promo__cta" data-i18n="surveyBannerCta">Completar / actualizar encuesta</span>
+        </span>
+        <span class="survey-promo__arrow" aria-hidden="true">›</span>
+        <span class="survey-promo__progress" aria-live="polite">
+          <span class="survey-promo__progress-track" aria-hidden="true"><span class="survey-promo__progress-fill" id="surveyProgressFill"></span></span>
+          <span class="survey-promo__progress-text" id="surveyProgressText">—</span>
+        </span>
+      </a>
+    </section>
 
     <main class="next-section">
       <section class="overview" aria-labelledby="overviewTitle">
@@ -681,6 +1047,7 @@
               <h3 class="event-card__title" data-i18n="allianceExercise">Ejercicio de alianza</h3>
               <span class="event-card__brand">Heroes of Last Area</span>
             </div>
+            <div class="event-card__schedule" data-event-key="alliance_exercise" hidden></div>
           </article>
           <article class="event-card event-zombie">
             <img src="event-zombie.png" alt="" loading="lazy">
@@ -688,22 +1055,46 @@
               <h3 class="event-card__title" data-i18n="zombieSiege">Asedio zombi</h3>
               <span class="event-card__brand">Heroes of Last Area</span>
             </div>
+            <div class="event-card__schedule" data-event-key="zombie_siege" hidden></div>
           </article>
-          <article class="event-card event-desert">
+          <a class="event-card event-desert" href="desert-storm.html" aria-label="Abrir Desert Storm" data-i18n-aria="openDesertStorm">
             <img src="event-desert.png" alt="" loading="lazy">
             <div class="event-card__copy">
               <h3 class="event-card__title" data-i18n="desertStorm">Tormenta del desierto</h3>
               <span class="event-card__brand">Heroes of Last Area</span>
             </div>
-          </article>
+            <div class="event-card__schedule" data-event-key="desert_storm" hidden></div>
+          </a>
           <article class="event-card event-invasion">
             <img src="event-zombie-invasion.png" alt="" loading="lazy">
             <div class="event-card__copy">
               <h3 class="event-card__title" data-i18n="zombieInvasion">Invasión zombi</h3>
               <span class="event-card__brand">Heroes of Last Area</span>
             </div>
+            <div class="event-card__schedule" data-event-key="zombie_invasion" hidden></div>
           </article>
         </div>
+      </section>
+
+      <section class="quick-access" aria-labelledby="quickAccessTitle">
+        <h2 class="quick-access__heading" id="quickAccessTitle" data-i18n="quickAccess">Acceso rápido</h2>
+        <a class="quick-access__card" href="members.html" aria-label="Abrir miembros" data-i18n-aria="openMembers">
+          <span class="quick-access__icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" focusable="false">
+              <circle cx="24" cy="16" r="7"></circle>
+              <circle cx="10.5" cy="20" r="5"></circle>
+              <circle cx="37.5" cy="20" r="5"></circle>
+              <path d="M12 38c.8-8 5.2-12 12-12s11.2 4 12 12"></path>
+              <path d="M2.5 37c.6-5.8 3.7-9 8.7-9 3.1 0 5.4 1.2 7 3.2"></path>
+              <path d="M45.5 37c-.6-5.8-3.7-9-8.7-9-3.1 0-5.4 1.2-7 3.2"></path>
+            </svg>
+          </span>
+          <span class="quick-access__copy">
+            <strong class="quick-access__title" data-i18n="quickMembers">Miembros</strong>
+            <span class="quick-access__subtitle" data-i18n="quickMembersSub">Conoce a la alianza</span>
+          </span>
+          <span class="quick-access__arrow" aria-hidden="true">›</span>
+        </a>
       </section>
     </main>
   </div>
@@ -714,19 +1105,54 @@
     const flag=document.getElementById('currentFlag');
 
     const translations={
-      es:{pageTitle:'HOLa — Centro de la alianza',overview:'Resumen de la alianza',strategy:'Estrategia',teamwork:'Equipo',family:'Familia',victory:'Victoria',members:'Miembros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Ejercicio de alianza',zombieSiege:'Asedio zombi',desertStorm:'Tormenta del desierto',zombieInvasion:'Invasión zombi',changeLanguage:'Cambiar idioma',adminCenter:'Centro de administración',allianceStats:'Estadísticas de la alianza'},
-      en:{pageTitle:'HOLa — Alliance Tracker',overview:'Alliance Overview',strategy:'Strategy',teamwork:'Teamwork',family:'Family',victory:'Victory',members:'Members',countries:'Countries',thp:'THP',eventsTitle:'Upcoming events',viewAll:'View all →',allianceExercise:'Alliance Exercise',zombieSiege:'Zombie Siege',desertStorm:'Desert Storm',zombieInvasion:'Zombie Invasion',changeLanguage:'Change language',adminCenter:'Administration center',allianceStats:'Alliance statistics'},
-      fr:{pageTitle:'HOLa — Centre de l’alliance',overview:'Vue de l’alliance',strategy:'Stratégie',teamwork:'Équipe',family:'Famille',victory:'Victoire',members:'Membres',countries:'Pays',thp:'THP',eventsTitle:'Événements à venir',viewAll:'Voir tout →',allianceExercise:'Exercice d’alliance',zombieSiege:'Siège zombie',desertStorm:'Tempête du désert',zombieInvasion:'Invasion zombie',changeLanguage:'Changer de langue',adminCenter:'Centre d’administration',allianceStats:'Statistiques de l’alliance'},
-      de:{pageTitle:'HOLa — Allianz-Zentrale',overview:'Allianzübersicht',strategy:'Strategie',teamwork:'Teamarbeit',family:'Familie',victory:'Sieg',members:'Mitglieder',countries:'Länder',thp:'THP',eventsTitle:'Bevorstehende Ereignisse',viewAll:'Alle ansehen →',allianceExercise:'Allianz-Übung',zombieSiege:'Zombie-Belagerung',desertStorm:'Wüstensturm',zombieInvasion:'Zombie-Invasion',changeLanguage:'Sprache ändern',adminCenter:'Administrationszentrum',allianceStats:'Allianzstatistiken'},
-      ro:{pageTitle:'HOLa — Centrul alianței',overview:'Prezentarea alianței',strategy:'Strategie',teamwork:'Echipă',family:'Familie',victory:'Victorie',members:'Membri',countries:'Țări',thp:'THP',eventsTitle:'Evenimente viitoare',viewAll:'Vezi tot →',allianceExercise:'Exercițiul alianței',zombieSiege:'Asediul zombi',desertStorm:'Furtună în deșert',zombieInvasion:'Invazie zombi',changeLanguage:'Schimbă limba',adminCenter:'Centrul de administrare',allianceStats:'Statisticile alianței'},
-      pt:{pageTitle:'HOLa — Centro da aliança',overview:'Visão da aliança',strategy:'Estratégia',teamwork:'Equipe',family:'Família',victory:'Vitória',members:'Membros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Exercício da aliança',zombieSiege:'Cerco zumbi',desertStorm:'Tempestade do deserto',zombieInvasion:'Invasão zumbi',changeLanguage:'Mudar idioma',adminCenter:'Centro de administração',allianceStats:'Estatísticas da aliança'},
-      uk:{pageTitle:'HOLa — Центр альянсу',overview:'Огляд альянсу',strategy:'Стратегія',teamwork:'Команда',family:'Родина',victory:'Перемога',members:'Учасники',countries:'Країни',thp:'THP',eventsTitle:'Майбутні події',viewAll:'Переглянути всі →',allianceExercise:'Навчання альянсу',zombieSiege:'Облога зомбі',desertStorm:'Буря в пустелі',zombieInvasion:'Вторгнення зомбі',changeLanguage:'Змінити мову',adminCenter:'Центр адміністрування',allianceStats:'Статистика альянсу'},
-      it:{pageTitle:'HOLa — Centro alleanza',overview:'Panoramica alleanza',strategy:'Strategia',teamwork:'Squadra',family:'Famiglia',victory:'Vittoria',members:'Membri',countries:'Paesi',thp:'THP',eventsTitle:'Prossimi eventi',viewAll:'Vedi tutti →',allianceExercise:'Esercitazione dell’alleanza',zombieSiege:'Assedio zombie',desertStorm:'Tempesta nel deserto',zombieInvasion:'Invasione zombie',changeLanguage:'Cambia lingua',adminCenter:'Centro di amministrazione',allianceStats:'Statistiche dell’alleanza'},
-      pl:{pageTitle:'HOLa — Centrum sojuszu',overview:'Przegląd sojuszu',strategy:'Strategia',teamwork:'Drużyna',family:'Rodzina',victory:'Zwycięstwo',members:'Członkowie',countries:'Kraje',thp:'THP',eventsTitle:'Nadchodzące wydarzenia',viewAll:'Zobacz wszystkie →',allianceExercise:'Ćwiczenia sojuszu',zombieSiege:'Oblężenie zombie',desertStorm:'Burza pustynna',zombieInvasion:'Inwazja zombie',changeLanguage:'Zmień język',adminCenter:'Centrum administracji',allianceStats:'Statystyki sojuszu'}
+      es:{pageTitle:'HOLa — Centro de la alianza',overview:'Resumen de la alianza',strategy:'Estrategia',teamwork:'Equipo',family:'Familia',victory:'Victoria',members:'Miembros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Ejercicio de alianza',zombieSiege:'Asedio zombi',desertStorm:'Tormenta del desierto',zombieInvasion:'Invasión zombi',quickAccess:'Acceso rápido',quickMembers:'Miembros',quickMembersSub:'Conoce a la alianza',openMembers:'Abrir miembros',changeLanguage:'Cambiar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administración',allianceStats:'Estadísticas de la alianza',surveyBannerEyebrow:'MISIÓN DE ALIANZA',surveyBannerTitle:'Actualiza tu perfil HOLa',surveyBannerText:'Mantén al día tu THP, squads y perfil de miembro.',surveyBannerCta:'Completar / actualizar encuesta',openSurvey:'Completar o actualizar encuesta',surveyBannerAria:'Encuesta de jugadores',surveyProgress:'{completed} de {total} completadas'},
+      en:{pageTitle:'HOLa — Alliance Tracker',overview:'Alliance Overview',strategy:'Strategy',teamwork:'Teamwork',family:'Family',victory:'Victory',members:'Members',countries:'Countries',thp:'THP',eventsTitle:'Upcoming events',viewAll:'View all →',allianceExercise:'Alliance Exercise',zombieSiege:'Zombie Siege',desertStorm:'Desert Storm',zombieInvasion:'Zombie Invasion',quickAccess:'Quick Access',quickMembers:'Members',quickMembersSub:'Meet the alliance',openMembers:'Open members',changeLanguage:'Change language',openDesertStorm:'Open Desert Storm',adminCenter:'Administration center',allianceStats:'Alliance statistics',surveyBannerEyebrow:'ALLIANCE MISSION',surveyBannerTitle:'Update your HOLa profile',surveyBannerText:'Keep your THP, squads and member profile up to date.',surveyBannerCta:'Complete / update survey',openSurvey:'Complete or update survey',surveyBannerAria:'Player survey',surveyProgress:'{completed} of {total} completed'},
+      fr:{pageTitle:'HOLa — Centre de l’alliance',overview:'Vue de l’alliance',strategy:'Stratégie',teamwork:'Équipe',family:'Famille',victory:'Victoire',members:'Membres',countries:'Pays',thp:'THP',eventsTitle:'Événements à venir',viewAll:'Voir tout →',allianceExercise:'Exercice d’alliance',zombieSiege:'Siège zombie',desertStorm:'Tempête du désert',zombieInvasion:'Invasion zombie',quickAccess:'Accès rapide',quickMembers:'Membres',quickMembersSub:'Découvrez l’alliance',openMembers:'Ouvrir les membres',changeLanguage:'Changer de langue',openDesertStorm:'Ouvrir Desert Storm',adminCenter:'Centre d’administration',allianceStats:'Statistiques de l’alliance',surveyBannerEyebrow:'MISSION D’ALLIANCE',surveyBannerTitle:'Mets à jour ton profil HOLa',surveyBannerText:'Garde ton THP, tes squads et ton profil de membre à jour.',surveyBannerCta:'Remplir / mettre à jour',openSurvey:'Remplir ou mettre à jour l’enquête',surveyBannerAria:'Enquête des joueurs',surveyProgress:'{completed} sur {total} terminées'},
+      de:{pageTitle:'HOLa — Allianz-Zentrale',overview:'Allianzübersicht',strategy:'Strategie',teamwork:'Teamarbeit',family:'Familie',victory:'Sieg',members:'Mitglieder',countries:'Länder',thp:'THP',eventsTitle:'Bevorstehende Ereignisse',viewAll:'Alle ansehen →',allianceExercise:'Allianz-Übung',zombieSiege:'Zombie-Belagerung',desertStorm:'Wüstensturm',zombieInvasion:'Zombie-Invasion',quickAccess:'Schnellzugriff',quickMembers:'Mitglieder',quickMembersSub:'Lerne die Allianz kennen',openMembers:'Mitglieder öffnen',changeLanguage:'Sprache ändern',openDesertStorm:'Desert Storm öffnen',adminCenter:'Administrationszentrum',allianceStats:'Allianzstatistiken',surveyBannerEyebrow:'ALLIANZ-MISSION',surveyBannerTitle:'Aktualisiere dein HOLa-Profil',surveyBannerText:'Halte THP, Squads und Mitgliederprofil aktuell.',surveyBannerCta:'Umfrage ausfüllen / aktualisieren',openSurvey:'Umfrage ausfüllen oder aktualisieren',surveyBannerAria:'Spielerumfrage',surveyProgress:'{completed} von {total} abgeschlossen'},
+      ro:{pageTitle:'HOLa — Centrul alianței',overview:'Prezentarea alianței',strategy:'Strategie',teamwork:'Echipă',family:'Familie',victory:'Victorie',members:'Membri',countries:'Țări',thp:'THP',eventsTitle:'Evenimente viitoare',viewAll:'Vezi tot →',allianceExercise:'Exercițiul alianței',zombieSiege:'Asediul zombi',desertStorm:'Furtună în deșert',zombieInvasion:'Invazie zombi',quickAccess:'Acces rapid',quickMembers:'Membri',quickMembersSub:'Cunoaște alianța',openMembers:'Deschide membrii',changeLanguage:'Schimbă limba',openDesertStorm:'Deschide Desert Storm',adminCenter:'Centrul de administrare',allianceStats:'Statisticile alianței',surveyBannerEyebrow:'MISIUNE DE ALIANȚĂ',surveyBannerTitle:'Actualizează profilul HOLa',surveyBannerText:'Ține THP-ul, squad-urile și profilul de membru la zi.',surveyBannerCta:'Completează / actualizează',openSurvey:'Completează sau actualizează chestionarul',surveyBannerAria:'Chestionar jucători',surveyProgress:'{completed} din {total} completate'},
+      pt:{pageTitle:'HOLa — Centro da aliança',overview:'Visão da aliança',strategy:'Estratégia',teamwork:'Equipe',family:'Família',victory:'Vitória',members:'Membros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Exercício da aliança',zombieSiege:'Cerco zumbi',desertStorm:'Tempestade do deserto',zombieInvasion:'Invasão zumbi',quickAccess:'Acesso rápido',quickMembers:'Membros',quickMembersSub:'Conheça a aliança',openMembers:'Abrir membros',changeLanguage:'Mudar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administração',allianceStats:'Estatísticas da aliança',surveyBannerEyebrow:'MISSÃO DA ALIANÇA',surveyBannerTitle:'Atualiza o teu perfil HOLa',surveyBannerText:'Mantém o THP, os squads e o perfil de membro atualizados.',surveyBannerCta:'Preencher / atualizar',openSurvey:'Preencher ou atualizar a pesquisa',surveyBannerAria:'Pesquisa de jogadores',surveyProgress:'{completed} de {total} concluídas'},
+      uk:{pageTitle:'HOLa — Центр альянсу',overview:'Огляд альянсу',strategy:'Стратегія',teamwork:'Команда',family:'Родина',victory:'Перемога',members:'Учасники',countries:'Країни',thp:'THP',eventsTitle:'Майбутні події',viewAll:'Переглянути всі →',allianceExercise:'Навчання альянсу',zombieSiege:'Облога зомбі',desertStorm:'Буря в пустелі',zombieInvasion:'Вторгнення зомбі',quickAccess:'Швидкий доступ',quickMembers:'Учасники',quickMembersSub:'Познайомтеся з альянсом',openMembers:'Відкрити учасників',changeLanguage:'Змінити мову',openDesertStorm:'Відкрити Desert Storm',adminCenter:'Центр адміністрування',allianceStats:'Статистика альянсу',surveyBannerEyebrow:'МІСІЯ АЛЬЯНСУ',surveyBannerTitle:'Онови свій профіль HOLa',surveyBannerText:'Підтримуй THP, squads і профіль учасника в актуальному стані.',surveyBannerCta:'Заповнити / оновити',openSurvey:'Заповнити або оновити опитування',surveyBannerAria:'Опитування гравців',surveyProgress:'{completed} з {total} завершено'},
+      it:{pageTitle:'HOLa — Centro alleanza',overview:'Panoramica alleanza',strategy:'Strategia',teamwork:'Squadra',family:'Famiglia',victory:'Vittoria',members:'Membri',countries:'Paesi',thp:'THP',eventsTitle:'Prossimi eventi',viewAll:'Vedi tutti →',allianceExercise:'Esercitazione dell’alleanza',zombieSiege:'Assedio zombie',desertStorm:'Tempesta nel deserto',zombieInvasion:'Invasione zombie',quickAccess:'Accesso rapido',quickMembers:'Membri',quickMembersSub:'Scopri l’alleanza',openMembers:'Apri membri',changeLanguage:'Cambia lingua',openDesertStorm:'Apri Desert Storm',adminCenter:'Centro di amministrazione',allianceStats:'Statistiche dell’alleanza',surveyBannerEyebrow:'MISSIONE DELL’ALLEANZA',surveyBannerTitle:'Aggiorna il tuo profilo HOLa',surveyBannerText:'Mantieni aggiornati THP, squad e profilo membro.',surveyBannerCta:'Compila / aggiorna',openSurvey:'Compila o aggiorna il sondaggio',surveyBannerAria:'Sondaggio giocatori',surveyProgress:'{completed} di {total} completati'},
+      pl:{pageTitle:'HOLa — Centrum sojuszu',overview:'Przegląd sojuszu',strategy:'Strategia',teamwork:'Drużyna',family:'Rodzina',victory:'Zwycięstwo',members:'Członkowie',countries:'Kraje',thp:'THP',eventsTitle:'Nadchodzące wydarzenia',viewAll:'Zobacz wszystkie →',allianceExercise:'Ćwiczenia sojuszu',zombieSiege:'Oblężenie zombie',desertStorm:'Burza pustynna',zombieInvasion:'Inwazja zombie',quickAccess:'Szybki dostęp',quickMembers:'Członkowie',quickMembersSub:'Poznaj sojusz',openMembers:'Otwórz członków',changeLanguage:'Zmień język',openDesertStorm:'Otwórz Desert Storm',adminCenter:'Centrum administracji',allianceStats:'Statystyki sojuszu',surveyBannerEyebrow:'MISJA SOJUSZU',surveyBannerTitle:'Zaktualizuj profil HOLa',surveyBannerText:'Aktualizuj THP, squady i profil członka.',surveyBannerCta:'Wypełnij / zaktualizuj',openSurvey:'Wypełnij lub zaktualizuj ankietę',surveyBannerAria:'Ankieta graczy',surveyProgress:'{completed} z {total} ukończonych'}
     };
 
     const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+
+
+    const EVENT_LOCALES={es:'es-ES',en:'en-GB',fr:'fr-FR',de:'de-DE',ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL'};
+
+    function formatEventSchedule(row,language){
+      if(!row?.event_date||!row?.event_time)return '';
+      const locale=EVENT_LOCALES[language]||EVENT_LOCALES.es;
+      const date=new Date(`${row.event_date}T12:00:00Z`);
+      if(Number.isNaN(date.getTime()))return '';
+      const day=new Intl.DateTimeFormat(locale,{weekday:'short',timeZone:'UTC'}).format(date).replace(/\.$/,'').toUpperCase();
+      const datePart=new Intl.DateTimeFormat(locale,{day:'2-digit',month:'short',timeZone:'UTC'}).format(date).replace(/\./g,'').toUpperCase();
+      const time=String(row.event_time).slice(0,5);
+      return `${day} · ${datePart} · ${time} <span class="event-card__server">SERVER TIME</span>`;
+    }
+
+    function renderUpcomingEvents(language){
+      const rows=window.__holaUpcomingEvents||[];
+      const byKey=Object.fromEntries(rows.map(row=>[row.event_key,row]));
+      document.querySelectorAll('.event-card__schedule[data-event-key]').forEach(el=>{
+        const html=formatEventSchedule(byKey[el.dataset.eventKey],language||document.documentElement.lang||'es');
+        if(html){el.innerHTML=html;el.hidden=false;}else{el.textContent='';el.hidden=true;}
+      });
+    }
+
+    async function loadUpcomingEvents(){
+      try{
+        const response=await fetch(`${SUPABASE_URL}/rest/v1/upcoming_events?select=event_key,event_date,event_time&order=event_key.asc`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}});
+        if(!response.ok)throw new Error(`Supabase events: ${response.status}`);
+        const rows=await response.json();
+        window.__holaUpcomingEvents=Array.isArray(rows)?rows:[];
+        renderUpcomingEvents(document.documentElement.lang||'es');
+      }catch(error){
+        console.warn('No se pudieron cargar los próximos eventos.',error);
+      }
+    }
 
     function parsePower(value){
       if(!value)return 0;
@@ -765,7 +1191,7 @@
     async function loadAllianceStats(){
       const cached=localStorage.getItem('hola-alliance-stats');
       if(cached){
-        try{renderAllianceStats(JSON.parse(cached));}catch(_error){}
+        try{const cachedStats=JSON.parse(cached);if(Object.prototype.hasOwnProperty.call(cachedStats,'completed'))renderAllianceStats(cachedStats);}catch(_error){}
       }
       try{
         const response=await fetch(`${SUPABASE_URL}/rest/v1/players?select=name,thp,country,flag,survey_completed`,{
@@ -775,6 +1201,7 @@
         const players=await response.json();
         const stats={
           members:players.length,
+          completed:players.filter(player=>player.survey_completed===true).length,
           countries:new Set(players.filter(player=>player.survey_completed===true).map(normalizeCountry).filter(Boolean)).size,
           thp:formatTotalPower(players.reduce((total,player)=>total+parsePower(player.thp),0))
         };
@@ -785,10 +1212,27 @@
       }
     }
 
+    function updateSurveyProgress(stats,language){
+      if(!stats)return;
+      const total=Number(stats.members)||0;
+      const completed=Number(stats.completed)||0;
+      const percent=total>0?Math.max(0,Math.min(100,(completed/total)*100)):0;
+      const fill=document.getElementById('surveyProgressFill');
+      const progress=document.getElementById('surveyProgressText');
+      if(fill)fill.style.width=`${percent.toFixed(1)}%`;
+      if(progress){
+        const dictionary=translations[language||document.documentElement.lang]||translations.es;
+        const template=dictionary.surveyProgress||'{completed} de {total} completadas';
+        progress.textContent=template.replace('{completed}',completed).replace('{total}',total);
+      }
+    }
+
     function renderAllianceStats(stats){
+      window.__holaAllianceStats=stats;
       document.getElementById('membersValue').textContent=stats.members;
       document.getElementById('countriesValue').textContent=stats.countries;
       document.getElementById('thpValue').textContent=stats.thp;
+      updateSurveyProgress(stats,document.documentElement.lang||'es');
     }
 
     function applyLanguage(language){
@@ -803,6 +1247,8 @@
       });
       document.title=dictionary.pageTitle;
       document.documentElement.lang=language;
+      updateSurveyProgress(window.__holaAllianceStats,language);
+      renderUpcomingEvents(language);
     }
 
     function closeLanguages(){
@@ -923,6 +1369,7 @@
 
     applyLanguage('es');
     loadAllianceStats();
+    loadUpcomingEvents();
   </script>
 </body>
 </html>

@@ -1,0 +1,6 @@
+name = "hola-avatar-transform"
+main = "avatar-transform-worker.js"
+compatibility_date = "2026-09-19"
+
+[ai]
+binding = "AI"

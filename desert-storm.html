@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a6eab">
+  <title>HOLa · Desert Storm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --blue:#087fc5;--blue2:#11b8e8;--deep:#07395f;--navy:#06263f;
+      --gold:#ffd451;--gold2:#e9aa38;--sand:#f4deb2;--paper:#fff9ec;
+      --cream:#fffdf6;--ink:#173b5b;--muted:#6d8193;--line:#e7c984;
+      --win:#178d66;--loss:#b94848;--draw:#a66a17;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:#ead6aa}
+    body{margin:0;min-height:100vh;background:linear-gradient(180deg,#f8ead0,#e8c98e);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,select{font:inherit}
+    button{cursor:pointer}
+    .app{width:100%;max-width:520px;min-height:100vh;margin:0 auto;background:var(--paper);box-shadow:0 0 38px rgba(72,43,5,.22);overflow:hidden}
+
+    .hero{--ds-title-top:58px;--ds-title-width:82%;position:relative;height:245px;overflow:hidden;isolation:isolate;background:#6d573c}
+    .hero__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 54%;z-index:0}
+    .hero:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(4,34,58,.18) 0%,rgba(3,29,49,.03) 56%,rgba(5,31,48,.35) 100%)}
+    .hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;z-index:3;background:linear-gradient(90deg,var(--blue2),var(--gold),var(--blue2));box-shadow:0 -3px 15px rgba(255,212,81,.32)}
+    .topbar{position:absolute;z-index:8;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;align-items:center}
+    .round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,230,161,.78);background:rgba(5,34,55,.72);backdrop-filter:blur(12px);box-shadow:0 5px 18px rgba(0,0,0,.22);color:#fff;text-decoration:none}
+    .round svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+    .language{position:relative}
+    .language__toggle{padding:0;overflow:hidden}
+    .language__toggle img{width:24px;height:24px;border-radius:50%;object-fit:cover}
+    .language__list{position:absolute;right:0;top:51px;width:165px;margin:0;padding:7px;list-style:none;border:1px solid rgba(255,215,107,.65);border-radius:16px;background:rgba(255,250,235,.97);box-shadow:0 16px 35px rgba(24,38,48,.27);backdrop-filter:blur(18px)}
+    .language__list[hidden]{display:none}
+    .language__option{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;color:#234762;font-size:12px;font-weight:800;text-align:left}
+    .language__option:active{background:#e9f6fc}
+    .language__option img{width:22px;height:16px;border-radius:3px;object-fit:cover}
+
+
+    .hero__title{position:absolute;z-index:5;top:var(--ds-title-top);left:50%;width:var(--ds-title-width);max-width:430px;height:auto;transform:translateX(-50%);filter:drop-shadow(0 3px 3px rgba(0,0,0,.45)) drop-shadow(0 8px 14px rgba(54,30,10,.55)) drop-shadow(0 0 10px rgba(0,0,0,.18));pointer-events:none;user-select:none}
+    .hero__copy{display:none}
+    .hero__brand{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+    .hero__brand img{width:55px;height:55px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}
+    .hero__brandtext{font:800 10px/1.3 Cinzel,Georgia,serif;letter-spacing:.16em;color:#fff1bc;text-transform:uppercase}
+    .hero__eyebrow{font:900 9px/1.2 system-ui,sans-serif;letter-spacing:.28em;color:#75e5ff;text-transform:uppercase;margin-bottom:6px}
+    .hero__sub{max-width:390px;margin:10px 0 0;color:#edf9ff;font-size:12px;font-weight:700;line-height:1.45}
+    .hero__chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+    .hero__chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid rgba(255,222,126,.58);border-radius:999px;background:rgba(4,37,60,.67);color:#fff6d6;font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;backdrop-filter:blur(8px)}
+    .hero__chip i{width:6px;height:6px;border-radius:50%;background:#66e8ff;box-shadow:0 0 8px #66e8ff}
+
+    .main{position:relative;padding:0 12px 34px;background:radial-gradient(circle at 92% 0,rgba(82,190,231,.12),transparent 230px),linear-gradient(180deg,#fff9ec 0%,#f7e7c7 100%)}
+    .battle-card{position:relative;z-index:7;margin:-16px 2px 0;padding:12px 10px;border:1px solid #e6c675;border-radius:20px;background:linear-gradient(145deg,rgba(255,253,246,.98),rgba(255,245,218,.98));box-shadow:0 12px 26px rgba(105,67,11,.18),inset 0 0 0 1px rgba(255,255,255,.9)}
+    .battle-nav{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:8px}
+    .battle-nav__btn{width:42px;height:42px;border-radius:13px;border:1px solid #8ccce8;background:linear-gradient(180deg,#f8fdff,#dff5ff);color:#0b6f9f;font-size:28px;font-weight:900;box-shadow:0 4px 9px rgba(19,101,145,.1)}
+    .battle-date{text-align:center;min-width:0}
+    .battle-date small{display:block;color:#a46e18;font-size:8px;font-weight:1000;letter-spacing:.2em;text-transform:uppercase}
+    .battle-date strong{display:block;margin-top:2px;font:800 15px/1.15 Cinzel,Georgia,serif;color:#16496d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .battle-status{min-height:17px;margin:7px 4px 0;text-align:center;color:#7890a2;font-size:9px;font-weight:800}
+
+    .team-switch{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 2px 0;padding:5px;border:1px solid #e6cc8b;border-radius:16px;background:#f1dfba}
+    .team-btn{border:0;border-radius:12px;padding:11px 8px;background:transparent;color:#776b5b;font-size:10px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase;transition:.18s ease}
+    .team-btn.active{background:linear-gradient(135deg,#087fc5,#12bfe8);color:#fff;box-shadow:0 5px 14px rgba(8,127,197,.28)}
+
+    .anchor-nav{position:sticky;top:8px;z-index:10;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:12px 0;padding:5px;border:1px solid rgba(218,183,100,.75);border-radius:15px;background:rgba(255,250,235,.91);backdrop-filter:blur(14px);box-shadow:0 6px 18px rgba(65,52,31,.12)}
+    .anchor-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border-radius:10px;color:#44657d;text-decoration:none;font-size:7px;font-weight:1000;letter-spacing:.05em;text-transform:uppercase}
+    .anchor-nav a span:first-child{font-size:16px;line-height:1}
+    .anchor-nav a:active{background:#eaf7fc;color:#087fc5}
+
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:11px 0}
+    .summary__item{min-width:0;padding:10px 7px;border:1px solid #e7cb87;border-radius:15px;background:rgba(255,252,242,.86);text-align:center;box-shadow:0 5px 12px rgba(95,63,17,.06)}
+    .summary__item span{display:block;color:#9b7b48;font-size:7px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase}
+    .summary__item strong{display:block;margin-top:3px;color:#0a6eaa;font:900 17px/1 Cinzel,Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .result-pill{font-family:Inter,system-ui!important;font-size:11px!important;line-height:1!important;padding-top:3px}
+    .result-pill.win{color:var(--win)}.result-pill.loss{color:var(--loss)}.result-pill.draw{color:var(--draw)}
+
+    .section{scroll-margin-top:84px;margin-top:12px;padding:15px;border:1px solid #e3c57b;border-radius:22px;background:linear-gradient(155deg,rgba(255,254,249,.98),rgba(255,246,223,.96));box-shadow:0 8px 20px rgba(89,60,17,.08);position:relative;overflow:hidden}
+    .section:before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue2),var(--gold),var(--blue2))}
+    .section__head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+    .section__eyebrow{color:#a47320;font-size:8px;font-weight:1000;letter-spacing:.2em;text-transform:uppercase}
+    .section h2{margin:3px 0 0;color:#153f61;font:900 20px/1.05 Cinzel,Georgia,serif;letter-spacing:-.02em}
+    .section__badge{flex:0 0 auto;padding:6px 8px;border-radius:999px;background:#e3f6fe;color:#0875a9;font-size:8px;font-weight:1000;border:1px solid #a9def0}
+    .empty{padding:20px 8px;text-align:center;color:#8193a0;font-size:11px;font-style:italic}
+
+    .players{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .player{display:flex;align-items:center;gap:8px;min-width:0;padding:9px;border:1px solid #ead6a2;border-radius:13px;background:rgba(255,255,255,.72)}
+    .player__n{flex:0 0 25px;width:25px;height:25px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#087fc5,#22c3e9);color:#fff;font-size:8px;font-weight:1000;box-shadow:0 3px 7px rgba(8,127,197,.24)}
+    .player__name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#294c66;font-size:10px;font-weight:900}
+
+    .strategy-plan{display:flex;flex-direction:column;gap:8px}
+    .strategy-block{position:relative;padding:11px 11px 10px;border:1px solid #e8d5a8;border-radius:14px;background:rgba(255,255,255,.68);overflow:hidden}
+    .strategy-block:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#0fa8d6}
+    .strategy-phase{border-color:#9fdcec;background:linear-gradient(135deg,#f5fdff,#e8f8fd)}.strategy-phase:before{background:#09a9db}
+    .strategy-side{border-color:#edc987;background:linear-gradient(135deg,#fffaf0,#fff0ce)}.strategy-side:before{background:#e6a638}
+    .strategy-note{border-color:#e4b66b;background:linear-gradient(135deg,#fff7df,#ffe8ad)}.strategy-note:before{background:#c98214}
+    .strategy-heading{display:flex;align-items:center;gap:7px;margin-bottom:7px;color:#194b6f;font-size:10px;font-weight:1000;letter-spacing:.04em;text-transform:uppercase}
+    .strategy-heading .ico{font-size:15px}
+    .strategy-line{color:#405b70;font-size:10px;line-height:1.5;padding:2px 0}
+    .strategy-line.strategy-bullet{display:flex;gap:6px}.strategy-line.strategy-bullet:before{content:"›";color:#0c9dca;font-weight:1000}
+    .strategy-player{color:#0a6f9e;font-weight:1000}.strategy-action{color:#be7d18;font-weight:1000}.strategy-building{color:#8b611e;font-weight:1000}
+    .strategy-separator{height:1px;margin:5px 0;background:linear-gradient(90deg,transparent,#dec68f,transparent)}
+
+    .map-wrap{position:relative;border:1px solid #d7b867;border-radius:16px;overflow:hidden;background:#ead7b0;min-height:160px;display:grid;place-items:center}
+    .map-wrap img{display:block;width:100%;height:auto;max-height:720px;object-fit:contain;cursor:zoom-in}
+    .map-hint{position:absolute;right:8px;bottom:8px;padding:6px 8px;border-radius:999px;background:rgba(6,46,72,.82);color:#fff;font-size:7px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;pointer-events:none}
+
+    .result-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:4px;border:1px solid #e4ca89;border-radius:13px;background:#f4e3bd}
+    .result-btn{border:0;border-radius:10px;padding:8px 5px;background:transparent;color:#776957;font-size:9px;font-weight:1000}
+    .result-btn.active{background:#0c80b7;color:#fff}
+    .result-banner{display:flex;align-items:center;justify-content:center;gap:7px;margin:3px 0 11px;padding:8px;border-radius:12px;font-size:9px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;border:1px solid #d9c48f;background:#fffaf0;color:#7d6e51}
+    .result-banner.win{border-color:#8fd5b8;background:#edf9f4;color:#147c5b}.result-banner.loss{border-color:#e1aaaa;background:#fff1f1;color:#aa4040}.result-banner.draw{border-color:#e7c785;background:#fff8e5;color:#996213}
+    .podium{display:grid;grid-template-columns:1fr 1.08fr 1fr;gap:6px;align-items:end;margin-bottom:12px}
+    .podium__card{min-width:0;text-align:center;padding:10px 5px 9px;border:1px solid #e3cf9e;border-radius:14px;background:#fffdf7}
+    .podium__card.first{padding-top:15px;background:linear-gradient(180deg,#fff9dd,#ffe7a1);border-color:#e4b742;box-shadow:0 6px 14px rgba(187,125,19,.13)}
+    .podium__medal{font-size:20px;line-height:1}.podium__name{margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#254963;font-size:9px;font-weight:1000}.podium__pts{margin-top:3px;color:#0a7da9;font-size:9px;font-weight:1000}
+    .score-table{width:100%;border-collapse:collapse;font-size:9px}
+    .score-table th{padding:7px 5px;border-bottom:1px solid #dec997;color:#927746;font-size:7px;letter-spacing:.12em;text-align:left;text-transform:uppercase}
+    .score-table td{padding:8px 5px;border-bottom:1px solid #eee0bc;color:#405c70;font-weight:700}.score-table td:last-child,.score-table th:last-child{text-align:right}.score-table .pts{color:#0878a9;font-weight:1000}
+
+    .lightbox{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(2,17,29,.92);backdrop-filter:blur(10px)}
+    .lightbox[hidden]{display:none}.lightbox img{max-width:100%;max-height:88vh;border-radius:12px;box-shadow:0 16px 45px rgba(0,0,0,.5)}
+    .lightbox button{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:44px;height:44px;border:1px solid #ffe6a2;border-radius:50%;background:rgba(4,34,56,.85);color:#fff;font-size:25px}
+
+    .footer{padding:22px 10px 8px;text-align:center;color:#987a47;font:800 8px/1.5 Cinzel,Georgia,serif;letter-spacing:.14em;text-transform:uppercase}
+    @media(min-width:700px){body{padding:24px 0}.app{border-radius:28px}.hero{border-radius:28px 28px 0 0}}
+    @media(max-width:380px){.hero{--ds-title-top:54px;--ds-title-width:84%;height:230px}.players{grid-template-columns:1fr}.summary__item strong{font-size:14px}.battle-date strong{font-size:13px}}
+    @media(prefers-reduced-motion:no-preference){.hero__copy{animation:rise .65s ease-out both}.battle-card{animation:rise .55s .12s ease-out both}@keyframes rise{from{opacity:0;transform:translateY(12px)}}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <img class="hero__bg" src="desert-storm-hero-simple.png" alt="">
+    <div class="topbar">
+      <a class="round" href="index.html" aria-label="Volver" data-i18n-aria="back">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      </a>
+      <div class="language">
+        <button class="round language__toggle" id="languageToggle" type="button" aria-label="Cambiar idioma" data-i18n-aria="changeLanguage" aria-expanded="false">
+          <img id="currentFlag" src="https://flagcdn.com/w80/es.png" alt="Español">
+        </button>
+        <ul class="language__list" id="languageList" hidden>
+          <li><button class="language__option" data-code="es" data-lang="es" data-name="Español"><img src="https://flagcdn.com/w40/es.png" alt="">Español</button></li>
+          <li><button class="language__option" data-code="gb" data-lang="en" data-name="English"><img src="https://flagcdn.com/w40/gb.png" alt="">English</button></li>
+          <li><button class="language__option" data-code="fr" data-lang="fr" data-name="Français"><img src="https://flagcdn.com/w40/fr.png" alt="">Français</button></li>
+          <li><button class="language__option" data-code="de" data-lang="de" data-name="Deutsch"><img src="https://flagcdn.com/w40/de.png" alt="">Deutsch</button></li>
+          <li><button class="language__option" data-code="ro" data-lang="ro" data-name="Română"><img src="https://flagcdn.com/w40/ro.png" alt="">Română</button></li>
+          <li><button class="language__option" data-code="pt" data-lang="pt" data-name="Português"><img src="https://flagcdn.com/w40/pt.png" alt="">Português</button></li>
+          <li><button class="language__option" data-code="ua" data-lang="uk" data-name="Українська"><img src="https://flagcdn.com/w40/ua.png" alt="">Українська</button></li>
+          <li><button class="language__option" data-code="it" data-lang="it" data-name="Italiano"><img src="https://flagcdn.com/w40/it.png" alt="">Italiano</button></li>
+          <li><button class="language__option" data-code="pl" data-lang="pl" data-name="Polski"><img src="https://flagcdn.com/w40/pl.png" alt="">Polski</button></li>
+        </ul>
+      </div>
+    </div>
+    <img class="hero__title" src="desert-storm-title-cyan-cream.png" alt="Desert Storm">
+  </header>
+
+  <main class="main">
+    <section class="battle-card" aria-label="Selector de jornada">
+      <div class="battle-nav">
+        <button class="battle-nav__btn" id="prevBattle" type="button" aria-label="Batalla anterior">‹</button>
+        <div class="battle-date"><small data-i18n="battle">JORNADA</small><strong id="battleDate">—</strong></div>
+        <button class="battle-nav__btn" id="nextBattle" type="button" aria-label="Batalla siguiente">›</button>
+      </div>
+      <div class="battle-status" id="loadStatus"></div>
+      <div class="team-switch" aria-label="Equipo">
+        <button class="team-btn active" data-team="B" type="button" data-i18n="teamB">FUERZA ESPECIAL B</button>
+        <button class="team-btn" data-team="A" type="button" data-i18n="teamA">FUERZA ESPECIAL A</button>
+      </div>
+    </section>
+
+    <nav class="anchor-nav" aria-label="Secciones">
+      <a href="#roster"><span>♟</span><span data-i18n="navRoster">Equipo</span></a>
+      <a href="#strategy"><span>⚔</span><span data-i18n="navPlan">Plan</span></a>
+      <a href="#map"><span>⌖</span><span data-i18n="navMap">Mapa</span></a>
+      <a href="#results"><span>🏆</span><span data-i18n="navScore">Resultados</span></a>
+    </nav>
+
+    <section class="summary" aria-label="Resumen">
+      <div class="summary__item"><span data-i18n="playersLabel">Jugadores</span><strong id="summaryPlayers">—</strong></div>
+      <div class="summary__item"><span data-i18n="mapLabel">Mapa</span><strong id="summaryMap">—</strong></div>
+      <div class="summary__item"><span data-i18n="resultLabel">Resultado</span><strong class="result-pill" id="summaryResult">—</strong></div>
+    </section>
+
+    <section class="section" id="roster">
+      <div class="section__head"><div><div class="section__eyebrow">01 · ROSTER</div><h2 data-i18n="participants">Participantes</h2></div><span class="section__badge" id="rosterCount">0</span></div>
+      <div class="players" id="players"><div class="empty" data-i18n="loading">Cargando…</div></div>
+    </section>
+
+    <section class="section" id="strategy">
+      <div class="section__head"><div><div class="section__eyebrow">02 · BATTLE PLAN</div><h2 data-i18n="strategy">Estrategia</h2></div><span class="section__badge" data-i18n="tactical">TÁCTICA</span></div>
+      <div id="strategyContent"><div class="empty">—</div></div>
+    </section>
+
+    <section class="section" id="map">
+      <div class="section__head"><div><div class="section__eyebrow">03 · TACTICAL MAP</div><h2 data-i18n="map">Mapa de batalla</h2></div><span class="section__badge" data-i18n="visual">VISUAL</span></div>
+      <div class="map-wrap" id="mapWrap"><div class="empty" data-i18n="noMap">No hay mapa cargado.</div></div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="section__head"><div><div class="section__eyebrow">04 · SCOREBOARD</div><h2 data-i18n="results">Resultados</h2></div><span class="section__badge" data-i18n="ranking">RANKING</span></div>
+      <div class="result-switch">
+        <button class="result-btn active" data-score-team="B" type="button" data-i18n="teamBShort">TEAM B</button>
+        <button class="result-btn" data-score-team="A" type="button" data-i18n="teamAShort">TEAM A</button>
+      </div>
+      <div id="resultState"></div>
+      <div id="resultContent"><div class="empty" data-i18n="noResults">Todavía no hay resultados.</div></div>
+    </section>
+
+    <div class="footer">HOLa · Heroes of Last Area · Desert Storm · S3 Golden Kingdom</div>
+  </main>
+</div>
+
+<div class="lightbox" id="mapLightbox" hidden><button id="closeMap" type="button" aria-label="Cerrar">×</button><img id="mapLightboxImage" alt="Desert Storm map"></div>
+
+<script>
+const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
+const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+async function rest(table,query=''){
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}${query?`?${query}`:''}`,{headers:{apikey:SUPABASE_KEY}});
+  if(!response.ok){let msg=`Supabase ${response.status}`;try{const e=await response.json();msg=e.message||e.error||msg}catch{}throw new Error(msg)}
+  return await response.json();
+}
+const $=id=>document.getElementById(id);
+let lang=localStorage.getItem('hola-language')||'es';
+let team='B';
+let scoreTeam='B';
+let battleDate=getFriday(new Date());
+let currentContent=null;
+const localeMap={es:'es-ES',en:'en-GB',fr:'fr-FR',de:'de-DE',ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL'};
+const flagMap={es:['es','Español'],en:['gb','English'],fr:['fr','Français'],de:['de','Deutsch'],ro:['ro','Română'],pt:['pt','Português'],uk:['ua','Українська'],it:['it','Italiano'],pl:['pl','Polski']};
+const T={
+ es:{back:'Volver',changeLanguage:'Cambiar idioma',command:'S3 · CENTRO DE COMANDO',heroSub:'Plan táctico, equipos, mapa y resultados de cada batalla.',liveData:'DATOS EN VIVO',serverStrategy:'ESTRATEGIA HOLa',battle:'JORNADA',teamB:'FUERZA ESPECIAL B',teamA:'FUERZA ESPECIAL A',teamBShort:'TEAM B',teamAShort:'TEAM A',navRoster:'Equipo',navPlan:'Plan',navMap:'Mapa',navScore:'Resultados',playersLabel:'Jugadores',mapLabel:'Mapa',resultLabel:'Resultado',participants:'Participantes',strategy:'Estrategia',map:'Mapa de batalla',results:'Resultados',tactical:'TÁCTICA',visual:'VISUAL',ranking:'RANKING',loading:'Cargando…',noMap:'No hay mapa cargado.',noResults:'Todavía no hay resultados.',noParticipants:'Todavía no hay participantes.',noStrategy:'Todavía no hay estrategia publicada.',tapMap:'Toca para ampliar',available:'LISTO',pending:'PENDIENTE',players:'jugadores',battleLoaded:'Jornada cargada',battleEmpty:'Sin datos para esta jornada',win:'VICTORIA',loss:'DERROTA',draw:'EMPATE',unknown:'PENDIENTE',points:'Puntos',player:'Jugador'},
+ en:{back:'Back',changeLanguage:'Change language',command:'S3 · COMMAND CENTER',heroSub:'Tactical plan, teams, map and results for every battle.',liveData:'LIVE DATA',serverStrategy:'HOLa STRATEGY',battle:'BATTLE',teamB:'SPECIAL FORCE B',teamA:'SPECIAL FORCE A',teamBShort:'TEAM B',teamAShort:'TEAM A',navRoster:'Team',navPlan:'Plan',navMap:'Map',navScore:'Results',playersLabel:'Players',mapLabel:'Map',resultLabel:'Result',participants:'Participants',strategy:'Strategy',map:'Battle map',results:'Results',tactical:'TACTICS',visual:'VISUAL',ranking:'RANKING',loading:'Loading…',noMap:'No map uploaded.',noResults:'No results yet.',noParticipants:'No participants yet.',noStrategy:'No strategy published yet.',tapMap:'Tap to enlarge',available:'READY',pending:'PENDING',players:'players',battleLoaded:'Battle loaded',battleEmpty:'No data for this battle',win:'VICTORY',loss:'DEFEAT',draw:'DRAW',unknown:'PENDING',points:'Points',player:'Player'},
+ fr:{back:'Retour',changeLanguage:'Changer de langue',command:'S3 · CENTRE DE COMMANDE',heroSub:'Plan tactique, équipes, carte et résultats de chaque bataille.',liveData:'DONNÉES EN DIRECT',serverStrategy:'STRATÉGIE HOLa',battle:'BATAILLE',teamB:'FORCE SPÉCIALE B',teamA:'FORCE SPÉCIALE A',teamBShort:'ÉQUIPE B',teamAShort:'ÉQUIPE A',navRoster:'Équipe',navPlan:'Plan',navMap:'Carte',navScore:'Résultats',playersLabel:'Joueurs',mapLabel:'Carte',resultLabel:'Résultat',participants:'Participants',strategy:'Stratégie',map:'Carte de bataille',results:'Résultats',tactical:'TACTIQUE',visual:'VISUEL',ranking:'CLASSEMENT',loading:'Chargement…',noMap:'Aucune carte chargée.',noResults:'Pas encore de résultats.',noParticipants:'Pas encore de participants.',noStrategy:'Aucune stratégie publiée.',tapMap:'Touchez pour agrandir',available:'PRÊTE',pending:'EN ATTENTE',players:'joueurs',battleLoaded:'Bataille chargée',battleEmpty:'Aucune donnée pour cette bataille',win:'VICTOIRE',loss:'DÉFAITE',draw:'NUL',unknown:'EN ATTENTE',points:'Points',player:'Joueur'},
+ de:{back:'Zurück',changeLanguage:'Sprache ändern',command:'S3 · KOMMANDOZENTRALE',heroSub:'Taktischer Plan, Teams, Karte und Ergebnisse jeder Schlacht.',liveData:'LIVE-DATEN',serverStrategy:'HOLa-STRATEGIE',battle:'SCHLACHT',teamB:'SPEZIALEINHEIT B',teamA:'SPEZIALEINHEIT A',teamBShort:'TEAM B',teamAShort:'TEAM A',navRoster:'Team',navPlan:'Plan',navMap:'Karte',navScore:'Ergebnisse',playersLabel:'Spieler',mapLabel:'Karte',resultLabel:'Ergebnis',participants:'Teilnehmer',strategy:'Strategie',map:'Schlachtkarte',results:'Ergebnisse',tactical:'TAKTIK',visual:'VISUELL',ranking:'RANGLISTE',loading:'Laden…',noMap:'Keine Karte geladen.',noResults:'Noch keine Ergebnisse.',noParticipants:'Noch keine Teilnehmer.',noStrategy:'Noch keine Strategie veröffentlicht.',tapMap:'Zum Vergrößern tippen',available:'BEREIT',pending:'AUSSTEHEND',players:'Spieler',battleLoaded:'Schlacht geladen',battleEmpty:'Keine Daten für diese Schlacht',win:'SIEG',loss:'NIEDERLAGE',draw:'UNENTSCHIEDEN',unknown:'AUSSTEHEND',points:'Punkte',player:'Spieler'},
+ ro:{back:'Înapoi',changeLanguage:'Schimbă limba',command:'S3 · CENTRU DE COMANDĂ',heroSub:'Plan tactic, echipe, hartă și rezultate pentru fiecare luptă.',liveData:'DATE LIVE',serverStrategy:'STRATEGIE HOLa',battle:'LUPTĂ',teamB:'FORȚA SPECIALĂ B',teamA:'FORȚA SPECIALĂ A',teamBShort:'ECHIPA B',teamAShort:'ECHIPA A',navRoster:'Echipă',navPlan:'Plan',navMap:'Hartă',navScore:'Rezultate',playersLabel:'Jucători',mapLabel:'Hartă',resultLabel:'Rezultat',participants:'Participanți',strategy:'Strategie',map:'Harta luptei',results:'Rezultate',tactical:'TACTICĂ',visual:'VIZUAL',ranking:'CLASAMENT',loading:'Se încarcă…',noMap:'Nu există hartă.',noResults:'Nu există încă rezultate.',noParticipants:'Nu există încă participanți.',noStrategy:'Nu există încă strategie publicată.',tapMap:'Apasă pentru mărire',available:'GATA',pending:'ÎN AȘTEPTARE',players:'jucători',battleLoaded:'Luptă încărcată',battleEmpty:'Nu există date pentru această luptă',win:'VICTORIE',loss:'ÎNFRÂNGERE',draw:'EGAL',unknown:'ÎN AȘTEPTARE',points:'Puncte',player:'Jucător'},
+ pt:{back:'Voltar',changeLanguage:'Mudar idioma',command:'S3 · CENTRO DE COMANDO',heroSub:'Plano tático, equipes, mapa e resultados de cada batalha.',liveData:'DADOS AO VIVO',serverStrategy:'ESTRATÉGIA HOLa',battle:'BATALHA',teamB:'FORÇA ESPECIAL B',teamA:'FORÇA ESPECIAL A',teamBShort:'EQUIPE B',teamAShort:'EQUIPE A',navRoster:'Equipe',navPlan:'Plano',navMap:'Mapa',navScore:'Resultados',playersLabel:'Jogadores',mapLabel:'Mapa',resultLabel:'Resultado',participants:'Participantes',strategy:'Estratégia',map:'Mapa de batalha',results:'Resultados',tactical:'TÁTICA',visual:'VISUAL',ranking:'RANKING',loading:'A carregar…',noMap:'Nenhum mapa carregado.',noResults:'Ainda não há resultados.',noParticipants:'Ainda não há participantes.',noStrategy:'Ainda não há estratégia publicada.',tapMap:'Toque para ampliar',available:'PRONTO',pending:'PENDENTE',players:'jogadores',battleLoaded:'Batalha carregada',battleEmpty:'Sem dados para esta batalha',win:'VITÓRIA',loss:'DERROTA',draw:'EMPATE',unknown:'PENDENTE',points:'Pontos',player:'Jogador'},
+ uk:{back:'Назад',changeLanguage:'Змінити мову',command:'S3 · КОМАНДНИЙ ЦЕНТР',heroSub:'Тактичний план, команди, карта та результати кожної битви.',liveData:'ЖИВІ ДАНІ',serverStrategy:'СТРАТЕГІЯ HOLa',battle:'БІЙ',teamB:'СПЕЦІАЛЬНА СИЛА B',teamA:'СПЕЦІАЛЬНА СИЛА A',teamBShort:'КОМАНДА B',teamAShort:'КОМАНДА A',navRoster:'Команда',navPlan:'План',navMap:'Карта',navScore:'Результати',playersLabel:'Гравці',mapLabel:'Карта',resultLabel:'Результат',participants:'Учасники',strategy:'Стратегія',map:'Карта бою',results:'Результати',tactical:'ТАКТИКА',visual:'ВІЗУАЛ',ranking:'РЕЙТИНГ',loading:'Завантаження…',noMap:'Карту не завантажено.',noResults:'Результатів ще немає.',noParticipants:'Учасників ще немає.',noStrategy:'Стратегію ще не опубліковано.',tapMap:'Натисніть для збільшення',available:'ГОТОВО',pending:'ОЧІКУЄ',players:'гравців',battleLoaded:'Бій завантажено',battleEmpty:'Немає даних для цього бою',win:'ПЕРЕМОГА',loss:'ПОРАЗКА',draw:'НІЧИЯ',unknown:'ОЧІКУЄ',points:'Очки',player:'Гравець'},
+ it:{back:'Indietro',changeLanguage:'Cambia lingua',command:'S3 · CENTRO DI COMANDO',heroSub:'Piano tattico, squadre, mappa e risultati di ogni battaglia.',liveData:'DATI LIVE',serverStrategy:'STRATEGIA HOLa',battle:'BATTAGLIA',teamB:'FORZA SPECIALE B',teamA:'FORZA SPECIALE A',teamBShort:'TEAM B',teamAShort:'TEAM A',navRoster:'Squadra',navPlan:'Piano',navMap:'Mappa',navScore:'Risultati',playersLabel:'Giocatori',mapLabel:'Mappa',resultLabel:'Risultato',participants:'Partecipanti',strategy:'Strategia',map:'Mappa di battaglia',results:'Risultati',tactical:'TATTICA',visual:'VISUALE',ranking:'CLASSIFICA',loading:'Caricamento…',noMap:'Nessuna mappa caricata.',noResults:'Nessun risultato ancora.',noParticipants:'Nessun partecipante ancora.',noStrategy:'Nessuna strategia ancora pubblicata.',tapMap:'Tocca per ingrandire',available:'PRONTA',pending:'IN ATTESA',players:'giocatori',battleLoaded:'Battaglia caricata',battleEmpty:'Nessun dato per questa battaglia',win:'VITTORIA',loss:'SCONFITTA',draw:'PAREGGIO',unknown:'IN ATTESA',points:'Punti',player:'Giocatore'},
+ pl:{back:'Wstecz',changeLanguage:'Zmień język',command:'S3 · CENTRUM DOWODZENIA',heroSub:'Plan taktyczny, drużyny, mapa i wyniki każdej bitwy.',liveData:'DANE NA ŻYWO',serverStrategy:'STRATEGIA HOLa',battle:'BITWA',teamB:'SIŁA SPECJALNA B',teamA:'SIŁA SPECJALNA A',teamBShort:'DRUŻYNA B',teamAShort:'DRUŻYNA A',navRoster:'Drużyna',navPlan:'Plan',navMap:'Mapa',navScore:'Wyniki',playersLabel:'Gracze',mapLabel:'Mapa',resultLabel:'Wynik',participants:'Uczestnicy',strategy:'Strategia',map:'Mapa bitwy',results:'Wyniki',tactical:'TAKTYKA',visual:'WIZUALNE',ranking:'RANKING',loading:'Ładowanie…',noMap:'Brak wczytanej mapy.',noResults:'Brak wyników.',noParticipants:'Brak uczestników.',noStrategy:'Brak opublikowanej strategii.',tapMap:'Dotknij, aby powiększyć',available:'GOTOWA',pending:'OCZEKUJE',players:'graczy',battleLoaded:'Bitwa wczytana',battleEmpty:'Brak danych dla tej bitwy',win:'ZWYCIĘSTWO',loss:'PORAŻKA',draw:'REMIS',unknown:'OCZEKUJE',points:'Punkty',player:'Gracz'}
+};
+function tr(k){return (T[lang]||T.es)[k]||k}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function getFriday(d){const x=new Date(d);x.setHours(12,0,0,0);const delta=(x.getDay()+2)%7;x.setDate(x.getDate()-delta);return x}
+function parseISODate(s){const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d,12,0,0,0)}
+function iso(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function formattedBattleDate(){return new Intl.DateTimeFormat(localeMap[lang]||'es-ES',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).format(battleDate).replace(/\./g,'').toUpperCase()}
+function applyLanguage(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const v=tr(el.dataset.i18n);if(v)el.textContent=v});
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>{const v=tr(el.dataset.i18nAria);if(v)el.setAttribute('aria-label',v)});
+  $('battleDate').textContent=formattedBattleDate();
+  const f=flagMap[lang]||flagMap.es;$('currentFlag').src=`https://flagcdn.com/w80/${f[0]}.png`;$('currentFlag').alt=f[1];
+  if(currentContent)renderSummary(currentContent);
+}
+function normalizeResult(v){const x=String(v||'').toUpperCase();return ['WIN','LOSS','DRAW'].includes(x)?x:''}
+function resultText(v){const r=normalizeResult(v);return r==='WIN'?tr('win'):r==='LOSS'?tr('loss'):r==='DRAW'?tr('draw'):tr('unknown')}
+function resultClass(v){const r=normalizeResult(v);return r==='WIN'?'win':r==='LOSS'?'loss':r==='DRAW'?'draw':''}
+function renderSummary(content){
+  $('summaryMap').textContent=content?.map_data_url?tr('available'):tr('pending');
+  const sr=$('summaryResult');sr.textContent=resultText(content?.result);sr.className='result-pill '+resultClass(content?.result);
+}
+function iconFor(txt){const x=txt.toUpperCase();if(/MINUTO|MINUTE|MINUT/.test(x))return '⏱️';if(/FLANCO IZQUIERDO|LEFT FLANK|FLANCO STÂNG|FLANCO ESQUERDO/.test(x))return '◀️';if(/FLANCO DERECHO|RIGHT FLANK|FLANCO DREPT|FLANCO DIREITO/.test(x))return '▶️';if(/ARSENAL/.test(x))return '⚔️';if(/MERCENARY FACTORY|FÁBRICA DE MERCENARIOS|FABRICĂ DE MERCENARI/.test(x))return '🏭';if(/SCIENCE HUB|CENTRO CIENTÍFICO|CENTRUL ȘTIINȚIFIC/.test(x))return '🔬';if(/FIELD HOSPITAL|HOSPITAL DE CAMPAÑA|HOSPITAL DE CAMPANHA|HOSPITAL DE CAMPANIE/.test(x))return '🏥';if(/REFINER|REFINERÍA|RAFFINERIE|RAFFINERY|RAFINĂRIE/.test(x))return '🛢️';if(/IMPORTANT|IMPORTANTE|WICHTIG|ВАЖЛИВО|ВАЖНО/.test(x))return '⚠️';if(/OBJETIVO|OBJECTIVE|OBJECTIF|ZIEL|OBIECTIV|МЕТА/.test(x))return '🎯';if(/DEFENSA|DEFEND|DEFENSE|VERTEIDIGUNG|APĂRARE|ОБОРОНА/.test(x))return '🛡️';return '◆'}
+function strategyHeading(t){const x=t.trim();if(!x)return false;if(/^(MINUTO|MINUTE|MINUT|FLANCO|LEFT FLANK|RIGHT FLANK|ARSENAL|MERCENARY FACTORY|SCIENCE HUB|FIELD HOSPITAL|REFINER|REFINERÍA|REFINERY|IMPORTANT|IMPORTANTE|OBJECTIVE|OBJETIVO|DEFENSA|DEFEND|DEFENSE|WICHTIG|ВАЖЛИВО|ВАЖНО)\b/i.test(x))return true;return x===x.toUpperCase()&&/[A-ZÀ-ÝА-Я]/.test(x)&&x.length>2&&x.length<65&&!/[.:]/.test(x)}
+function strategyClass(t){const x=t.toUpperCase();if(/IMPORTANT|IMPORTANTE|WICHTIG|ВАЖЛИВО|ВАЖНО/.test(x))return 'strategy-block strategy-note';if(/MINUTO|MINUTE|MINUT/.test(x))return 'strategy-block strategy-phase';if(/FLANCO|FLANK/.test(x))return 'strategy-block strategy-side';return 'strategy-block'}
+function strategyLine(line){let h=esc(line.trim());h=h.replace(/(FIELD HOSPITAL\s*\d*|HOSPITAL DE CAMPAÑA\s*\d*|HOSPITAL DE CAMPANHA\s*\d*|HOSPITAL DE CAMPANIE\s*\d*)/gi,'<span class="strategy-building">🏥 $1</span>');h=h.replace(/(MERCENARY FACTORY|FÁBRICA DE MERCENARIOS|FABRICĂ DE MERCENARI)/gi,'<span class="strategy-building">🏭 $1</span>');h=h.replace(/(ARSENAL)/gi,'<span class="strategy-building">⚔️ $1</span>');h=h.replace(/(SCIENCE HUB)/gi,'<span class="strategy-building">🔬 $1</span>');h=h.replace(/(REFINER(?:Y|ÍA|IE)|RAFINĂRIE)/gi,'<span class="strategy-building">🛢️ $1</span>');h=h.replace(/([A-Za-zÀ-ÿА-Яа-яĂÂÎȘȚăâîșț0-9_]{2,})(?=\s*(?:→|->))/g,'<span class="strategy-player">$1</span>');h=h.replace(/(→|->)/g,'<span class="strategy-action">$1</span>');return h}
+function formatStrategy(raw){const lines=String(raw||'').replace(/\r/g,'').split('\n');let html='<div class="strategy-plan">',open=false;const close=()=>{if(open){html+='</div>';open=false}};for(const rawLine of lines){const t=rawLine.trim();if(!t){if(open)html+='<div class="strategy-separator"></div>';continue}const clean=t.replace(/^[-•▪◦*]+\s*/,'');if(strategyHeading(clean)){close();html+=`<div class="${strategyClass(clean)}"><div class="strategy-heading"><span class="ico">${iconFor(clean)}</span><span>${esc(clean)}</span></div>`;open=true;continue}if(!open){html+='<div class="strategy-block">';open=true}const bullet=/^[-•▪◦*]+\s*/.test(t);html+=`<div class="strategy-line${bullet?' strategy-bullet':''}">${strategyLine(clean)}</div>`}close();return html+'</div>'}
+function renderPlayers(rows){$('summaryPlayers').textContent=rows.length;$('rosterCount').textContent=`${rows.length} ${tr('players')}`;$('players').innerHTML=rows.length?rows.map((x,i)=>`<div class="player"><span class="player__n">${String(i+1).padStart(2,'0')}</span><span class="player__name">${esc(x.player_name)}</span></div>`).join(''):`<div class="empty">${tr('noParticipants')}</div>`}
+function renderContent(content){currentContent=content||{};$('strategyContent').innerHTML=content?.strategy?formatStrategy(content.strategy):`<div class="empty">${tr('noStrategy')}</div>`;if(content?.map_data_url){$('mapWrap').innerHTML=`<img id="battleMapImage" src="${esc(content.map_data_url)}" alt="Desert Storm map"><span class="map-hint">${tr('tapMap')}</span>`;$('battleMapImage').onclick=()=>openMap(content.map_data_url)}else{$('mapWrap').innerHTML=`<div class="empty">${tr('noMap')}</div>`}renderSummary(content)}
+function renderResults(rows,result){const state=$('resultState'),klass=resultClass(result);state.innerHTML=normalizeResult(result)?`<div class="result-banner ${klass}">${resultText(result)}</div>`:'';if(!rows.length){$('resultContent').innerHTML=`<div class="empty">${tr('noResults')}</div>`;return}const medals=['🥇','🥈','🥉'];const top=rows.slice(0,3);let podium='';if(top.length){const order=top.length>=3?[1,0,2]:top.map((_,i)=>i);podium='<div class="podium">'+order.map(idx=>{const x=top[idx];if(!x)return '';return `<div class="podium__card ${idx===0?'first':''}"><div class="podium__medal">${medals[idx]}</div><div class="podium__name">${esc(x.player_name)}</div><div class="podium__pts">${Number(x.points||0).toLocaleString(localeMap[lang]||'es-ES')}</div></div>`}).join('')+'</div>'}const table=`<table class="score-table"><thead><tr><th>#</th><th>${tr('player')}</th><th>${tr('points')}</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${x.position||i+1}</td><td>${esc(x.player_name)}</td><td class="pts">${Number(x.points||0).toLocaleString(localeMap[lang]||'es-ES')}</td></tr>`).join('')}</tbody></table>`;$('resultContent').innerHTML=podium+table}
+async function loadBattle(){applyLanguage();const d=iso(battleDate);$('loadStatus').textContent=tr('loading');$('players').innerHTML=`<div class="empty">${tr('loading')}</div>`;try{const qTeam=encodeURIComponent(team),qDate=encodeURIComponent(d);const [rows,contentRows]=await Promise.all([rest('desert_storm_participants',`select=player_name&battle_date=eq.${qDate}&team=eq.${qTeam}&order=player_name.asc`),rest('desert_storm_content',`select=strategy,map_data_url,result&battle_date=eq.${qDate}&team=eq.${qTeam}&limit=1`)]);const content=contentRows?.[0]||{};renderPlayers(rows||[]);renderContent(content);$('loadStatus').textContent=((rows||[]).length||content.strategy||content.map_data_url)?tr('battleLoaded'):tr('battleEmpty')}catch(err){$('loadStatus').textContent=err?.message||String(err)}await loadResults()}
+async function loadResults(){const d=iso(battleDate);try{const qTeam=encodeURIComponent(scoreTeam),qDate=encodeURIComponent(d);const [rows,contentRows]=await Promise.all([rest('desert_storm_scores',`select=player_name,position,points&battle_date=eq.${qDate}&team=eq.${qTeam}&order=position.asc`),rest('desert_storm_content',`select=result&battle_date=eq.${qDate}&team=eq.${qTeam}&limit=1`)]);renderResults(rows||[],contentRows?.[0]?.result||'')}catch(err){$('resultContent').innerHTML=`<div class="empty">${esc(err?.message||String(err))}</div>`}}
+async function initBattleDate(){try{const today=encodeURIComponent(iso(new Date()));const rows=await rest('desert_storm_participants',`select=battle_date&battle_date=lte.${today}&order=battle_date.desc&limit=1`);if(rows?.[0]?.battle_date)battleDate=parseISODate(rows[0].battle_date)}catch{}await loadBattle()}
+function openMap(src){$('mapLightboxImage').src=src;$('mapLightbox').hidden=false;document.body.style.overflow='hidden'}function closeMap(){$('mapLightbox').hidden=true;$('mapLightboxImage').src='';document.body.style.overflow=''}
+document.querySelectorAll('[data-team]').forEach(btn=>btn.addEventListener('click',()=>{team=btn.dataset.team;document.querySelectorAll('[data-team]').forEach(x=>x.classList.toggle('active',x===btn));loadBattle()}));
+document.querySelectorAll('[data-score-team]').forEach(btn=>btn.addEventListener('click',()=>{scoreTeam=btn.dataset.scoreTeam;document.querySelectorAll('[data-score-team]').forEach(x=>x.classList.toggle('active',x===btn));loadResults()}));
+$('prevBattle').onclick=()=>{battleDate.setDate(battleDate.getDate()-7);loadBattle()};$('nextBattle').onclick=()=>{battleDate.setDate(battleDate.getDate()+7);loadBattle()};
+const toggle=$('languageToggle'),list=$('languageList');toggle.onclick=e=>{e.stopPropagation();list.hidden=!list.hidden;toggle.setAttribute('aria-expanded',String(!list.hidden))};list.onclick=e=>{const option=e.target.closest('.language__option');if(!option)return;lang=option.dataset.lang;localStorage.setItem('hola-language',lang);list.hidden=true;applyLanguage();loadBattle()};document.addEventListener('click',e=>{if(!e.target.closest('.language'))list.hidden=true});
+$('closeMap').onclick=closeMap;$('mapLightbox').onclick=e=>{if(e.target===$('mapLightbox'))closeMap()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMap();list.hidden=true}});
+applyLanguage();initBattleDate();
+</script>
+</body>
+</html>

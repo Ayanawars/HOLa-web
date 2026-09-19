@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#d9b35f">
+  <title>HOLa — Administrar miembros</title>
+  <style>
+    :root{--cream:#fffaf0;--navy:#103f69;--blue:#19a8db;--gold:#d5a832;--ink:#183b5c;--muted:#65788c;--danger:#a83e43;--ok:#167e6d;--line:rgba(213,168,50,.34)}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+    body{background:linear-gradient(180deg,#81d9ef 0,#f7e1ad 39%,#f1d9a3 100%);padding:max(14px,env(safe-area-inset-top)) 12px max(28px,env(safe-area-inset-bottom))}
+    body:before{content:"";position:fixed;inset:0;z-index:-2;background:linear-gradient(rgba(255,255,255,.08),rgba(255,247,226,.45)),url('hola-s3-background-square.png') center top/cover no-repeat;filter:saturate(.82);opacity:.7}
+    body:after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(25,126,177,.17),rgba(252,239,203,.7) 42%,rgba(241,217,163,.95))}
+    .shell{width:min(100%,760px);margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.round{width:44px;height:44px;border:1px solid rgba(208,163,56,.65);border-radius:50%;background:rgba(255,250,240,.92);display:grid;place-items:center;color:var(--navy);box-shadow:0 7px 20px rgba(86,55,10,.13);text-decoration:none;cursor:pointer;font-size:23px}.brand{text-align:center;margin:4px 0 14px}.brand img{width:min(72%,330px);max-height:135px;object-fit:contain;filter:drop-shadow(0 7px 18px rgba(31,77,106,.16))}
+    .panel{background:rgba(255,250,240,.97);border:1px solid rgba(205,161,53,.72);border-radius:26px;box-shadow:0 17px 42px rgba(105,71,14,.16),inset 0 0 0 5px rgba(255,255,255,.35);padding:18px}.kicker{color:#a97617;font-size:10px;letter-spacing:.2em;font-weight:900;text-transform:uppercase}.title{font-family:Georgia,"Times New Roman",serif;color:var(--navy);font-size:27px;margin:5px 0 6px}.sub{margin:0 0 16px;color:var(--muted);font-size:12px;line-height:1.5}
+    .searchbox{position:relative}.searchbox input{width:100%;min-height:50px;border:1px solid rgba(25,126,177,.28);border-radius:14px;background:#fff;padding:0 14px;font:800 14px system-ui;color:var(--ink);outline:none}.searchbox input:focus{border-color:#22a9d9;box-shadow:0 0 0 3px rgba(34,169,217,.12)}.results{position:absolute;left:0;right:0;top:56px;z-index:20;max-height:280px;overflow:auto;background:#fffef9;border:1px solid rgba(25,126,177,.24);border-radius:14px;box-shadow:0 16px 34px rgba(26,71,99,.18)}.results[hidden]{display:none}.result{width:100%;border:0;border-bottom:1px solid #eef3f5;background:transparent;text-align:left;padding:11px 13px;color:var(--ink);cursor:pointer}.result:last-child{border-bottom:0}.result strong{display:block;color:var(--navy);font-size:13px}.result small{color:var(--muted);font-size:10px}
+    .editor{margin-top:14px}.editor[hidden]{display:none}.member-head{display:flex;align-items:center;gap:12px;padding:13px;border-radius:18px;background:#f1fbff;border:1px solid rgba(25,168,219,.25)}.avatar{width:66px;height:66px;border-radius:50%;object-fit:cover;background:#fff;border:3px solid #fff;box-shadow:0 3px 12px rgba(20,83,122,.16)}.member-meta{min-width:0;flex:1}.member-meta strong{display:block;color:var(--navy);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.member-meta small{display:block;color:var(--muted);margin-top:3px}.badge{padding:7px 10px;border-radius:999px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-weight:900;font-size:10px}
+    .section{margin-top:12px;padding:14px;border-radius:18px;background:linear-gradient(145deg,#fffdf7,#f7fbff);border:1px solid var(--line)}.section h2{margin:0 0 11px;font-family:Georgia,"Times New Roman",serif;color:var(--navy);font-size:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.grid.three{grid-template-columns:repeat(3,1fr)}label{display:block;color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.055em}input,select,textarea{width:100%;margin-top:4px;border:1px solid rgba(25,126,177,.22);border-radius:10px;background:#fff;color:var(--ink);padding:9px 10px;font:750 12px system-ui;outline:none}input,select{min-height:42px}textarea{min-height:88px;resize:vertical;line-height:1.4}input:focus,select:focus,textarea:focus{border-color:#22a9d9;box-shadow:0 0 0 3px rgba(34,169,217,.1)}input[readonly]{background:#f1f3f4;color:#65788c}.check{display:flex;align-items:center;gap:8px;min-height:42px;margin-top:4px;padding:7px 10px;border:1px solid rgba(25,126,177,.18);border-radius:10px;background:#fff}.check input{width:18px;height:18px;min-height:0;margin:0;accent-color:#169bcf}.check span{font-size:12px;font-weight:800;color:var(--ink)}
+    .squad{padding:10px;border-radius:14px;background:#fff;border:1px solid rgba(25,126,177,.14)}.squad strong{display:block;color:var(--navy);font-size:12px;margin-bottom:7px}.squad-fields{display:grid;grid-template-columns:1.05fr .95fr;gap:7px}.avatar-tools{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.tiny{min-height:42px;border:1px solid rgba(25,126,177,.24);border-radius:10px;background:#eefaff;color:#0c85b8;font-weight:900;padding:0 11px;cursor:pointer}.note{margin-top:6px;color:var(--muted);font-size:9px;line-height:1.35}
+    .actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px}.save{min-height:50px;border:0;border-radius:14px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 20px rgba(10,143,199,.2)}.secondary{min-height:50px;padding:0 15px;border:1px solid rgba(25,126,177,.25);border-radius:14px;background:#fff;color:var(--navy);font-weight:900;cursor:pointer}.save:disabled,.secondary:disabled{opacity:.55;cursor:wait}.status{min-height:23px;margin:10px 2px 0;text-align:center;color:var(--muted);font-size:11px;font-weight:800}.status.ok{color:var(--ok)}.status.error{color:var(--danger)}.who{margin-top:14px;padding:10px 12px;border-radius:14px;background:#f1fbff;border:1px solid rgba(25,168,219,.28);display:flex;justify-content:space-between;gap:10px;align-items:center}.who strong{color:var(--navy);font-size:13px}.rank{padding:6px 9px;border-radius:999px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-size:10px;font-weight:900}
+    .guard{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:linear-gradient(180deg,#9bdbef,#f0d69e);color:var(--navy);text-align:center;padding:25px}.guard[hidden]{display:none}.spinner{width:48px;height:48px;margin:0 auto 12px;border:5px solid rgba(16,63,105,.16);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:600px){.grid,.grid.three{grid-template-columns:1fr}.squad-fields{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.title{font-size:25px}.avatar-tools{grid-template-columns:1fr}.tiny{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
+  <main class="shell" id="app" hidden>
+    <div class="topbar"><a class="round" href="admin-center-hola_login.html" aria-label="Volver al centro de administración">‹</a><button class="round" id="logoutTop" type="button" aria-label="Cerrar sesión">⇥</button></div>
+    <div class="brand"><img src="hola-s3-logo.png" alt="HOLa — Heroes of Last Area"></div>
+    <section class="panel">
+      <div class="kicker">ADMINISTRACIÓN · S3</div>
+      <h1 class="title">Editar miembros</h1>
+      <p class="sub">Busca un jugador y modifica manualmente sus datos guardados en Supabase. El nombre queda bloqueado para evitar romper referencias internas.</p>
+      <div class="searchbox">
+        <input id="memberSearch" type="search" autocomplete="off" placeholder="Buscar jugador…">
+        <div class="results" id="searchResults" hidden></div>
+      </div>
+
+      <div class="editor" id="editor" hidden>
+        <div class="member-head">
+          <img class="avatar" id="avatarPreview" alt="Avatar del miembro">
+          <div class="member-meta"><strong id="selectedName">—</strong><small id="selectedSummary">—</small></div>
+          <span class="badge" id="selectedRank">—</span>
+        </div>
+
+        <section class="section">
+          <h2>Identidad y progreso</h2>
+          <div class="grid">
+            <label>Nombre<input id="name" readonly></label>
+            <label>Rango<select id="rank"><option value="">—</option><option>R1</option><option>R2</option><option>R3</option><option>R4</option><option>R5</option></select></label>
+            <label>Nivel HQ<input id="hq_level" type="number" min="1" max="40" inputmode="numeric"></label>
+            <label>Profesión<select id="profession"><option value="">—</option><option value="Engineer">Engineer</option><option value="Warlord">Warlord</option></select></label>
+            <label>T10<div class="check"><input id="t10" type="checkbox"><span>Desbloqueado</span></div></label>
+            <label>Supreme Lord<div class="check"><input id="supreme_lord_unlocked" type="checkbox"><span>Desbloqueado</span></div></label>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>THP y squads</h2>
+          <div class="grid" style="margin-bottom:9px"><label>THP<input id="thp" placeholder="103.19M"></label><label>Semana IA<input id="ai_detection_week" readonly placeholder="Sin detección"></label></div>
+          <div class="grid three">
+            <div class="squad"><strong>Squad 1</strong><div class="squad-fields"><label>Tipo<select id="squad1_type"><option value="">—</option><option value="Tank">Tanque</option><option value="Aircraft">Aéreo</option><option value="Missile">Misil</option></select></label><label>Poder<input id="squad1_power" placeholder="34.41M"></label></div></div>
+            <div class="squad"><strong>Squad 2</strong><div class="squad-fields"><label>Tipo<select id="squad2_type"><option value="">—</option><option value="Tank">Tanque</option><option value="Aircraft">Aéreo</option><option value="Missile">Misil</option></select></label><label>Poder<input id="squad2_power" placeholder="29.50M"></label></div></div>
+            <div class="squad"><strong>Squad 3</strong><div class="squad-fields"><label>Tipo<select id="squad3_type"><option value="">—</option><option value="Tank">Tanque</option><option value="Aircraft">Aéreo</option><option value="Missile">Misil</option></select></label><label>Poder<input id="squad3_power" placeholder="26.18M"></label></div></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Ubicación</h2>
+          <div class="grid">
+            <label>Ciudad<input id="city" placeholder="Barcelona"></label>
+            <label>Comunidad<input id="community" placeholder="Catalunya"></label>
+            <label>País<input id="country" placeholder="España"></label>
+            <label>Bandera / etiqueta<input id="flag" placeholder="Catalunya o España"></label>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Perfil público</h2>
+          <div class="avatar-tools"><label>Avatar<input id="avatarFile" type="file" accept="image/*"></label><button class="tiny" id="clearAvatar" type="button">QUITAR AVATAR</button></div>
+          <div class="note">La imagen nueva se recorta al centro y se comprime antes de guardarse.</div>
+          <div class="grid" style="margin-top:10px"><label>Sobre mí<textarea id="about_me" maxlength="1200"></textarea></label><label>Mi frase<textarea id="epic_quote" maxlength="500"></textarea></label></div>
+        </section>
+
+        <section class="section">
+          <h2>Estado de encuesta</h2>
+          <div class="grid">
+            <label>Encuesta<div class="check"><input id="survey_completed" type="checkbox"><span>Marcada como completada</span></div></label>
+            <label>Fecha completada<input id="survey_completed_at" readonly></label>
+          </div>
+        </section>
+
+        <div class="actions"><button class="save" id="saveMember" type="button">GUARDAR CAMBIOS</button><button class="secondary" id="reloadMember" type="button">RECARGAR</button></div>
+        <div class="status" id="memberStatus" role="status" aria-live="polite"></div>
+      </div>
+      <div class="who"><strong id="adminName">—</strong><span class="rank" id="adminRank">—</span></div>
+    </section>
+  </main>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
+    const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+    const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const $=id=>document.getElementById(id);
+    const fields=['name','rank','hq_level','profession','thp','squad1_type','squad1_power','squad2_type','squad2_power','squad3_type','squad3_power','city','community','country','flag','about_me','epic_quote','survey_completed_at','ai_detection_week'];
+    let players=[], selected=null, avatarValue='';
+    const fallbackAvatar='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" rx="80" fill="#eaf8fd"/><circle cx="80" cy="59" r="28" fill="#8ccce5"/><path d="M30 145c5-35 25-52 50-52s45 17 50 52" fill="#8ccce5"/></svg>`);
+    function normalizeName(v){return String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
+    function setStatus(text,type=''){const el=$('memberStatus');el.textContent=text;el.className='status'+(type?' '+type:'');}
+    async function deny(){await sb.auth.signOut().catch(()=>{});sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html');}
+    async function verify(){
+      const {data:{session},error}=await sb.auth.getSession(); if(error||!session?.user)return false;
+      const {data:admin,error:adminErr}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle(); if(adminErr||!admin)return false;
+      const {data:list,error:playersErr}=await sb.from('players').select('name,rank'); if(playersErr||!Array.isArray(list))return false;
+      const wanted=normalizeName(admin.display_name); const officer=list.find(p=>['R4','R5'].includes(String(p.rank||'').toUpperCase())&&normalizeName(p.name)===wanted); if(!officer)return false;
+      $('adminName').textContent=officer.name;$('adminRank').textContent=officer.rank;return true;
+    }
+    function formatDate(value){if(!value)return '';try{return new Intl.DateTimeFormat('es-ES',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));}catch{return String(value)}}
+    function renderResults(query=''){
+      const box=$('searchResults'); const q=normalizeName(query); let list=players;
+      if(q)list=players.filter(p=>normalizeName(p.name).includes(q));
+      list=list.slice(0,40); box.innerHTML='';
+      if(!list.length){box.innerHTML='<button class="result" type="button" disabled><strong>Sin resultados</strong></button>';box.hidden=false;return;}
+      for(const p of list){const b=document.createElement('button');b.type='button';b.className='result';b.innerHTML=`<strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.rank||'—')} · ${escapeHtml(p.thp||'Sin THP')}</small>`;b.addEventListener('click',()=>selectPlayer(p.name));box.appendChild(b)}
+      box.hidden=false;
+    }
+    function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+    async function loadPlayers(){
+      const {data,error}=await sb.from('players').select('*').order('name',{ascending:true}); if(error)throw error; players=Array.isArray(data)?data:[];
+    }
+    function fill(row){
+      selected=row; avatarValue=row.avatar||'';
+      $('memberSearch').value=row.name||'';$('searchResults').hidden=true;$('editor').hidden=false;
+      for(const id of fields){const el=$(id);if(!el)continue;el.value=id==='survey_completed_at'?formatDate(row[id]):(row[id]??'')}
+      $('t10').checked=row.t10===true;$('supreme_lord_unlocked').checked=row.supreme_lord_unlocked===true;$('survey_completed').checked=row.survey_completed===true;
+      $('avatarPreview').src=avatarValue||fallbackAvatar;$('selectedName').textContent=row.name||'—';$('selectedRank').textContent=row.rank||'—';$('selectedSummary').textContent=[row.thp||'Sin THP',row.country||row.community||'Sin ubicación'].join(' · ');setStatus('');
+    }
+    async function selectPlayer(name){
+      const local=players.find(p=>p.name===name); if(local){fill(local);return;} const {data,error}=await sb.from('players').select('*').eq('name',name).single();if(error){setStatus('No se pudo cargar el jugador: '+error.message,'error');return;}fill(data);
+    }
+    function cleanText(id){const v=$(id).value.trim();return v||null}
+    function cleanPower(id){const raw=$(id).value.trim().replace(',','.');if(!raw)return null;const m=raw.match(/^([0-9]+(?:\.[0-9]+)?)\s*M?$/i);if(!m)return raw;return Number(m[1]).toFixed(2)+'M';}
+    async function saveMember(){
+      if(!selected)return; const b=$('saveMember');b.disabled=true;$('reloadMember').disabled=true;setStatus('Guardando…');
+      try{
+        const wasCompleted=selected.survey_completed===true, nowCompleted=$('survey_completed').checked;
+        const payload={
+          rank:cleanText('rank'),hq_level:$('hq_level').value?Number($('hq_level').value):null,profession:cleanText('profession'),t10:$('t10').checked,supreme_lord_unlocked:$('supreme_lord_unlocked').checked,
+          thp:cleanPower('thp'),squad1_type:cleanText('squad1_type')||'',squad1_power:cleanPower('squad1_power'),squad2_type:cleanText('squad2_type')||'',squad2_power:cleanPower('squad2_power'),squad3_type:cleanText('squad3_type')||'',squad3_power:cleanPower('squad3_power'),
+          city:cleanText('city'),community:cleanText('community'),country:cleanText('country'),flag:cleanText('flag'),avatar:avatarValue||null,about_me:cleanText('about_me'),epic_quote:cleanText('epic_quote'),survey_completed:nowCompleted,
+          survey_completed_at:nowCompleted?(selected.survey_completed_at||(wasCompleted?selected.survey_completed_at:new Date().toISOString())):null,updated_at:new Date().toISOString()
+        };
+        const {data,error}=await sb.from('players').update(payload).eq('name',selected.name).select('*').single(); if(error)throw error;
+        const i=players.findIndex(p=>p.name===data.name);if(i>=0)players[i]=data;fill(data);setStatus('✓ Datos del miembro actualizados.','ok');
+      }catch(e){setStatus('No se pudieron guardar los cambios: '+(e?.message||e),'error')}finally{b.disabled=false;$('reloadMember').disabled=false}
+    }
+    async function resizeAvatar(file){
+      const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});const size=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-size)/2,sy=(img.naturalHeight-size)/2,canvas=document.createElement('canvas');canvas.width=480;canvas.height=480;const ctx=canvas.getContext('2d');ctx.drawImage(img,sx,sy,size,size,0,0,480,480);return canvas.toDataURL('image/jpeg',.84)}finally{URL.revokeObjectURL(url)}
+    }
+    $('memberSearch').addEventListener('focus',()=>renderResults($('memberSearch').value));$('memberSearch').addEventListener('input',()=>renderResults($('memberSearch').value));document.addEventListener('click',e=>{if(!e.target.closest('.searchbox'))$('searchResults').hidden=true});
+    $('avatarFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{avatarValue=await resizeAvatar(f);$('avatarPreview').src=avatarValue;setStatus('Avatar preparado. Pulsa Guardar cambios para aplicarlo.')}catch{setStatus('No se pudo procesar la imagen.','error')}});
+    $('clearAvatar').addEventListener('click',()=>{avatarValue='';$('avatarPreview').src=fallbackAvatar;setStatus('Avatar marcado para eliminar. Pulsa Guardar cambios.')});
+    $('saveMember').addEventListener('click',saveMember);$('reloadMember').addEventListener('click',()=>selected&&selectPlayer(selected.name));
+    async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html')}$('logoutTop').addEventListener('click',logout);
+    const ok=await verify();if(!ok){await deny()}else{try{await loadPlayers();$('guard').hidden=true;$('app').hidden=false;renderResults('');$('searchResults').hidden=true}catch(e){await deny()}}
+  </script>
+</body>
+</html>

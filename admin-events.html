@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#d9b35f">
+  <title>HOLa — Próximos eventos</title>
+  <style>
+    :root{--cream:#fffaf0;--navy:#103f69;--blue:#19a8db;--gold:#d5a832;--ink:#183b5c;--muted:#65788c;--danger:#a83e43;--ok:#167e6d}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+    body{background:linear-gradient(180deg,#81d9ef 0,#f7e1ad 39%,#f1d9a3 100%);padding:max(14px,env(safe-area-inset-top)) 12px max(22px,env(safe-area-inset-bottom))}
+    body:before{content:"";position:fixed;inset:0;z-index:-2;background:linear-gradient(rgba(255,255,255,.08),rgba(255,247,226,.45)),url('hola-s3-background-square.png') center top/cover no-repeat;filter:saturate(.82);opacity:.7}
+    body:after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(25,126,177,.17),rgba(252,239,203,.7) 42%,rgba(241,217,163,.95))}
+    .shell{width:min(100%,720px);margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .round{width:44px;height:44px;border:1px solid rgba(208,163,56,.65);border-radius:50%;background:rgba(255,250,240,.92);display:grid;place-items:center;color:var(--navy);box-shadow:0 7px 20px rgba(86,55,10,.13);text-decoration:none;cursor:pointer;font-size:23px}
+    .brand{text-align:center;margin:4px 0 14px}.brand img{width:min(72%,330px);max-height:135px;object-fit:contain;filter:drop-shadow(0 7px 18px rgba(31,77,106,.16))}
+    .panel{background:rgba(255,250,240,.97);border:1px solid rgba(205,161,53,.72);border-radius:26px;box-shadow:0 17px 42px rgba(105,71,14,.16),inset 0 0 0 5px rgba(255,255,255,.35);padding:18px}
+    .kicker{color:#a97617;font-size:10px;letter-spacing:.2em;font-weight:900;text-transform:uppercase}.title{font-family:Georgia,"Times New Roman",serif;color:var(--navy);font-size:27px;margin:5px 0 6px}.sub{margin:0 0 16px;color:var(--muted);font-size:12px;line-height:1.5}
+    .event-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.event{padding:14px;border-radius:18px;background:linear-gradient(145deg,#fffdf7,#f7fbff);border:1px solid rgba(213,168,50,.38)}
+    .event strong{display:block;color:var(--navy);font-size:14px;margin-bottom:10px}.fields{display:grid;grid-template-columns:1.25fr .8fr;gap:7px}.event label{display:block;color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.055em}.event input{width:100%;margin-top:4px;min-height:42px;border:1px solid rgba(25,126,177,.24);border-radius:10px;background:#fff;color:var(--ink);padding:7px 8px;font:800 12px system-ui,sans-serif;outline:none}.event input:focus{border-color:#22a9d9;box-shadow:0 0 0 3px rgba(34,169,217,.12)}
+    .server-note{display:block;margin-top:8px;color:#0c8ec2;font-size:9px;font-weight:900}.preview{margin-top:9px;padding:8px 9px;border-radius:10px;background:#effaff;color:var(--navy);font-size:10px;font-weight:900;min-height:31px;display:flex;align-items:center}
+    .save{width:100%;min-height:50px;margin-top:14px;border:0;border-radius:14px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:white;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 20px rgba(10,143,199,.2)}.save:disabled{opacity:.55;cursor:wait}.status{min-height:22px;margin:10px 2px 0;color:var(--muted);font-size:11px;font-weight:800;text-align:center}.status.ok{color:var(--ok)}.status.error{color:var(--danger)}
+    .who{margin-top:14px;padding:10px 12px;border-radius:14px;background:#f1fbff;border:1px solid rgba(25,168,219,.28);display:flex;justify-content:space-between;gap:10px;align-items:center}.who strong{color:var(--navy);font-size:13px}.rank{padding:6px 9px;border-radius:999px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-size:10px;font-weight:900}
+    .guard{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:linear-gradient(180deg,#9bdbef,#f0d69e);color:var(--navy);text-align:center;padding:25px}.guard[hidden]{display:none}.spinner{width:48px;height:48px;margin:0 auto 12px;border:5px solid rgba(16,63,105,.16);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:540px){.event-grid{grid-template-columns:1fr}.fields{grid-template-columns:1.25fr .8fr}.title{font-size:25px}}
+  </style>
+</head>
+<body>
+  <div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
+  <main class="shell" id="app" hidden>
+    <div class="topbar"><a class="round" href="admin-center-hola_login.html" aria-label="Volver al centro de administración">‹</a><button class="round" id="logoutTop" type="button" aria-label="Cerrar sesión">⇥</button></div>
+    <div class="brand"><img src="hola-s3-logo.png" alt="HOLa — Heroes of Last Area"></div>
+    <section class="panel">
+      <div class="kicker">ADMINISTRACIÓN · S3</div>
+      <h1 class="title">Próximos eventos</h1>
+      <p class="sub">Configura la <strong>fecha</strong> y la <strong>hora del servidor</strong> de los cuatro banners del index. El día de la semana se calcula automáticamente y nunca se convierte a la hora local del jugador.</p>
+      <div class="event-grid">
+        <div class="event" data-event="alliance_exercise"><strong>Ejercicio de alianza</strong><div class="fields"><label>Fecha<input type="date" data-field="date"></label><label>Server time<input type="time" data-field="time"></label></div><span class="server-note">⏱ SERVER TIME · sin conversión local</span><div class="preview" data-preview>Sin fecha programada</div></div>
+        <div class="event" data-event="zombie_siege"><strong>Asedio zombi</strong><div class="fields"><label>Fecha<input type="date" data-field="date"></label><label>Server time<input type="time" data-field="time"></label></div><span class="server-note">⏱ SERVER TIME · sin conversión local</span><div class="preview" data-preview>Sin fecha programada</div></div>
+        <div class="event" data-event="desert_storm"><strong>Tormenta del desierto</strong><div class="fields"><label>Fecha<input type="date" data-field="date"></label><label>Server time<input type="time" data-field="time"></label></div><span class="server-note">⏱ SERVER TIME · sin conversión local</span><div class="preview" data-preview>Sin fecha programada</div></div>
+        <div class="event" data-event="zombie_invasion"><strong>Invasión zombi</strong><div class="fields"><label>Fecha<input type="date" data-field="date"></label><label>Server time<input type="time" data-field="time"></label></div><span class="server-note">⏱ SERVER TIME · sin conversión local</span><div class="preview" data-preview>Sin fecha programada</div></div>
+      </div>
+      <button class="save" id="saveEvents" type="button">GUARDAR CAMBIOS</button>
+      <div class="status" id="eventsStatus" role="status" aria-live="polite"></div>
+      <div class="who"><strong id="adminName">—</strong><span class="rank" id="adminRank">—</span></div>
+    </section>
+  </main>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
+    const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+    const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const $=id=>document.getElementById(id);
+    function normalizeName(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
+    async function deny(){await sb.auth.signOut().catch(()=>{});sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html');}
+    async function verify(){
+      const {data:{session},error}=await sb.auth.getSession(); if(error||!session?.user)return false;
+      const {data:admin,error:adminErr}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle(); if(adminErr||!admin)return false;
+      const {data:players,error:playersErr}=await sb.from('players').select('name,rank'); if(playersErr||!Array.isArray(players))return false;
+      const wanted=normalizeName(admin.display_name); const player=players.find(p=>['R4','R5'].includes(String(p.rank||'').toUpperCase())&&normalizeName(p.name)===wanted); if(!player)return false;
+      $('adminName').textContent=player.name;$('adminRank').textContent=player.rank;return true;
+    }
+    const dayFmt=new Intl.DateTimeFormat('es-ES',{weekday:'short',timeZone:'UTC'}); const dateFmt=new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',timeZone:'UTC'});
+    function renderPreview(card){
+      const date=card.querySelector('[data-field="date"]').value; const time=card.querySelector('[data-field="time"]').value; const out=card.querySelector('[data-preview]');
+      if(!date||!time){out.textContent='Sin fecha programada';return;}
+      const d=new Date(date+'T12:00:00Z'); const day=dayFmt.format(d).replace('.','').toUpperCase(); const dp=dateFmt.format(d).replace('.','').toUpperCase(); out.textContent=`${day} · ${dp} · ${time} SERVER TIME`;
+    }
+    document.querySelectorAll('.event').forEach(card=>card.querySelectorAll('input').forEach(input=>input.addEventListener('input',()=>renderPreview(card))));
+    async function load(){
+      const {data,error}=await sb.from('upcoming_events').select('event_key,event_date,event_time');
+      if(error){$('eventsStatus').textContent='No se pudieron cargar los eventos.';$('eventsStatus').className='status error';return;}
+      const byKey=Object.fromEntries((data||[]).map(r=>[r.event_key,r]));
+      document.querySelectorAll('.event[data-event]').forEach(card=>{const row=byKey[card.dataset.event]||{};card.querySelector('[data-field="date"]').value=row.event_date||'';card.querySelector('[data-field="time"]').value=row.event_time?String(row.event_time).slice(0,5):'';renderPreview(card);});
+    }
+    async function save(){
+      const b=$('saveEvents'),s=$('eventsStatus');b.disabled=true;s.className='status';s.textContent='Guardando…';
+      try{const rows=[...document.querySelectorAll('.event[data-event]')].map(card=>({event_key:card.dataset.event,event_date:card.querySelector('[data-field="date"]').value||null,event_time:card.querySelector('[data-field="time"]').value||null,updated_at:new Date().toISOString()}));const {error}=await sb.from('upcoming_events').upsert(rows,{onConflict:'event_key'});if(error)throw error;s.className='status ok';s.textContent='✓ Próximos eventos actualizados.';}catch(e){s.className='status error';s.textContent='No se pudieron guardar los eventos: '+(e?.message||e);}finally{b.disabled=false;}
+    }
+    async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html');}
+    $('saveEvents').addEventListener('click',save);$('logoutTop').addEventListener('click',logout);
+    const ok=await verify();if(!ok){await deny();}else{await load();$('guard').hidden=true;$('app').hidden=false;}
+  </script>
+</body>
+</html>

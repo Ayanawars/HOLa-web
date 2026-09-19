@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d83c8">
+<title>HOLa Avatar Studio</title>
+<style>
+:root{
+  --sky:#52c8ef;--blue:#0b83c9;--deep:#0c4168;--ink:#17364f;--gold:#d7a83f;
+  --cream:#fff4da;--sand:#ead6a7;--paper:#fffaf0;--line:#d9bf81;--shadow:0 10px 30px rgba(88,55,17,.16)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#ead8b3;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button{font:inherit}
+.app{width:100%;max-width:520px;min-height:100vh;margin:0 auto;background:linear-gradient(180deg,#fffaf0 0%,#f4e4bf 100%);box-shadow:0 0 36px rgba(68,41,8,.20);overflow:hidden}
+.topbar{height:66px;padding:calc(10px + env(safe-area-inset-top)) 14px 8px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;background:linear-gradient(180deg,#0a83c8,#0874b6);color:white;position:sticky;top:0;z-index:50;box-shadow:0 4px 18px rgba(0,64,103,.22)}
+.icon-btn{width:40px;height:40px;border:1px solid rgba(255,255,255,.35);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);color:white;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.back-arrow{font-size:25px;line-height:1;transform:translateY(-1px)}
+.brand{text-align:center;min-width:0}.brand strong{display:block;font-family:Georgia,"Times New Roman",serif;font-size:19px;letter-spacing:.08em;color:#fff1c9;text-shadow:0 2px 3px rgba(0,31,55,.35)}
+.brand span{display:block;margin-top:1px;font-size:9px;font-weight:800;letter-spacing:.20em;text-transform:uppercase;color:#b9ecff}
+.lang-btn{font-size:12px;font-weight:900;letter-spacing:.04em}
+.lang-menu{position:fixed;z-index:100;top:62px;right:max(14px,calc((100vw - 520px)/2 + 14px));width:180px;padding:7px;border-radius:15px;background:#fff9e9;border:1px solid #d9bd7d;box-shadow:0 16px 36px rgba(61,38,7,.25);display:none}
+.lang-menu.open{display:block}.lang-menu button{width:100%;border:0;background:transparent;padding:10px 12px;text-align:left;border-radius:10px;color:#183c58;font-weight:800}.lang-menu button:hover{background:#edf8fc}
+.intro{padding:14px 16px 9px;text-align:center}.eyebrow{font-size:10px;font-weight:900;letter-spacing:.22em;text-transform:uppercase;color:#9a711c}.intro h1{margin:4px 0 4px;font-family:Georgia,"Times New Roman",serif;font-size:25px;line-height:1;color:#0d75b3;text-transform:uppercase;text-shadow:0 2px 0 #fff,0 4px 8px rgba(56,38,8,.18)}.intro p{margin:0 auto;max-width:410px;font-size:12px;line-height:1.45;color:#63717b}
+.preview-wrap{padding:6px 14px 12px}.preview-card{position:relative;overflow:hidden;border-radius:25px;border:2px solid #d9b45d;background:#cf9b4e;box-shadow:var(--shadow)}
+.preview-card:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;border:7px double rgba(255,237,190,.76);border-radius:23px;mix-blend-mode:screen;opacity:.55}
+.avatar-stage{display:block;width:100%;aspect-ratio:1/1;background:#d7a761}
+.preview-actions{position:absolute;z-index:5;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;gap:8px}.mini-btn{border:1px solid rgba(255,244,218,.8);background:rgba(19,57,75,.72);backdrop-filter:blur(5px);color:#fff9e8;border-radius:13px;padding:8px 11px;font-size:11px;font-weight:900;box-shadow:0 4px 12px rgba(0,0,0,.16)}
+.tabs-shell{position:sticky;top:66px;z-index:30;background:linear-gradient(180deg,rgba(255,250,240,.98),rgba(255,250,240,.95));border-top:1px solid rgba(195,155,72,.26);border-bottom:1px solid rgba(195,155,72,.34);backdrop-filter:blur(8px)}
+.tabs{display:flex;gap:7px;overflow-x:auto;padding:10px 13px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{flex:0 0 auto;border:1px solid #dac28b;background:#fffdf7;color:#65532b;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900;white-space:nowrap}.tab.active{background:linear-gradient(180deg,#20a5df,#087dbd);border-color:#087dbd;color:white;box-shadow:0 5px 12px rgba(8,125,189,.22)}
+.panel{padding:13px 14px 5px}.panel-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:9px}.panel-head h2{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:18px;color:#23445d}.panel-head span{font-size:10px;font-weight:800;color:#9a7a3c;text-transform:uppercase;letter-spacing:.08em}.options{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.option{position:relative;border:1px solid #d7c28e;background:#fffdf7;border-radius:15px;padding:7px;min-width:0;text-align:center;cursor:pointer;box-shadow:0 3px 10px rgba(85,58,16,.06)}.option.active{border:2px solid #159ad5;padding:6px;box-shadow:0 0 0 3px rgba(21,154,213,.11),0 5px 14px rgba(9,112,169,.12)}.option-art{height:62px;border-radius:11px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,#bde9f5,#f6dba6);font-size:33px}.option span{display:block;margin-top:6px;font-size:9px;line-height:1.1;font-weight:900;color:#415363;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.option.active:after{content:"✓";position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:#128dcc;color:white;border:2px solid #fff;font-size:10px;font-weight:900}
+.palette{display:flex;gap:10px;flex-wrap:wrap;padding-top:4px}.swatch{width:38px;height:38px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 1px #c7a96d,0 3px 8px rgba(63,42,9,.13);cursor:pointer}.swatch.active{box-shadow:0 0 0 3px #159bd5,0 4px 10px rgba(21,155,213,.22)}
+
+.identity-card{margin:0 14px 10px;padding:11px 13px;border:1px solid #d7bd7c;border-radius:15px;background:rgba(255,249,233,.94);box-shadow:0 5px 14px rgba(83,56,12,.08);display:flex;align-items:center;gap:10px}
+.identity-dot{width:12px;height:12px;border-radius:50%;background:#c8b58a;box-shadow:0 0 0 4px rgba(200,181,138,.16);flex:0 0 auto}
+.identity-card.ok .identity-dot{background:#21a46b;box-shadow:0 0 0 4px rgba(33,164,107,.14)}
+.identity-card.bad .identity-dot{background:#cb604d;box-shadow:0 0 0 4px rgba(203,96,77,.14)}
+.identity-copy{min-width:0;flex:1}.identity-copy b{display:block;color:#23445d;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.identity-copy small{display:block;margin-top:2px;color:#8b754a;font-size:9px;line-height:1.3}
+.ai-btn:disabled{opacity:.55;filter:grayscale(.15);cursor:not-allowed}
+
+.bottom{padding:14px 14px calc(20px + env(safe-area-inset-bottom))}.draft-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}.secondary{border:1px solid #c8aa68;background:#fff8e8;color:#5a471d;border-radius:14px;padding:11px;font-weight:900;font-size:12px}.ai-btn{width:100%;border:0;border-radius:17px;padding:15px 14px;background:linear-gradient(135deg,#0b82c6,#21b8e9);color:white;font-weight:1000;font-size:14px;letter-spacing:.03em;box-shadow:0 8px 20px rgba(7,117,179,.26);position:relative}.ai-btn small{display:block;margin-top:3px;font-size:9px;font-weight:700;opacity:.75;letter-spacing:.02em}.status{margin-top:9px;text-align:center;font-size:10px;color:#8a7241;line-height:1.4}.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);z-index:200;background:#173c54;color:white;border-radius:999px;padding:10px 15px;font-size:11px;font-weight:900;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 8px 24px rgba(0,0,0,.25)}.toast.show{opacity:1;transform:translate(-50%,0)}.ai-modal{position:fixed;inset:0;z-index:180;background:rgba(11,31,45,.68);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:18px}.ai-modal.open{display:flex}.ai-sheet{width:min(100%,420px);background:linear-gradient(180deg,#fff9ed,#f2e0b7);border:1px solid #d2b06b;border-radius:24px;padding:14px;box-shadow:0 20px 40px rgba(30,17,4,.33)}.ai-sheet h3{margin:4px 0 10px;text-align:center;font-family:Georgia,"Times New Roman",serif;font-size:22px;color:#145b8a}.ai-result{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:18px;border:2px solid #d6b66f;background:#f3e0bb;box-shadow:0 10px 26px rgba(70,44,10,.15)}.ai-sheet p{margin:10px 4px 0;text-align:center;font-size:11px;line-height:1.45;color:#715b31}.ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.primary{border:0;border-radius:14px;padding:12px;background:linear-gradient(135deg,#0b82c6,#20b7e7);color:#fff;font-weight:900;box-shadow:0 8px 20px rgba(7,117,179,.22)}.ghost{border:1px solid #c8aa68;background:#fff8e8;color:#5a471d;border-radius:14px;padding:12px;font-weight:900}.single-row{display:grid;grid-template-columns:1fr;gap:9px;margin-top:9px}
+@media(max-width:370px){.options{gap:7px}.option{padding:5px}.option.active{padding:4px}.option-art{height:55px}.tab{padding:7px 10px}.intro h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="icon-btn" id="backBtn" aria-label="Volver"><span class="back-arrow">‹</span></button>
+    <div class="brand"><strong data-i18n="title">HOLa Avatar Studio</strong><span data-i18n="subtitle">S3 · Egypt Collection</span></div>
+    <button class="icon-btn lang-btn" id="langBtn" aria-label="Idioma">ES</button>
+  </header>
+
+  <div class="lang-menu" id="langMenu">
+    <button data-lang="es">ES · Español</button><button data-lang="en">EN · English</button><button data-lang="fr">FR · Français</button><button data-lang="de">DE · Deutsch</button><button data-lang="ro">RO · Română</button><button data-lang="pt">PT · Português</button><button data-lang="uk">UA · Українська</button><button data-lang="it">IT · Italiano</button><button data-lang="pl">PL · Polski</button>
+  </div>
+
+  <section class="intro">
+    <div class="eyebrow" data-i18n="eyebrow">Forja tu identidad</div>
+    <h1 data-i18n="heading">Tu héroe egipcio</h1>
+    <p data-i18n="intro">Combina las piezas, crea tu diseño y después la IA lo convertirá en un avatar único.</p>
+  </section>
+
+  <section class="preview-wrap">
+    <div class="preview-card">
+      <svg id="avatarStage" class="avatar-stage" viewBox="0 0 1000 1000" role="img" aria-label="Vista previa del avatar">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86dcf5"/><stop offset=".58" stop-color="#f5d69d"/><stop offset="1" stop-color="#ca873f"/></linearGradient>
+          <linearGradient id="nightGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#102d57"/><stop offset="1" stop-color="#6d3d52"/></linearGradient>
+          <linearGradient id="templeGrad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#65c3df"/><stop offset="1" stop-color="#d8a54e"/></linearGradient>
+          <linearGradient id="goldGrad" x1="0" x2="1"><stop stop-color="#a56f17"/><stop offset=".5" stop-color="#ffde73"/><stop offset="1" stop-color="#9a6512"/></linearGradient>
+          <linearGradient id="blueGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b5f95"/><stop offset=".52" stop-color="#30bee7"/><stop offset=".55" stop-color="#f6cf63"/><stop offset="1" stop-color="#8c5e16"/></linearGradient>
+          <radialGradient id="skin1"><stop stop-color="#f0bb82"/><stop offset="1" stop-color="#b87543"/></radialGradient>
+          <radialGradient id="skin2"><stop stop-color="#ca8b5e"/><stop offset="1" stop-color="#7e492c"/></radialGradient>
+          <radialGradient id="skin3"><stop stop-color="#f3c79a"/><stop offset="1" stop-color="#c68555"/></radialGradient>
+          <filter id="softShadow"><feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#3c220a" flood-opacity=".35"/></filter>
+          <filter id="glow"><feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#7ce1ff" flood-opacity=".6"/></filter>
+        </defs>
+        <g id="bgLayer">
+          <rect id="bgRect" width="1000" height="1000" fill="url(#skyGrad)"/>
+          <circle id="sun" cx="760" cy="190" r="85" fill="#ffe9a8" opacity=".82"/>
+          <path id="dunes" d="M0 620 Q180 540 365 625 T720 605 T1000 625 V1000 H0Z" fill="#d59b50"/>
+          <path id="pyramids" d="M58 635 L245 360 L420 635 Z M620 645 L778 430 L922 645 Z" fill="#c28a45" opacity=".88"/>
+          <path id="temple" d="M115 595h170v-160h-170zm22-136h126v18H137zm14 50h98v86h-98z" fill="#8c632d" opacity="0"/>
+          <g id="stars" opacity="0" fill="#fff2ba"><circle cx="130" cy="130" r="3"/><circle cx="240" cy="90" r="4"/><circle cx="810" cy="110" r="3"/><circle cx="900" cy="250" r="4"/><circle cx="620" cy="155" r="2"/></g>
+        </g>
+        <g id="character" filter="url(#softShadow)">
+          <path id="cloak" d="M250 1000 Q292 734 390 690 Q500 645 610 690 Q710 736 750 1000Z" fill="#f4e7cf"/>
+          <path id="shoulders" d="M212 1000 Q235 754 382 712 Q500 675 620 712 Q763 754 790 1000Z" fill="url(#blueGold)"/>
+          <path id="neck" d="M445 650h110v112H445z" fill="url(#skin1)"/>
+          <ellipse id="head" cx="500" cy="480" rx="164" ry="210" fill="url(#skin1)"/>
+          <path id="ears" d="M337 464c-38-12-52 28-38 70 10 31 30 52 54 36m310-106c38-12 52 28 38 70-10 31-30 52-54 36" fill="none" stroke="#b97848" stroke-width="20" stroke-linecap="round"/>
+          <path id="hair" d="M350 496 Q325 290 500 256 Q680 282 655 506 Q624 376 500 354 Q380 380 350 496Z" fill="#17161a"/>
+          <path id="hairLong" d="M355 405 Q310 575 338 730 L420 694 L395 420 Z M645 405 Q690 575 662 730 L580 694 L605 420 Z" fill="#17161a" opacity="0"/>
+          <path id="brows" d="M398 440 Q438 415 470 439 M530 439 Q566 414 606 440" fill="none" stroke="#34251f" stroke-width="14" stroke-linecap="round"/>
+          <path id="eyes" d="M399 482 Q438 461 474 484 Q438 505 399 482 M526 484 Q562 461 603 482 Q562 505 526 484" fill="#f5f3e8" stroke="#55392a" stroke-width="7"/>
+          <circle cx="438" cy="482" r="13" fill="#55ccef"/><circle cx="562" cy="482" r="13" fill="#55ccef"/><circle cx="438" cy="482" r="5" fill="#12384d"/><circle cx="562" cy="482" r="5" fill="#12384d"/>
+          <path id="liner" d="M397 478l-42-8m248 8 42-8" stroke="#173447" stroke-width="9" stroke-linecap="round"/>
+          <g id="makeupShadow" opacity="0">
+            <path d="M386 460 Q438 424 482 460 Q438 445 393 472Z M518 460 Q562 424 614 460 L607 472 Q562 445 518 460Z" fill="#36bfe6" opacity=".72"/>
+          </g>
+          <g id="makeupGold" opacity="0">
+            <path d="M389 453 Q438 421 480 455 Q438 440 395 465Z M520 455 Q562 421 611 453 L605 465 Q562 440 520 455Z" fill="#e7be52" opacity=".82"/>
+            <circle cx="500" cy="414" r="12" fill="#e7be52"/>
+          </g>
+          <g id="makeupHorus" opacity="0" fill="none" stroke="#173447" stroke-width="8" stroke-linecap="round">
+            <path d="M397 479 L350 474 L324 493"/><path d="M603 479 L650 474 L676 493"/>
+            <path d="M438 505 Q430 526 414 536 M562 505 Q570 526 586 536"/>
+          </g>
+          <path id="nose" d="M500 490 Q480 548 504 557" fill="none" stroke="#a96943" stroke-width="9" stroke-linecap="round"/>
+          <path id="mouth" d="M449 601 Q500 630 551 601 Q500 656 449 601Z" fill="#8d3b3d"/>
+          <g id="headdress1">
+            <path d="M332 414 Q320 266 500 202 Q681 266 668 414 L620 395 Q597 312 500 291 Q404 312 380 395Z" fill="url(#goldGrad)"/>
+            <path d="M470 208h60l-4 116h-52z" fill="#1e97c6"/>
+            <path d="M500 185c30 8 43 32 32 59-10 23-36 29-47 5-10-22 6-37 27-34" fill="none" stroke="#e8c75d" stroke-width="16" stroke-linecap="round"/>
+          </g>
+          <g id="headdress2" opacity="0">
+            <path d="M345 404 Q338 245 500 224 Q663 245 655 404 L620 388 Q603 322 500 304 Q399 322 380 388Z" fill="#143d58" stroke="#e1b94f" stroke-width="16"/>
+            <path d="M394 300h212" stroke="#38c4e8" stroke-width="22"/><circle cx="500" cy="292" r="28" fill="#e0b443"/>
+          </g>
+          <g id="headdress3" opacity="0">
+            <path d="M385 364 Q410 218 500 198 Q590 218 615 364" fill="none" stroke="#e6c15b" stroke-width="26"/>
+            <path d="M500 200v-90" stroke="#1d8fbd" stroke-width="22"/><ellipse cx="500" cy="95" rx="24" ry="52" fill="#42c0e2"/>
+          </g>
+          <g id="collar">
+            <path d="M365 695 Q500 776 635 695 L675 781 Q500 892 325 781Z" fill="url(#goldGrad)"/>
+            <path d="M347 746 Q500 840 653 746" fill="none" stroke="#34b9df" stroke-width="28"/>
+            <path d="M376 790 Q500 865 624 790" fill="none" stroke="#f6e4b3" stroke-width="18"/>
+          </g>
+          <g id="accessoryAnkh" opacity="0" filter="url(#glow)">
+            <ellipse cx="500" cy="825" rx="30" ry="42" fill="none" stroke="#f5d15e" stroke-width="15"/><path d="M500 866v98M455 908h90" stroke="#f5d15e" stroke-width="15" stroke-linecap="round"/>
+          </g>
+          <g id="accessoryHorus" opacity="0" transform="translate(0 8)">
+            <path d="M430 841 Q500 794 570 841 Q500 886 430 841Z" fill="none" stroke="#7ce0f2" stroke-width="13"/><circle cx="500" cy="840" r="14" fill="#f0c95a"/><path d="M555 857q32 30 5 63" fill="none" stroke="#7ce0f2" stroke-width="11"/>
+          </g>
+        </g>
+        <g id="frameLayer" pointer-events="none">
+          <rect x="24" y="24" width="952" height="952" rx="38" fill="none" stroke="#f1d47b" stroke-width="18"/>
+          <path d="M55 135h120V55M825 55h120v80M55 865v80h120M825 945h120v-80" fill="none" stroke="#0f86b9" stroke-width="14"/>
+          <circle cx="55" cy="55" r="18" fill="#f1d47b"/><circle cx="945" cy="55" r="18" fill="#f1d47b"/><circle cx="55" cy="945" r="18" fill="#f1d47b"/><circle cx="945" cy="945" r="18" fill="#f1d47b"/>
+        </g>
+      </svg>
+      <div class="preview-actions"><button class="mini-btn" id="randomBtn" data-i18n="random">✦ Aleatorio</button><button class="mini-btn" id="resetBtn" data-i18n="reset">↺ Reiniciar</button></div>
+    </div>
+  </section>
+
+  <div class="identity-card" id="identityCard">
+    <span class="identity-dot"></span>
+    <div class="identity-copy"><b id="identityName">Identidad no verificada</b><small id="identityStatus">Abre el creador desde tu perfil de miembro verificado.</small></div>
+  </div>
+
+  <div class="tabs-shell"><div class="tabs" id="tabs"></div></div>
+  <section class="panel"><div class="panel-head"><h2 id="panelTitle">Personaje</h2><span id="panelStep">1 / 8</span></div><div id="options"></div></section>
+
+  <section class="bottom">
+    <div class="draft-row"><button class="secondary" id="saveDraft" data-i18n="saveDraft">Guardar borrador</button><button class="secondary" id="loadDraft" data-i18n="loadDraft">Recuperar diseño</button></div>
+    <button class="ai-btn" id="aiBtn"><span data-i18n="ai">✨ Transformar con IA</span><small data-i18n="aiSub">Envía tu diseño actual al motor IA</small></button>
+    <div class="status" data-i18n="status">La IA enviará tu diseño base a tu Worker seguro de Cloudflare para generar el avatar gratis con Stable Diffusion.</div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+<div class="ai-modal" id="aiModal" aria-hidden="true">
+  <div class="ai-sheet">
+    <h3 data-i18n="resultTitle">Avatar IA</h3>
+    <img id="aiResultImg" class="ai-result" alt="AI avatar preview">
+    <p data-i18n="resultHelp">Elige si quieres usar esta versión como resultado guardado de tu avatar.</p>
+    <div class="ai-actions">
+      <button class="primary" id="useAiAvatar" data-i18n="useAvatar">Usar este avatar</button>
+      <button class="ghost" id="downloadAiAvatar" data-i18n="download">Descargar</button>
+    </div>
+    <div class="single-row">
+      <button class="ghost" id="closeAiModal" data-i18n="close">Cerrar</button>
+    </div>
+  </div>
+</div>
+<script>
+const I18N={
+ es:{title:'HOLa Avatar Studio',subtitle:'S3 · Colección Egipto',eyebrow:'Forja tu identidad',heading:'Tu héroe egipcio',intro:'Combina las piezas, crea tu diseño y después la IA lo convertirá en un avatar único.',random:'✦ Aleatorio',reset:'↺ Reiniciar',saveDraft:'Guardar borrador',loadDraft:'Recuperar diseño',ai:'✨ Transformar con IA',status:'La IA enviará tu diseño base a tu Worker seguro de Cloudflare para generar el avatar gratis con Stable Diffusion.',aiSub:'Envía tu diseño actual al motor IA',coming:'La transformación con IA se conectará en la siguiente fase.',saved:'Borrador guardado en este dispositivo.',loaded:'Diseño recuperado.',empty:'Todavía no hay ningún borrador guardado.'},
+ en:{title:'HOLa Avatar Studio',subtitle:'S3 · Egypt Collection',eyebrow:'Forge your identity',heading:'Your Egyptian hero',intro:'Combine the pieces, build your design and then AI will turn it into a unique avatar.',random:'✦ Random',reset:'↺ Reset',saveDraft:'Save draft',loadDraft:'Restore design',ai:'✨ Transform with AI',status:'This version only builds the base avatar. AI and Supabase will be connected later.',aiSub:'Next phase · no image is sent yet',coming:'AI transformation will be connected in the next phase.',saved:'Draft saved on this device.',loaded:'Design restored.',empty:'No saved draft yet.'},
+ fr:{title:'HOLa Avatar Studio',subtitle:'S3 · Collection Égypte',eyebrow:'Forge ton identité',heading:'Ton héros égyptien',intro:'Combine les éléments, crée ton design puis l’IA le transformera en avatar unique.',random:'✦ Aléatoire',reset:'↺ Réinitialiser',saveDraft:'Sauver le brouillon',loadDraft:'Restaurer',ai:'✨ Transformer avec IA',status:'Cette version crée seulement l’avatar de base. IA et Supabase seront ajoutés ensuite.',aiSub:'Prochaine phase · aucune image n’est encore envoyée',coming:'La transformation IA sera ajoutée à la prochaine phase.',saved:'Brouillon sauvegardé sur cet appareil.',loaded:'Design restauré.',empty:'Aucun brouillon sauvegardé.'},
+ de:{title:'HOLa Avatar Studio',subtitle:'S3 · Ägypten-Kollektion',eyebrow:'Erschaffe deine Identität',heading:'Dein ägyptischer Held',intro:'Kombiniere die Teile und die KI verwandelt dein Design später in einen einzigartigen Avatar.',random:'✦ Zufall',reset:'↺ Zurücksetzen',saveDraft:'Entwurf speichern',loadDraft:'Entwurf laden',ai:'✨ Mit KI verwandeln',status:'Diese Version baut nur den Basis-Avatar. KI und Supabase folgen später.',aiSub:'Nächste Phase · noch wird kein Bild gesendet',coming:'Die KI-Transformation folgt in der nächsten Phase.',saved:'Entwurf auf diesem Gerät gespeichert.',loaded:'Design geladen.',empty:'Noch kein Entwurf gespeichert.'},
+ ro:{title:'HOLa Avatar Studio',subtitle:'S3 · Colecția Egipt',eyebrow:'Creează-ți identitatea',heading:'Eroul tău egiptean',intro:'Combină piesele, creează designul, apoi IA îl va transforma într-un avatar unic.',random:'✦ Aleatoriu',reset:'↺ Resetare',saveDraft:'Salvează schița',loadDraft:'Recuperează',ai:'✨ Transformă cu IA',status:'Această versiune construiește doar avatarul de bază. IA și Supabase vor fi conectate ulterior.',aiSub:'Etapa următoare · încă nu se trimite nicio imagine',coming:'Transformarea IA va fi conectată în etapa următoare.',saved:'Schiță salvată pe acest dispozitiv.',loaded:'Design recuperat.',empty:'Nu există încă o schiță salvată.'},
+ pt:{title:'HOLa Avatar Studio',subtitle:'S3 · Coleção Egito',eyebrow:'Forja a tua identidade',heading:'O teu herói egípcio',intro:'Combina as peças, cria o teu design e depois a IA irá transformá-lo num avatar único.',random:'✦ Aleatório',reset:'↺ Reiniciar',saveDraft:'Guardar rascunho',loadDraft:'Recuperar design',ai:'✨ Transformar com IA',status:'Esta versão apenas constrói o avatar base. IA e Supabase serão ligados depois.',aiSub:'Próxima fase · ainda não envia nenhuma imagem',coming:'A transformação com IA será ligada na próxima fase.',saved:'Rascunho guardado neste dispositivo.',loaded:'Design recuperado.',empty:'Ainda não existe rascunho guardado.'},
+ uk:{title:'HOLa Avatar Studio',subtitle:'S3 · Колекція Єгипет',eyebrow:'Створи свою ідентичність',heading:'Твій єгипетський герой',intro:'Поєднуй елементи, створи дизайн, а потім ШІ перетворить його на унікальний аватар.',random:'✦ Випадково',reset:'↺ Скинути',saveDraft:'Зберегти чернетку',loadDraft:'Відновити дизайн',ai:'✨ Перетворити ШІ',status:'Ця версія створює лише базовий аватар. ШІ та Supabase підключимо пізніше.',aiSub:'Наступний етап · зображення ще не надсилається',coming:'Перетворення ШІ буде підключено на наступному етапі.',saved:'Чернетку збережено на цьому пристрої.',loaded:'Дизайн відновлено.',empty:'Збереженої чернетки ще немає.'},
+ it:{title:'HOLa Avatar Studio',subtitle:'S3 · Collezione Egitto',eyebrow:'Forgiati un’identità',heading:'Il tuo eroe egizio',intro:'Combina gli elementi, crea il design e poi l’IA lo trasformerà in un avatar unico.',random:'✦ Casuale',reset:'↺ Reimposta',saveDraft:'Salva bozza',loadDraft:'Recupera design',ai:'✨ Trasforma con IA',status:'Questa versione costruisce solo l’avatar base. IA e Supabase verranno collegati in seguito.',aiSub:'Prossima fase · non viene ancora inviata alcuna immagine',coming:'La trasformazione IA verrà collegata nella prossima fase.',saved:'Bozza salvata su questo dispositivo.',loaded:'Design recuperato.',empty:'Non c’è ancora una bozza salvata.'},
+ pl:{title:'HOLa Avatar Studio',subtitle:'S3 · Kolekcja Egipt',eyebrow:'Stwórz swoją tożsamość',heading:'Twój egipski bohater',intro:'Połącz elementy, stwórz projekt, a potem AI zamieni go w unikalny awatar.',random:'✦ Losowo',reset:'↺ Resetuj',saveDraft:'Zapisz szkic',loadDraft:'Przywróć projekt',ai:'✨ Przekształć przez AI',status:'Ta wersja buduje tylko bazowy awatar. AI i Supabase podłączymy później.',aiSub:'Następny etap · obraz nie jest jeszcze wysyłany',coming:'Transformacja AI zostanie podłączona w następnym etapie.',saved:'Szkic zapisany na tym urządzeniu.',loaded:'Projekt przywrócony.',empty:'Nie ma jeszcze zapisanego szkicu.'}
+};
+
+const AI_ENDPOINT = window.HOLA_AVATAR_AI_ENDPOINT || localStorage.getItem('hola_avatar_ai_endpoint') || 'https://hola-avatar-transform.ayanawarslastwar.workers.dev/avatar-transform';
+
+const SUPABASE_URL = 'https://ovybstpiomphrouvqxmf.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+const AVATAR_PROFILE_ENDPOINT = SUPABASE_URL + '/functions/v1/avatar-profile';
+const AVATAR_PARAMS = new URLSearchParams(location.search);
+const AVATAR_PLAYER = String(AVATAR_PARAMS.get('player') || '').trim();
+let verifiedIdentity = null;
+function identityStorageKey(name){return 'hola_identity_v1:'+String(name||'').trim().toLowerCase().replace(/\s+/g,' ')}
+function getIdentitySession(name){
+ try{
+   const raw=localStorage.getItem(identityStorageKey(name));
+   if(!raw)return null;
+   const value=JSON.parse(raw);
+   if(!value?.token||!value?.expiresAt||Date.parse(value.expiresAt)<=Date.now()){localStorage.removeItem(identityStorageKey(name));return null}
+   return value;
+ }catch{return null}
+}
+async function avatarProfileRequest(action,extra={}){
+ if(!verifiedIdentity) throw new Error('Identidad no verificada.');
+ const res=await fetch(AVATAR_PROFILE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({action,name:verifiedIdentity.name,verificationToken:verifiedIdentity.token,...extra})});
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok||!data?.ok)throw new Error(data?.error||('HTTP '+res.status));
+ return data;
+}
+async function initAvatarIdentity(){
+ const card=document.getElementById('identityCard'), nameEl=document.getElementById('identityName'), statusEl=document.getElementById('identityStatus'), btn=document.getElementById('aiBtn');
+ btn.disabled=true;
+ if(!AVATAR_PLAYER){card.className='identity-card bad';nameEl.textContent='Identidad no verificada';statusEl.textContent='Entra desde tu ficha de Miembros para crear tu avatar.';return}
+ const session=getIdentitySession(AVATAR_PLAYER);
+ nameEl.textContent='Verificando: '+AVATAR_PLAYER;
+ if(!session){card.className='identity-card bad';nameEl.textContent=AVATAR_PLAYER;statusEl.textContent='Este navegador no tiene una verificación activa para este jugador.';return}
+ try{
+   verifiedIdentity={name:AVATAR_PLAYER,token:session.token};
+   const data=await avatarProfileRequest('verify');
+   card.className='identity-card ok';nameEl.textContent='Creando avatar para: '+data.name;statusEl.textContent='✓ Identidad verificada · podrás guardar solo en tu perfil.';btn.disabled=false;
+ }catch(e){verifiedIdentity=null;card.className='identity-card bad';nameEl.textContent=AVATAR_PLAYER;statusEl.textContent=String(e?.message||e);btn.disabled=true}
+}
+
+const AI_EXTRA = {
+ es:{status:'La IA enviará tu diseño base a tu Worker seguro de Cloudflare para generar el avatar gratis con Stable Diffusion.',aiSub:'Envía tu diseño actual al motor IA',resultTitle:'Avatar IA',resultHelp:'Elige si quieres usar esta versión como resultado guardado de tu avatar.',useAvatar:'Usar este avatar',download:'Descargar',close:'Cerrar',generating:'Transformando con IA…',using:'Avatar IA guardado en este dispositivo.',noResult:'La IA no devolvió ninguna imagen.',serverMissing:'La URL del Worker de Cloudflare no está lista o no responde todavía.',aiError:'No se pudo transformar el avatar con IA.',configureWorker:'Configura primero la URL de tu Worker de Cloudflare en AI_ENDPOINT o en window.HOLA_AVATAR_AI_ENDPOINT.'},
+ en:{status:'AI sends your base design to your secure Cloudflare Worker to generate a free Stable Diffusion avatar.',aiSub:'Send your current design to the AI engine',resultTitle:'AI Avatar',resultHelp:'Choose whether you want to keep this version as your saved avatar result.',useAvatar:'Use this avatar',download:'Download',close:'Close',generating:'Transforming with AI…',using:'AI avatar saved on this device.',noResult:'AI did not return any image.',serverMissing:'The Cloudflare Worker URL is not ready or not responding yet.',aiError:'Could not transform the avatar with AI.',configureWorker:'Set your Cloudflare Worker URL first in AI_ENDPOINT or window.HOLA_AVATAR_AI_ENDPOINT.'},
+ fr:{status:'L’IA envoie votre design de base vers une fonction serveur sécurisée. Si avatar-transform n’existe pas encore, vous verrez un message clair.',aiSub:'Envoyer le design actuel au moteur IA',resultTitle:'Avatar IA',resultHelp:'Choisissez si vous voulez garder cette version comme résultat sauvegardé.',useAvatar:'Utiliser cet avatar',download:'Télécharger',close:'Fermer',generating:'Transformation avec IA…',using:'Avatar IA enregistré sur cet appareil.',noResult:'L’IA n’a renvoyé aucune image.',serverMissing:'La fonction avatar-transform n’est pas encore disponible.',aiError:'Impossible de transformer l’avatar avec l’IA.',configureWorker:'Configurez d’abord l’URL de votre Worker Cloudflare dans AI_ENDPOINT ou window.HOLA_AVATAR_AI_ENDPOINT.'},
+ de:{status:'Die KI sendet dein Basisdesign an eine sichere Serverfunktion. Wenn avatar-transform noch nicht existiert, erscheint ein klarer Hinweis.',aiSub:'Sende dein aktuelles Design an die KI',resultTitle:'KI-Avatar',resultHelp:'Wähle, ob du diese Version als gespeichertes Ergebnis behalten möchtest.',useAvatar:'Diesen Avatar verwenden',download:'Herunterladen',close:'Schließen',generating:'Wird mit KI verwandelt…',using:'KI-Avatar auf diesem Gerät gespeichert.',noResult:'Die KI hat kein Bild zurückgegeben.',serverMissing:'Die Funktion avatar-transform ist noch nicht verfügbar.',aiError:'Der Avatar konnte nicht mit KI umgewandelt werden.',configureWorker:'Konfiguriere zuerst die URL deines Cloudflare Workers in AI_ENDPOINT oder window.HOLA_AVATAR_AI_ENDPOINT.'},
+ ro:{status:'IA trimite designul de bază către o funcție securizată de server. Dacă avatar-transform nu există încă, vei vedea un mesaj clar.',aiSub:'Trimite designul actual către motorul IA',resultTitle:'Avatar IA',resultHelp:'Alege dacă vrei să păstrezi această versiune ca rezultat salvat.',useAvatar:'Folosește acest avatar',download:'Descarcă',close:'Închide',generating:'Se transformă cu IA…',using:'Avatarul IA a fost salvat pe acest dispozitiv.',noResult:'IA nu a returnat nicio imagine.',serverMissing:'Funcția avatar-transform nu este încă disponibilă.',aiError:'Avatarul nu a putut fi transformat cu IA.',configureWorker:'Configurează mai întâi URL-ul Workerului Cloudflare în AI_ENDPOINT sau window.HOLA_AVATAR_AI_ENDPOINT.'},
+ pt:{status:'A IA envia o teu design base para uma função segura do servidor. Se avatar-transform ainda não existir, verás uma mensagem clara.',aiSub:'Enviar o design atual para o motor IA',resultTitle:'Avatar IA',resultHelp:'Escolhe se queres guardar esta versão como resultado final.',useAvatar:'Usar este avatar',download:'Descarregar',close:'Fechar',generating:'A transformar com IA…',using:'Avatar IA guardado neste dispositivo.',noResult:'A IA não devolveu nenhuma imagem.',serverMissing:'A função avatar-transform ainda não está disponível.',aiError:'Não foi possível transformar o avatar com IA.',configureWorker:'Configura primeiro o URL do teu Worker Cloudflare em AI_ENDPOINT ou window.HOLA_AVATAR_AI_ENDPOINT.'},
+ uk:{status:'ШІ надсилає базовий дизайн у захищену серверну функцію. Якщо avatar-transform ще не існує, з’явиться зрозуміле повідомлення.',aiSub:'Надіслати поточний дизайн у рушій ШІ',resultTitle:'Аватар ШІ',resultHelp:'Оберіть, чи хочете зберегти цю версію як результат.',useAvatar:'Використати цей аватар',download:'Завантажити',close:'Закрити',generating:'Перетворення за допомогою ШІ…',using:'Аватар ШІ збережено на цьому пристрої.',noResult:'ШІ не повернув зображення.',serverMissing:'Функція avatar-transform ще недоступна.',aiError:'Не вдалося перетворити аватар за допомогою ШІ.',configureWorker:'Спочатку вкажіть URL вашого Cloudflare Worker у AI_ENDPOINT або window.HOLA_AVATAR_AI_ENDPOINT.'},
+ it:{status:'L’IA invia il design base a una funzione server sicura. Se avatar-transform non esiste ancora, vedrai un messaggio chiaro.',aiSub:'Invia il design attuale al motore IA',resultTitle:'Avatar IA',resultHelp:'Scegli se vuoi mantenere questa versione come risultato salvato.',useAvatar:'Usa questo avatar',download:'Scarica',close:'Chiudi',generating:'Trasformazione con IA…',using:'Avatar IA salvato su questo dispositivo.',noResult:'L’IA non ha restituito alcuna immagine.',serverMissing:'La funzione avatar-transform non è ancora disponibile.',aiError:'Impossibile trasformare l’avatar con IA.'},
+ pl:{status:'AI wysyła podstawowy projekt do bezpiecznej funkcji serwera. Jeśli avatar-transform jeszcze nie istnieje, zobaczysz jasny komunikat.',aiSub:'Wyślij obecny projekt do silnika AI',resultTitle:'Awatar AI',resultHelp:'Wybierz, czy chcesz zachować tę wersję jako zapisany rezultat.',useAvatar:'Użyj tego awatara',download:'Pobierz',close:'Zamknij',generating:'Przekształcanie przez AI…',using:'Awatar AI zapisano na tym urządzeniu.',noResult:'AI nie zwróciło żadnego obrazu.',serverMissing:'Funkcja avatar-transform nie jest jeszcze dostępna.',aiError:'Nie udało się przekształcić awatara przez AI.',configureWorker:'Najpierw ustaw adres URL swojego Workera Cloudflare w AI_ENDPOINT lub window.HOLA_AVATAR_AI_ENDPOINT.'}
+};
+Object.keys(AI_EXTRA).forEach(k=>Object.assign(I18N[k]||(I18N[k]={}),AI_EXTRA[k]));
+let aiImageData = localStorage.getItem('hola_avatar_ai_result') || '';
+
+const categories=[
+ {id:'sex',label:{es:'Sexo',en:'Sex',fr:'Sexe',de:'Geschlecht',ro:'Sex',pt:'Sexo',uk:'Стать',it:'Sesso',pl:'Płeć'},opts:[['female',{es:'Mujer',en:'Woman',fr:'Femme',de:'Frau',ro:'Femeie',pt:'Mulher',uk:'Жінка',it:'Donna',pl:'Kobieta'},'♀'],['male',{es:'Hombre',en:'Man',fr:'Homme',de:'Mann',ro:'Bărbat',pt:'Homem',uk:'Чоловік',it:'Uomo',pl:'Mężczyzna'},'♂']]},
+ {id:'base',label:{es:'Personaje',en:'Character',fr:'Personnage',de:'Charakter',ro:'Personaj',pt:'Personagem',uk:'Персонаж',it:'Personaggio',pl:'Postać'},opts:[['noble',{es:'Noble',en:'Noble',fr:'Noble',de:'Adel',ro:'Nobil',pt:'Nobre',uk:'Шляхта',it:'Nobile',pl:'Szlachcic'},'👑'],['warrior',{es:'Guerrero',en:'Warrior',fr:'Guerrier',de:'Krieger',ro:'Războinic',pt:'Guerreiro',uk:'Воїн',it:'Guerriero',pl:'Wojownik'},'⚔️'],['priest',{es:'Sacerdote',en:'Priest',fr:'Prêtre',de:'Priester',ro:'Preot',pt:'Sacerdote',uk:'Жрець',it:'Sacerdote',pl:'Kapłan'},'☀️'],['desert',{es:'Desierto',en:'Desert',fr:'Désert',de:'Wüste',ro:'Deșert',pt:'Deserto',uk:'Пустеля',it:'Deserto',pl:'Pustynia'},'🏜️']]},
+ {id:'face',label:{es:'Piel',en:'Skin',fr:'Peau',de:'Haut',ro:'Piele',pt:'Pele',uk:'Шкіра',it:'Pelle',pl:'Skóra'},palette:true,opts:[['skin1','#d99a68'],['skin2','#a96842'],['skin3','#f0bd8c'],['skin4','#7a472f']]},
+ {id:'makeup',label:{es:'Maquillaje',en:'Makeup',fr:'Maquillage',de:'Make-up',ro:'Machiaj',pt:'Maquilhagem',uk:'Макіяж',it:'Trucco',pl:'Makijaż'},opts:[['none',{es:'Natural',en:'Natural',fr:'Naturel',de:'Natürlich',ro:'Natural',pt:'Natural',uk:'Природний',it:'Naturale',pl:'Naturalny'},'○'],['turquoise',{es:'Turquesa',en:'Turquoise',fr:'Turquoise',de:'Türkis',ro:'Turcoaz',pt:'Turquesa',uk:'Бірюзовий',it:'Turchese',pl:'Turkus'},'✦'],['gold',{es:'Oro',en:'Gold',fr:'Or',de:'Gold',ro:'Auriu',pt:'Dourado',uk:'Золото',it:'Oro',pl:'Złoty'},'◆'],['horus',{es:'Horus',en:'Horus',fr:'Horus',de:'Horus',ro:'Horus',pt:'Hórus',uk:'Гор',it:'Horus',pl:'Horus'},'𓂀']]},
+ {id:'hair',label:{es:'Pelo',en:'Hair',fr:'Cheveux',de:'Haare',ro:'Păr',pt:'Cabelo',uk:'Волосся',it:'Capelli',pl:'Włosy'},opts:[['short',{es:'Corto',en:'Short',fr:'Court',de:'Kurz',ro:'Scurt',pt:'Curto',uk:'Коротке',it:'Corto',pl:'Krótkie'},'◒'],['long',{es:'Largo',en:'Long',fr:'Long',de:'Lang',ro:'Lung',pt:'Longo',uk:'Довге',it:'Lungo',pl:'Długie'},'◉'],['braid',{es:'Trenzas',en:'Braids',fr:'Tresses',de:'Zöpfe',ro:'Împletit',pt:'Tranças',uk:'Коси',it:'Trecce',pl:'Warkocze'},'≋'],['shaved',{es:'Rapado',en:'Shaved',fr:'Rasé',de:'Rasiert',ro:'Ras',pt:'Rapado',uk:'Поголене',it:'Rasato',pl:'Ogolone'},'◐']]},
+ {id:'hairColor',label:{es:'Color de pelo',en:'Hair color',fr:'Couleur cheveux',de:'Haarfarbe',ro:'Culoare păr',pt:'Cor do cabelo',uk:'Колір волосся',it:'Colore capelli',pl:'Kolor włosów'},palette:true,opts:[['black','#17161a'],['brown','#4d2d1f'],['copper','#8b4b2a'],['blueblack','#152a3b'],['white','#e7dfd0'],['goldhair','#c9973e']]},
+ {id:'headdress',label:{es:'Tocado',en:'Headdress',fr:'Coiffe',de:'Kopfschmuck',ro:'Coroană',pt:'Adorno',uk:'Головний убір',it:'Copricapo',pl:'Nakrycie'},opts:[['crown',{es:'Faraón',en:'Pharaoh',fr:'Pharaon',de:'Pharao',ro:'Faraon',pt:'Faraó',uk:'Фараон',it:'Faraone',pl:'Faraon'},'♛'],['guard',{es:'Guardia',en:'Guard',fr:'Garde',de:'Wache',ro:'Gardă',pt:'Guarda',uk:'Варта',it:'Guardia',pl:'Straż'},'◆'],['feather',{es:'Pluma',en:'Feather',fr:'Plume',de:'Feder',ro:'Pană',pt:'Pena',uk:'Перо',it:'Piuma',pl:'Pióro'},'♢'],['none',{es:'Sin tocado',en:'None',fr:'Aucun',de:'Keiner',ro:'Fără',pt:'Sem adorno',uk:'Без',it:'Nessuno',pl:'Brak'},'○']]},
+ {id:'armor',label:{es:'Armadura',en:'Armor',fr:'Armure',de:'Rüstung',ro:'Armură',pt:'Armadura',uk:'Броня',it:'Armatura',pl:'Zbroja'},opts:[['royal',{es:'Real',en:'Royal',fr:'Royale',de:'Königlich',ro:'Regală',pt:'Real',uk:'Королівська',it:'Reale',pl:'Królewska'},'✦'],['blue',{es:'Celeste',en:'Sky blue',fr:'Bleu ciel',de:'Himmelblau',ro:'Albastru',pt:'Azul celeste',uk:'Блакитна',it:'Celeste',pl:'Błękitna'},'✧'],['dark',{es:'Oscura',en:'Dark',fr:'Sombre',de:'Dunkel',ro:'Închisă',pt:'Escura',uk:'Темна',it:'Scura',pl:'Ciemna'},'⬟'],['cream',{es:'Crema',en:'Cream',fr:'Crème',de:'Creme',ro:'Crem',pt:'Creme',uk:'Кремова',it:'Crema',pl:'Kremowa'},'◇']]},
+ {id:'accessory',label:{es:'Accesorios',en:'Accessories',fr:'Accessoires',de:'Zubehör',ro:'Accesorii',pt:'Acessórios',uk:'Аксесуари',it:'Accessori',pl:'Akcesoria'},opts:[['ankh','Ankh','☥'],['horus','Horus','◉'],['scarab',{es:'Escarabajo',en:'Scarab',fr:'Scarabée',de:'Skarabäus',ro:'Scarabeu',pt:'Escaravelho',uk:'Скарабей',it:'Scarabeo',pl:'Skarabeusz'},'◆'],['none',{es:'Ninguno',en:'None',fr:'Aucun',de:'Keines',ro:'Niciunul',pt:'Nenhum',uk:'Немає',it:'Nessuno',pl:'Brak'},'○']]},
+ {id:'background',label:{es:'Fondo',en:'Background',fr:'Fond',de:'Hintergrund',ro:'Fundal',pt:'Fundo',uk:'Фон',it:'Sfondo',pl:'Tło'},opts:[['dunes',{es:'Desierto',en:'Desert',fr:'Désert',de:'Wüste',ro:'Deșert',pt:'Deserto',uk:'Пустеля',it:'Deserto',pl:'Pustynia'},'🏜️'],['night',{es:'Noche',en:'Night',fr:'Nuit',de:'Nacht',ro:'Noapte',pt:'Noite',uk:'Ніч',it:'Notte',pl:'Noc'},'✦'],['temple',{es:'Templo',en:'Temple',fr:'Temple',de:'Tempel',ro:'Templu',pt:'Templo',uk:'Храм',it:'Tempio',pl:'Świątynia'},'▥'],['oasis',{es:'Oasis',en:'Oasis',fr:'Oasis',de:'Oase',ro:'Oază',pt:'Oásis',uk:'Оаза',it:'Oasi',pl:'Oaza'},'◒']]},
+ {id:'frame',label:{es:'Marco',en:'Frame',fr:'Cadre',de:'Rahmen',ro:'Ramă',pt:'Moldura',uk:'Рамка',it:'Cornice',pl:'Ramka'},opts:[['gold',{es:'Dorado',en:'Gold',fr:'Doré',de:'Gold',ro:'Auriu',pt:'Dourado',uk:'Золотий',it:'Dorato',pl:'Złoty'},'◇'],['blue','HOLa','◆'],['sand',{es:'Arena',en:'Sand',fr:'Sable',de:'Sand',ro:'Nisip',pt:'Areia',uk:'Пісок',it:'Sabbia',pl:'Piasek'},'□'],['none',{es:'Sin marco',en:'No frame',fr:'Sans cadre',de:'Ohne Rahmen',ro:'Fără ramă',pt:'Sem moldura',uk:'Без рамки',it:'Senza cornice',pl:'Bez ramki'},'○']]}
+]
+const defaults={sex:'female',base:'noble',face:'skin1',makeup:'turquoise',hair:'long',hairColor:'black',headdress:'crown',armor:'royal',accessory:'none',background:'dunes',frame:'gold'};
+let state={...defaults};let active='base';let lang=(localStorage.getItem('hola_avatar_lang')||document.documentElement.lang||'es').toLowerCase();if(!I18N[lang])lang='es';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function txt(key){return (I18N[lang]||I18N.es)[key]||I18N.es[key]||key}
+function label(cat){return cat.label[lang]||cat.label.es}
+function optionLabel(v){return (v&&typeof v==='object')?(v[lang]||v.es||Object.values(v)[0]):v}
+function applyLang(){document.documentElement.lang=lang;$$('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;el.textContent=txt(key)});$('#langBtn').textContent=lang==='uk'?'UA':lang.toUpperCase();renderTabs();renderPanel();localStorage.setItem('hola_avatar_lang',lang)}
+function renderTabs(){const host=$('#tabs');host.innerHTML='';categories.forEach(c=>{const b=document.createElement('button');b.className='tab'+(active===c.id?' active':'');b.textContent=label(c);b.onclick=()=>{active=c.id;renderTabs();renderPanel()};host.appendChild(b)})}
+function renderPanel(){const cat=categories.find(c=>c.id===active);$('#panelTitle').textContent=label(cat);$('#panelStep').textContent=(categories.indexOf(cat)+1)+' / '+categories.length;const host=$('#options');host.innerHTML='';if(cat.palette){const p=document.createElement('div');p.className='palette';cat.opts.forEach(([id,color])=>{const b=document.createElement('button');b.className='swatch'+(state[cat.id]===id?' active':'');b.style.background=color;b.title=id;b.onclick=()=>{state[cat.id]=id;applyAvatar();renderPanel()};p.appendChild(b)});host.appendChild(p);return}
+ const grid=document.createElement('div');grid.className='options';cat.opts.forEach(([id,name,icon])=>{const b=document.createElement('button');b.className='option'+(state[cat.id]===id?' active':'');b.innerHTML=`<div class="option-art">${icon}</div><span>${optionLabel(name)}</span>`;b.onclick=()=>{state[cat.id]=id;applyAvatar();renderPanel()};grid.appendChild(b)});host.appendChild(grid)}
+function applyAvatar(){
+ const skins={skin1:'url(#skin1)',skin2:'url(#skin2)',skin3:'url(#skin3)',skin4:'#75432e'};$('#head').setAttribute('fill',skins[state.face]);$('#neck').setAttribute('fill',skins[state.face]);
+ const hairColors={black:'#17161a',brown:'#4d2d1f',copper:'#8b4b2a',blueblack:'#152a3b',white:'#e7dfd0',goldhair:'#c9973e'}; const hc=hairColors[state.hairColor]||hairColors.black; $('#hair').setAttribute('fill',hc); $('#hairLong').setAttribute('fill',hc); $('#brows').setAttribute('stroke',state.hairColor==='white'?'#8e877d':hc);
+ const female=state.sex!=='male'; $('#head').setAttribute('rx',female?'156':'172'); $('#head').setAttribute('ry',female?'210':'216'); $('#brows').setAttribute('stroke-width',female?'13':'18'); $('#shoulders').setAttribute('transform',female?'':'translate(-25 0) scale(1.05 1)'); $('#cloak').setAttribute('transform',female?'':'translate(-18 0) scale(1.04 1)');
+ $('#makeupShadow').setAttribute('opacity',state.makeup==='turquoise'?'1':'0'); $('#makeupGold').setAttribute('opacity',state.makeup==='gold'?'1':'0'); $('#makeupHorus').setAttribute('opacity',state.makeup==='horus'?'1':'0'); $('#liner').setAttribute('opacity',state.makeup==='none'?(female?'.55':'.28'):'1');
+ $('#hairLong').setAttribute('opacity',state.hair==='long'||state.hair==='braid'?'1':'0');$('#hair').setAttribute('opacity',state.hair==='shaved'?'.16':'1');
+ $('#headdress1').setAttribute('opacity',state.headdress==='crown'?'1':'0');$('#headdress2').setAttribute('opacity',state.headdress==='guard'?'1':'0');$('#headdress3').setAttribute('opacity',state.headdress==='feather'?'1':'0');
+ const armors={royal:'url(#blueGold)',blue:'#159fd0',dark:'#243746',cream:'#f0e3c4'};$('#shoulders').setAttribute('fill',armors[state.armor]);$('#cloak').setAttribute('fill',state.armor==='dark'?'#171d26':'#f4e7cf');
+ $('#accessoryAnkh').setAttribute('opacity',state.accessory==='ankh'?'1':'0');$('#accessoryHorus').setAttribute('opacity',state.accessory==='horus'?'1':'0');
+ const bg=$('#bgRect'),sun=$('#sun'),pyr=$('#pyramids'),tmp=$('#temple'),stars=$('#stars');sun.setAttribute('opacity','.82');pyr.setAttribute('opacity','.88');tmp.setAttribute('opacity','0');stars.setAttribute('opacity','0');
+ if(state.background==='night'){bg.setAttribute('fill','url(#nightGrad)');sun.setAttribute('opacity','.18');stars.setAttribute('opacity','1');pyr.setAttribute('opacity','.68')} else if(state.background==='temple'){bg.setAttribute('fill','url(#templeGrad)');tmp.setAttribute('opacity','.92');pyr.setAttribute('opacity','.16')} else if(state.background==='oasis'){bg.setAttribute('fill','#83d5e4');sun.setAttribute('fill','#fff1ba');pyr.setAttribute('opacity','.45')} else {bg.setAttribute('fill','url(#skyGrad)');sun.setAttribute('fill','#ffe9a8')}
+ const fr=$('#frameLayer');fr.setAttribute('opacity',state.frame==='none'?'0':'1');const strokes={gold:'#f1d47b',blue:'#60d5f3',sand:'#e1c99a'};fr.querySelector('rect').setAttribute('stroke',strokes[state.frame]||'#f1d47b');
+ const mouth=$('#mouth');const eyeGlow=$('#eyes');if(state.sex==='male'){mouth.setAttribute('fill',state.makeup==='gold'?'#8a5f3a':'#76524b')}else if(state.base==='warrior'){mouth.setAttribute('fill','#6f2e2e')}else if(state.base==='priest'){mouth.setAttribute('fill','#9f4866')}else if(state.base==='desert'){mouth.setAttribute('fill','#77423b')}else{mouth.setAttribute('fill','#8d3b3d')}; if(state.base==='warrior'){eyeGlow.setAttribute('stroke','#18364a')}else if(state.base==='priest'){eyeGlow.setAttribute('stroke','#b08b33')}else if(state.base==='desert'){eyeGlow.setAttribute('stroke','#684321')}else{eyeGlow.setAttribute('stroke','#55392a')}
+}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1900)}
+$('#backBtn').onclick=()=>{if(history.length>1)history.back();else location.href='index.html'};
+$('#langBtn').onclick=e=>{e.stopPropagation();$('#langMenu').classList.toggle('open')};document.addEventListener('click',()=>$('#langMenu').classList.remove('open'));$$('#langMenu button').forEach(b=>b.onclick=e=>{e.stopPropagation();lang=b.dataset.lang;applyLang();$('#langMenu').classList.remove('open')});
+$('#randomBtn').onclick=()=>{categories.forEach(c=>{state[c.id]=c.opts[Math.floor(Math.random()*c.opts.length)][0]});applyAvatar();renderPanel()};
+$('#resetBtn').onclick=()=>{state={...defaults};applyAvatar();renderPanel()};
+$('#saveDraft').onclick=()=>{localStorage.setItem('hola_avatar_draft',JSON.stringify(state));toast(txt('saved'))};
+$('#loadDraft').onclick=()=>{const raw=localStorage.getItem('hola_avatar_draft');if(!raw)return toast(txt('empty'));try{state={...defaults,...JSON.parse(raw)};applyAvatar();renderPanel();toast(txt('loaded'))}catch{toast(txt('empty'))}};
+async function svgStageToPng(){
+ const svg = $('#avatarStage');
+ const markup = new XMLSerializer().serializeToString(svg);
+ const blob = new Blob([markup], {type:'image/svg+xml;charset=utf-8'});
+ const url = URL.createObjectURL(blob);
+ try{
+   const img = new Image();
+   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+   const canvas = document.createElement('canvas'); canvas.width = 510; canvas.height = 510;
+   const ctx = canvas.getContext('2d'); ctx.fillStyle='#f1dfba'; ctx.fillRect(0,0,1024,1024); ctx.drawImage(img,0,0,510,510);
+   return canvas.toDataURL('image/png');
+ } finally { URL.revokeObjectURL(url); }
+}
+function buildAiPrompt(){
+ const names = {}; categories.forEach(cat=>{ const found=(cat.opts||[]).find(o=>o[0]===state[cat.id]); names[cat.id]=found ? optionLabel(found[1]||found[0]) : state[cat.id]; });
+ return 'Transform this square avatar concept into a polished fantasy Egyptian profile avatar for the HOLa alliance. Preserve the same character identity, sex, skin tone, hairstyle, hair color, makeup, pose, clothing colors and accessories. Keep it stylized, heroic, ancient-Egypt inspired and unique. Sex:'+names.sex+', base:'+names.base+', skin:'+state.face+', makeup:'+names.makeup+', hair:'+names.hair+', hair color:'+state.hairColor+', headdress:'+names.headdress+', armor:'+names.armor+', accessory:'+names.accessory+', background:'+names.background+', frame:'+names.frame+'.';
+}
+function extractAiImage(payload){
+ if(!payload) return '';
+ if(typeof payload === 'string') return payload.startsWith('data:') ? payload : '';
+ if(payload.image_url) return payload.image_url;
+ if(payload.output_url) return payload.output_url;
+ if(payload.result_url) return payload.result_url;
+ if(payload.image) return payload.image;
+ if(payload.image_base64) return 'data:image/png;base64,'+payload.image_base64;
+ if(payload.b64_json) return 'data:image/png;base64,'+payload.b64_json;
+ if(Array.isArray(payload.data) && payload.data[0]){
+   if(payload.data[0].url) return payload.data[0].url;
+   if(payload.data[0].b64_json) return 'data:image/png;base64,'+payload.data[0].b64_json;
+ }
+ if(Array.isArray(payload.output) && payload.output[0]){
+   if(payload.output[0].url) return payload.output[0].url;
+   if(payload.output[0].b64_json) return 'data:image/png;base64,'+payload.output[0].b64_json;
+ }
+ return '';
+}
+function openAiModal(src){ aiImageData = src; $('#aiResultImg').src = src; $('#aiModal').classList.add('open'); $('#aiModal').setAttribute('aria-hidden','false'); }
+function closeAiModal(){ $('#aiModal').classList.remove('open'); $('#aiModal').setAttribute('aria-hidden','true'); }
+
+async function blobToDataUrl(blob){
+ return await new Promise((resolve,reject)=>{ const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(blob); });
+}
+async function runAiTransform(){
+ if(!verifiedIdentity){toast('Verifica tu identidad desde Miembros antes de generar.');return;}
+ const btn = $('#aiBtn'); const small = btn.querySelector('small'); btn.disabled = true; small.textContent = txt('generating');
+ try{
+   if(/replace-with-your-cloudflare-worker/i.test(AI_ENDPOINT)) throw new Error(txt('configureWorker'));
+   const imageDataUrl = await svgStageToPng();
+   const payload = { image_base64: imageDataUrl.split(',')[1], prompt: buildAiPrompt(), state, lang, source: 'hola-avatar-maker' };
+   const res = await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+   const contentType = (res.headers.get('content-type')||'').toLowerCase();
+   if(!res.ok){
+     const raw = await res.text(); let data = {}; try{ data = raw ? JSON.parse(raw) : {}; }catch{ data = {error: raw}; }
+     throw new Error(data.error || data.message || ('HTTP '+res.status));
+   }
+   if(contentType.startsWith('image/')){
+     const blob = await res.blob();
+     const image = await blobToDataUrl(blob);
+     openAiModal(image);
+     return;
+   }
+   const raw = await res.text(); let data = {}; try{ data = raw ? JSON.parse(raw) : {}; }catch{ data = {error: raw}; }
+   const image = extractAiImage(data);
+   if(!image) throw new Error(txt('noResult'));
+   openAiModal(image);
+ } catch(err){
+   const msg = (err && err.message) ? err.message : txt('aiError');
+   if(/failed to fetch|networkerror|load failed/i.test(msg)) toast(txt('serverMissing'));
+   else toast(msg);
+ }
+ finally { btn.disabled = false; small.textContent = txt('aiSub'); }
+}
+$('#aiBtn').onclick=()=>runAiTransform();
+$('#closeAiModal').onclick=()=>closeAiModal();
+$('#aiModal').onclick=e=>{ if(e.target.id==='aiModal') closeAiModal(); };
+$('#useAiAvatar').onclick=async()=>{
+ if(!aiImageData||!verifiedIdentity)return;
+ const btn=$('#useAiAvatar');const oldText=btn.textContent;btn.disabled=true;btn.textContent='Guardando…';
+ try{
+   await avatarProfileRequest('save_hola',{image:aiImageData});
+   await avatarProfileRequest('set_default',{source:'hola'});
+   localStorage.setItem('hola_avatar_ai_result:'+verifiedIdentity.name.toLowerCase(),aiImageData);
+   toast('✓ Avatar HOLa guardado como predeterminado');closeAiModal();
+ }catch(e){toast(String(e?.message||e))}
+ finally{btn.disabled=false;btn.textContent=oldText}
+};
+$('#downloadAiAvatar').onclick=()=>{ if(!aiImageData) return; const a=document.createElement('a'); a.href=aiImageData; a.download='hola-avatar-ai.png'; document.body.appendChild(a); a.click(); a.remove(); };
+applyLang();applyAvatar();initAvatarIdentity();
+</script>
+</body>
+</html>
