@@ -457,6 +457,7 @@
     document.querySelectorAll(`img[data-player-index="${index}"]`).forEach(img=>{
       img.src = src;
       img.classList.toggle('avatar-fallback', src === FALLBACK_AVATAR);
+      img.classList.toggle('avatar-hola', p.default_avatar==='hola' && src!==FALLBACK_AVATAR);
     });
   }
 
@@ -467,12 +468,13 @@
     p._avatarLoading = true;
     try{
       const params = new URLSearchParams({
-        select:'avatar',
+        select:'avatar,default_avatar',
         name:`eq.${p.name}`,
         limit:'1'
       });
       const rows = await apiGet(params);
       p.avatar = String(rows?.[0]?.avatar || '').trim();
+      p.default_avatar = String(rows?.[0]?.default_avatar || '').trim();
       p._avatarLoaded = true;
       applyAvatarToCards(index);
     }catch(err){
@@ -659,7 +661,7 @@
             <img src="${escapeHtml(uploaded||fallback)}" alt="Avatar subido"><span>Subido</span><small>${def==='uploaded'?'★ Predeterminado':'Usar'}</small>
           </button>
           <button type="button" class="avatar-choice ${def==='hola'?'is-default':''}" data-avatar-source="hola" ${hola?'':'disabled'}>
-            <img src="${escapeHtml(hola||fallback)}" alt="Avatar HOLa"><span>HOLa</span><small>${def==='hola'?'★ Predeterminado':(hola?'Usar':'Sin crear')}</small>
+            <img class="avatar-hola-preview" src="${escapeHtml(hola||fallback)}" alt="Avatar HOLa"><span>HOLa</span><small>${def==='hola'?'★ Predeterminado':(hola?'Usar':'Sin crear')}</small>
           </button>
         </div>
         <button type="button" class="avatar-create-btn" id="createHolaAvatar">✨ Crear / editar avatar HOLa</button>
@@ -670,9 +672,9 @@
         const status=box.querySelector('#avatarManagerStatus');status.textContent='Guardando predeterminado…';
         try{
           await avatarProfileRequest(p.name,session.token,'set_default',{source});
-          p.avatar=source==='hola'?hola:uploaded;p._avatarLoaded=true;
+          p.avatar=source==='hola'?hola:uploaded;p.default_avatar=source;p._avatarLoaded=true;
           applyAvatarToCards(players.indexOf(p));
-          document.getElementById('profileImg').src=p.avatar||FALLBACK_AVATAR;
+          const currentImg=document.getElementById('profileImg');currentImg.src=p.avatar||FALLBACK_AVATAR;currentImg.classList.toggle('avatar-hola',source==='hola'&&!!p.avatar);
           status.textContent='✓ Avatar predeterminado actualizado.';
           await renderAvatarManager(p);
         }catch(e){status.textContent=String(e?.message||e)}
@@ -695,11 +697,13 @@
     profileImg.src=p.avatar?avatarSrc(p):FALLBACK_AVATAR;
     profileImg.alt=p.name||'Perfil';
     profileImg.classList.toggle('avatar-fallback',!p.avatar);
+    profileImg.classList.toggle('avatar-hola',p.default_avatar==='hola'&&!!p.avatar);
     if(!p._avatarLoaded){
       window.setTimeout(async ()=>{
         await loadPlayerAvatar(playerIndex);
         profileImg.src=p.avatar?avatarSrc(p):FALLBACK_AVATAR;
         profileImg.classList.toggle('avatar-fallback',!p.avatar);
+        profileImg.classList.toggle('avatar-hola',p.default_avatar==='hola'&&!!p.avatar);
       },80);
     }
     document.getElementById('profileMeta').innerHTML=locationBits.length?locationBits.join('<span class="meta-sep">|</span>'):`<span>${escapeHtml(t().noLocation)}</span>`;
@@ -817,6 +821,7 @@
       players=(rows||[]).map(p=>({
         ...p,
         avatar:'',
+        default_avatar:'',
         _avatarLoaded:false,
         _avatarLoading:false
       }));

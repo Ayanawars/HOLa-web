@@ -602,6 +602,109 @@
     .event-card__schedule[hidden] { display:none; }
     .event-card__server { color:#68d7ff; margin-left:3px; }
 
+
+    /* WEB NEWS TICKER */
+    .web-news {
+      margin:10px 10px 0;
+    }
+
+    .web-news__bar {
+      min-height:42px;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      align-items:center;
+      gap:9px;
+      overflow:hidden;
+      border:1px solid rgba(8,127,197,.16);
+      border-radius:14px;
+      background:rgba(255,255,255,.74);
+      box-shadow:0 5px 15px rgba(40,78,108,.07);
+      color:#16466c;
+      text-decoration:none;
+      -webkit-tap-highlight-color:transparent;
+      backdrop-filter:blur(8px);
+    }
+
+    .web-news__label {
+      margin-left:10px;
+      padding:4px 7px;
+      border-radius:999px;
+      background:#eaf7fd;
+      color:#087fc5;
+      font-size:8px;
+      font-weight:950;
+      letter-spacing:.11em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    .web-news__viewport {
+      min-width:0;
+      overflow:hidden;
+      mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
+      -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
+    }
+
+    .web-news__track {
+      display:inline-flex;
+      width:max-content;
+      min-width:max-content;
+      align-items:center;
+      animation:web-news-scroll 10s linear infinite;
+      -webkit-animation:web-news-scroll 10s linear infinite;
+      will-change:transform;
+      transform:translate3d(0,0,0);
+      -webkit-transform:translate3d(0,0,0);
+    }
+
+    .web-news__item {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      padding-right:34px;
+      color:#335970;
+      font-size:11px;
+      font-weight:750;
+      white-space:nowrap;
+    }
+
+    .web-news__item strong {
+      color:#0d75b3;
+      font-weight:950;
+    }
+
+    .web-news__dot {
+      width:4px;
+      height:4px;
+      flex:0 0 auto;
+      border-radius:50%;
+      background:#d7a83f;
+      box-shadow:0 0 0 3px rgba(215,168,63,.12);
+    }
+
+    .web-news__arrow {
+      width:27px;
+      color:#c8962e;
+      font-size:22px;
+      line-height:1;
+      text-align:center;
+      transform:translateY(-1px);
+    }
+
+    .web-news__bar:active {
+      background:rgba(238,248,252,.92);
+    }
+
+    @keyframes web-news-scroll {
+      0% { transform:translate3d(0,0,0); }
+      100% { transform:translate3d(-50%,0,0); }
+    }
+
+    @-webkit-keyframes web-news-scroll {
+      0% { -webkit-transform:translate3d(0,0,0); }
+      100% { -webkit-transform:translate3d(-50%,0,0); }
+    }
+
     /* QUICK ACCESS */
     .quick-access {
       margin-top:18px;
@@ -993,6 +1096,19 @@
       <div class="hero__edge" aria-hidden="true"></div>
     </header>
 
+    <section class="web-news" aria-label="Noticias de la web" data-i18n-aria="webNewsAria">
+      <a class="web-news__bar" href="avatar-maker.html" aria-label="Crear avatar HOLa" data-i18n-aria="webNewsAvatarAria">
+        <span class="web-news__label" data-i18n="webNewsLabel">NUEVO</span>
+        <span class="web-news__viewport" aria-hidden="true">
+          <span class="web-news__track">
+            <span class="web-news__item"><span class="web-news__dot"></span><strong data-i18n="webNewsAvatarTitle">Ahora puedes crear tu avatar HOLa</strong><span data-i18n="webNewsAvatarCta">Pruébalo</span></span>
+            <span class="web-news__item"><span class="web-news__dot"></span><strong data-i18n="webNewsAvatarTitle">Ahora puedes crear tu avatar HOLa</strong><span data-i18n="webNewsAvatarCta">Pruébalo</span></span>
+          </span>
+        </span>
+        <span class="web-news__arrow" aria-hidden="true">›</span>
+      </a>
+    </section>
+
     <section class="survey-promo" aria-label="Encuesta de jugadores" data-i18n-aria="surveyBannerAria">
       <a class="survey-promo__card" href="survey.html" aria-label="Completar o actualizar encuesta" data-i18n-aria="openSurvey">
         <span class="survey-promo__icon" aria-hidden="true">
@@ -1105,15 +1221,15 @@
     const flag=document.getElementById('currentFlag');
 
     const translations={
-      es:{pageTitle:'HOLa — Centro de la alianza',overview:'Resumen de la alianza',strategy:'Estrategia',teamwork:'Equipo',family:'Familia',victory:'Victoria',members:'Miembros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Ejercicio de alianza',zombieSiege:'Asedio zombi',desertStorm:'Tormenta del desierto',zombieInvasion:'Invasión zombi',quickAccess:'Acceso rápido',quickMembers:'Miembros',quickMembersSub:'Conoce a la alianza',openMembers:'Abrir miembros',changeLanguage:'Cambiar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administración',allianceStats:'Estadísticas de la alianza',surveyBannerEyebrow:'MISIÓN DE ALIANZA',surveyBannerTitle:'Actualiza tu perfil HOLa',surveyBannerText:'Mantén al día tu THP, squads y perfil de miembro.',surveyBannerCta:'Completar / actualizar encuesta',openSurvey:'Completar o actualizar encuesta',surveyBannerAria:'Encuesta de jugadores',surveyProgress:'{completed} de {total} completadas'},
-      en:{pageTitle:'HOLa — Alliance Tracker',overview:'Alliance Overview',strategy:'Strategy',teamwork:'Teamwork',family:'Family',victory:'Victory',members:'Members',countries:'Countries',thp:'THP',eventsTitle:'Upcoming events',viewAll:'View all →',allianceExercise:'Alliance Exercise',zombieSiege:'Zombie Siege',desertStorm:'Desert Storm',zombieInvasion:'Zombie Invasion',quickAccess:'Quick Access',quickMembers:'Members',quickMembersSub:'Meet the alliance',openMembers:'Open members',changeLanguage:'Change language',openDesertStorm:'Open Desert Storm',adminCenter:'Administration center',allianceStats:'Alliance statistics',surveyBannerEyebrow:'ALLIANCE MISSION',surveyBannerTitle:'Update your HOLa profile',surveyBannerText:'Keep your THP, squads and member profile up to date.',surveyBannerCta:'Complete / update survey',openSurvey:'Complete or update survey',surveyBannerAria:'Player survey',surveyProgress:'{completed} of {total} completed'},
-      fr:{pageTitle:'HOLa — Centre de l’alliance',overview:'Vue de l’alliance',strategy:'Stratégie',teamwork:'Équipe',family:'Famille',victory:'Victoire',members:'Membres',countries:'Pays',thp:'THP',eventsTitle:'Événements à venir',viewAll:'Voir tout →',allianceExercise:'Exercice d’alliance',zombieSiege:'Siège zombie',desertStorm:'Tempête du désert',zombieInvasion:'Invasion zombie',quickAccess:'Accès rapide',quickMembers:'Membres',quickMembersSub:'Découvrez l’alliance',openMembers:'Ouvrir les membres',changeLanguage:'Changer de langue',openDesertStorm:'Ouvrir Desert Storm',adminCenter:'Centre d’administration',allianceStats:'Statistiques de l’alliance',surveyBannerEyebrow:'MISSION D’ALLIANCE',surveyBannerTitle:'Mets à jour ton profil HOLa',surveyBannerText:'Garde ton THP, tes squads et ton profil de membre à jour.',surveyBannerCta:'Remplir / mettre à jour',openSurvey:'Remplir ou mettre à jour l’enquête',surveyBannerAria:'Enquête des joueurs',surveyProgress:'{completed} sur {total} terminées'},
-      de:{pageTitle:'HOLa — Allianz-Zentrale',overview:'Allianzübersicht',strategy:'Strategie',teamwork:'Teamarbeit',family:'Familie',victory:'Sieg',members:'Mitglieder',countries:'Länder',thp:'THP',eventsTitle:'Bevorstehende Ereignisse',viewAll:'Alle ansehen →',allianceExercise:'Allianz-Übung',zombieSiege:'Zombie-Belagerung',desertStorm:'Wüstensturm',zombieInvasion:'Zombie-Invasion',quickAccess:'Schnellzugriff',quickMembers:'Mitglieder',quickMembersSub:'Lerne die Allianz kennen',openMembers:'Mitglieder öffnen',changeLanguage:'Sprache ändern',openDesertStorm:'Desert Storm öffnen',adminCenter:'Administrationszentrum',allianceStats:'Allianzstatistiken',surveyBannerEyebrow:'ALLIANZ-MISSION',surveyBannerTitle:'Aktualisiere dein HOLa-Profil',surveyBannerText:'Halte THP, Squads und Mitgliederprofil aktuell.',surveyBannerCta:'Umfrage ausfüllen / aktualisieren',openSurvey:'Umfrage ausfüllen oder aktualisieren',surveyBannerAria:'Spielerumfrage',surveyProgress:'{completed} von {total} abgeschlossen'},
-      ro:{pageTitle:'HOLa — Centrul alianței',overview:'Prezentarea alianței',strategy:'Strategie',teamwork:'Echipă',family:'Familie',victory:'Victorie',members:'Membri',countries:'Țări',thp:'THP',eventsTitle:'Evenimente viitoare',viewAll:'Vezi tot →',allianceExercise:'Exercițiul alianței',zombieSiege:'Asediul zombi',desertStorm:'Furtună în deșert',zombieInvasion:'Invazie zombi',quickAccess:'Acces rapid',quickMembers:'Membri',quickMembersSub:'Cunoaște alianța',openMembers:'Deschide membrii',changeLanguage:'Schimbă limba',openDesertStorm:'Deschide Desert Storm',adminCenter:'Centrul de administrare',allianceStats:'Statisticile alianței',surveyBannerEyebrow:'MISIUNE DE ALIANȚĂ',surveyBannerTitle:'Actualizează profilul HOLa',surveyBannerText:'Ține THP-ul, squad-urile și profilul de membru la zi.',surveyBannerCta:'Completează / actualizează',openSurvey:'Completează sau actualizează chestionarul',surveyBannerAria:'Chestionar jucători',surveyProgress:'{completed} din {total} completate'},
-      pt:{pageTitle:'HOLa — Centro da aliança',overview:'Visão da aliança',strategy:'Estratégia',teamwork:'Equipe',family:'Família',victory:'Vitória',members:'Membros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Exercício da aliança',zombieSiege:'Cerco zumbi',desertStorm:'Tempestade do deserto',zombieInvasion:'Invasão zumbi',quickAccess:'Acesso rápido',quickMembers:'Membros',quickMembersSub:'Conheça a aliança',openMembers:'Abrir membros',changeLanguage:'Mudar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administração',allianceStats:'Estatísticas da aliança',surveyBannerEyebrow:'MISSÃO DA ALIANÇA',surveyBannerTitle:'Atualiza o teu perfil HOLa',surveyBannerText:'Mantém o THP, os squads e o perfil de membro atualizados.',surveyBannerCta:'Preencher / atualizar',openSurvey:'Preencher ou atualizar a pesquisa',surveyBannerAria:'Pesquisa de jogadores',surveyProgress:'{completed} de {total} concluídas'},
-      uk:{pageTitle:'HOLa — Центр альянсу',overview:'Огляд альянсу',strategy:'Стратегія',teamwork:'Команда',family:'Родина',victory:'Перемога',members:'Учасники',countries:'Країни',thp:'THP',eventsTitle:'Майбутні події',viewAll:'Переглянути всі →',allianceExercise:'Навчання альянсу',zombieSiege:'Облога зомбі',desertStorm:'Буря в пустелі',zombieInvasion:'Вторгнення зомбі',quickAccess:'Швидкий доступ',quickMembers:'Учасники',quickMembersSub:'Познайомтеся з альянсом',openMembers:'Відкрити учасників',changeLanguage:'Змінити мову',openDesertStorm:'Відкрити Desert Storm',adminCenter:'Центр адміністрування',allianceStats:'Статистика альянсу',surveyBannerEyebrow:'МІСІЯ АЛЬЯНСУ',surveyBannerTitle:'Онови свій профіль HOLa',surveyBannerText:'Підтримуй THP, squads і профіль учасника в актуальному стані.',surveyBannerCta:'Заповнити / оновити',openSurvey:'Заповнити або оновити опитування',surveyBannerAria:'Опитування гравців',surveyProgress:'{completed} з {total} завершено'},
-      it:{pageTitle:'HOLa — Centro alleanza',overview:'Panoramica alleanza',strategy:'Strategia',teamwork:'Squadra',family:'Famiglia',victory:'Vittoria',members:'Membri',countries:'Paesi',thp:'THP',eventsTitle:'Prossimi eventi',viewAll:'Vedi tutti →',allianceExercise:'Esercitazione dell’alleanza',zombieSiege:'Assedio zombie',desertStorm:'Tempesta nel deserto',zombieInvasion:'Invasione zombie',quickAccess:'Accesso rapido',quickMembers:'Membri',quickMembersSub:'Scopri l’alleanza',openMembers:'Apri membri',changeLanguage:'Cambia lingua',openDesertStorm:'Apri Desert Storm',adminCenter:'Centro di amministrazione',allianceStats:'Statistiche dell’alleanza',surveyBannerEyebrow:'MISSIONE DELL’ALLEANZA',surveyBannerTitle:'Aggiorna il tuo profilo HOLa',surveyBannerText:'Mantieni aggiornati THP, squad e profilo membro.',surveyBannerCta:'Compila / aggiorna',openSurvey:'Compila o aggiorna il sondaggio',surveyBannerAria:'Sondaggio giocatori',surveyProgress:'{completed} di {total} completati'},
-      pl:{pageTitle:'HOLa — Centrum sojuszu',overview:'Przegląd sojuszu',strategy:'Strategia',teamwork:'Drużyna',family:'Rodzina',victory:'Zwycięstwo',members:'Członkowie',countries:'Kraje',thp:'THP',eventsTitle:'Nadchodzące wydarzenia',viewAll:'Zobacz wszystkie →',allianceExercise:'Ćwiczenia sojuszu',zombieSiege:'Oblężenie zombie',desertStorm:'Burza pustynna',zombieInvasion:'Inwazja zombie',quickAccess:'Szybki dostęp',quickMembers:'Członkowie',quickMembersSub:'Poznaj sojusz',openMembers:'Otwórz członków',changeLanguage:'Zmień język',openDesertStorm:'Otwórz Desert Storm',adminCenter:'Centrum administracji',allianceStats:'Statystyki sojuszu',surveyBannerEyebrow:'MISJA SOJUSZU',surveyBannerTitle:'Zaktualizuj profil HOLa',surveyBannerText:'Aktualizuj THP, squady i profil członka.',surveyBannerCta:'Wypełnij / zaktualizuj',openSurvey:'Wypełnij lub zaktualizuj ankietę',surveyBannerAria:'Ankieta graczy',surveyProgress:'{completed} z {total} ukończonych'}
+      es:{pageTitle:'HOLa — Centro de la alianza',overview:'Resumen de la alianza',strategy:'Estrategia',teamwork:'Equipo',family:'Familia',victory:'Victoria',members:'Miembros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Ejercicio de alianza',zombieSiege:'Asedio zombi',desertStorm:'Tormenta del desierto',zombieInvasion:'Invasión zombi',quickAccess:'Acceso rápido',quickMembers:'Miembros',quickMembersSub:'Conoce a la alianza',openMembers:'Abrir miembros',changeLanguage:'Cambiar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administración',allianceStats:'Estadísticas de la alianza',surveyBannerEyebrow:'MISIÓN DE ALIANZA',surveyBannerTitle:'Actualiza tu perfil HOLa',surveyBannerText:'Mantén al día tu THP, squads y perfil de miembro.',surveyBannerCta:'Completar / actualizar encuesta',openSurvey:'Completar o actualizar encuesta',surveyBannerAria:'Encuesta de jugadores',surveyProgress:'{completed} de {total} completadas',webNewsLabel:'NUEVO',webNewsAvatarTitle:'Ahora puedes crear tu avatar HOLa',webNewsAvatarCta:'Pruébalo',webNewsAria:'Noticias de la web',webNewsAvatarAria:'Crear avatar HOLa'},
+      en:{pageTitle:'HOLa — Alliance Tracker',overview:'Alliance Overview',strategy:'Strategy',teamwork:'Teamwork',family:'Family',victory:'Victory',members:'Members',countries:'Countries',thp:'THP',eventsTitle:'Upcoming events',viewAll:'View all →',allianceExercise:'Alliance Exercise',zombieSiege:'Zombie Siege',desertStorm:'Desert Storm',zombieInvasion:'Zombie Invasion',quickAccess:'Quick Access',quickMembers:'Members',quickMembersSub:'Meet the alliance',openMembers:'Open members',changeLanguage:'Change language',openDesertStorm:'Open Desert Storm',adminCenter:'Administration center',allianceStats:'Alliance statistics',surveyBannerEyebrow:'ALLIANCE MISSION',surveyBannerTitle:'Update your HOLa profile',surveyBannerText:'Keep your THP, squads and member profile up to date.',surveyBannerCta:'Complete / update survey',openSurvey:'Complete or update survey',surveyBannerAria:'Player survey',surveyProgress:'{completed} of {total} completed',webNewsLabel:'NEW',webNewsAvatarTitle:'You can now create your HOLa avatar',webNewsAvatarCta:'Try it',webNewsAria:'Website news',webNewsAvatarAria:'Create HOLa avatar'},
+      fr:{pageTitle:'HOLa — Centre de l’alliance',overview:'Vue de l’alliance',strategy:'Stratégie',teamwork:'Équipe',family:'Famille',victory:'Victoire',members:'Membres',countries:'Pays',thp:'THP',eventsTitle:'Événements à venir',viewAll:'Voir tout →',allianceExercise:'Exercice d’alliance',zombieSiege:'Siège zombie',desertStorm:'Tempête du désert',zombieInvasion:'Invasion zombie',quickAccess:'Accès rapide',quickMembers:'Membres',quickMembersSub:'Découvrez l’alliance',openMembers:'Ouvrir les membres',changeLanguage:'Changer de langue',openDesertStorm:'Ouvrir Desert Storm',adminCenter:'Centre d’administration',allianceStats:'Statistiques de l’alliance',surveyBannerEyebrow:'MISSION D’ALLIANCE',surveyBannerTitle:'Mets à jour ton profil HOLa',surveyBannerText:'Garde ton THP, tes squads et ton profil de membre à jour.',surveyBannerCta:'Remplir / mettre à jour',openSurvey:'Remplir ou mettre à jour l’enquête',surveyBannerAria:'Enquête des joueurs',surveyProgress:'{completed} sur {total} terminées',webNewsLabel:'NOUVEAU',webNewsAvatarTitle:'Tu peux maintenant créer ton avatar HOLa',webNewsAvatarCta:'Essaie-le',webNewsAria:'Actualités du site',webNewsAvatarAria:'Créer un avatar HOLa'},
+      de:{pageTitle:'HOLa — Allianz-Zentrale',overview:'Allianzübersicht',strategy:'Strategie',teamwork:'Teamarbeit',family:'Familie',victory:'Sieg',members:'Mitglieder',countries:'Länder',thp:'THP',eventsTitle:'Bevorstehende Ereignisse',viewAll:'Alle ansehen →',allianceExercise:'Allianz-Übung',zombieSiege:'Zombie-Belagerung',desertStorm:'Wüstensturm',zombieInvasion:'Zombie-Invasion',quickAccess:'Schnellzugriff',quickMembers:'Mitglieder',quickMembersSub:'Lerne die Allianz kennen',openMembers:'Mitglieder öffnen',changeLanguage:'Sprache ändern',openDesertStorm:'Desert Storm öffnen',adminCenter:'Administrationszentrum',allianceStats:'Allianzstatistiken',surveyBannerEyebrow:'ALLIANZ-MISSION',surveyBannerTitle:'Aktualisiere dein HOLa-Profil',surveyBannerText:'Halte THP, Squads und Mitgliederprofil aktuell.',surveyBannerCta:'Umfrage ausfüllen / aktualisieren',openSurvey:'Umfrage ausfüllen oder aktualisieren',surveyBannerAria:'Spielerumfrage',surveyProgress:'{completed} von {total} abgeschlossen',webNewsLabel:'NEU',webNewsAvatarTitle:'Du kannst jetzt deinen HOLa-Avatar erstellen',webNewsAvatarCta:'Jetzt testen',webNewsAria:'Website-News',webNewsAvatarAria:'HOLa-Avatar erstellen'},
+      ro:{pageTitle:'HOLa — Centrul alianței',overview:'Prezentarea alianței',strategy:'Strategie',teamwork:'Echipă',family:'Familie',victory:'Victorie',members:'Membri',countries:'Țări',thp:'THP',eventsTitle:'Evenimente viitoare',viewAll:'Vezi tot →',allianceExercise:'Exercițiul alianței',zombieSiege:'Asediul zombi',desertStorm:'Furtună în deșert',zombieInvasion:'Invazie zombi',quickAccess:'Acces rapid',quickMembers:'Membri',quickMembersSub:'Cunoaște alianța',openMembers:'Deschide membrii',changeLanguage:'Schimbă limba',openDesertStorm:'Deschide Desert Storm',adminCenter:'Centrul de administrare',allianceStats:'Statisticile alianței',surveyBannerEyebrow:'MISIUNE DE ALIANȚĂ',surveyBannerTitle:'Actualizează profilul HOLa',surveyBannerText:'Ține THP-ul, squad-urile și profilul de membru la zi.',surveyBannerCta:'Completează / actualizează',openSurvey:'Completează sau actualizează chestionarul',surveyBannerAria:'Chestionar jucători',surveyProgress:'{completed} din {total} completate',webNewsLabel:'NOU',webNewsAvatarTitle:'Acum îți poți crea avatarul HOLa',webNewsAvatarCta:'Încearcă-l',webNewsAria:'Noutăți web',webNewsAvatarAria:'Creează avatar HOLa'},
+      pt:{pageTitle:'HOLa — Centro da aliança',overview:'Visão da aliança',strategy:'Estratégia',teamwork:'Equipe',family:'Família',victory:'Vitória',members:'Membros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Exercício da aliança',zombieSiege:'Cerco zumbi',desertStorm:'Tempestade do deserto',zombieInvasion:'Invasão zumbi',quickAccess:'Acesso rápido',quickMembers:'Membros',quickMembersSub:'Conheça a aliança',openMembers:'Abrir membros',changeLanguage:'Mudar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administração',allianceStats:'Estatísticas da aliança',surveyBannerEyebrow:'MISSÃO DA ALIANÇA',surveyBannerTitle:'Atualiza o teu perfil HOLa',surveyBannerText:'Mantém o THP, os squads e o perfil de membro atualizados.',surveyBannerCta:'Preencher / atualizar',openSurvey:'Preencher ou atualizar a pesquisa',surveyBannerAria:'Pesquisa de jogadores',surveyProgress:'{completed} de {total} concluídas',webNewsLabel:'NOVO',webNewsAvatarTitle:'Agora podes criar o teu avatar HOLa',webNewsAvatarCta:'Experimenta',webNewsAria:'Novidades do site',webNewsAvatarAria:'Criar avatar HOLa'},
+      uk:{pageTitle:'HOLa — Центр альянсу',overview:'Огляд альянсу',strategy:'Стратегія',teamwork:'Команда',family:'Родина',victory:'Перемога',members:'Учасники',countries:'Країни',thp:'THP',eventsTitle:'Майбутні події',viewAll:'Переглянути всі →',allianceExercise:'Навчання альянсу',zombieSiege:'Облога зомбі',desertStorm:'Буря в пустелі',zombieInvasion:'Вторгнення зомбі',quickAccess:'Швидкий доступ',quickMembers:'Учасники',quickMembersSub:'Познайомтеся з альянсом',openMembers:'Відкрити учасників',changeLanguage:'Змінити мову',openDesertStorm:'Відкрити Desert Storm',adminCenter:'Центр адміністрування',allianceStats:'Статистика альянсу',surveyBannerEyebrow:'МІСІЯ АЛЬЯНСУ',surveyBannerTitle:'Онови свій профіль HOLa',surveyBannerText:'Підтримуй THP, squads і профіль учасника в актуальному стані.',surveyBannerCta:'Заповнити / оновити',openSurvey:'Заповнити або оновити опитування',surveyBannerAria:'Опитування гравців',surveyProgress:'{completed} з {total} завершено',webNewsLabel:'НОВЕ',webNewsAvatarTitle:'Тепер ти можеш створити свій аватар HOLa',webNewsAvatarCta:'Спробуй',webNewsAria:'Новини сайту',webNewsAvatarAria:'Створити аватар HOLa'},
+      it:{pageTitle:'HOLa — Centro alleanza',overview:'Panoramica alleanza',strategy:'Strategia',teamwork:'Squadra',family:'Famiglia',victory:'Vittoria',members:'Membri',countries:'Paesi',thp:'THP',eventsTitle:'Prossimi eventi',viewAll:'Vedi tutti →',allianceExercise:'Esercitazione dell’alleanza',zombieSiege:'Assedio zombie',desertStorm:'Tempesta nel deserto',zombieInvasion:'Invasione zombie',quickAccess:'Accesso rapido',quickMembers:'Membri',quickMembersSub:'Scopri l’alleanza',openMembers:'Apri membri',changeLanguage:'Cambia lingua',openDesertStorm:'Apri Desert Storm',adminCenter:'Centro di amministrazione',allianceStats:'Statistiche dell’alleanza',surveyBannerEyebrow:'MISSIONE DELL’ALLEANZA',surveyBannerTitle:'Aggiorna il tuo profilo HOLa',surveyBannerText:'Mantieni aggiornati THP, squad e profilo membro.',surveyBannerCta:'Compila / aggiorna',openSurvey:'Compila o aggiorna il sondaggio',surveyBannerAria:'Sondaggio giocatori',surveyProgress:'{completed} di {total} completati',webNewsLabel:'NOVITÀ',webNewsAvatarTitle:'Ora puoi creare il tuo avatar HOLa',webNewsAvatarCta:'Provalo',webNewsAria:'Novità del sito',webNewsAvatarAria:'Crea avatar HOLa'},
+      pl:{pageTitle:'HOLa — Centrum sojuszu',overview:'Przegląd sojuszu',strategy:'Strategia',teamwork:'Drużyna',family:'Rodzina',victory:'Zwycięstwo',members:'Członkowie',countries:'Kraje',thp:'THP',eventsTitle:'Nadchodzące wydarzenia',viewAll:'Zobacz wszystkie →',allianceExercise:'Ćwiczenia sojuszu',zombieSiege:'Oblężenie zombie',desertStorm:'Burza pustynna',zombieInvasion:'Inwazja zombie',quickAccess:'Szybki dostęp',quickMembers:'Członkowie',quickMembersSub:'Poznaj sojusz',openMembers:'Otwórz członków',changeLanguage:'Zmień język',openDesertStorm:'Otwórz Desert Storm',adminCenter:'Centrum administracji',allianceStats:'Statystyki sojuszu',surveyBannerEyebrow:'MISJA SOJUSZU',surveyBannerTitle:'Zaktualizuj profil HOLa',surveyBannerText:'Aktualizuj THP, squady i profil członka.',surveyBannerCta:'Wypełnij / zaktualizuj',openSurvey:'Wypełnij lub zaktualizuj ankietę',surveyBannerAria:'Ankieta graczy',surveyProgress:'{completed} z {total} ukończonych',webNewsLabel:'NOWOŚĆ',webNewsAvatarTitle:'Teraz możesz stworzyć swój awatar HOLa',webNewsAvatarCta:'Wypróbuj',webNewsAria:'Nowości strony',webNewsAvatarAria:'Utwórz awatar HOLa'}
     };
 
     const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
