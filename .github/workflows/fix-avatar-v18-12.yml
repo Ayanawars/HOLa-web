@@ -1,0 +1,203 @@
+name: Fix HOLa Avatar v18.12
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-avatar-v18-12.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch Avatar Maker
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("avatar-maker.html")
+          text = p.read_text(encoding="utf-8")
+
+          text = text.replace(
+          """.preview-wrap{padding:6px 14px 12px}.preview-card{position:relative;overflow:hidden;border-radius:25px;border:2px solid #d9b45d;background:#cf9b4e;box-shadow:var(--shadow)}
+          .preview-card:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;border:7px double rgba(255,237,190,.76);border-radius:23px;mix-blend-mode:screen;opacity:.55}
+          .avatar-stage{display:block;width:100%;aspect-ratio:1/1;background:#d7a761}
+          """,
+          """.preview-wrap{padding:6px 14px 12px}.preview-card{position:relative;overflow:hidden;border-radius:25px;border:2px solid #d9b45d;background-color:#f1eee6;background-image:linear-gradient(45deg,#ddd8cc 25%,transparent 25%),linear-gradient(-45deg,#ddd8cc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd8cc 75%),linear-gradient(-45deg,transparent 75%,#ddd8cc 75%);background-size:28px 28px;background-position:0 0,0 14px,14px -14px,-14px 0;box-shadow:var(--shadow)}
+          .preview-card:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;border:3px solid rgba(255,237,190,.82);border-radius:23px;opacity:.55}
+          .avatar-stage{display:block;width:100%;aspect-ratio:1/1;background:transparent}
+          """
+          )
+
+          text = text.replace(
+            "const AI_ENDPOINT = window.HOLA_AVATAR_AI_ENDPOINT || localStorage.getItem('hola_avatar_ai_endpoint') || 'https://hola-avatar-transform.ayanawarslastwar.workers.dev/avatar-transform';",
+            "const AI_ENDPOINT = 'https://hola-avatar-transform.ayanawarslastwar.workers.dev/avatar-transform';\ntry{ localStorage.removeItem('hola_avatar_ai_endpoint'); }catch(_){}"
+          )
+
+          text = re.sub(
+            r"\n \{id:'frame',label:\{es:'Marco'.*?\]\}\n\]",
+            "\n]",
+            text,
+            flags=re.S
+          )
+
+          text = text.replace(
+          """ const bg=$('#bgRect'),sun=$('#sun'),pyr=$('#pyramids'),tmp=$('#temple'),stars=$('#stars');sun.setAttribute('opacity','.82');pyr.setAttribute('opacity','.88');tmp.setAttribute('opacity','0');stars.setAttribute('opacity','0');
+           bg.setAttribute('fill','transparent');
+           sun.setAttribute('opacity','0');
+           pyr.setAttribute('opacity','0');
+           tmp.setAttribute('opacity','0');
+           stars.setAttribute('opacity','0');
+          """,
+          """ const bg=$('#bgRect'),sun=$('#sun'),pyr=$('#pyramids'),tmp=$('#temple'),stars=$('#stars');
+           $('#bgLayer').setAttribute('opacity','0');
+           bg.setAttribute('fill','transparent');
+           sun.setAttribute('opacity','0');
+           pyr.setAttribute('opacity','0');
+           tmp.setAttribute('opacity','0');
+           stars.setAttribute('opacity','0');
+          """
+          )
+
+          text = text.replace(
+          """ const expressionMouth={calm:'M449 601 Q500 630 551 601 Q500 656 449 601Z',smile:'M448 594 Q500 645 552 594 Q500 671 448 594Z',fierce:'M450 617 Q500 595 550 617 Q500 638 450 617Z',mysterious:'M451 607 Q500 628 549 600 Q505 650 451 607Z'};$('#mouth').setAttribute('d',expressionMouth[state.expression]||expressionMouth.calm);$('#brows').setAttribute('transform',state.expression==='fierce'?'rotate(2 500 440)':state.expression==='mysterious'?'translate(0 -4)':''); const fr=$('#frameLayer');fr.setAttribute('opacity',state.frame==='none'?'0':'1');const strokes={gold:'#f1d47b',blue:'#60d5f3',sand:'#e1c99a'};fr.querySelector('rect').setAttribute('stroke',strokes[state.frame]||'#f1d47b');
+          """,
+          """ const expressionMouth={calm:'M449 601 Q500 630 551 601 Q500 656 449 601Z',smile:'M448 594 Q500 645 552 594 Q500 671 448 594Z',fierce:'M450 617 Q500 595 550 617 Q500 638 450 617Z',mysterious:'M451 607 Q500 628 549 600 Q505 650 451 607Z'};$('#mouth').setAttribute('d',expressionMouth[state.expression]||expressionMouth.calm);$('#brows').setAttribute('transform',state.expression==='fierce'?'rotate(2 500 440)':state.expression==='mysterious'?'translate(0 -4)':''); $('#frameLayer').setAttribute('opacity','0');
+          """
+          )
+
+          text = text.replace(
+            "const res = await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});",
+            "const res = await fetch(AI_ENDPOINT,{method:'POST',mode:'cors',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});"
+          )
+
+          text = text.replace(
+            "if(/failed to fetch|networkerror|load failed/i.test(msg)) toast(txt('serverMissing'));",
+            "if(/failed to fetch|networkerror|load failed/i.test(msg)) toast('No se pudo conectar con Cloudflare. Recarga la página e inténtalo otra vez.');"
+          )
+
+          text = text.replace(
+            "La IA enviará tu diseño base a tu Worker seguro de Cloudflare para generar el avatar gratis con Stable Diffusion.",
+            "La IA enviará tu diseño al motor gratuito de Cloudflare AI para crear tu avatar."
+          )
+
+          p.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Update Worker source
+        shell: bash
+        run: |
+          cat > worker.js <<'EOF'
+          export default {
+            async fetch(request, env) {
+              const cors = {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'content-type',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Cache-Control': 'no-store'
+              };
+
+              if (request.method === 'OPTIONS') {
+                return new Response(null, { status: 204, headers: cors });
+              }
+
+              const url = new URL(request.url);
+
+              if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health' || url.pathname === '/avatar-transform')) {
+                return new Response(JSON.stringify({
+                  ok: true,
+                  service: 'hola-avatar-transform',
+                  model: '@cf/black-forest-labs/flux-2-klein-4b'
+                }), {
+                  status: 200,
+                  headers: { ...cors, 'Content-Type': 'application/json' }
+                });
+              }
+
+              if (request.method !== 'POST' || url.pathname !== '/avatar-transform') {
+                return new Response(JSON.stringify({ error: 'Not found' }), {
+                  status: 404,
+                  headers: { ...cors, 'Content-Type': 'application/json' }
+                });
+              }
+
+              try {
+                const body = await request.json();
+                let base64 = String(body.image_base64 || '').trim().replace(/\s/g, '');
+                if (!base64) {
+                  return new Response(JSON.stringify({ error: 'image_base64 is required' }), {
+                    status: 400,
+                    headers: { ...cors, 'Content-Type': 'application/json' }
+                  });
+                }
+
+                const prompt =
+                  String(body.prompt || 'Egyptian fantasy avatar').slice(0, 5000) +
+                  ' Use input image 0 as the visual reference. Preserve the selected character identity and all requested visual traits. Centered bust portrait, square composition, no text, no watermark.';
+
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+                const blob = new Blob([bytes], { type: 'image/png' });
+                const form = new FormData();
+                form.append('input_image_0', blob, 'hola-avatar.png');
+                form.append('prompt', prompt);
+                form.append('width', '1024');
+                form.append('height', '1024');
+                form.append('guidance', '4.0');
+                form.append('seed', String(Math.floor(Math.random() * 2147483647)));
+
+                const formResponse = new Response(form);
+                const result = await env.AI.run(
+                  '@cf/black-forest-labs/flux-2-klein-4b',
+                  {
+                    multipart: {
+                      body: formResponse.body,
+                      contentType: formResponse.headers.get('content-type')
+                    }
+                  }
+                );
+
+                if (!result || !result.image) throw new Error('Cloudflare AI did not return an image');
+
+                return new Response(JSON.stringify({
+                  ok: true,
+                  provider: '@cf/black-forest-labs/flux-2-klein-4b',
+                  image_base64: result.image,
+                  mime_type: 'image/jpeg'
+                }), {
+                  status: 200,
+                  headers: { ...cors, 'Content-Type': 'application/json' }
+                });
+              } catch (error) {
+                return new Response(JSON.stringify({
+                  error: String(error?.message || error)
+                }), {
+                  status: 500,
+                  headers: { ...cors, 'Content-Type': 'application/json' }
+                });
+              }
+            }
+          };
+          EOF
+
+      - name: Finalize v18.12
+        shell: bash
+        run: |
+          printf 'HOLa S3 v18,12\n' > VERSION.txt
+          rm -f "HOLa-S3-v18,12-GITHUB-UPDATE.zip"
+          rm -f .github/workflows/fix-avatar-v18-12.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Avatar Maker v18.12"
+          git push
