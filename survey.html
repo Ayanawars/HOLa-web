@@ -2773,9 +2773,9 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
   <div class="thp-ai-status" id="thpAiStatus" aria-live="polite"></div>
 
   <div class="thp-input-wrap">
-    <span class="thp-lock-icon" aria-hidden="true">🔒</span>
+    <span class="thp-lock-icon" aria-hidden="true">✎</span>
     <input id="playerThp" type="text" inputmode="decimal" autocomplete="off"
-           placeholder="THP detectado automáticamente" data-i18n-placeholder="thpInputPlaceholder" aria-label="THP del jugador" readonly aria-readonly="true">
+           placeholder="Introduce o corrige el THP" data-i18n-placeholder="thpInputPlaceholder" aria-label="THP del jugador">
   </div>
 
   <button type="button" class="thp-confirm-btn" id="confirmThpBtn">
@@ -4049,25 +4049,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // El THP solo puede introducirse después de una detección válida por IA.
-  // Se usa readonly en lugar de disabled para que el usuario pueda tocar el
-  // campo y recibir el mensaje indicado sin modificar el diseño existente.
-  let thpUnlocked = false;
+  // La IA/OCR propone un valor, pero el jugador siempre puede corregirlo.
+  let thpUnlocked = true;
   if (thpInput) {
-    thpInput.readOnly = true;
-    thpInput.setAttribute("aria-readonly", "true");
+    thpInput.readOnly = false;
+    thpInput.setAttribute("aria-readonly", "false");
     thpInput.addEventListener("input", () => thpInput.setCustomValidity(""));
-    const showThpCaptureMessage = (event) => {
-      if (thpUnlocked) return;
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      thpInput.blur();
-      openThpLockedPopup();
-    };
-    thpInput.addEventListener("click", showThpCaptureMessage);
-    thpInput.addEventListener("focus", showThpCaptureMessage);
     document.addEventListener("weekly-ai-detected", () => {
       thpUnlocked = true;
       thpInput.readOnly = false;
@@ -4408,8 +4395,7 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     }else if(index===1){
       if(!avatarOk()){ok=false;msg=tt('avatar');targets.push(q('#avatarUpload'));}
     }else if(index===2){
-      const verified=!!(window.HOLaSurveyVerification&&window.HOLaSurveyVerification.get(val('playerName')));
-      if(!validPower(val('playerThp'))||!verified){ok=false;msg=tt('thp');targets.push(q('#weeklyAiCard'));}
+      if(!validPower(val('playerThp'))){ok=false;msg=tt('thp');targets.push(q('#playerThp'));}
     }else if(index===3){
       const allowed=new Set(['Tank','Aircraft','Missile']);
       for(let i=1;i<=3;i++){
