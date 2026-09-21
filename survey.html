@@ -2759,7 +2759,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     <button type="button" class="thp-ai-btn weekly-ai-detect" id="weeklyAiSelectBtn">
       <span class="thp-ai-icon">⌾</span><span data-i18n="weeklyAiSelect">SELECCIONAR 2 CAPTURAS</span>
     </button>
-    <button type="button" class="thp-ai-btn weekly-ai-detect" id="weeklyAiDetectBtn" aria-disabled="false" onclick="if(!window.holaWeeklyAiRun&&window.HOLaShowBrowserWarning){window.HOLaShowBrowserWarning();}">
+    <button type="button" class="thp-ai-btn weekly-ai-detect" id="weeklyAiDetectBtn" aria-disabled="false" onclick="if(window.holaWeeklyAiRun){window.holaWeeklyAiRun();}else if(window.HOLaShowBrowserWarning){window.HOLaShowBrowserWarning();}">
       <span class="thp-ai-icon">⌾</span><span data-i18n="weeklyAiDetect">DETECTAR LAS DOS CON IA</span>
     </button>
     <div class="thp-ai-status" id="weeklyAiStatus" aria-live="polite"></div>
@@ -4665,7 +4665,7 @@ document.addEventListener("DOMContentLoaded", () => {
  else setStatus("","genericError");
  }catch(e){var m=String(e&&e.message?e.message:e).replace(/[<>]/g,"").replace(/\s+/g," ").trim();setStatus(m?"⚠ "+m.slice(0,260):d().genericError,null);}finally{if(btn){btn.classList.remove("ai-scanning");}refreshSelection();}}
  window.holaWeeklyAiRun=run;
- function bind(){var input=$("weeklyAiImages"),selectBtn=$("weeklyAiSelectBtn"),detectBtn=$("weeklyAiDetectBtn");if(!input||!selectBtn||!detectBtn)return;if(selectBtn.getAttribute("data-bound")!=="1"){selectBtn.setAttribute("data-bound","1");selectBtn.addEventListener("click",function(){if(weeklyLocked&&!canRecoverIdentity())return;input.click();});}if(detectBtn.getAttribute("data-bound")!=="1"){detectBtn.setAttribute("data-bound","1");detectBtn.addEventListener("click",run);}refreshSelection();}
+ function bind(){var input=$("weeklyAiImages"),selectBtn=$("weeklyAiSelectBtn"),detectBtn=$("weeklyAiDetectBtn");if(!input||!selectBtn||!detectBtn)return;if(selectBtn.getAttribute("data-bound")!=="1"){selectBtn.setAttribute("data-bound","1");selectBtn.addEventListener("click",function(){if(weeklyLocked&&!canRecoverIdentity())return;input.click();});}refreshSelection();}
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
  window.__weeklyAiTexts=texts;
  function apply(){var x=d(),nodes=document.querySelectorAll("#weeklyAiCard [data-i18n]"),map={weeklyAiTitle:"title",weeklyAiText:"text",weeklyAiSelect:"select",weeklyAiDetect:"detect"};for(var i=0;i<nodes.length;i++){var k=nodes[i].getAttribute("data-i18n");if(map[k])nodes[i].textContent=x[map[k]];}}
