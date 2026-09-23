@@ -1224,6 +1224,9 @@
       function cleanName(s) {
         return String(s)
           .replace(/^[#\-\.\s]+/, "")
+          // El juego puede anteponer la etiqueta de la alianza: [HOLa]Nombre.
+          // La retiramos antes de validar para conservar nombres Unicode reales.
+          .replace(/^\s*[\[［(（]\s*h[o0]l[a4]\s*[\]］)）]\s*/iu, "")
           .replace(/^\d{1,3}\s+[\.\-:]?\s*/, "") // quita el puesto si OCR lo pegó al nombre: "2 Sergio endwar"
           .replace(/^\d{1,3}\s+(?=[A-Za-zÀ-ÿ])/, "")
           .replace(/\s+/g, " ")
@@ -1277,7 +1280,11 @@
       }
 
       function matchMemberName(detected) {
-        const variants = bidiVariants(detected).map(normName).filter(Boolean);
+        // Reaplicamos la limpieza aquí para todos los caminos del OCR, incluidos
+        // los textos que no llegaron desde las líneas con coordenadas.
+        const variants = bidiVariants(cleanName(detected))
+          .map(normName)
+          .filter(Boolean);
         if (!variants.length) return null;
 
         for (const key of variants) {
