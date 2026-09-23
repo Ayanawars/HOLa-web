@@ -1331,7 +1331,7 @@
         const push = weekType === "push";
         let html = "";
         if (currentTab === "summary") {
-          html = `<div class="hero"><div class="kicker">${push ? "🚀 PUSH WEEK" : "🛡️ SAVE WEEK"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">${push ? "7,2M cada día" : "7,2M total semanal"}</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(rows[0]?.name || "—")}</div><div class="small">${rows[0] ? f(rows[0].total) : ""}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>${push ? "Cumplen los 6 días" : "Cumplen exactamente"}</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia</div></div>`;
+          html = `<div class="hero"><div class="kicker">${push ? "🚀 SEMANA DE PUSH" : "🛡️ SEMANA DE SAVE"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">${push ? "7,2M cada día" : "7,2M total semanal"}</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(rows[0]?.name || "—")}</div><div class="small">${rows[0] ? f(rows[0].total) : ""}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>${push ? "Cumplen los 6 días" : "Cumplen exactamente"}</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia</div></div>`;
         }
         if (currentTab === "ranking") {
           html = `<div class="section"><h4>🏆 Ranking semanal — Total Supabase</h4>${rows.map((x, i) => `<div class="rank"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><div><b>${esc(x.name)}</b><div class="small">${x.days}/6 días con puntos</div></div><div class="points">${f(x.total)}</div></div>`).join("") || '<div class="status">Sin datos.</div>'}</div>`;
@@ -1461,7 +1461,12 @@
         hasSelectedInitialWeek = true;
         scores = a.data || [];
         players = b.data || [];
-        weekType = scores.find((x) => x.week_type)?.week_type || "push";
+        // Determina el tipo de semana por mayoría de registros, no por la
+        // primera fila devuelta por Supabase. Así la página pública no puede
+        // mostrar SAVE por una fila aislada o por un orden distinto de respuesta.
+        const pushCount = scores.filter((x) => x.week_type === "push").length;
+        const saveCount = scores.filter((x) => x.week_type === "save").length;
+        weekType = pushCount >= saveCount ? "push" : "save";
         buttons();
         render();
       }
