@@ -1227,6 +1227,8 @@
           // El juego puede anteponer la etiqueta de la alianza: [HOLa]Nombre.
           // La retiramos antes de validar para conservar nombres Unicode reales.
           .replace(/^\s*[\[［(（]\s*h[o0]l[a4]\s*[\]］)）]\s*/iu, "")
+          // Adorno de gato usado en varios nicks turcos: nombre ᓚᘏᗢ.
+          .replace(/\s*ᓚᘏᗢ\s*$/u, "")
           .replace(/^\d{1,3}\s+[\.\-:]?\s*/, "") // quita el puesto si OCR lo pegó al nombre: "2 Sergio endwar"
           .replace(/^\d{1,3}\s+(?=[A-Za-zÀ-ÿ])/, "")
           .replace(/\s+/g, " ")
