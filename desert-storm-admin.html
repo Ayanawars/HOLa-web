@@ -323,14 +323,14 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
 
   <section class="card magenta">
     <div class="step">03</div>
-    <h2 id="ocrTitle">OCR SPACE</h2>
+    <h2 id="ocrTitle">GOOGLE VISION</h2>
     <p class="help" id="ocrHelp">
       Sube capturas ya recortadas mostrando las filas de nombre + puntos. El OCR leerá esos dos datos y el TOP se ordenará automáticamente por puntuación.
     </p>
     <div class="filebox">
       <label for="screenshots" id="shotsLabel">Capturas de resultados</label>
       <input id="screenshots" type="file" accept="image/*" multiple>
-      <div class="mini" id="ocrConfigured">OCR.Space está configurado automáticamente.</div>
+      <div class="mini" id="ocrConfigured">Google Vision está configurado automáticamente.</div>
     </div>
     <div class="ocr-auto-note" id="ocrAutoNote">⚡ El análisis comienza automáticamente al seleccionar las capturas.</div>
     <div id="ocrStatus" class="status">Esperando capturas…</div>
@@ -383,8 +383,8 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
 <script>
 const SUPABASE_URL = "https://ovybstpiomphrouvqxmf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
-// OCR.Space debe llamarse desde un backend; no se publica ninguna clave en el navegador.
-const OCR_SPACE_API_KEY = "";
+// Google Vision debe llamarse desde un backend; no se publica ninguna clave en el navegador.
+const DESERT_STORM_OCR_FUNCTION = "desert-storm-ocr";
 
 window.holaSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const supabaseClient = window.holaSupabaseClient;
@@ -584,7 +584,7 @@ function parseOverlayResults(overlay, text){
   const registered=participants();
   if(!registered.length) return [];
 
-  // OCR.Space puede devolver el nombre y la puntuación en la misma línea
+  // Google Vision puede devolver el nombre y la puntuación en la misma línea
   // o en dos líneas consecutivas. Como ya conocemos la lista de apuntados,
   // buscamos CADA participante dentro del texto OCR y asociamos únicamente
   // la puntuación que aparece en su propia fila.
@@ -739,7 +739,7 @@ function parseSimpleNamePoints(text){
     .map(x=>x.replace(/\s+/g,' ').trim())
     .filter(Boolean);
 
-  // OCR.Space puede separar nombre y puntos en líneas distintas,
+  // Google Vision puede separar nombre y puntos en líneas distintas,
   // unirlos en una sola línea o introducir pequeños errores de OCR.
   // Buscamos cada fila localmente y damos prioridad a la coincidencia
   // exacta, después a una coincidencia aproximada.
@@ -832,30 +832,23 @@ async function prepareOCRImage(file){
   }
 }
 
-async function ocrImage(file,key){
+async function fileAsDataUrl(file){
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||""));
+    reader.onerror=()=>reject(new Error("No se pudo preparar la imagen para OCR."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function ocrImage(file){
   const prepared=await prepareOCRImage(file);
-  const fd=new FormData();
-  fd.append('file',prepared,'desert-storm.jpg');
-  fd.append('apikey',key);
-  fd.append('language','eng');
-  fd.append('isOverlayRequired','false');
-  fd.append('OCREngine','1');
-  fd.append('scale','true');
-  fd.append('isTable','false');
-  fd.append('detectOrientation','true');
-  const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',body:fd});
-  let data=null;
-  try{ data=await res.json(); }catch(_){ throw new Error('OCR.Space devolvió una respuesta no válida.'); }
-  if(!res.ok){
-    const detail=Array.isArray(data?.ErrorMessage)?data.ErrorMessage.join(' '):(data?.ErrorMessage||'');
-    throw new Error(detail||`OCR.Space respondió con HTTP ${res.status}.`);
-  }
-  if(data?.IsErroredOnProcessing){
-    const detail=Array.isArray(data.ErrorMessage)?data.ErrorMessage.join(' '):(data.ErrorMessage||'Error procesando la imagen.');
-    throw new Error(detail);
-  }
-  const parsed=data?.ParsedResults||[];
-  return {text:parsed.map(x=>x.ParsedText||'').join('\n')};
+  const imageDataUrl=await fileAsDataUrl(prepared);
+  const {data,error}=await supabaseClient.functions.invoke(DESERT_STORM_OCR_FUNCTION,{body:{imageDataUrl}});
+  if(error)throw new Error(error.message||"No se pudo conectar con el OCR.");
+  if(data?.error)throw new Error(data.error);
+  if(!data?.text)throw new Error("No se detectó texto en la captura.");
+  return {text:String(data.text)};
 }
 
 
@@ -886,11 +879,6 @@ function escapeHtml(s){
 
 
 async function runOCR(){
-  if(!OCR_SPACE_API_KEY){
-    $("ocrStatus").className="status err";
-    $("ocrStatus").textContent="El OCR externo no está configurado en esta página por seguridad. Puedes guardar los resultados manualmente.";
-    return;
-  }
   const files=[...$("screenshots").files];
   const registered=participants();
   if(!registered.length){
@@ -915,7 +903,7 @@ async function runOCR(){
   try{
     for(let i=0;i<files.length;i++){
       $("ocrStatus").textContent=`⚡ Analizando captura ${i+1} de ${files.length}…`;
-      const ocr=await ocrImage(files[i],OCR_SPACE_API_KEY);
+      const ocr=await ocrImage(files[i]);
       const text=ocr.text;
       const captureTime=parseTime(text);
       if(captureTime) allTimes.push(captureTime);
@@ -1080,8 +1068,8 @@ es:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administración de participantes y resultados · datos guardados en Supabase",badge:"ADMIN",
   participants:"PARTICIPANTES",participantsHelp:"Pega aquí la lista de jugadores apuntados para Desert Storm, uno por línea. Esta lista se guarda antes del evento y será la referencia para comparar después con los resultados reales.",
   saveParticipants:"💾 GUARDAR PARTICIPANTES",load:"↻ CARGAR LISTA GUARDADA",pending:"Lista pendiente de guardar.",selected:"JORNADA",notSelected:"Aún no seleccionada",
-  ocr:"OCR SPACE",ocrHelp:"Sube capturas ya recortadas mostrando las filas de nombre + puntos. El OCR leerá esos dos datos y el TOP se ordenará automáticamente por puntuación.",
-  shots:"Capturas de resultados",configured:"OCR.Space está configurado automáticamente.",auto:"⚡ El análisis comienza automáticamente al seleccionar las capturas.",waiting:"Esperando capturas…",
+  ocr:"GOOGLE VISION",ocrHelp:"Sube una o varias capturas completas del correo de resultados. El OCR ignora la posición y la fecha, lee nombre + puntos y une todas las capturas en un único TOP.",
+  shots:"Capturas de resultados",configured:"Google Vision está configurado automáticamente.",auto:"⚡ El análisis comienza automáticamente al seleccionar las capturas.",waiting:"Esperando capturas…",
   results:"RESULTADOS DETECTADOS",resultsHelp:"Revisa los nombres y puntos detectados. El TOP se calcula ordenando de mayor a menor puntuación. Solo se guardan jugadores vinculados a la lista de participantes.",
   empty:"Todavía no hay resultados.",save:"💾 GUARDAR EN SUPABASE",nothing:"Nada pendiente de guardar.",
   modalTitle:"¿Qué día y qué equipo?",modalHelp:"Selecciona la jornada a la que pertenece esta lista de participantes.",date:"DÍA",team:"EQUIPO",confirm:"💾 CONFIRMAR Y GUARDAR",cancel:"CANCELAR"
@@ -1090,8 +1078,8 @@ en:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Participant and result administration · data saved in Supabase",badge:"ADMIN",
   participants:"PARTICIPANTS",participantsHelp:"Paste the players registered for Desert Storm, one per line. This list is saved before the event and used later to compare against actual results.",
   saveParticipants:"💾 SAVE PARTICIPANTS",load:"↻ LOAD SAVED LIST",pending:"List pending save.",selected:"BATTLE",notSelected:"Not selected yet",
-  ocr:"OCR SPACE",ocrHelp:"Upload already-cropped screenshots showing name + points rows. OCR reads those two fields and TOP is automatically sorted by score.",
-  shots:"Result screenshots",configured:"OCR.Space is configured automatically.",auto:"⚡ Analysis starts automatically when screenshots are selected.",waiting:"Waiting for screenshots…",
+  ocr:"GOOGLE VISION",ocrHelp:"Upload already-cropped screenshots showing name + points rows. OCR reads those two fields and TOP is automatically sorted by score.",
+  shots:"Result screenshots",configured:"Google Vision is configured automatically.",auto:"⚡ Analysis starts automatically when screenshots are selected.",waiting:"Waiting for screenshots…",
   results:"DETECTED RESULTS",resultsHelp:"Review detected names and points. TOP is sorted from highest to lowest score. Only players linked to the participant list are saved.",
   empty:"No results yet.",save:"💾 SAVE TO SUPABASE",nothing:"Nothing pending to save.",
   modalTitle:"Which day and team?",modalHelp:"Select the battle this participant list belongs to.",date:"DAY",team:"TEAM",confirm:"💾 CONFIRM AND SAVE",cancel:"CANCEL"
@@ -1100,8 +1088,8 @@ pt:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administração de participantes e resultados · dados guardados no Supabase",badge:"ADMIN",
   participants:"PARTICIPANTES",participantsHelp:"Cole os jogadores inscritos no Desert Storm, um por linha. Esta lista é guardada antes do evento e usada depois para comparar com os resultados reais.",
   saveParticipants:"💾 GUARDAR PARTICIPANTES",load:"↻ CARREGAR LISTA GUARDADA",pending:"Lista por guardar.",selected:"BATALHA",notSelected:"Ainda não selecionada",
-  ocr:"OCR SPACE",ocrHelp:"Carregue capturas já recortadas com as linhas nome + pontos. O OCR lê esses dois dados e o TOP é ordenado automaticamente pela pontuação.",
-  shots:"Capturas dos resultados",configured:"OCR.Space está configurado automaticamente.",auto:"⚡ A análise começa automaticamente ao selecionar as capturas.",waiting:"A aguardar capturas…",
+  ocr:"GOOGLE VISION",ocrHelp:"Carregue capturas já recortadas com as linhas nome + pontos. O OCR lê esses dois dados e o TOP é ordenado automaticamente pela pontuação.",
+  shots:"Capturas dos resultados",configured:"Google Vision está configurado automaticamente.",auto:"⚡ A análise começa automaticamente ao selecionar as capturas.",waiting:"A aguardar capturas…",
   results:"RESULTADOS DETETADOS",resultsHelp:"Reveja os nomes e pontos detetados. O TOP é ordenado da maior para a menor pontuação. Só serão guardados jogadores ligados à lista de participantes.",
   empty:"Ainda não há resultados.",save:"💾 GUARDAR NO SUPABASE",nothing:"Nada pendente para guardar.",
   modalTitle:"Que dia e que equipa?",modalHelp:"Selecione a batalha a que pertence esta lista de participantes.",date:"DIA",team:"EQUIPA",confirm:"💾 CONFIRMAR E GUARDAR",cancel:"CANCELAR"
@@ -1110,8 +1098,8 @@ ro:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administrarea participanților și rezultatelor · date salvate în Supabase",badge:"ADMIN",
   participants:"PARTICIPANȚI",participantsHelp:"Introdu jucătorii înscriși la Desert Storm, câte unul pe linie. Lista este salvată înaintea evenimentului și va fi folosită ulterior pentru comparație cu rezultatele reale.",
   saveParticipants:"💾 SALVEAZĂ PARTICIPANȚII",load:"↻ ÎNCARCĂ LISTA SALVATĂ",pending:"Lista așteaptă salvarea.",selected:"BĂTĂLIE",notSelected:"Nu este selectată",
-  ocr:"OCR SPACE",ocrHelp:"Încarcă capturi deja decupate cu rândurile nume + puncte. OCR citește aceste date, iar TOP este ordonat automat după punctaj.",
-  shots:"Capturi rezultate",configured:"OCR.Space este configurat automat.",auto:"⚡ Analiza începe automat când sunt selectate capturile.",waiting:"Se așteaptă capturi…",
+  ocr:"GOOGLE VISION",ocrHelp:"Încarcă capturi deja decupate cu rândurile nume + puncte. OCR citește aceste date, iar TOP este ordonat automat după punctaj.",
+  shots:"Capturi rezultate",configured:"Google Vision este configurat automat.",auto:"⚡ Analiza începe automat când sunt selectate capturile.",waiting:"Se așteaptă capturi…",
   results:"REZULTATE DETECTATE",resultsHelp:"Verifică numele și punctele detectate. TOP este sortat descrescător. Vor fi salvate doar persoanele asociate listei de participanți.",
   empty:"Nu există încă rezultate.",save:"💾 SALVEAZĂ ÎN SUPABASE",nothing:"Nimic de salvat.",
   modalTitle:"Ce zi și ce echipă?",modalHelp:"Selectează bătălia căreia îi aparține această listă de participanți.",date:"ZI",team:"ECHIPĂ",confirm:"💾 CONFIRMĂ ȘI SALVEAZĂ",cancel:"ANULEAZĂ"
@@ -1120,8 +1108,8 @@ fr:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administration des participants et résultats · données enregistrées dans Supabase",badge:"ADMIN",
   participants:"PARTICIPANTS",participantsHelp:"Collez les joueurs inscrits au Desert Storm, un par ligne. Cette liste est enregistrée avant l'événement et servira ensuite à comparer les résultats réels.",
   saveParticipants:"💾 ENREGISTRER LES PARTICIPANTS",load:"↻ CHARGER LA LISTE",pending:"Liste en attente d'enregistrement.",selected:"BATAILLE",notSelected:"Pas encore sélectionnée",
-  ocr:"OCR SPACE",ocrHelp:"Téléversez des captures déjà recadrées avec les lignes nom + points. L'OCR lit ces deux données et le TOP est automatiquement trié par score.",
-  shots:"Captures des résultats",configured:"OCR.Space est configuré automatiquement.",auto:"⚡ L’analyse commence automatiquement lors de la sélection des captures.",waiting:"En attente de captures…",
+  ocr:"GOOGLE VISION",ocrHelp:"Téléversez des captures déjà recadrées avec les lignes nom + points. L'OCR lit ces deux données et le TOP est automatiquement trié par score.",
+  shots:"Captures des résultats",configured:"Google Vision est configuré automatiquement.",auto:"⚡ L’analyse commence automatiquement lors de la sélection des captures.",waiting:"En attente de captures…",
   results:"RÉSULTATS DÉTECTÉS",resultsHelp:"Vérifiez les noms et points détectés. Le TOP est trié du score le plus élevé au plus faible. Seuls les joueurs liés à la liste sont enregistrés.",
   empty:"Aucun résultat pour le moment.",save:"💾 ENREGISTRER DANS SUPABASE",nothing:"Rien à enregistrer.",
   modalTitle:"Quel jour et quelle équipe ?",modalHelp:"Sélectionnez la bataille à laquelle appartient cette liste de participants.",date:"JOUR",team:"ÉQUIPE",confirm:"💾 CONFIRMER ET ENREGISTRER",cancel:"ANNULER"
@@ -1130,8 +1118,8 @@ it:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Gestione partecipanti e risultati · dati salvati in Supabase",badge:"ADMIN",
   participants:"PARTECIPANTI",participantsHelp:"Incolla i giocatori iscritti al Desert Storm, uno per riga. Questa lista viene salvata prima dell'evento e usata in seguito per confrontarla con i risultati reali.",
   saveParticipants:"💾 SALVA PARTECIPANTI",load:"↻ CARICA LISTA SALVATA",pending:"Lista in attesa di salvataggio.",selected:"BATTAGLIA",notSelected:"Non ancora selezionata",
-  ocr:"OCR SPACE",ocrHelp:"Carica screenshot già ritagliati con le righe nome + punti. OCR legge questi due dati e il TOP viene ordinato automaticamente per punteggio.",
-  shots:"Screenshot risultati",configured:"OCR.Space è configurato automaticamente.",auto:"⚡ L’analisi inizia automaticamente quando selezioni gli screenshot.",waiting:"In attesa degli screenshot…",
+  ocr:"GOOGLE VISION",ocrHelp:"Carica screenshot già ritagliati con le righe nome + punti. OCR legge questi due dati e il TOP viene ordinato automaticamente per punteggio.",
+  shots:"Screenshot risultati",configured:"Google Vision è configurato automaticamente.",auto:"⚡ L’analisi inizia automaticamente quando selezioni gli screenshot.",waiting:"In attesa degli screenshot…",
   results:"RISULTATI RILEVATI",resultsHelp:"Controlla nomi e punti rilevati. Il TOP è ordinato dal punteggio più alto al più basso. Verranno salvati solo i giocatori collegati alla lista partecipanti.",
   empty:"Nessun risultato.",save:"💾 SALVA IN SUPABASE",nothing:"Niente da salvare.",
   modalTitle:"Quale giorno e quale squadra?",modalHelp:"Seleziona la battaglia a cui appartiene questa lista di partecipanti.",date:"GIORNO",team:"SQUADRA",confirm:"💾 CONFERMA E SALVA",cancel:"ANNULLA"
@@ -1140,8 +1128,8 @@ de:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Teilnehmer- und Ergebnisverwaltung · Daten in Supabase gespeichert",badge:"ADMIN",
   participants:"TEILNEHMER",participantsHelp:"Füge die für Desert Storm angemeldeten Spieler ein, einen pro Zeile. Diese Liste wird vor dem Event gespeichert und später mit den tatsächlichen Ergebnissen verglichen.",
   saveParticipants:"💾 TEILNEHMER SPEICHERN",load:"↻ GESPEICHERTE LISTE LADEN",pending:"Liste wartet auf Speicherung.",selected:"KAMPF",notSelected:"Noch nicht ausgewählt",
-  ocr:"OCR SPACE",ocrHelp:"Lade bereits zugeschnittene Screenshots mit Name + Punkten hoch. OCR liest diese beiden Angaben und sortiert das TOP automatisch nach Punkten.",
-  shots:"Ergebnis-Screenshots",configured:"OCR.Space ist automatisch konfiguriert.",auto:"⚡ Die Analyse startet automatisch, sobald Screenshots ausgewählt werden.",waiting:"Warte auf Screenshots…",
+  ocr:"GOOGLE VISION",ocrHelp:"Lade bereits zugeschnittene Screenshots mit Name + Punkten hoch. OCR liest diese beiden Angaben und sortiert das TOP automatisch nach Punkten.",
+  shots:"Ergebnis-Screenshots",configured:"Google Vision ist automatisch konfiguriert.",auto:"⚡ Die Analyse startet automatisch, sobald Screenshots ausgewählt werden.",waiting:"Warte auf Screenshots…",
   results:"ERKANNTE ERGEBNISSE",resultsHelp:"Prüfe erkannte Namen und Punkte. Das TOP wird absteigend sortiert. Nur Spieler aus der Teilnehmerliste werden gespeichert.",
   empty:"Noch keine Ergebnisse.",save:"💾 IN SUPABASE SPEICHERN",nothing:"Nichts zu speichern.",
   modalTitle:"Welcher Tag und welches Team?",modalHelp:"Wähle den Kampf, zu dem diese Teilnehmerliste gehört.",date:"TAG",team:"TEAM",confirm:"💾 BESTÄTIGEN UND SPEICHERN",cancel:"ABBRECHEN"
@@ -1150,8 +1138,8 @@ uk:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Керування учасниками та результатами · дані збережено в Supabase",badge:"ADMIN",
   participants:"УЧАСНИКИ",participantsHelp:"Вставте гравців, зареєстрованих на Desert Storm, по одному в рядку. Цей список зберігається до події та пізніше порівнюється з фактичними результатами.",
   saveParticipants:"💾 ЗБЕРЕГТИ УЧАСНИКІВ",load:"↻ ЗАВАНТАЖИТИ ЗБЕРЕЖЕНИЙ СПИСОК",pending:"Список очікує збереження.",selected:"БІЙ",notSelected:"Ще не вибрано",
-  ocr:"OCR SPACE",ocrHelp:"Завантажте вже обрізані знімки з рядками ім’я + очки. OCR прочитає ці два поля та автоматично відсортує TOP за очками.",
-  shots:"Знімки результатів",configured:"OCR.Space налаштовано автоматично.",auto:"⚡ Аналіз починається автоматично після вибору знімків.",waiting:"Очікування знімків…",
+  ocr:"GOOGLE VISION",ocrHelp:"Завантажте вже обрізані знімки з рядками ім’я + очки. OCR прочитає ці два поля та автоматично відсортує TOP за очками.",
+  shots:"Знімки результатів",configured:"Google Vision налаштовано автоматично.",auto:"⚡ Аналіз починається автоматично після вибору знімків.",waiting:"Очікування знімків…",
   results:"ВИЯВЛЕНІ РЕЗУЛЬТАТИ",resultsHelp:"Перевірте виявлені імена та очки. TOP сортується від найбільшого до найменшого. Зберігаються лише гравці зі списку учасників.",
   empty:"Результатів ще немає.",save:"💾 ЗБЕРЕГТИ В SUPABASE",nothing:"Немає даних для збереження.",
   modalTitle:"Який день і яка команда?",modalHelp:"Виберіть бій, до якого належить цей список учасників.",date:"ДЕНЬ",team:"КОМАНДА",confirm:"💾 ПІДТВЕРДИТИ Й ЗБЕРЕГТИ",cancel:"СКАСУВАТИ"
