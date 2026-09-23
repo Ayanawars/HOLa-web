@@ -488,6 +488,10 @@ $("confirmParticipantsBtn").addEventListener("click",async()=>{
     $("modalStatus").textContent="⚠️ Selecciona Team A o Team B.";
     return;
   }
+  if(names.length>25){
+    $("modalStatus").textContent=`⚠️ Desert Storm permite un máximo de 25 participantes. Ahora hay ${names.length}.`;
+    return;
+  }
 
   const btn=$("confirmParticipantsBtn");
   btn.disabled=true;
@@ -500,10 +504,16 @@ $("confirmParticipantsBtn").addEventListener("click",async()=>{
       player_name
     }));
 
+    const {error:removeError}=await supabaseClient
+      .from("desert_storm_participants")
+      .delete()
+      .eq("battle_date",selectedDate)
+      .eq("team",team);
+    if(removeError) throw removeError;
+
     const {error}=await supabaseClient
       .from("desert_storm_participants")
-      .upsert(rows,{onConflict:"battle_date,team,player_name"});
-
+      .insert(rows);
     if(error) throw error;
 
     battleDate=selectedDate;
