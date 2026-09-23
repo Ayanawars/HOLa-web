@@ -1317,6 +1317,47 @@
         [normName("مثالي25"), normName("مثالـي25")],
       ]);
 
+      const decoratedMemberBases = [
+        { base: "Memofex042", official: "Memofex042 ᓚᘏᗢ" },
+        { base: "Laz Ziyaaa", official: "Laz Ziyaaa ᓚᘏᗢ" },
+        { base: "Judéx", official: "Judéx ᓚᘏᗢ" },
+        { base: "Ophicat", official: "Ophicat ᓚᘏᗢ" },
+        { base: "sinsifeX", official: "sinsifeX ᓚᘏᗢ" },
+      ];
+
+      function matchDecoratedMemberVariant(key) {
+        for (const entry of decoratedMemberBases) {
+          const baseKey = normName(entry.base);
+          const official = memberNames.find(
+            (name) => normName(name) === normName(entry.official),
+          );
+          if (!official) continue;
+
+          // Coincidencia exacta del nombre sin adorno.
+          if (key === baseKey) return { name: official, score: 1 };
+
+          // OCR suele leer el gato como 1-8 letras/símbolos pegados al final.
+          // Comparamos solo la longitud del nombre base, no el adorno.
+          if (key.length >= baseKey.length && key.length <= baseKey.length + 8) {
+            const prefix = key.slice(0, baseKey.length);
+            const dist = levenshtein(prefix, baseKey);
+            if (dist <= 1) {
+              return { name: official, score: dist === 0 ? 0.99 : 0.94 };
+            }
+          }
+
+          // Caso especial frecuente: Laz Ziyaa / Laz Ziyaaa.
+          if (
+            entry.base === "Laz Ziyaaa" &&
+            (key.startsWith(normName("Laz Ziyaa")) ||
+              key.startsWith(normName("Laz Ziyaaa")))
+          ) {
+            return { name: official, score: 0.97 };
+          }
+        }
+        return null;
+      }
+
       function matchMemberName(detected) {
         // Reaplicamos la limpieza aquí para todos los caminos del OCR, incluidos
         // los textos que no llegaron desde las líneas con coordenadas.
@@ -1338,6 +1379,13 @@
         for (const key of variants) {
           const exact = memberNames.find((name) => normName(name) === key);
           if (exact) return { name: exact, score: 1 };
+
+          // Antes de la coincidencia aproximada general, resolvemos los nombres
+          // que llevan el adorno ᓚᘏᗢ. Esto es especialmente importante para
+          // "Laz Ziyaaa", porque contiene un espacio y el OCR puede ensuciar
+          // únicamente el sufijo del gato.
+          const decorated = matchDecoratedMemberVariant(key);
+          if (decorated) return decorated;
 
           const aliasKey = ocrNameAliases.get(key);
           if (aliasKey) {
