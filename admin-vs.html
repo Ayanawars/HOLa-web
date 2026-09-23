@@ -716,8 +716,8 @@
           <b>🌍 Captura para nombre árabe</b><br />
           <div class="note">
             Selecciona solo la captura donde aparece el nombre árabe. Este modo
-            usa el OCR rápido normal y recupera al jugador árabe mediante la
-            fila de puntos. Se añade sin borrar los resultados del OCR normal.
+            hace una lectura específica en árabe y enlaza el nombre con los
+            puntos de su misma fila. Se añade sin borrar los resultados del OCR normal.
           </div>
           <input id="arabicImg" type="file" accept="image/*" multiple />
           <div class="note" id="arabicFile"></div>
@@ -2013,40 +2013,121 @@
         return extractAndMatchPlayers(parsed);
       }
 
-      async function readArabicScreenshot(selected) {
-        // OCR.Space puede rechazar "ara" según la clave/plan. Para este botón
-        // usamos el mismo OCR rápido que ya funciona y recuperamos la fila árabe
-        // a partir de sus puntos, que el OCR sí suele leer correctamente.
-        const cropped = await cropRankingForOcr(selected);
-        const parsed = await runOcrPass(cropped, "eng", "2");
+      function findArabicRowScore(parsed) {
+        let best = null;
 
-        const found = extractAndMatchPlayers(parsed);
+        for (const result of parsed || []) {
+          const overlay = result?.TextOverlay;
+          if (!overlay) continue;
 
-        // Buscamos el nombre árabe oficial en la lista de miembros.
-        const arabicMember =
-          memberNames.find((n) => /[\u0600-\u06FF]/.test(n)) || "مثالـي25";
-        if (found.some((x) => normName(x.name) === normName(arabicMember)))
-          return found;
+          const scoreCandidates = scoreCandidatesFromOverlay(overlay);
+          if (!scoreCandidates.length) continue;
 
-        // Recoger todas las cifras grandes, incluso cuando OCR.space las mezcla
-        // con símbolos o las separa en varias palabras de la fila.
-        const scoreCandidates = collectScoreCandidates(parsed);
+          for (const line of overlay.Lines || []) {
+            const text = String(line.LineText || "").trim();
+            if (!/[\u0600-\u06FF]/u.test(text)) continue;
 
-        // Preferimos un valor de puntos que no esté ya asignado a otro jugador.
-        const used = new Set(found.map((x) => Number(x.points)));
-        const unusedScores = scoreCandidates.filter((p) => !used.has(Number(p)));
-        let points =
-          unusedScores.length === 1
-            ? unusedScores[0]
-            : unusedScores.find((p) => !used.has(Number(p)));
-        if (points === undefined && scoreCandidates.length)
-          points = scoreCandidates[scoreCandidates.length - 1];
+            const top = Number(line.MinTop || 0);
+            const height = Number(line.MaxHeight || 0);
+            const center = top + height / 2;
+            const tolerance = Math.max(45, Math.min(100, height * 2.5));
 
-        if (points !== undefined && points > 0) {
-          found.push({ name: arabicMember, points });
+            for (const candidate of scoreCandidates) {
+              const scoreCenter = candidate.top + candidate.height / 2;
+              const dy = Math.abs(scoreCenter - center);
+              if (dy > tolerance) continue;
+
+              if (!best || dy < best.dy) {
+                best = {
+                  points: Number(candidate.value),
+                  dy,
+                  text,
+                };
+              }
+            }
+          }
         }
 
-        return found;
+        return best?.points > 0 ? best.points : null;
+      }
+
+      async function readArabicScreenshot(selected) {
+        const cropped = await cropRankingForOcr(selected);
+
+        // Primera pasada: OCR normal para recuperar los demás jugadores visibles.
+        const parsedEng = await runOcrPass(cropped, "eng", "2");
+        const found = extractAndMatchPlayers(parsedEng);
+
+        const arabicMember =
+          memberNames.find((n) => /[\u0600-\u06FF]/u.test(n)) || "مثالـي25";
+        const arabicKey = normName(arabicMember);
+
+        // Segunda pasada específica en árabe. OCR.space puede no admitirla según
+        // la clave/motor, por eso probamos dos motores y, si falla, seguimos con
+        // el OCR inglés como respaldo.
+        let parsedAra = [];
+        try {
+          parsedAra = await runOcrPass(cropped, "ara", "2");
+        } catch (error2) {
+          try {
+            parsedAra = await runOcrPass(cropped, "ara", "1");
+          } catch (error1) {
+            console.warn("OCR árabe no disponible; usando respaldo inglés.", error1);
+          }
+        }
+
+        // Método principal: localizar físicamente la línea que contiene árabe
+        // y tomar la puntuación de la misma fila en la columna derecha.
+        let arabicPoints =
+          findArabicRowScore(parsedAra) ||
+          findArabicRowScore(parsedEng);
+
+        // Si la pasada árabe sí reconoció al jugador por nombre, aceptamos su
+        // puntuación aunque el detector de línea no haya podido enlazarla.
+        if (!arabicPoints && parsedAra.length) {
+          const fromArabicPass = extractAndMatchPlayers(parsedAra).find(
+            (item) =>
+              normName(item.name) === arabicKey &&
+              Number(item.points) > 0,
+          );
+          if (fromArabicPass) arabicPoints = Number(fromArabicPass.points);
+        }
+
+        // Último respaldo: solo asignamos una cifra "sobrante" si existe
+        // exactamente UNA. Nunca elegimos una de varias al azar.
+        if (!arabicPoints) {
+          const used = new Set(
+            found
+              .filter((item) => normName(item.name) !== arabicKey)
+              .map((item) => Number(item.points)),
+          );
+          const candidates = [
+            ...new Set([
+              ...collectScoreCandidates(parsedEng),
+              ...collectScoreCandidates(parsedAra),
+            ]),
+          ].filter((value) => !used.has(Number(value)));
+
+          if (candidates.length === 1) {
+            arabicPoints = Number(candidates[0]);
+          }
+        }
+
+        // Quitamos cualquier lectura previa del árabe y la sustituimos solo
+        // cuando tenemos una puntuación fiable.
+        const withoutArabic = found.filter(
+          (item) => normName(item.name) !== arabicKey,
+        );
+
+        if (arabicPoints && arabicPoints > 0) {
+          withoutArabic.push({
+            name: arabicMember,
+            points: arabicPoints,
+            score: 1,
+          });
+        }
+
+        return withoutArabic;
       }
 
       function extractAndMatchPlayers(parsed) {
