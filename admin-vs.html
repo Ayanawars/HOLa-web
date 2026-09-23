@@ -1962,6 +1962,216 @@
         );
       }
 
+      async function cropPointsForOcr(selected) {
+        const source = await new Promise((resolve, reject) => {
+          const image = new Image();
+          const url = URL.createObjectURL(selected);
+          image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+          };
+          image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("No se pudo abrir la captura."));
+          };
+          image.src = url;
+        });
+
+        const width = source.naturalWidth || source.width;
+        const height = source.naturalHeight || source.height;
+
+        // Solo la columna derecha del ranking, donde aparecen los puntos.
+        // Al eliminar nombres, puestos y avatares evitamos que números de los
+        // nicks (ENIGMA31415, N6C6R6, etc.) contaminen la puntuación.
+        const left = Math.round(width * 0.68);
+        const right = Math.round(width * 0.995);
+        const cropWidth = Math.max(1, right - left);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = cropWidth;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+        ctx.drawImage(
+          source,
+          left,
+          0,
+          cropWidth,
+          height,
+          0,
+          0,
+          cropWidth,
+          height,
+        );
+
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/jpeg", 0.98),
+        );
+        if (!blob) throw new Error("No se pudo preparar la columna de puntos.");
+
+        return new File(
+          [blob],
+          selected.name.replace(/\.[^.]+$/, "_points.jpg"),
+          { type: "image/jpeg" },
+        );
+      }
+
+      function numericRowsFromPointsOverlay(overlay) {
+        const words = [];
+
+        for (const line of overlay?.Lines || []) {
+          for (const word of line.Words || []) {
+            const text = String(word.WordText || "").trim();
+            if (!text || !/\d/.test(text) || /[\p{L}]/u.test(text)) continue;
+
+            words.push({
+              text,
+              left: Number(word.Left || 0),
+              top: Number(word.Top ?? line.MinTop ?? 0),
+              width: Number(word.Width || 0),
+              height: Number(word.Height ?? line.MaxHeight ?? 0),
+            });
+          }
+        }
+
+        words.sort(
+          (a, b) =>
+            a.top + a.height / 2 - (b.top + b.height / 2) ||
+            a.left - b.left,
+        );
+
+        const rows = [];
+        for (const word of words) {
+          const center = word.top + word.height / 2;
+          let row = rows.find(
+            (candidate) =>
+              Math.abs(candidate.center - center) <=
+              Math.max(18, Math.min(36, word.height * 1.4)),
+          );
+
+          if (!row) {
+            row = { center, words: [] };
+            rows.push(row);
+          }
+
+          row.words.push(word);
+          row.center =
+            row.words.reduce(
+              (sum, item) => sum + item.top + item.height / 2,
+              0,
+            ) / row.words.length;
+        }
+
+        const out = [];
+        for (const row of rows) {
+          const rowWords = row.words.sort((a, b) => a.left - b.left);
+          const digits = rowWords
+            .map((word) => word.text)
+            .join("")
+            .replace(/\D/g, "");
+
+          if (digits.length < 5) continue;
+
+          const value = Number(digits);
+          if (!Number.isFinite(value) || value < 0) continue;
+
+          out.push({
+            value,
+            top: Math.min(...rowWords.map((word) => word.top)),
+            height: Math.max(...rowWords.map((word) => word.height)),
+            center: row.center,
+          });
+        }
+
+        return out.sort((a, b) => a.center - b.center);
+      }
+
+      function memberRowsFromOverlay(overlay) {
+        const out = [];
+        const seen = new Set();
+
+        for (const line of overlay?.Lines || []) {
+          let text = cleanName(String(line.LineText || ""));
+
+          text = text
+            .replace(
+              /\s*\[?h[o0]l[a4]\]?\s*heroes\s+of\s+last\s+area.*$/iu,
+              "",
+            )
+            .replace(/\s*heroes\s+of\s+last\s+area.*$/iu, "")
+            .trim();
+
+          if (!text || isBadName(text)) continue;
+
+          const match = matchMemberName(text);
+          if (!match) continue;
+
+          const key = normName(match.name);
+          const top = Number(line.MinTop || 0);
+          const height = Number(line.MaxHeight || 0);
+          const center = top + height / 2;
+
+          // Una misma fila puede salir duplicada en el overlay.
+          const dedupe = key + "|" + Math.round(center / 12);
+          if (seen.has(dedupe)) continue;
+          seen.add(dedupe);
+
+          out.push({
+            name: match.name,
+            top,
+            height,
+            center,
+            score: match.score,
+          });
+        }
+
+        return out.sort((a, b) => a.center - b.center);
+      }
+
+      function pairMemberRowsWithPoints(memberRows, pointRows) {
+        const found = [];
+        const usedPointIndexes = new Set();
+
+        for (const member of memberRows) {
+          let bestIndex = -1;
+          let bestDistance = Infinity;
+
+          for (let i = 0; i < pointRows.length; i++) {
+            if (usedPointIndexes.has(i)) continue;
+
+            const distance = Math.abs(pointRows[i].center - member.center);
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              bestIndex = i;
+            }
+          }
+
+          // Las dos pasadas conservan exactamente la misma altura de imagen,
+          // por lo que la fila correcta debe quedar muy cerca en vertical.
+          const tolerance = Math.max(
+            55,
+            Math.min(115, Number(member.height || 0) * 3.2),
+          );
+
+          if (bestIndex >= 0 && bestDistance <= tolerance) {
+            usedPointIndexes.add(bestIndex);
+            found.push({
+              name: member.name,
+              points: Number(pointRows[bestIndex].value),
+              top: member.top,
+              score: member.score,
+            });
+          }
+        }
+
+        const unmatchedPoints = pointRows
+          .filter((_, index) => !usedPointIndexes.has(index))
+          .map((row) => Number(row.value))
+          .filter((value) => Number.isFinite(value));
+
+        return { found, unmatchedPoints };
+      }
+
       async function runOcrPass(selected, language, engine = "2") {
         const fd = new FormData();
         fd.append("file", selected);
@@ -1992,10 +2202,45 @@
       }
 
       async function readScreenshot(selected) {
-        // OCR NORMAL: una sola petición rápida en inglés.
-        const cropped = await cropRankingForOcr(selected);
-        const parsed = await runOcrPass(cropped, "eng", "2");
-        return extractAndMatchPlayers(parsed);
+        // Pasada 1: nombres y estructura general.
+        const rankingCrop = await cropRankingForOcr(selected);
+        const parsedRanking = await runOcrPass(rankingCrop, "eng", "2");
+
+        // Pasada 2: exclusivamente la columna de puntos.
+        // Esta es la fuente prioritaria de las cifras.
+        const pointsCrop = await cropPointsForOcr(selected);
+        const parsedPoints = await runOcrPass(pointsCrop, "eng", "2");
+
+        const memberRows = [];
+        for (const result of parsedRanking) {
+          memberRows.push(...memberRowsFromOverlay(result.TextOverlay));
+        }
+
+        const pointRows = [];
+        for (const result of parsedPoints) {
+          pointRows.push(...numericRowsFromPointsOverlay(result.TextOverlay));
+        }
+
+        const paired = pairMemberRowsWithPoints(memberRows, pointRows);
+
+        // Conservamos el detector anterior solo como respaldo para nombres que
+        // la nueva asociación por filas no haya podido enlazar.
+        const fallback = extractAndMatchPlayers(parsedRanking);
+        const byName = new Map();
+
+        for (const item of paired.found) {
+          byName.set(normName(item.name), item);
+        }
+
+        for (const item of fallback) {
+          const key = normName(item.name);
+          if (!byName.has(key)) byName.set(key, item);
+        }
+
+        return {
+          found: [...byName.values()],
+          unmatchedPoints: paired.unmatchedPoints,
+        };
       }
 
       function findArabicRowScore(parsed) {
@@ -2313,6 +2558,7 @@
         }
         const allFound = [];
         const foundByName = new Map();
+        const unmatchedPointFrequency = new Map();
         let processed = 0;
         const errors = [];
 
@@ -2325,7 +2571,18 @@
             ocrStatus.textContent = `Leyendo ${processed} de ${selected.length}: ${file.name}`;
 
             try {
-              const found = await readScreenshot(file);
+              const result = await readScreenshot(file);
+              const found = result.found || [];
+
+              for (const value of result.unmatchedPoints || []) {
+                const numeric = Number(value);
+                if (!Number.isFinite(numeric)) continue;
+                unmatchedPointFrequency.set(
+                  numeric,
+                  (unmatchedPointFrequency.get(numeric) || 0) + 1,
+                );
+              }
+
               for (const x of found) {
                 const key = normName(x.name);
                 const prev = foundByName.get(key);
@@ -2344,43 +2601,53 @@
             }
           }
 
-          // Si falta el único miembro árabe, no dependemos de leer sus letras:
-          // buscamos la única puntuación de la columna derecha que aún no está
-          // asignada a ninguno de los otros jugadores detectados.
+          // Si solo falta el miembro árabe, usamos la fila de puntos que no
+          // quedó emparejada con ningún nombre. Ya no necesitamos leer árabe.
           const arabicMember = memberNames.find((name) =>
             /[\u0600-\u06FF]/u.test(name),
           );
           const arabicKey = arabicMember ? normName(arabicMember) : "";
 
           if (arabicMember && !foundByName.has(arabicKey)) {
-            const recoveredArabic = await recoverArabicFromUnassignedScore(
-              selected,
-              foundByName,
+            const usedScores = new Set(
+              [...foundByName.values()].map((item) => Number(item.points)),
             );
 
-            if (recoveredArabic) {
-              foundByName.set(arabicKey, recoveredArabic);
-            } else {
-              // Respaldo final: intentamos localizar físicamente la fila árabe.
-              for (let i = 0; i < selected.length; i++) {
-                try {
-                  const arabicResults = await readArabicScreenshot(selected[i]);
-                  const arabicResult = arabicResults.find(
-                    (item) =>
-                      normName(item.name) === arabicKey &&
-                      Number(item.points) > 0,
-                  );
-                  if (arabicResult) {
-                    foundByName.set(arabicKey, {
-                      ...arabicResult,
-                      name: arabicMember,
-                    });
-                    break;
-                  }
-                } catch (error) {
-                  console.warn("Respaldo OCR árabe falló:", error);
-                }
-              }
+            const candidates = [...unmatchedPointFrequency.entries()]
+              .map(([value, count]) => ({
+                value: Number(value),
+                count: Number(count),
+              }))
+              .filter(
+                (item) =>
+                  Number.isFinite(item.value) &&
+                  item.value >= 0 &&
+                  !usedScores.has(item.value),
+              )
+              .sort(
+                (a, b) =>
+                  b.count - a.count ||
+                  b.value - a.value,
+              );
+
+            // Cuando las capturas se solapan, la fila árabe suele aparecer más
+            // de una vez. Si hay una candidata claramente dominante, la usamos.
+            let chosen = null;
+            if (candidates.length === 1) {
+              chosen = candidates[0];
+            } else if (
+              candidates.length > 1 &&
+              candidates[0].count > candidates[1].count
+            ) {
+              chosen = candidates[0];
+            }
+
+            if (chosen) {
+              foundByName.set(arabicKey, {
+                name: arabicMember,
+                points: chosen.value,
+                score: 1,
+              });
             }
           }
 
