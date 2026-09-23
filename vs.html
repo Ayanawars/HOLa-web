@@ -721,6 +721,19 @@
       .week-current b {
         color: var(--t);
       }
+      .week-current {
+        flex-wrap: wrap;
+      }
+      .week-type-public {
+        flex-basis: 100%;
+        display: block;
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        color: #ffd166;
+        text-transform: uppercase;
+      }
       .week-arrow {
         width: 46px;
         height: 46px;
@@ -1054,6 +1067,7 @@
         </button>
         <div class="week-current">
           <span>📅</span><b id="weekRange">Semana actual</b>
+          <small id="weekTypePublic" class="week-type-public">SEMANA PUSH</small>
         </div>
         <button
           type="button"
@@ -1467,6 +1481,13 @@
         const pushCount = scores.filter((x) => x.week_type === "push").length;
         const saveCount = scores.filter((x) => x.week_type === "save").length;
         weekType = pushCount >= saveCount ? "push" : "save";
+
+        const publicWeekType = document.getElementById("weekTypePublic");
+        if (publicWeekType) {
+          publicWeekType.textContent =
+            weekType === "push" ? "🚀 SEMANA PUSH" : "🛡️ SEMANA SAVE";
+        }
+
         buttons();
         render();
       }
