@@ -1745,6 +1745,14 @@
             );
           }
 
+          // Presentamos el ranking tal como se ve en el juego: más puntos primero.
+          allFound.sort(
+            (a, b) =>
+              Number(b.points || 0) - Number(a.points || 0) ||
+              String(a.name).localeCompare(String(b.name), "es", {
+                sensitivity: "base",
+              }),
+          );
           allFound.forEach((x) => add(x.name, x.points));
 
           const zeroPlayers = allFound.filter((x) => Number(x.points) === 0);
