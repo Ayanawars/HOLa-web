@@ -1,0 +1,1767 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>VS - HOLa</title>
+    <style>
+      :root {
+        --bg: #07111e;
+        --p: #101d2c;
+        --p2: #0c1724;
+        --l: #31465d;
+        --t: #eef5ff;
+        --m: #9fb0c4;
+        --b: #25b9ff;
+        --g: #18b978;
+        --r: #e05263;
+        --o: #e4b548;
+        --v: #8c68ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #06111d, #0a1420);
+        color: var(--t);
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+      }
+      .head {
+        padding: 28px 5% 34px;
+        border-bottom: 1px solid #263b51;
+        background: #0b1725;
+      }
+      .headin,
+      .wrap {
+        max-width: 1200px;
+        margin: auto;
+      }
+      .headin {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      .logo {
+        font-size: 36px;
+        font-weight: 900;
+        line-height: 1;
+        text-align: center;
+      }
+      .title {
+        border-left: 1px solid #31465d;
+        padding-left: 20px;
+        flex: 1;
+        align-self: flex-start;
+      }
+      .title h1 {
+        margin: 0;
+        line-height: 1;
+      }
+      .title p {
+        margin: 7px 0 0;
+        color: var(--m);
+        font-size: 13px;
+      }
+      .btn {
+        background: #102033;
+        color: white;
+        border: 1px solid #3a526a;
+        border-radius: 11px;
+        padding: 11px 14px;
+        text-decoration: none;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .wrap {
+        padding: 20px 20px 95px;
+      }
+      .week {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 12px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      .week b {
+        color: var(--t);
+      }
+      .days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .day,
+      .card,
+      .box,
+      .stats-launch {
+        background: var(--p);
+        border: 1px solid var(--l);
+        border-radius: 15px;
+      }
+      .day {
+        padding: 12px 6px;
+        color: var(--m);
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .day.active {
+        background: #168dca;
+        color: white;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .card {
+        padding: 17px;
+        border-left: 5px solid var(--b);
+      }
+      .card:nth-child(2) {
+        border-left-color: var(--g);
+      }
+      .card:nth-child(3) {
+        border-left-color: var(--o);
+      }
+      .card:nth-child(4) {
+        border-left-color: var(--v);
+      }
+      .card span {
+        font-size: 10px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      .card b {
+        display: block;
+        font-size: 30px;
+        margin-top: 7px;
+      }
+      .card small {
+        color: var(--m);
+      }
+      h2 {
+        font-size: 21px;
+        margin: 24px 0 10px;
+      }
+      .box {
+        overflow: hidden;
+      }
+      .rh,
+      .rr {
+        display: grid;
+        grid-template-columns: 65px 1fr 140px;
+        gap: 10px;
+        padding: 13px 16px;
+        align-items: center;
+      }
+      .rh {
+        background: #14263a;
+        color: var(--m);
+        font-size: 10px;
+        font-weight: 900;
+      }
+      .rr {
+        border-top: 1px solid #263b51;
+      }
+      .rr b:last-child {
+        text-align: right;
+        color: #66d4ff;
+      }
+      .empty {
+        padding: 40px;
+        text-align: center;
+        color: var(--m);
+      }
+      .parts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .part {
+        padding: 16px;
+      }
+      .part b {
+        font-size: 28px;
+        display: block;
+      }
+      .part span {
+        font-size: 10px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      summary {
+        margin-top: 8px;
+        color: var(--b);
+        cursor: pointer;
+      }
+      .names {
+        font-size: 12px;
+        color: #c9d6e4;
+        line-height: 1.6;
+      }
+      .stats-launch {
+        margin-top: 22px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        background: linear-gradient(135deg, #12283a, #101d2c);
+        cursor: pointer;
+      }
+      .stats-launch h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .stats-launch p {
+        margin: 6px 0 0;
+        color: var(--m);
+        font-size: 12px;
+      }
+      .stats-launch .open {
+        white-space: nowrap;
+        background: #168dca;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: #fff;
+        font-weight: 900;
+      }
+      .stats-admin-row {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #263b51;
+      }
+      .stats-admin-gear {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #102033;
+        border: 1px solid #3a526a;
+        color: #fff;
+        text-decoration: none;
+        font-size: 25px;
+        box-shadow: 0 8px 24px #0008;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: #000b;
+        display: none;
+        z-index: 30;
+        padding: 18px;
+        overflow: auto;
+      }
+      .modal.show {
+        display: block;
+      }
+      .modal-box {
+        width: min(1100px, 96vw);
+        margin: 24px auto;
+        background: linear-gradient(180deg, #0c1523, #070d17);
+        border: 1px solid #31465d;
+        border-radius: 24px;
+        padding: 18px;
+      }
+      .modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+      }
+      .modal h3 {
+        margin: 0;
+        font-size: 23px;
+      }
+      .modal p {
+        color: var(--m);
+      }
+      .close {
+        background: #415165;
+        border: 0;
+        color: #fff;
+        border-radius: 11px;
+        padding: 11px 18px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 14px 0;
+      }
+      .tab {
+        border: 1px solid #2b3d5c;
+        background: #111c2d;
+        color: #cbd8ed;
+        border-radius: 12px;
+        padding: 10px 13px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .tab.active {
+        background: linear-gradient(135deg, #6f4cff, #3486ff);
+        border-color: #7b8fff;
+        color: #fff;
+      }
+      .stats-content {
+        overflow: auto;
+        max-height: 70vh;
+      }
+      .hero {
+        padding: 22px;
+        border: 1px solid #2b3d5c;
+        border-radius: 18px;
+        background: #111b2a;
+        margin-bottom: 14px;
+      }
+      .kicker {
+        color: #25b9ff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .big-number {
+        font-size: 36px;
+        font-weight: 900;
+        margin: 10px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .s-card {
+        background: #111c2d;
+        border: 1px solid #2b3d5c;
+        border-radius: 16px;
+        padding: 15px;
+      }
+      .s-card .label {
+        color: var(--m);
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .s-card .value {
+        font-size: 26px;
+        font-weight: 900;
+        margin-top: 7px;
+      }
+      .small {
+        color: var(--m);
+        font-size: 11px;
+      }
+      .section {
+        margin-top: 14px;
+        background: #0d1724;
+        border: 1px solid #263b51;
+        border-radius: 18px;
+        padding: 15px;
+      }
+      .section h4 {
+        margin: 0 0 12px;
+      }
+      .rank {
+        display: grid;
+        grid-template-columns: 60px 1fr 120px;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+        border-top: 1px solid #263b51;
+      }
+      .rank:first-child {
+        border-top: 0;
+      }
+      .rank .points {
+        text-align: right;
+        color: #e4c675;
+        font-weight: 900;
+      }
+      .badge {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 6px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .ok {
+        background: #133c34;
+        color: #91e9be;
+      }
+      .bad {
+        background: #3b2027;
+        color: #ffb1b8;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: 110px 1fr 95px;
+        gap: 10px;
+        align-items: center;
+        margin: 10px 0;
+      }
+      .bar {
+        height: 10px;
+        background: #1b2b3d;
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2bc3ff, #8b7cff);
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .table th,
+      .table td {
+        padding: 9px;
+        border-bottom: 1px solid #263b51;
+        text-align: right;
+      }
+      .table th:nth-child(2),
+      .table td:nth-child(2) {
+        text-align: left;
+      }
+      .status {
+        color: var(--m);
+        padding: 25px;
+        text-align: center;
+      }
+      @media (max-width: 750px) {
+        .stats,
+        .parts,
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .days {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .logo {
+          font-size: 27px;
+        }
+        .title h1 {
+          font-size: 20px;
+        }
+        .headin {
+          gap: 12px;
+          align-items: flex-start;
+        }
+        .rr,
+        .rh {
+          grid-template-columns: 48px 1fr 90px;
+          padding: 11px 9px;
+        }
+        .wrap {
+          padding: 14px 9px 95px;
+        }
+        .stats-launch {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .stats-launch .open {
+          width: 100%;
+        }
+        .rank {
+          grid-template-columns: 50px 1fr 90px;
+        }
+        .bar-row {
+          grid-template-columns: 80px 1fr 75px;
+        }
+        .modal {
+          padding: 8px;
+        }
+        .modal-box {
+          width: 100%;
+          margin: 0;
+          min-height: 100%;
+        }
+      }
+      @media (max-width: 500px) {
+        .parts,
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .card b {
+          font-size: 24px;
+        }
+        .table {
+          font-size: 11px;
+        }
+      }
+    </style>
+    <style id="translator-style">
+      .logo-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        min-width: 150px;
+      }
+      .translator-wrap {
+        position: relative;
+      }
+      .translator-btn {
+        background: #102033;
+        color: #fff;
+        border: 1px solid #3a526a;
+        border-radius: 11px;
+        padding: 9px 14px;
+        font-weight: 900;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .translator-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 170px;
+        padding: 6px;
+        background: #0c1724;
+        border: 1px solid #31465d;
+        border-radius: 12px;
+        z-index: 50;
+        box-shadow: 0 10px 25px #0008;
+      }
+      .translator-menu button {
+        display: block;
+        width: 100%;
+        background: transparent;
+        color: #eef5ff;
+        border: 0;
+        text-align: left;
+        padding: 9px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .translator-menu button:hover {
+        background: #14263a;
+      }
+      @media (max-width: 750px) {
+        .head {
+          padding: 22px 4% 28px;
+        }
+        .logo-area {
+          min-width: 110px;
+          gap: 13px;
+        }
+        .translator-btn {
+          font-size: 11px;
+          padding: 8px 10px;
+        }
+        .translator-menu {
+          min-width: 145px;
+        }
+      }
+    </style>
+    <style id="vs-admin-gear-style">
+      #vs-admin-gear {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: #102033;
+        border: 1px solid #3a526a;
+        color: #fff;
+        text-decoration: none;
+        font-size: 21px;
+        box-shadow: 0 7px 20px #0008;
+        z-index: 20;
+        opacity: 0.9;
+      }
+      #vs-admin-gear:hover {
+        opacity: 1;
+      }
+      @media (max-width: 500px) {
+        #vs-admin-gear {
+          right: 10px;
+          bottom: 10px;
+          width: 38px;
+          height: 38px;
+          font-size: 19px;
+        }
+      }
+    </style>
+    <style id="hola-language-style">
+      #hola-language-box {
+        position: absolute;
+        left: 0;
+        bottom: 8px;
+        z-index: 40;
+      }
+      #hola-language-toggle {
+        background: #102033;
+        color: #fff;
+        border: 1px solid #3a526a;
+        border-radius: 11px;
+        padding: 9px 14px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      #hola-language-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        background: #0c1724;
+        border: 1px solid #31465d;
+        border-radius: 12px;
+        padding: 5px;
+        min-width: 160px;
+        box-shadow: 0 10px 25px #0008;
+      }
+      #hola-language-menu button {
+        display: block;
+        width: 100%;
+        background: transparent;
+        color: #eef5ff;
+        border: 0;
+        text-align: left;
+        padding: 8px;
+        border-radius: 7px;
+      }
+    </style>
+    <style id="vs-header-responsive-final">
+      .headin {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        min-width: 0;
+      }
+      .logo-area {
+        flex: 0 0 170px;
+        min-width: 0;
+      }
+      .title {
+        min-width: 0;
+        flex: 1;
+      }
+      .title h1 {
+        white-space: nowrap;
+      }
+      @media (max-width: 750px) {
+        .head {
+          padding: 22px 4% 28px;
+        }
+        .headin {
+          gap: 12px;
+          align-items: flex-start;
+        }
+        .logo-area {
+          flex: 0 0 145px;
+        }
+        .logo {
+          font-size: 27px;
+        }
+        .translator-btn {
+          font-size: 11px;
+          padding: 8px 10px;
+        }
+        .title {
+          padding-left: 12px;
+        }
+        .title h1 {
+          font-size: 24px;
+          white-space: normal;
+          line-height: 1.05;
+        }
+        .title p {
+          font-size: 12px;
+          line-height: 1.2;
+        }
+      }
+      @media (max-width: 520px) {
+        .logo-area {
+          flex-basis: 125px;
+        }
+        .logo {
+          font-size: 24px;
+        }
+        .title h1 {
+          font-size: 20px;
+        }
+        .title p {
+          font-size: 11px;
+        }
+      }
+    </style>
+    <style id="supabase-week-selector-style">
+      .week {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 12px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      .week-current {
+        min-width: 280px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+      }
+      .week-current b {
+        color: var(--t);
+      }
+      .week-arrow {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        border: 1px solid #3a526a;
+        background: #102033;
+        color: #eaf5ff;
+        font-size: 32px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .week-arrow:hover {
+        background: #15324a;
+      }
+      .week-arrow:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      @media (max-width: 600px) {
+        .week-current {
+          min-width: 235px;
+        }
+        .week-arrow {
+          width: 42px;
+          height: 42px;
+        }
+      }
+    </style>
+    <style id="ranking-collapse-style">
+      .ranking-more {
+        border-top: 1px solid #263b50;
+      }
+      .ranking-more summary {
+        cursor: pointer;
+        list-style: none;
+        text-align: center;
+        padding: 14px 10px;
+        color: #8fd7ff;
+        font-weight: 900;
+      }
+      .ranking-more summary::-webkit-details-marker {
+        display: none;
+      }
+      .ranking-more summary:after {
+        content: " ▾";
+        font-size: 18px;
+      }
+      .ranking-more[open] summary:after {
+        content: " ▴";
+      }
+    </style>
+    <style id="vs-color-font-polish">
+      /* Visual polish based on the supplied reference: same clean Arial family,
+   stronger weight, and more distinct accent colors. */
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .title,
+      .day,
+      .card,
+      .stats-launch,
+      .rh,
+      .rr,
+      .btn,
+      .week,
+      .week-arrow,
+      .translator-btn,
+      .translator-menu button {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .title h1,
+      .card b,
+      .stats-launch h3 {
+        font-weight: 900;
+        letter-spacing: -0.25px;
+      }
+
+      /* More colorful statistic cards while preserving the existing layout. */
+      .card {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(145deg, #12263a, #0e1c2b);
+      }
+      .card:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        background: linear-gradient(
+          120deg,
+          rgba(37, 185, 255, 0.07),
+          transparent 55%
+        );
+      }
+      .card:nth-child(2) {
+        background: linear-gradient(145deg, #102b28, #0e1c2b);
+      }
+      .card:nth-child(3) {
+        background: linear-gradient(145deg, #302719, #0e1c2b);
+      }
+      .card:nth-child(4) {
+        background: linear-gradient(145deg, #241c39, #0e1c2b);
+      }
+      .card:nth-child(1) b {
+        color: #59cfff;
+      }
+      .card:nth-child(2) b {
+        color: #48e09c;
+      }
+      .card:nth-child(3) b {
+        color: #ffd166;
+      }
+      .card:nth-child(4) b {
+        color: #a987ff;
+      }
+
+      /* Week/day selector gets the brighter reference-style blue. */
+      .day {
+        transition:
+          transform 0.12s ease,
+          background 0.12s ease,
+          border-color 0.12s ease;
+      }
+      .day.active {
+        background: linear-gradient(135deg, #18a7e8, #168dca);
+        border-color: #39c2ff;
+        box-shadow: 0 4px 14px rgba(24, 167, 232, 0.22);
+      }
+      .day:hover {
+        border-color: #3d9ac6;
+      }
+
+      /* Section titles and ranking have clearer visual hierarchy. */
+      h2 {
+        color: #eef5ff;
+        text-shadow: 0 1px 8px rgba(37, 185, 255, 0.08);
+      }
+      .rh {
+        background: linear-gradient(90deg, #16324b, #14263a);
+        color: #b7c9dd;
+      }
+      .rr:nth-child(-n + 3) {
+        background: linear-gradient(
+          90deg,
+          rgba(37, 185, 255, 0.08),
+          transparent
+        );
+      }
+      .rr b:first-child {
+        color: #d8e8f8;
+      }
+      .rr b:last-child {
+        color: #66d4ff;
+      }
+
+      /* Main weekly-statistics panel gets the richer reference treatment. */
+      .stats-launch {
+        border-color: #2d5873;
+        background: linear-gradient(135deg, #12334a, #101d2c);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+      }
+      .stats-launch h3 {
+        color: #f1f7ff;
+      }
+      .stats-launch .open {
+        background: linear-gradient(135deg, #19a8e8, #138fce);
+        box-shadow: 0 5px 16px rgba(19, 143, 206, 0.18);
+      }
+
+      /* Keep the language control consistent with the reference palette. */
+      .translator-btn {
+        background: linear-gradient(135deg, #112a3e, #102033);
+        border-color: #416078;
+      }
+    </style>
+    <style id="vs-less-bold">
+      /* Reduce the heavy bold appearance while keeping hierarchy. */
+      body {
+        font-weight: 400;
+      }
+      .title h1,
+      h1,
+      h2,
+      h3,
+      .stats-launch h3 {
+        font-weight: 700;
+      }
+      .title p,
+      .card span,
+      .card small,
+      .stats-launch p {
+        font-weight: 400;
+      }
+      .day,
+      .btn,
+      .week,
+      .week-arrow,
+      .translator-btn,
+      .translator-menu button {
+        font-weight: 600;
+      }
+      .rh {
+        font-weight: 600;
+      }
+      .rr b {
+        font-weight: 600;
+      }
+      .card b {
+        font-weight: 700;
+      }
+      .stats-launch .open {
+        font-weight: 700;
+      }
+    </style>
+    <style id="vs-desert-theme">
+      :root{--sand:#f8efda;--paper:#fffaf0;--ink:#173f5c;--muted:#657888;--nile:#08a8c7;--nile-dark:#08779f;--gold:#dca926;--line:#e4c979;--danger:#b64c4f;--shadow:0 16px 38px rgba(72,51,17,.18)}
+      body{min-height:100vh;background:linear-gradient(180deg,rgba(246,225,171,.2),rgba(255,246,219,.94)),url('hola-s3-background-square.webp') center/cover fixed;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      .head{position:relative;overflow:visible;padding:0;border:0;background:linear-gradient(90deg,rgba(10,69,103,.96),rgba(16,135,165,.82)),url('hola-s3-header.png') center/cover}
+      .head:after{content:"";position:absolute;inset:auto 0 0;height:5px;background:linear-gradient(90deg,var(--nile),#f4d372,var(--nile));z-index:1}
+      .headin{min-height:116px;display:grid;grid-template-columns:58px 1fr 58px;gap:10px;align-items:center;max-width:1080px;padding:12px 18px;margin:auto}
+      .desert-back{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;text-decoration:none;color:#fff;background:rgba(4,41,66,.8);border:2px solid rgba(244,211,114,.85);font-size:28px;line-height:1;box-shadow:0 7px 20px rgba(0,0,0,.24)}
+      .logo-area{display:contents}.logo{display:none}.brand-logo{display:block;width:min(116px,34vw);max-height:44px;object-fit:contain;margin:0 auto 1px;filter:drop-shadow(0 4px 5px rgba(0,0,0,.42))}
+      .title{grid-column:2;grid-row:1;border:0;padding:0;text-align:center;align-self:center;color:#fff}.title h1{margin:0;color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(24px,5vw,38px);letter-spacing:.06em;text-shadow:0 2px 0 #31566c,0 5px 13px rgba(0,0,0,.38)}.title p{margin:4px 0 0;color:#fff4d3;font-size:12px;font-weight:700;letter-spacing:.035em}
+      .translator-wrap{grid-column:3;grid-row:1;position:relative;z-index:30;justify-self:end}.translator-btn{width:48px;height:48px;padding:0;border-radius:50%;border:2px solid #f5d777;background:#0a5878;color:transparent;font-size:0;box-shadow:0 6px 16px rgba(0,0,0,.23)}.translator-btn:after{content:"🌐";color:#fff;font-size:23px}.translator-menu{right:0;top:56px;min-width:178px;border:1px solid var(--line);border-radius:16px;background:#fffdf5;box-shadow:var(--shadow);padding:7px}.translator-menu button{color:var(--ink);border-radius:10px}.translator-menu button:hover{background:#eaf8fb}
+      .wrap{max-width:1080px;padding:25px 18px 82px}.week{margin:0 0 16px;gap:12px;color:var(--ink)}.week-current{background:rgba(255,253,245,.93);border:1px solid var(--line);border-radius:999px;padding:12px 18px;box-shadow:0 6px 16px rgba(101,71,16,.11)}.week-arrow{background:var(--nile-dark);border:2px solid #f2d47b;color:#fff;box-shadow:0 5px 12px rgba(4,73,98,.24)}
+      .days{gap:8px}.day{background:rgba(255,253,245,.9);border:1px solid var(--line);color:#496271;box-shadow:0 4px 10px rgba(101,71,16,.08)}.day.active{background:linear-gradient(135deg,#0faec5,#08779f);color:#fff;border-color:#e9bf50;box-shadow:0 7px 15px rgba(4,115,145,.26)}
+      .stats{gap:12px;margin-top:18px}.card,.box,.stats-launch{background:rgba(255,251,239,.95);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}.card{border-left:6px solid var(--nile);padding:17px}.card:nth-child(2){border-left-color:#3da76a}.card:nth-child(3){border-left-color:var(--gold)}.card:nth-child(4){border-left-color:#9b7bd1}.card span,.card small,.rh,.names{color:var(--muted)}.card b{color:var(--ink)}
+      h2{margin:30px 0 12px;color:var(--ink);font-family:Georgia,"Times New Roman",serif;letter-spacing:.055em;font-size:clamp(20px,4vw,27px)}.stats-launch{background:linear-gradient(120deg,#e8fbfb,#fff7df);padding:19px;border-left:6px solid var(--gold)}.stats-launch h3{color:var(--ink);font-family:Georgia,"Times New Roman",serif}.stats-launch p{color:var(--muted)}.stats-launch .open{background:linear-gradient(135deg,#e8bd42,#c88b16);box-shadow:0 6px 14px rgba(159,105,7,.24);border:1px solid #f7df88}
+      .box{overflow:hidden}.rh{background:linear-gradient(90deg,#0a7897,#0a5276);color:#fff8dc;padding:13px 16px}.rr{border-top:1px solid #ebddba}.rr:nth-child(odd){background:#fffaf0}.rr b:last-child{color:var(--nile-dark)}.empty{color:var(--muted)}.part{background:rgba(255,251,239,.96)}.part b{color:var(--nile-dark)}summary{color:var(--nile-dark)}
+      .modal{background:rgba(10,47,60,.56);padding:16px}.modal-box{background:#fffaf0;border:1px solid var(--line);box-shadow:0 20px 60px rgba(24,42,41,.35);color:var(--ink)}.modal-head{background:linear-gradient(110deg,#0d6d8d,#09a8c0);color:#fffaf0}.modal-head p{color:#fff3ca}.close,.tab{border-color:var(--line);color:var(--ink);background:#fffdf6}.tab.active{background:var(--nile-dark);color:#fff}.stats-content .stat-card,.stats-content .compliance-card,.stats-content .daily-card{background:#fffdf6!important;border-color:var(--line)!important;color:var(--ink)!important}.stats-content h3,.stats-content h4{color:var(--ink)!important}.stats-admin-row{border-top-color:var(--line)}.stats-admin-gear{background:var(--gold);color:#fff}
+      @media(max-width:700px){.headin{min-height:105px;padding:10px 14px;grid-template-columns:50px 1fr 50px}.desert-back,.translator-btn{width:43px;height:43px}.brand-logo{width:105px;max-height:59px}.title h1{font-size:24px}.title p{font-size:10px}.stats{grid-template-columns:repeat(2,1fr)}.parts{grid-template-columns:repeat(2,1fr)}.card b{font-size:23px}.days{grid-template-columns:repeat(4,1fr)}.day:last-child{grid-column:2 / span 2}.rh,.rr{grid-template-columns:45px 1fr 92px;padding:12px}.stats-launch{align-items:flex-start;flex-direction:column}.stats-launch .open{width:100%}}
+    </style>
+  </head>
+  <body>
+    <header class="head">
+      <div class="headin">
+        <a class="desert-back" href="index.html" aria-label="Volver al inicio">‹</a>
+        <div class="logo-area">
+          <div class="translator-wrap">
+            <button class="translator-btn" id="translatorBtn" type="button">
+              🇪🇸 Español ▾
+            </button>
+            <div class="translator-menu" id="translatorMenu" hidden>
+              <button type="button" data-lang="es">🇪🇸 Español</button>
+              <button type="button" data-lang="en">🇬🇧 English</button>
+              <button type="button" data-lang="de">🇩🇪 Deutsch</button>
+              <button type="button" data-lang="fr">🇫🇷 Français</button>
+              <button type="button" data-lang="ro">🇷🇴 Română</button>
+              <button type="button" data-lang="pt">🇵🇹 Português</button>
+              <button type="button" data-lang="uk">🇺🇦 Українська</button>
+            </div>
+          </div>
+        </div>
+        <div class="title">
+          <img class="brand-logo" src="hola-s3-logo.webp" alt="HOLa" />
+          <h1>VS COMMAND</h1>
+          <p>Rendimiento y participación de la alianza</p>
+        </div>
+      </div>
+    </header>
+    <main class="wrap">
+      <div class="week" id="weekSelector">
+        <button
+          type="button"
+          class="week-arrow"
+          id="prevWeek"
+          aria-label="Semana anterior"
+        >
+          ‹
+        </button>
+        <div class="week-current">
+          <span>📅</span><b id="weekRange">Semana actual</b>
+        </div>
+        <button
+          type="button"
+          class="week-arrow"
+          id="nextWeek"
+          aria-label="Semana siguiente"
+        >
+          ›
+        </button>
+      </div>
+      <div class="days" id="days"></div>
+      <section class="stats">
+        <article class="card">
+          <span>PUNTOS TOTALES</span><b id="total">—</b
+          ><small>selección actual</small>
+        </article>
+        <article class="card">
+          <span>PARTICIPANTES</span><b id="participants">—</b
+          ><small>con puntos</small>
+        </article>
+        <article class="card">
+          <span>MEJOR JUGADOR</span><b id="best">—</b
+          ><small id="bestp">sin datos</small>
+        </article>
+        <article class="card">
+          <span>MEDIA</span><b id="avg">—</b><small>por participante</small>
+        </article>
+      </section>
+      <section class="stats-launch" id="openStats">
+        <div>
+          <h3>📈 ESTADÍSTICAS DE LA SEMANA</h3>
+          <p>
+            Ranking, cumplimiento diario, participación y desglose completo.
+          </p>
+        </div>
+        <button class="open" type="button">ABRIR ESTADÍSTICAS →</button>
+      </section>
+      <h2>▌ RANKING</h2>
+      <section class="box">
+        <div class="rh">
+          <span>RANK</span><span>JUGADOR</span><span>PUNTOS</span>
+        </div>
+        <div id="ranking"><div class="empty">Cargando...</div></div>
+      </section>
+      <h2>▌ PARTICIPACIÓN</h2>
+      <section class="parts">
+        <article class="box part">
+          <b id="six">—</b><span>6 DÍAS</span>
+          <details>
+            <summary>Ver nombres</summary>
+            <div class="names" id="sixN"></div>
+          </details>
+        </article>
+        <article class="box part">
+          <b id="five">—</b><span>4-5 DÍAS</span>
+          <details>
+            <summary>Ver nombres</summary>
+            <div class="names" id="fiveN"></div>
+          </details>
+        </article>
+        <article class="box part">
+          <b id="few">—</b><span>1-3 DÍAS</span>
+          <details>
+            <summary>Ver nombres</summary>
+            <div class="names" id="fewN"></div>
+          </details>
+        </article>
+        <article class="box part">
+          <b id="none">—</b><span>SIN PARTICIPACIÓN</span>
+          <details>
+            <summary>Ver nombres</summary>
+            <div class="names" id="noneN"></div>
+          </details>
+        </article>
+      </section>
+    </main>
+    <div class="modal" id="statsModal">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <h3>📈 ESTADÍSTICAS DE LA SEMANA</h3>
+            <p id="statsWeekTitle">Cargando...</p>
+          </div>
+          <button class="close" id="closeStats">Cerrar</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="summary">📊 Resumen</button
+          ><button class="tab" data-tab="ranking">🏆 Ranking</button
+          ><button class="tab" data-tab="compliance">🎯 Cumplimiento</button
+          ><button class="tab" data-tab="noncompliance">
+            ⚠️ Incumplimientos</button
+          ><button class="tab" data-tab="daily">📅 Por día</button
+          ><button class="tab" data-tab="alliance">🔥 Alianza</button>
+        </div>
+        <div class="stats-content" id="statsContent"></div>
+        <div class="stats-admin-row">
+          <a
+            class="stats-admin-gear"
+            href="admin-vs.html"
+            aria-label="Administración VS"
+            >⚙</a
+          >
+        </div>
+      </div>
+    </div>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+      const sb = createClient(
+        "https://ovybstpiomphrouvqxmf.supabase.co",
+        "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV",
+      );
+      let scores = [],
+        players = [],
+        sel = "TOTAL",
+        weekType = "push",
+        currentTab = "summary",
+        selectedWeek = monday();
+      const dayNames = [
+        "",
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+      ];
+      const f = (n) => {
+        n = Number(n) || 0;
+        return n >= 1e9
+          ? (n / 1e9).toFixed(2) + "B"
+          : n >= 1e6
+            ? (n / 1e6).toFixed(2).replace(/\.00$/, "") + "M"
+            : n.toLocaleString("es-ES");
+      };
+      const esc = (s) =>
+        String(s || "").replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      const key = (s) =>
+        String(s || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, "");
+      function monday(d = new Date()) {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        const off = (x.getDay() + 6) % 7;
+        x.setDate(x.getDate() - off);
+        return x;
+      }
+      selectedWeek = monday();
+      function iso(d) {
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 10);
+      }
+      function rangeText() {
+        const m = selectedWeek,
+          s = new Date(m);
+        s.setDate(m.getDate() + 6);
+        return `${m.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })} - ${s.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}`;
+      }
+      function buttons() {
+        const n = document.getElementById("nextWeek");
+        if (n) n.disabled = selectedWeek >= monday();
+        document.getElementById("days").innerHTML = ["TOTAL", 1, 2, 3, 4, 5, 6]
+          .map(
+            (d) =>
+              `<button class="day ${sel === d ? "active" : ""}" data-day="${d}">${d === "TOTAL" ? "TOTAL" : dayNames[d]}</button>`,
+          )
+          .join("");
+        document.querySelectorAll(".day").forEach(
+          (b) =>
+            (b.onclick = () => {
+              sel = b.dataset.day === "TOTAL" ? "TOTAL" : +b.dataset.day;
+              buttons();
+              render();
+            }),
+        );
+      }
+      function buildRows() {
+        const map = new Map();
+        players.forEach((p) => {
+          const n = typeof p === "string" ? p : p.name || p.player_name || "";
+          if (n)
+            map.set(key(n), {
+              name: n,
+              daily: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+            });
+        });
+        scores
+          .filter((x) => +x.day >= 1 && +x.day <= 6)
+          .forEach((x) => {
+            const k = key(x.player_name);
+            if (!map.has(k))
+              map.set(k, {
+                name: x.player_name,
+                daily: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+              });
+            map.get(k).daily[+x.day] = Number(x.points) || 0;
+          });
+        return [...map.values()]
+          .map((x) => ({
+            ...x,
+            total: Object.values(x.daily).reduce((a, b) => a + b, 0),
+            days: Object.values(x.daily).filter((v) => v > 0).length,
+          }))
+          .sort((a, b) => b.total - a.total);
+      }
+      function render() {
+        const rows = buildRows();
+        const active =
+          sel === "TOTAL"
+            ? rows
+            : rows
+                .map((x) => ({ ...x, total: x.daily[sel] || 0 }))
+                .filter((x) => x.total > 0);
+        const sum = active.reduce((a, x) => a + x.total, 0);
+        total.textContent = f(sum);
+        participants.textContent = active.filter((x) => x.total > 0).length;
+        best.textContent = active[0]?.name || "—";
+        bestp.textContent = active[0] ? f(active[0].total) : "sin datos";
+        avg.textContent = active.length ? f(sum / active.length) : "—";
+        ranking.innerHTML = active.length
+          ? (() => {
+              const row = (x, i) =>
+                `<div class="rr"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><b>${esc(x.name)}</b><b>${f(x.total)}</b></div>`;
+              const top = active.slice(0, 10).map(row).join("");
+              const rest =
+                active.length > 10
+                  ? `<details class="ranking-more"><summary>Ver más...</summary><div>${active
+                      .slice(10)
+                      .map((x, i) => row(x, i + 10))
+                      .join("")}</div></details>`
+                  : "";
+              return top + rest;
+            })()
+          : '<div class="empty">Todavía no hay puntuaciones.</div>';
+        const c = { six: [], five: [], few: [], none: [] };
+        rows.forEach((x) =>
+          c[
+            x.days === 6
+              ? "six"
+              : x.days >= 4
+                ? "five"
+                : x.days
+                  ? "few"
+                  : "none"
+          ].push(x.name),
+        );
+        for (const k of Object.keys(c)) {
+          document.getElementById(k).textContent = c[k].length;
+          document.getElementById(k + "N").textContent =
+            c[k].join(" · ") || "—";
+        }
+      }
+      function compliance(rows) {
+        return rows.map((x) => {
+          const failed = [1, 2, 3, 4, 5, 6].filter((d) => x.daily[d] < 7200000);
+          const p = x.total;
+          let ok,
+            delta = 0;
+          if (weekType === "push") {
+            ok = failed.length === 0;
+            delta = failed.length;
+          } else {
+            ok = p === 7200000;
+            delta = Math.abs(p - 7200000);
+          }
+          return { ...x, ok, failed, delta };
+        });
+      }
+      function renderStats() {
+        const rows = buildRows(),
+          c = compliance(rows),
+          ok = c.filter((x) => x.ok).length,
+          fail = c.length - ok,
+          totalAlliance = rows.reduce((a, x) => a + x.total, 0),
+          max = Math.max(1, ...rows.map((x) => x.total)),
+          percent = rows.length ? Math.round((ok / rows.length) * 100) : 0;
+        const push = weekType === "push";
+        let html = "";
+        if (currentTab === "summary") {
+          html = `<div class="hero"><div class="kicker">${push ? "🚀 PUSH WEEK" : "🛡️ SAVE WEEK"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">${push ? "7,2M cada día" : "7,2M total semanal"}</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(rows[0]?.name || "—")}</div><div class="small">${rows[0] ? f(rows[0].total) : ""}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>${push ? "Cumplen los 6 días" : "Cumplen exactamente"}</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia</div></div>`;
+        }
+        if (currentTab === "ranking") {
+          html = `<div class="section"><h4>🏆 Ranking semanal — Total Supabase</h4>${rows.map((x, i) => `<div class="rank"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><div><b>${esc(x.name)}</b><div class="small">${x.days}/6 días con puntos</div></div><div class="points">${f(x.total)}</div></div>`).join("") || '<div class="status">Sin datos.</div>'}</div>`;
+        }
+        if (currentTab === "compliance") {
+          html = `<div class="section"><h4>🟢 Cumplimiento</h4>${
+            c
+              .filter((x) => x.ok)
+              .map(
+                (x, i) =>
+                  `<div class="rank"><b>#${i + 1}</b><div><b>${esc(x.name)}</b><div class="badge ok">${push ? "CUMPLE LOS 6 DÍAS" : "CUMPLE 7,2M"}</div></div><div class="points">${f(x.total)}</div></div>`,
+              )
+              .join("") ||
+            '<div class="status">Todavía no hay jugadores que cumplan.</div>'
+          }</div>`;
+        }
+        if (currentTab === "noncompliance") {
+          html = `<div class="section"><h4>🔴 Incumplimientos</h4>${
+            c
+              .filter((x) => !x.ok)
+              .map((x) => {
+                const msg = push
+                  ? `Faltan: ${x.failed.map((d) => dayNames[d]).join(", ")}`
+                  : x.total < 7200000
+                    ? `Faltan ${f(7200000 - x.total)}`
+                    : `Se pasa ${f(x.total - 7200000)}`;
+                return `<div class="rank"><b>⚠</b><div><b>${esc(x.name)}</b><div class="badge bad">${esc(msg)}</div></div><div class="points">${f(x.total)}</div></div>`;
+              })
+              .join("") || '<div class="status">No hay incumplimientos.</div>'
+          }</div>`;
+        }
+        if (currentTab === "daily") {
+          html = `<div class="section"><h4>📅 Desglose diario</h4><div style="overflow:auto"><table class="table"><thead><tr><th>#</th><th>Jugador</th>${[1, 2, 3, 4, 5, 6].map((d) => `<th>${dayNames[d].slice(0, 3)}</th>`).join("")}<th>Total</th></tr></thead><tbody>${rows.map((x, i) => `<tr><td>${i + 1}</td><td><b>${esc(x.name)}</b></td>${[1, 2, 3, 4, 5, 6].map((d) => `<td>${f(x.daily[d])}</td>`).join("")}<td><b>${f(x.total)}</b></td></tr>`).join("")}</tbody></table></div></div>`;
+        }
+        if (currentTab === "alliance") {
+          const dayTotals = [1, 2, 3, 4, 5, 6].map((d) => ({
+            d,
+            total: rows.reduce((a, x) => a + x.daily[d], 0),
+            participants: rows.filter((x) => x.daily[d] > 0).length,
+          }));
+          const mx = Math.max(1, ...dayTotals.map((x) => x.total));
+          html = `<div class="hero"><div class="kicker">🔥 ALIANZA</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE DE TODOS LOS MIEMBROS</div></div><div class="section"><h4>🔥 Puntos por día</h4>${dayTotals.map((x) => `<div class="bar-row"><b>${dayNames[x.d]}</b><div class="bar"><div class="fill" style="width:${Math.round((x.total / mx) * 100)}%"></div></div><div><b>${f(x.total)}</b><div class="small">${x.participants} 👥</div></div></div>`).join("")}</div><div class="grid"><div class="s-card"><div class="label">TOTAL SUPABASE</div><div class="value">${f(totalAlliance)}</div></div><div class="s-card"><div class="label">MIEMBROS CON DATOS</div><div class="value">${rows.filter((x) => x.total > 0).length}</div></div></div>`;
+        }
+        document.getElementById("statsContent").innerHTML = html;
+      }
+      function openModal() {
+        currentTab = "summary";
+        document.getElementById("statsWeekTitle").textContent =
+          `Semana ${rangeText()} · ${weekType === "push" ? "🚀 Push Week" : "🛡️ Save Week"}`;
+        document.getElementById("statsModal").classList.add("show");
+        document
+          .querySelectorAll(".tab")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.tab === currentTab),
+          );
+        renderStats();
+      }
+      document.getElementById("openStats").onclick = openModal;
+      if (location.hash === "#estadisticas") setTimeout(openModal, 0);
+      document.getElementById("closeStats").onclick = () =>
+        document.getElementById("statsModal").classList.remove("show");
+      document.getElementById("statsModal").onclick = (e) => {
+        if (e.target.id === "statsModal")
+          document.getElementById("statsModal").classList.remove("show");
+      };
+      document.querySelectorAll(".tab").forEach(
+        (b) =>
+          (b.onclick = () => {
+            currentTab = b.dataset.tab;
+            document
+              .querySelectorAll(".tab")
+              .forEach((x) => x.classList.toggle("active", x === b));
+            renderStats();
+          }),
+      );
+      async function changeWeek(delta) {
+        selectedWeek = new Date(selectedWeek);
+        selectedWeek.setDate(selectedWeek.getDate() + delta * 7);
+        document.getElementById("weekRange").textContent =
+          `Semana ${rangeText()}`;
+        const p = document.getElementById("prevWeek"),
+          n = document.getElementById("nextWeek");
+        if (p) p.disabled = false;
+        if (n) n.disabled = selectedWeek > monday();
+        sel = "TOTAL";
+        await load();
+      }
+      document
+        .getElementById("prevWeek")
+        ?.addEventListener("click", () => changeWeek(-1));
+      document
+        .getElementById("nextWeek")
+        ?.addEventListener("click", () => changeWeek(1));
+      async function load() {
+        const vsDate = iso(selectedWeek);
+        document.getElementById("weekRange").textContent =
+          `Semana ${rangeText()}`;
+        let [a, b] = await Promise.all([
+          sb
+            .from("vs_scores")
+            .select("player_name,day,points,week_type,vs_date")
+            .eq("vs_date", vsDate)
+            .gte("day", 1)
+            .lte("day", 6),
+          sb.from("players").select("name"),
+        ]);
+        if (a.error) throw a.error;
+        if (b.error) console.warn(b.error);
+        scores = a.data || [];
+        players = b.data || [];
+        weekType = scores.find((x) => x.week_type)?.week_type || "push";
+        buttons();
+        render();
+      }
+      load().catch((e) => {
+        console.error(e);
+        buttons();
+        render();
+        document.getElementById("ranking").innerHTML =
+          '<div class="empty">No se pudieron cargar los datos de Supabase.</div>';
+      });
+    </script>
+    <a
+      id="vs-admin-gear"
+      href="admin-vs.html"
+      aria-label="Administración VS"
+      title="Administración VS"
+      >⚙</a
+    >
+    <script id="hola-translator-final">
+      (() => {
+        const T = {
+          en: {
+            "Semana actual": "Current week",
+            "PUNTOS TOTALES": "TOTAL POINTS",
+            "selección actual": "current selection",
+            PARTICIPANTES: "PARTICIPANTS",
+            "con puntos": "with points",
+            "MEJOR JUGADOR": "BEST PLAYER",
+            "sin datos": "no data",
+            MEDIA: "AVERAGE",
+            "por participante": "per participant",
+            "ESTADÍSTICAS DE LA SEMANA": "WEEK STATISTICS",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Ranking, daily compliance, participation and full breakdown.",
+            "ABRIR ESTADÍSTICAS →": "OPEN STATISTICS →",
+            RANKING: "RANKING",
+            RANK: "RANK",
+            JUGADOR: "PLAYER",
+            PUNTOS: "POINTS",
+            TOTAL: "TOTAL",
+            Lunes: "Monday",
+            Martes: "Tuesday",
+            Miércoles: "Wednesday",
+            Jueves: "Thursday",
+            Viernes: "Friday",
+            Sábado: "Saturday",
+            Resumen: "Summary",
+            Cumplimiento: "Compliance",
+            Incumplimientos: "Non-compliance",
+            "Por día": "By day",
+            Alianza: "Alliance",
+            Cerrar: "Close",
+            "Ver nombres": "View names",
+            "Todavía no hay puntuaciones.": "There are no scores yet.",
+          },
+          de: {
+            "Semana actual": "Aktuelle Woche",
+            "PUNTOS TOTALES": "GESAMTPUNKTE",
+            "selección actual": "aktuelle Auswahl",
+            PARTICIPANTES: "TEILNEHMER",
+            "con puntos": "mit Punkten",
+            "MEJOR JUGADOR": "BESTER SPIELER",
+            "sin datos": "keine Daten",
+            MEDIA: "DURCHSCHNITT",
+            "por participante": "pro Teilnehmer",
+            "ESTADÍSTICAS DE LA SEMANA": "WOCHENSTATISTIK",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Rangliste, tägliche Erfüllung, Teilnahme und vollständige Aufschlüsselung.",
+            "ABRIR ESTADÍSTICAS →": "STATISTIK ÖFFNEN →",
+            RANKING: "RANGLISTE",
+            RANK: "RANG",
+            JUGADOR: "SPIELER",
+            PUNTOS: "PUNKTE",
+            TOTAL: "GESAMT",
+            Lunes: "Montag",
+            Martes: "Dienstag",
+            Miércoles: "Mittwoch",
+            Jueves: "Donnerstag",
+            Viernes: "Freitag",
+            Sábado: "Samstag",
+            Resumen: "Übersicht",
+            Cumplimiento: "Erfüllung",
+            Incumplimientos: "Nicht erfüllt",
+            "Por día": "Pro Tag",
+            Alianza: "Allianz",
+            Cerrar: "Schließen",
+            "Ver nombres": "Namen anzeigen",
+            "Todavía no hay puntuaciones.": "Noch keine Punkte.",
+          },
+          fr: {
+            "Semana actual": "Semaine actuelle",
+            "PUNTOS TOTALES": "POINTS TOTAUX",
+            "selección actual": "sélection actuelle",
+            PARTICIPANTES: "PARTICIPANTS",
+            "con puntos": "avec des points",
+            "MEJOR JUGADOR": "MEILLEUR JOUEUR",
+            "sin datos": "aucune donnée",
+            MEDIA: "MOYENNE",
+            "por participante": "par participant",
+            "ESTADÍSTICAS DE LA SEMANA": "STATISTIQUES DE LA SEMAINE",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Classement, respect quotidien, participation et détail complet.",
+            "ABRIR ESTADÍSTICAS →": "OUVRIR LES STATISTIQUES →",
+            RANKING: "CLASSEMENT",
+            RANK: "RANG",
+            JUGADOR: "JOUEUR",
+            PUNTOS: "POINTS",
+            TOTAL: "TOTAL",
+            Lunes: "Lundi",
+            Martes: "Mardi",
+            Miércoles: "Mercredi",
+            Jueves: "Jeudi",
+            Viernes: "Vendredi",
+            Sábado: "Samedi",
+            Resumen: "Résumé",
+            Cumplimiento: "Respect",
+            Incumplimientos: "Non-respect",
+            "Por día": "Par jour",
+            Alianza: "Alliance",
+            Cerrar: "Fermer",
+            "Ver nombres": "Voir les noms",
+            "Todavía no hay puntuaciones.": "Aucune note pour le moment.",
+          },
+          ro: {
+            "Semana actual": "Săptămâna curentă",
+            "PUNTOS TOTALES": "PUNCTE TOTALE",
+            "selección actual": "selecția curentă",
+            PARTICIPANTES: "PARTICIPANȚI",
+            "con puntos": "cu puncte",
+            "MEJOR JUGADOR": "CEL MAI BUN JUCĂTOR",
+            "sin datos": "fără date",
+            MEDIA: "MEDIE",
+            "por participante": "per participant",
+            "ESTADÍSTICAS DE LA SEMANA": "STATISTICI SĂPTĂMÂNALE",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Clasament, îndeplinire zilnică, participare și detaliere completă.",
+            "ABRIR ESTADÍSTICAS →": "DESCHIDE STATISTICILE →",
+            RANKING: "CLASAMENT",
+            RANK: "RANG",
+            JUGADOR: "JUCĂTOR",
+            PUNTOS: "PUNCTE",
+            TOTAL: "TOTAL",
+            Lunes: "Luni",
+            Martes: "Marți",
+            Miércoles: "Miercuri",
+            Jueves: "Joi",
+            Viernes: "Vineri",
+            Sábado: "Sâmbătă",
+            Resumen: "Rezumat",
+            Cumplimiento: "Îndeplinire",
+            Incumplimientos: "Neîndepliniri",
+            "Por día": "Pe zi",
+            Alianza: "Alianță",
+            Cerrar: "Închide",
+            "Ver nombres": "Vezi numele",
+            "Todavía no hay puntuaciones.": "Nu există încă punctaje.",
+          },
+          pt: {
+            "Semana actual": "Semana atual",
+            "PUNTOS TOTALES": "PONTOS TOTAIS",
+            "selección actual": "seleção atual",
+            PARTICIPANTES: "PARTICIPANTES",
+            "con puntos": "com pontos",
+            "MEJOR JUGADOR": "MELHOR JOGADOR",
+            "sin datos": "sem dados",
+            MEDIA: "MÉDIA",
+            "por participante": "por participante",
+            "ESTADÍSTICAS DE LA SEMANA": "ESTATÍSTICAS DA SEMANA",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Classificação, cumprimento diário, participação e detalhamento completo.",
+            "ABRIR ESTADÍSTICAS →": "ABRIR ESTATÍSTICAS →",
+            RANKING: "CLASSIFICAÇÃO",
+            RANK: "RANK",
+            JUGADOR: "JOGADOR",
+            PUNTOS: "PONTOS",
+            TOTAL: "TOTAL",
+            Lunes: "Segunda-feira",
+            Martes: "Terça-feira",
+            Miércoles: "Quarta-feira",
+            Jueves: "Quinta-feira",
+            Viernes: "Sexta-feira",
+            Sábado: "Sábado",
+            Resumen: "Resumo",
+            Cumplimiento: "Cumprimento",
+            Incumplimientos: "Não cumprimento",
+            "Por día": "Por dia",
+            Alianza: "Aliança",
+            Cerrar: "Fechar",
+            "Ver nombres": "Ver nomes",
+            "Todavía no hay puntuaciones.": "Ainda não há pontuações.",
+          },
+          uk: {
+            "Semana actual": "Поточний тиждень",
+            "PUNTOS TOTALES": "ЗАГАЛЬНІ БАЛИ",
+            "selección actual": "поточний вибір",
+            PARTICIPANTES: "УЧАСНИКИ",
+            "con puntos": "з балами",
+            "MEJOR JUGADOR": "НАЙКРАЩИЙ ГРАВЕЦЬ",
+            "sin datos": "немає даних",
+            MEDIA: "СЕРЕДНЄ",
+            "por participante": "на учасника",
+            "ESTADÍSTICAS DE LA SEMANA": "СТАТИСТИКА ТИЖНЯ",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Рейтинг, щоденне виконання, участь і повна деталізація.",
+            "ABRIR ESTADÍSTICAS →": "ВІДКРИТИ СТАТИСТИКУ →",
+            RANKING: "РЕЙТИНГ",
+            RANK: "МІСЦЕ",
+            JUGADOR: "ГРАВЕЦЬ",
+            PUNTOS: "БАЛИ",
+            TOTAL: "РАЗОМ",
+            Lunes: "Понеділок",
+            Martes: "Вівторок",
+            Miércoles: "Середа",
+            Jueves: "Четвер",
+            Viernes: "П’ятниця",
+            Sábado: "Субота",
+            Resumen: "Підсумок",
+            Cumplimiento: "Виконання",
+            Incumplimientos: "Невиконання",
+            "Por día": "За день",
+            Alianza: "Альянс",
+            Cerrar: "Закрити",
+            "Ver nombres": "Показати імена",
+            "Todavía no hay puntuaciones.": "Поки що немає балів.",
+          },
+        };
+        const labels = {
+          es: "🇪🇸 Español",
+          en: "🇬🇧 English",
+          de: "🇩🇪 Deutsch",
+          fr: "🇫🇷 Français",
+          ro: "🇷🇴 Română",
+          pt: "🇵🇹 Português",
+          uk: "🇺🇦 Українська",
+        };
+        let lang = "es";
+        const original = new WeakMap();
+        function visit(root) {
+          const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let n;
+          while ((n = w.nextNode())) {
+            const p = n.parentElement;
+            if (
+              !p ||
+              p.closest(".translator-wrap") ||
+              p.id === "vs-admin-gear" ||
+              ["SCRIPT", "STYLE"].includes(p.tagName)
+            )
+              continue;
+            if (!original.has(n)) original.set(n, n.nodeValue);
+            let s = original.get(n),
+              d = T[lang] || {};
+            Object.keys(d)
+              .sort((a, b) => b.length - a.length)
+              .forEach((k) => (s = s.split(k).join(d[k])));
+            n.nodeValue = s;
+          }
+        }
+        function setLanguage(l) {
+          lang = l;
+          visit(document.body);
+          document.documentElement.lang = l;
+          const b = document.getElementById("translatorBtn");
+          if (b) b.textContent = (labels[l] || labels.es) + " ▾";
+        }
+        window.setLanguage = setLanguage;
+        window.changeLanguage = setLanguage;
+        const b = document.getElementById("translatorBtn"),
+          m = document.getElementById("translatorMenu");
+        b?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          m.hidden = !m.hidden;
+        });
+        m?.querySelectorAll("[data-lang]").forEach((x) =>
+          x.addEventListener("click", () => {
+            setLanguage(x.dataset.lang);
+            m.hidden = true;
+          }),
+        );
+        document.addEventListener("click", (e) => {
+          if (m && !e.target.closest(".translator-wrap")) m.hidden = true;
+        });
+        new MutationObserver((ms) =>
+          ms.forEach((x) =>
+            x.addedNodes.forEach((n) => {
+              if (n.nodeType === 1) visit(n);
+            }),
+          ),
+        ).observe(document.body, { childList: true, subtree: true });
+        visit(document.body);
+      })();
+    </script>
+    <script id="hola-header-translation-fix">
+      (() => {
+        const extra = {
+          en: {
+            "Rendimiento y participación de la alianza":
+              "Alliance performance and participation",
+            "Semana ": "Week ",
+          },
+          de: {
+            "Rendimiento y participación de la alianza":
+              "Leistung und Teilnahme der Allianz",
+            "Semana ": "Woche ",
+          },
+          fr: {
+            "Rendimiento y participación de la alianza":
+              "Performance et participation de l’alliance",
+            "Semana ": "Semaine ",
+          },
+          ro: {
+            "Rendimiento y participación de la alianza":
+              "Performanța și participarea alianței",
+            "Semana ": "Săptămâna ",
+          },
+          pt: {
+            "Rendimiento y participación de la alianza":
+              "Desempenho e participação da aliança",
+            "Semana ": "Semana ",
+          },
+          uk: {
+            "Rendimiento y participación de la alianza":
+              "Результативність та участь альянсу",
+            "Semana ": "Тиждень ",
+          },
+        };
+        let lang = "es";
+        const originals = new WeakMap();
+        function scan() {
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+          );
+          let n;
+          while ((n = w.nextNode())) {
+            const p = n.parentElement;
+            if (
+              !p ||
+              p.closest(".translator-wrap") ||
+              p.id === "vs-admin-gear" ||
+              ["SCRIPT", "STYLE"].includes(p.tagName)
+            )
+              continue;
+            if (!originals.has(n)) originals.set(n, n.nodeValue);
+            let s = originals.get(n),
+              d = extra[lang] || {};
+            Object.keys(d)
+              .sort((a, b) => b.length - a.length)
+              .forEach((k) => (s = s.split(k).join(d[k])));
+            n.nodeValue = s;
+          }
+        }
+        document.addEventListener("hola:languagechange", (e) => {
+          lang = e.detail.lang;
+          scan();
+        });
+        const old = window.setLanguage;
+        window.setLanguage = function (l) {
+          lang = l;
+          if (old) old(l);
+          scan();
+        };
+        window.changeLanguage = window.setLanguage;
+        scan();
+      })();
+    </script>
+  </body>
+</html>
