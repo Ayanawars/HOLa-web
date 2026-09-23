@@ -1334,9 +1334,9 @@
         );
         // La coincidencia aproximada solo corrige errores claros de OCR; nunca
         // convierte libremente a un jugador ajeno en un miembro de la alianza.
-        // Sin coincidencia exacta o alias, solo aceptamos errores mínimos.
-        // Esto impide que texto ajeno del ranking se convierta en un miembro.
-        const threshold = minLen <= 4 ? 0.92 : minLen <= 7 ? 0.9 : 0.87;
+        // Tolerante con tildes, letras decorativas y pequeños fallos de OCR.
+        // El límite final de miembros únicos evita que se cuele un jugador extra.
+        const threshold = minLen <= 4 ? 0.88 : minLen <= 7 ? 0.82 : 0.78;
         return best.score >= threshold ? best : null;
       }
 
