@@ -385,7 +385,7 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
 const SUPABASE_URL = "https://ovybstpiomphrouvqxmf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
 // Google Vision debe llamarse desde un backend; no se publica ninguna clave en el navegador.
-const DESERT_STORM_OCR_FUNCTION = "desert-storm-ocr";
+const DESERT_STORM_OCR_FUNCTION = "desert-storm-ocr-v2";
 
 window.holaSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const supabaseClient = window.holaSupabaseClient;
@@ -488,18 +488,42 @@ $("loadExisting").addEventListener("click",async()=>{
   $("participantSaveMessage").className="status";
   $("participantSaveMessage").textContent="⏳ Consultando Supabase…";
   try{
-    const {data,error}=await supabaseClient
+    const {data:current,error}=await supabaseClient
       .from("desert_storm_participants")
       .select("player_name")
       .eq("battle_date",battleDate)
       .eq("team",team)
       .order("player_name",{ascending:true});
     if(error) throw error;
-    if(!data?.length){
-      $("participantSaveMessage").textContent=`No hay lista guardada para ${battleDate} · Team ${team}.`;
+    let data=current||[];
+    let loadedDate=battleDate;
+    let loadedTeam=team;
+
+    // Si al abrir el panel queda Team B por defecto, recuperamos la última
+    // lista guardada aunque haya sido Team A, en vez de mostrar una lista vacía.
+    if(!data.length){
+      const {data:latest,error:latestError}=await supabaseClient
+        .from("desert_storm_participants")
+        .select("battle_date,team,player_name,created_at")
+        .order("created_at",{ascending:false})
+        .limit(250);
+      if(latestError) throw latestError;
+      if(latest?.length){
+        loadedDate=latest[0].battle_date;
+        loadedTeam=latest[0].team;
+        data=latest.filter(row=>row.battle_date===loadedDate&&row.team===loadedTeam)
+          .sort((a,b)=>a.player_name.localeCompare(b.player_name));
+      }
+    }
+    if(!data.length){
+      $("participantSaveMessage").textContent="No hay listas guardadas todavía.";
       return;
     }
     $("participants").value=data.map(x=>x.player_name).join("\n");
+    battleDate=loadedDate;
+    team=loadedTeam;
+    $("participantDate").value=battleDate;
+    updateTeamButtons();
     $("participantSaveMessage").className="status ok";
     $("participantSaveMessage").textContent=`✅ Cargados ${data.length} participantes · ${battleDate} · Team ${team}`;
     updateSelectedEvent();
