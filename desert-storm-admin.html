@@ -317,7 +317,7 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
 
     <div class="actions">
       <button type="button" id="saveContentBtn" class="btn save">💾 GUARDAR ESTRATEGIA Y MAPA</button>
-      <button type="button" id="loadContentBtn" class="btn secondary">↻ CARGAR DATOS GUARDADOS</button>
+      <button type="button" id="loadContentBtn" class="btn secondary">↻ CARGAR ESTRATEGIA GUARDADA</button>
     </div>
     <div id="contentStatus" class="status">Nada pendiente de guardar.</div>
   </section>
@@ -377,6 +377,31 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
         <button type="button" id="cancelModalBtn" class="btn secondary">CANCELAR</button>
       </div>
       <div id="modalStatus" class="modal-status"></div>
+    </div>
+  </div>
+
+  <div id="loadModal" class="modal-backdrop" aria-hidden="true">
+    <div class="event-modal" role="dialog" aria-modal="true" aria-labelledby="loadModalTitle">
+      <button type="button" class="modal-close" id="loadModalClose" aria-label="Cerrar">×</button>
+      <div class="modal-kicker">DESERT STORM</div>
+      <h2 id="loadModalTitle">Cargar datos guardados</h2>
+      <p id="loadModalHelp">Elige la jornada y el equipo que quieres recuperar.</p>
+      <div class="modal-field">
+        <label for="loadDate">DÍA</label>
+        <input id="loadDate" type="date">
+      </div>
+      <div class="modal-field">
+        <label>EQUIPO</label>
+        <div class="team-buttons" id="loadTeamButtons">
+          <button class="team-btn b active" data-load-team="B" type="button">TEAM B <span>13:00–13:30</span></button>
+          <button class="team-btn a" data-load-team="A" type="button">TEAM A <span>22:00–22:30</span></button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="confirmLoadBtn" class="btn save">CARGAR</button>
+        <button type="button" id="cancelLoadBtn" class="btn secondary">CANCELAR</button>
+      </div>
+      <div id="loadModalStatus" class="modal-status"></div>
     </div>
   </div>
 </main>
@@ -484,44 +509,24 @@ $("confirmParticipantsBtn").addEventListener("click",async()=>{
   }
 });
 
-$("loadExisting").addEventListener("click",async()=>{
+async function loadParticipantsFor(selectedDate,selectedTeam){
   $("participantSaveMessage").className="status";
   $("participantSaveMessage").textContent="⏳ Consultando Supabase…";
   try{
-    const {data:current,error}=await supabaseClient
+    const {data,error}=await supabaseClient
       .from("desert_storm_participants")
       .select("player_name")
-      .eq("battle_date",battleDate)
-      .eq("team",team)
+      .eq("battle_date",selectedDate)
+      .eq("team",selectedTeam)
       .order("player_name",{ascending:true});
     if(error) throw error;
-    let data=current||[];
-    let loadedDate=battleDate;
-    let loadedTeam=team;
-
-    // Si al abrir el panel queda Team B por defecto, recuperamos la última
-    // lista guardada aunque haya sido Team A, en vez de mostrar una lista vacía.
-    if(!data.length){
-      const {data:latest,error:latestError}=await supabaseClient
-        .from("desert_storm_participants")
-        .select("battle_date,team,player_name,created_at")
-        .order("created_at",{ascending:false})
-        .limit(250);
-      if(latestError) throw latestError;
-      if(latest?.length){
-        loadedDate=latest[0].battle_date;
-        loadedTeam=latest[0].team;
-        data=latest.filter(row=>row.battle_date===loadedDate&&row.team===loadedTeam)
-          .sort((a,b)=>a.player_name.localeCompare(b.player_name));
-      }
-    }
-    if(!data.length){
-      $("participantSaveMessage").textContent="No hay listas guardadas todavía.";
+    if(!data?.length){
+      $("participantSaveMessage").textContent=`No hay lista guardada para ${selectedDate} · Team ${selectedTeam}.`;
       return;
     }
     $("participants").value=data.map(x=>x.player_name).join("\n");
-    battleDate=loadedDate;
-    team=loadedTeam;
+    battleDate=selectedDate;
+    team=selectedTeam;
     $("participantDate").value=battleDate;
     updateTeamButtons();
     $("participantSaveMessage").className="status ok";
@@ -531,6 +536,54 @@ $("loadExisting").addEventListener("click",async()=>{
     $("participantSaveMessage").className="status err";
     $("participantSaveMessage").textContent="❌ "+(err?.message||"error desconocido");
   }
+}
+
+let loadMode="participants";
+let loadTeam=team;
+function updateLoadTeamButtons(){
+  document.querySelectorAll("#loadTeamButtons .team-btn").forEach(button=>button.classList.toggle("active",button.dataset.loadTeam===loadTeam));
+}
+function closeLoadModal(){
+  $("loadModal").classList.remove("open");
+  $("loadModal").setAttribute("aria-hidden","true");
+}
+function openLoadModal(mode){
+  loadMode=mode;
+  loadTeam=mode==="participants"?team:contentTeam;
+  const selectedDate=mode==="participants"?battleDate:(contentDateEl.value||battleDate);
+  $("loadDate").value=selectedDate||new Date().toISOString().slice(0,10);
+  $("loadModalTitle").textContent=mode==="participants"?"Cargar lista de participantes":"Cargar estrategia guardada";
+  $("loadModalHelp").textContent=mode==="participants"?"Elige la jornada y el equipo cuya lista quieres recuperar.":"Elige la jornada y el equipo cuya estrategia quieres recuperar.";
+  $("confirmLoadBtn").textContent=mode==="participants"?"CARGAR LISTA":"CARGAR ESTRATEGIA";
+  $("loadModalStatus").textContent="";
+  updateLoadTeamButtons();
+  $("loadModal").classList.add("open");
+  $("loadModal").setAttribute("aria-hidden","false");
+}
+document.querySelectorAll("#loadTeamButtons .team-btn").forEach(button=>button.addEventListener("click",()=>{loadTeam=button.dataset.loadTeam;updateLoadTeamButtons();}));
+$("loadExisting").addEventListener("click",()=>openLoadModal("participants"));
+$("loadModalClose").addEventListener("click",closeLoadModal);
+$("cancelLoadBtn").addEventListener("click",closeLoadModal);
+$("loadModal").addEventListener("click",event=>{if(event.target===$("loadModal"))closeLoadModal();});
+$("confirmLoadBtn").addEventListener("click",async()=>{
+  const date=$("loadDate").value;
+  if(!date){$("loadModalStatus").textContent="Selecciona un día.";return;}
+  const button=$("confirmLoadBtn");button.disabled=true;
+  try{
+    if(loadMode==="participants"){
+      await loadParticipantsFor(date,loadTeam);
+    }else{
+      contentDateEl.value=date;
+      battleDate=date;
+      contentTeam=loadTeam;
+      document.querySelectorAll(".content-team").forEach(item=>item.classList.toggle("active",item.dataset.contentTeam===contentTeam));
+      updateSelectedEvent();
+      await loadContent();
+    }
+    closeLoadModal();
+  }catch(error){
+    $("loadModalStatus").textContent="No se pudieron cargar los datos.";
+  }finally{button.disabled=false;}
 });
 
 function norm(s){
@@ -1086,7 +1139,7 @@ $("saveContentBtn").addEventListener("click",async()=>{
     console.error(e); $("contentStatus").className="status err"; $("contentStatus").textContent="❌ No se pudo guardar: "+(e.message||"error");
   }finally{btn.disabled=false;}
 });
-$("loadContentBtn").addEventListener("click",loadContent);
+$("loadContentBtn").addEventListener("click",()=>openLoadModal("content"));
 
 updateTeamButtons();
 updateSelectedEvent();
