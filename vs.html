@@ -1028,15 +1028,6 @@
           <span>MEDIA</span><b id="avg">—</b><small>por participante</small>
         </article>
       </section>
-      <section class="stats-launch" id="openStats">
-        <div>
-          <h3>📈 ESTADÍSTICAS DE LA SEMANA</h3>
-          <p>
-            Ranking, cumplimiento diario, participación y desglose completo.
-          </p>
-        </div>
-        <button class="open" type="button">ABRIR ESTADÍSTICAS →</button>
-      </section>
       <h2>▌ RANKING</h2>
       <section class="box">
         <div class="rh">
@@ -1344,7 +1335,8 @@
           );
         renderStats();
       }
-      document.getElementById("openStats").onclick = openModal;
+      const openStatsButton = document.getElementById("openStats");
+      if (openStatsButton) openStatsButton.onclick = openModal;
       if (location.hash === "#estadisticas") setTimeout(openModal, 0);
       document.getElementById("closeStats").onclick = () =>
         document.getElementById("statsModal").classList.remove("show");
