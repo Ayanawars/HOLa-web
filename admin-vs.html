@@ -698,10 +698,10 @@
       <section class="panel">
         <h2>📸 SUBIR SCREENSHOTS</h2>
         <p>
-          Selecciona todas las capturas del ranking. Primero usa OCR.space.
-          Si recibe un límite 429, cambia automáticamente a Tesseract local y
-          no vuelve a consultar OCR.space durante esa sesión. Lolo se asigna
-          automáticamente al jugador oficial مثالـي25.
+          Selecciona todas las capturas del ranking. Primero se procesan
+          localmente con Tesseract.js, sin gastar cuota. Si no llega a todos
+          los miembros, Azure Vision revisa automáticamente solo las capturas
+          necesarias. Lolo se asigna al jugador oficial مثالـي25.
         </p>
         <div class="drop">
           <b>Capturas del ranking</b><br /><input
@@ -2834,8 +2834,10 @@
         }
 
         ocrBtn.disabled = true;
+
         try {
-          ocrStatus.textContent = "Comprobando los miembros actuales de la alianza...";
+          ocrStatus.textContent =
+            "Comprobando los miembros actuales de la alianza...";
           await loadMemberNames();
         } catch (e) {
           ocrBtn.disabled = false;
@@ -2843,51 +2845,105 @@
             "⚠ No se pudo comprobar la lista actual de la alianza. El OCR no se ha ejecutado.";
           return;
         }
-        const allFound = [];
+
         const foundByName = new Map();
-        let processed = 0;
+        const tessByFile = [];
         const errors = [];
+        let azureUsed = 0;
+
+        const mergeFound = (items, prefer = false) => {
+          for (const item of items || []) {
+            const key = normName(item.name);
+            if (!key) continue;
+
+            const previous = foundByName.get(key);
+            const nextPoints = Number(item.points) || 0;
+            const previousPoints = Number(previous?.points) || 0;
+
+            if (
+              !previous ||
+              (previousPoints === 0 && nextPoints !== 0) ||
+              (prefer && nextPoints !== 0)
+            ) {
+              foundByName.set(key, item);
+            }
+          }
+        };
 
         try {
           rows.innerHTML = "";
 
-          for (const file of selected) {
-            processed++;
-            ocrBtn.textContent = `⏳ LEYENDO ${processed}/${selected.length}`;
-            ocrStatus.textContent = `Leyendo ${processed} de ${selected.length}: ${file.name}`;
+          // FASE 1 — Tesseract local.
+          // No consume ninguna API ni tiene cuota.
+          for (let i = 0; i < selected.length; i++) {
+            const file = selected[i];
+            ocrBtn.textContent = `🧠 TESSERACT ${i + 1}/${selected.length}`;
+            ocrStatus.textContent =
+              `🧠 Tesseract local: captura ${i + 1} de ${selected.length} · ${file.name}`;
 
             try {
-              const found = await readScreenshot(file);
-              for (const x of found) {
-                const key = normName(x.name);
-                const prev = foundByName.get(key);
-                // Capturas solapadas: un jugador solo aparece una vez.
-                // Si existe una lectura con puntos y otra con 0, conservamos la de puntos.
-                if (
-                  !prev ||
-                  (Number(prev.points) === 0 && Number(x.points) !== 0)
-                ) {
-                  foundByName.set(key, x);
-                }
-              }
-            } catch (e) {
-              console.error("OCR error:", file.name, e);
-              errors.push(`${file.name}: ${e.message}`);
+              const found = await readScreenshotTesseract(file);
+              tessByFile.push({ file, found, count: found.length });
+              mergeFound(found, false);
+            } catch (error) {
+              console.error("Tesseract error:", file.name, error);
+              tessByFile.push({ file, found: [], count: 0 });
+              errors.push(
+                `Tesseract · ${file.name}: ${error?.message || String(error)}`,
+              );
             }
           }
 
-          // El jugador árabe se reconoce mediante el alias personal "Lolo",
-          // que se convierte internamente al nombre oficial مثالـي25.
+          const afterTesseract = foundByName.size;
 
-          // Barrera final: solo miembros únicos de la lista actual y nunca más
-          // resultados que miembros reales de la alianza.
+          // FASE 2 — Azure Vision solamente si Tesseract no llegó a todos.
+          // Releemos primero las capturas donde Tesseract encontró menos filas.
+          if (foundByName.size < memberNames.length) {
+            showOcrToast(
+              "☁️ Respaldo Azure Vision",
+              `Tesseract detectó ${foundByName.size}/${memberNames.length}. Azure revisará solo lo necesario.`,
+            );
+
+            const candidates = [...tessByFile].sort(
+              (a, b) => a.count - b.count,
+            );
+
+            for (let i = 0; i < candidates.length; i++) {
+              if (foundByName.size >= memberNames.length) break;
+
+              const item = candidates[i];
+              ocrBtn.textContent =
+                `☁️ AZURE ${i + 1}/${candidates.length}`;
+              ocrStatus.textContent =
+                `☁️ Azure Vision: completando miembros (${foundByName.size}/${memberNames.length}) · ${item.file.name}`;
+
+              try {
+                const found = await readScreenshotAzure(item.file);
+                azureUsed++;
+                // Azure tiene prioridad en las capturas que revisa, por lo que
+                // también puede corregir una puntuación truncada de Tesseract.
+                mergeFound(found, true);
+              } catch (error) {
+                console.error("Azure OCR error:", item.file.name, error);
+                errors.push(
+                  `Azure · ${item.file.name}: ${error?.message || String(error)}`,
+                );
+              }
+            }
+          }
+
+          // El alias personal Lolo se convierte a مثالـي25 mediante
+          // canonicalMemberName/matchMemberName. En Supabase siempre queda el
+          // nombre oficial.
           const allowedMembers = new Map(
             memberNames.map((name) => [normName(name), name]),
           );
           const accepted = new Map();
+
           for (const item of foundByName.values()) {
             const official = allowedMembers.get(normName(item.name));
             if (!official) continue;
+
             const key = normName(official);
             const previous = accepted.get(key);
             if (
@@ -2897,7 +2953,16 @@
               accepted.set(key, { ...item, name: official });
             }
           }
-          allFound.push(...[...accepted.values()].slice(0, memberNames.length));
+
+          const allFound = [...accepted.values()]
+            .slice(0, memberNames.length)
+            .sort(
+              (a, b) =>
+                Number(b.points || 0) - Number(a.points || 0) ||
+                String(a.name).localeCompare(String(b.name), "es", {
+                  sensitivity: "base",
+                }),
+            );
 
           if (!allFound.length) {
             throw new Error(
@@ -2907,33 +2972,45 @@
             );
           }
 
-          // Presentamos el ranking tal como se ve en el juego: más puntos primero.
-          allFound.sort(
-            (a, b) =>
-              Number(b.points || 0) - Number(a.points || 0) ||
-              String(a.name).localeCompare(String(b.name), "es", {
-                sensitivity: "base",
-              }),
-          );
           allFound.forEach((x) => add(x.name, x.points));
 
-          const zeroPlayers = allFound.filter((x) => Number(x.points) === 0);
-          ocrStatus.textContent = `✓ OCR completado: ${allFound.length}/${memberNames.length} miembros únicos detectados en ${processed} captura${processed === 1 ? "" : "s"}. Revisa antes de guardar.`;
+          const zeroPlayers = allFound.filter(
+            (x) => Number(x.points) === 0,
+          );
+          const missing = memberNames.filter(
+            (name) => !accepted.has(normName(name)),
+          );
+
+          ocrStatus.textContent =
+            `✓ OCR completado: ${allFound.length}/${memberNames.length} miembros. ` +
+            `Tesseract: ${afterTesseract}/${memberNames.length} · ` +
+            `Azure usado en ${azureUsed} captura${azureUsed === 1 ? "" : "s"}.`;
+
           if (zeroPlayers.length) {
-            ocrStatus.textContent += ` Se detectaron ${zeroPlayers.length} jugador${zeroPlayers.length === 1 ? "" : "es"} con 0 puntos.`;
+            ocrStatus.textContent +=
+              ` ${zeroPlayers.length} jugador${zeroPlayers.length === 1 ? "" : "es"} con 0 puntos.`;
+          }
+
+          if (missing.length) {
+            ocrStatus.textContent +=
+              ` Faltan ${missing.length}: ${missing.join(" · ")}.`;
           }
 
           if (errors.length) {
-            ocrStatus.textContent += ` Algunas capturas tuvieron problemas: ${errors.join(" · ")}`;
+            ocrStatus.textContent +=
+              ` Avisos: ${errors.join(" · ")}`;
           }
 
           showOcrToast(
-            "✓ OCR actualizado",
-            `${allFound.length} jugadores detectados en ${processed} captura${processed === 1 ? "" : "s"}. ${zeroPlayers.length ? zeroPlayers.length + " con 0 puntos. " : ""}${errors.length ? errors.length + " captura(s) con problemas." : "Todo correcto."}`,
+            allFound.length === memberNames.length
+              ? "✓ OCR 99/99"
+              : "✓ OCR terminado",
+            `Tesseract ${afterTesseract}/${memberNames.length} · Azure ${azureUsed} captura${azureUsed === 1 ? "" : "s"} · Resultado ${allFound.length}/${memberNames.length}.`,
           );
         } catch (e) {
           console.error(e);
-          ocrStatus.textContent = "⚠ Error OCR: " + e.message;
+          ocrStatus.textContent =
+            "⚠ Error OCR: " + (e?.message || String(e));
         } finally {
           await releaseTesseractWorker();
           ocrBtn.disabled = false;
