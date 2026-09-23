@@ -820,10 +820,12 @@
         );
       };
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-      const sb = createClient(
-        "https://ovybstpiomphrouvqxmf.supabase.co",
-        "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV",
-      );
+      const SUPABASE_URL = "https://ovybstpiomphrouvqxmf.supabase.co";
+      const SUPABASE_PUBLIC_KEY =
+        "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
+      const AZURE_OCR_URL =
+        SUPABASE_URL + "/functions/v1/vs-azure-ocr";
+      const sb = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
       const OCR_API_KEY = "K88248924688957";
       const rows = document.getElementById("rows"),
         img = document.getElementById("img"),
@@ -2251,88 +2253,187 @@
       }
 
       function tesseractDataToParsedResults(data) {
-        const rawWords = Array.isArray(data?.words) ? data.words : [];
-        const words = rawWords
-          .map((word) => {
-            const box = word.bbox || {};
-            const left = Number(box.x0 || 0);
-            const top = Number(box.y0 || 0);
-            const right = Number(box.x1 || left);
-            const bottom = Number(box.y1 || top);
-            return {
-              text: String(word.text || "").trim(),
-              left,
-              top,
-              width: Math.max(0, right - left),
-              height: Math.max(1, bottom - top),
-              center: top + Math.max(1, bottom - top) / 2,
-            };
-          })
-          .filter((word) => word.text);
+        const lines = [];
 
-        const grouped = [];
-        for (const word of words.sort(
-          (a, b) => a.center - b.center || a.left - b.left,
-        )) {
-          let line = grouped.find(
-            (candidate) =>
-              Math.abs(candidate.center - word.center) <=
-              Math.max(14, Math.min(32, word.height * 0.9)),
-          );
+        // Tesseract.js v5/v6: para obtener coordenadas hay que pedir
+        // explícitamente el output "blocks". Recorremos bloques > párrafos >
+        // líneas > palabras y lo convertimos al mismo formato de overlay que
+        // ya usa el resto del detector.
+        for (const block of data?.blocks || []) {
+          for (const paragraph of block?.paragraphs || []) {
+            for (const line of paragraph?.lines || []) {
+              const lineWords = (line?.words || [])
+                .map((word) => {
+                  const box = word?.bbox || {};
+                  const left = Number(box.x0 || 0);
+                  const top = Number(box.y0 || 0);
+                  const right = Number(box.x1 || left);
+                  const bottom = Number(box.y1 || top);
+                  return {
+                    WordText: String(word?.text || "").trim(),
+                    Left: left,
+                    Top: top,
+                    Width: Math.max(0, right - left),
+                    Height: Math.max(1, bottom - top),
+                    Confidence: Number(word?.confidence || 0),
+                  };
+                })
+                .filter((word) => word.WordText);
 
-          if (!line) {
-            line = { center: word.center, words: [] };
-            grouped.push(line);
+              if (!lineWords.length) continue;
+
+              const lineBox = line?.bbox || {};
+              const minTop = Number(
+                lineBox.y0 ??
+                  Math.min(...lineWords.map((word) => Number(word.Top || 0))),
+              );
+              const bottom = Number(
+                lineBox.y1 ??
+                  Math.max(
+                    ...lineWords.map(
+                      (word) =>
+                        Number(word.Top || 0) + Number(word.Height || 0),
+                    ),
+                  ),
+              );
+
+              lines.push({
+                LineText:
+                  String(line?.text || "").trim() ||
+                  lineWords.map((word) => word.WordText).join(" "),
+                MinTop: minTop,
+                MaxHeight: Math.max(1, bottom - minTop),
+                Words: lineWords,
+              });
+            }
           }
-
-          line.words.push(word);
-          line.center =
-            line.words.reduce((sum, item) => sum + item.center, 0) /
-            line.words.length;
         }
 
-        const Lines = grouped
-          .map((line) => {
-            const lineWords = line.words.sort((a, b) => a.left - b.left);
-            const minTop = Math.min(...lineWords.map((word) => word.top));
-            const maxHeight = Math.max(...lineWords.map((word) => word.height));
-
-            return {
-              LineText: lineWords.map((word) => word.text).join(" "),
-              MinTop: minTop,
-              MaxHeight: maxHeight,
-              Words: lineWords.map((word) => ({
-                WordText: word.text,
-                Left: word.left,
-                Top: word.top,
-                Width: word.width,
-                Height: word.height,
-              })),
-            };
-          })
-          .sort((a, b) => Number(a.MinTop) - Number(b.MinTop));
+        lines.sort(
+          (a, b) => Number(a.MinTop || 0) - Number(b.MinTop || 0),
+        );
 
         return [
           {
-            ParsedText: String(data?.text || ""),
-            TextOverlay: { Lines },
+            ParsedText:
+              String(data?.text || "").trim() ||
+              lines.map((line) => line.LineText).join("\n"),
+            TextOverlay: { Lines: lines },
           },
         ];
       }
 
       async function runTesseractPass(selected) {
         const worker = await getTesseractWorker();
-        const result = await worker.recognize(selected);
+        const result = await worker.recognize(
+          selected,
+          {},
+          { text: true, blocks: true },
+        );
 
         const parsed = tesseractDataToParsedResults(result?.data);
-        if (
-          !parsed[0]?.TextOverlay?.Lines?.length &&
-          !String(result?.data?.text || "").trim()
-        ) {
-          throw new Error("Tesseract no detectó texto en la captura.");
+        if (!parsed[0]?.TextOverlay?.Lines?.length) {
+          throw new Error(
+            "Tesseract no pudo obtener filas con coordenadas de esta captura.",
+          );
         }
 
         return parsed;
+      }
+
+      async function runAzurePass(selected) {
+        const response = await fetch(AZURE_OCR_URL, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_PUBLIC_KEY,
+            "Content-Type": selected.type || "application/octet-stream",
+          },
+          body: selected,
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error ||
+              `Azure Vision respondió con error ${response.status}.`,
+          );
+        }
+
+        const parsed = data?.ParsedResults || [];
+        if (!parsed[0]?.TextOverlay?.Lines?.length) {
+          throw new Error(
+            data?.warning || "Azure Vision no detectó texto en la captura.",
+          );
+        }
+
+        return parsed;
+      }
+
+      function extractRankingFromParsed(parsed, provider = "OCR") {
+        const robust = [];
+        const fallback = [];
+
+        for (const result of parsed || []) {
+          const members = memberRowsFromOverlay(result.TextOverlay);
+          const pointsRows = scoreCandidatesFromOverlay(result.TextOverlay)
+            .map((row) => ({
+              value: Number(row.value),
+              top: Number(row.top || 0),
+              height: Number(row.height || 0),
+              center:
+                Number(row.top || 0) + Number(row.height || 0) / 2,
+            }))
+            .sort((a, b) => a.center - b.center);
+
+          const paired = pairMemberRowsWithPoints(members, pointsRows);
+          robust.push(...paired.found);
+
+          const oldDetected = pairsFromOverlay(result.TextOverlay);
+          fallback.push(...oldDetected);
+        }
+
+        const byName = new Map();
+
+        // La asociación nombre/puntos por coordenadas es prioritaria.
+        for (const item of robust) {
+          const match = matchMemberName(item.name);
+          if (!match) continue;
+          byName.set(normName(match.name), {
+            ...item,
+            name: match.name,
+            source: provider + "-column",
+          });
+        }
+
+        // La lectura antigua solo rellena nombres que faltan; nunca pisa una
+        // puntuación ya reconstruida desde la columna derecha.
+        for (const item of fallback) {
+          const match = matchMemberName(item.name);
+          if (!match) continue;
+          const key = normName(match.name);
+          if (!byName.has(key)) {
+            byName.set(key, {
+              ...item,
+              name: match.name,
+              source: provider + "-fallback",
+            });
+          }
+        }
+
+        return [...byName.values()];
+      }
+
+      async function readScreenshotTesseract(selected) {
+        const cropped = await cropRankingForOcr(selected);
+        const parsed = await runTesseractPass(cropped);
+        return extractRankingFromParsed(parsed, "Tesseract");
+      }
+
+      async function readScreenshotAzure(selected) {
+        const cropped = await cropRankingForOcr(selected);
+        const parsed = await runAzurePass(cropped);
+        return extractRankingFromParsed(parsed, "Azure");
       }
 
       async function runOcrPass(selected, language, engine = "2") {
@@ -2427,63 +2528,6 @@
         }
 
         return data?.ParsedResults || [];
-      }
-
-      async function readScreenshot(selected) {
-        // Una sola petición por captura. Del mismo overlay obtenemos nombres
-        // y reconstruimos la columna derecha de puntos por coordenadas.
-        const cropped = await cropRankingForOcr(selected);
-        const parsed = await runOcrPass(cropped, "eng", "2");
-
-        const robust = [];
-        const fallback = [];
-
-        for (const result of parsed) {
-          const members = memberRowsFromOverlay(result.TextOverlay);
-          const pointsRows = scoreCandidatesFromOverlay(result.TextOverlay)
-            .map((row) => ({
-              value: Number(row.value),
-              top: Number(row.top || 0),
-              height: Number(row.height || 0),
-              center:
-                Number(row.top || 0) + Number(row.height || 0) / 2,
-            }))
-            .sort((a, b) => a.center - b.center);
-
-          const paired = pairMemberRowsWithPoints(members, pointsRows);
-          robust.push(...paired.found);
-
-          const oldDetected = pairsFromOverlay(result.TextOverlay);
-          fallback.push(...oldDetected);
-        }
-
-        // La lectura por columna es prioritaria. Esto evita que una lectura
-        // truncada como 2.697.406 sustituya a 26.974.062 en Chadriavis.
-        const byName = new Map();
-        for (const item of robust) {
-          const match = matchMemberName(item.name);
-          if (!match) continue;
-          byName.set(normName(match.name), {
-            ...item,
-            name: match.name,
-            source: "column",
-          });
-        }
-
-        for (const item of fallback) {
-          const match = matchMemberName(item.name);
-          if (!match) continue;
-          const key = normName(match.name);
-          if (!byName.has(key)) {
-            byName.set(key, {
-              ...item,
-              name: match.name,
-              source: "fallback",
-            });
-          }
-        }
-
-        return [...byName.values()];
       }
 
       function findArabicRowScore(parsed) {
