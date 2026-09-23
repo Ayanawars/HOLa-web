@@ -2206,6 +2206,93 @@
           }
         }
       }
+      async function recoverArabicFromUnassignedScore(
+        selectedFiles,
+        foundByName,
+      ) {
+        const arabicMember = memberNames.find((name) =>
+          /[\u0600-\u06FF]/u.test(name),
+        );
+        if (!arabicMember) return null;
+
+        const arabicKey = normName(arabicMember);
+        if (foundByName.has(arabicKey)) return foundByName.get(arabicKey);
+
+        const usedScores = new Set(
+          [...foundByName.values()]
+            .map((item) => Number(item.points))
+            .filter((value) => Number.isFinite(value)),
+        );
+
+        const frequency = new Map();
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+          ocrBtn.textContent = `🌍 BUSCANDO ÁRABE ${i + 1}/${selectedFiles.length}`;
+          ocrStatus.textContent =
+            `Buscando la puntuación sin asignar en la captura ${i + 1} de ${selectedFiles.length}...`;
+
+          try {
+            const cropped = await cropRankingForOcr(selectedFiles[i]);
+            const parsed = await runOcrPass(cropped, "eng", "2");
+            const candidates = collectScoreCandidates(parsed);
+
+            for (const value of candidates) {
+              const numeric = Number(value);
+              if (!Number.isFinite(numeric)) continue;
+              frequency.set(numeric, (frequency.get(numeric) || 0) + 1);
+            }
+          } catch (error) {
+            console.warn(
+              "No se pudieron extraer puntuaciones de",
+              selectedFiles[i].name,
+              error,
+            );
+          }
+        }
+
+        // Quitamos todas las puntuaciones ya asignadas a los otros 98 jugadores.
+        let remaining = [...frequency.keys()].filter(
+          (value) => !usedScores.has(Number(value)),
+        );
+
+        // Descartamos cifras absurdamente pequeñas que suelen ser puestos/rangos
+        // u otros números del interfaz.
+        remaining = remaining.filter(
+          (value) => Number(value) === 0 || Number(value) >= 100000,
+        );
+
+        if (remaining.length === 1) {
+          return {
+            name: arabicMember,
+            points: Number(remaining[0]),
+            score: 1,
+          };
+        }
+
+        // Si hay varias candidatas por ruido OCR, priorizamos las que aparecen
+        // más de una vez en capturas solapadas.
+        const repeated = remaining
+          .map((value) => ({
+            value: Number(value),
+            count: frequency.get(Number(value)) || 0,
+          }))
+          .filter((item) => item.count >= 2)
+          .sort((a, b) => b.count - a.count);
+
+        if (
+          repeated.length === 1 ||
+          (repeated.length > 1 && repeated[0].count > repeated[1].count)
+        ) {
+          return {
+            name: arabicMember,
+            points: repeated[0].value,
+            score: 0.99,
+          };
+        }
+
+        return null;
+      }
+
       ocrBtn.onclick = async () => {
         const selected = [...img.files];
         if (!selected.length) {
@@ -2257,42 +2344,42 @@
             }
           }
 
-          // Si el OCR normal no encontró al jugador árabe, lo buscamos
-          // automáticamente en las mismas capturas. El usuario no necesita
-          // seleccionar otra imagen ni pulsar un segundo botón.
+          // Si falta el único miembro árabe, no dependemos de leer sus letras:
+          // buscamos la única puntuación de la columna derecha que aún no está
+          // asignada a ninguno de los otros jugadores detectados.
           const arabicMember = memberNames.find((name) =>
             /[\u0600-\u06FF]/u.test(name),
           );
           const arabicKey = arabicMember ? normName(arabicMember) : "";
 
           if (arabicMember && !foundByName.has(arabicKey)) {
-            ocrStatus.textContent =
-              "🌍 Buscando automáticamente el jugador árabe...";
+            const recoveredArabic = await recoverArabicFromUnassignedScore(
+              selected,
+              foundByName,
+            );
 
-            for (let i = 0; i < selected.length; i++) {
-              ocrBtn.textContent = `🌍 ÁRABE ${i + 1}/${selected.length}`;
-
-              try {
-                const arabicResults = await readArabicScreenshot(selected[i]);
-                const arabicResult = arabicResults.find(
-                  (item) =>
-                    normName(item.name) === arabicKey &&
-                    Number(item.points) > 0,
-                );
-
-                if (arabicResult) {
-                  foundByName.set(arabicKey, {
-                    ...arabicResult,
-                    name: arabicMember,
-                  });
-                  break;
+            if (recoveredArabic) {
+              foundByName.set(arabicKey, recoveredArabic);
+            } else {
+              // Respaldo final: intentamos localizar físicamente la fila árabe.
+              for (let i = 0; i < selected.length; i++) {
+                try {
+                  const arabicResults = await readArabicScreenshot(selected[i]);
+                  const arabicResult = arabicResults.find(
+                    (item) =>
+                      normName(item.name) === arabicKey &&
+                      Number(item.points) > 0,
+                  );
+                  if (arabicResult) {
+                    foundByName.set(arabicKey, {
+                      ...arabicResult,
+                      name: arabicMember,
+                    });
+                    break;
+                  }
+                } catch (error) {
+                  console.warn("Respaldo OCR árabe falló:", error);
                 }
-              } catch (error) {
-                console.warn(
-                  "No se pudo leer árabe en",
-                  selected[i].name,
-                  error,
-                );
               }
             }
           }
