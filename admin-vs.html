@@ -1282,9 +1282,19 @@
       function matchMemberName(detected) {
         // Reaplicamos la limpieza aquí para todos los caminos del OCR, incluidos
         // los textos que no llegaron desde las líneas con coordenadas.
-        const variants = bidiVariants(cleanName(detected))
-          .map(normName)
-          .filter(Boolean);
+        const cleaned = cleanName(detected);
+        const rawVariants = new Set(bidiVariants(cleaned));
+
+        // Algunos nombres del juego llevan un adorno o texto secundario después
+        // del nombre (ej.: "sinsifeX ⊂oD"). Probamos el primer bloque por
+        // separado, pero mantenemos también el nombre completo para los que
+        // contienen espacios reales, como "Laz Ziyaaa".
+        const firstBlock = cleaned.split(/\s+/)[0] || "";
+        if (firstBlock.length >= 3) {
+          bidiVariants(firstBlock).forEach((value) => rawVariants.add(value));
+        }
+
+        const variants = [...rawVariants].map(normName).filter(Boolean);
         if (!variants.length) return null;
 
         for (const key of variants) {
