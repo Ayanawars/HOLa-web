@@ -1001,6 +1001,18 @@
         .rh,.rr{grid-template-columns:37px minmax(0,1fr) 76px!important;gap:6px!important;padding:10px!important;font-size:11px!important}
         .part{padding:12px!important}
       }
+      @media(max-width:700px){
+        html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
+        .head,.headin,.wrap,.week,.days,.stats,.parts,.box{width:100%!important;max-width:100%!important;min-width:0!important}
+        .headin{margin:0!important}
+        .week{display:grid!important;grid-template-columns:38px minmax(0,1fr) 38px!important}
+        .week-current{width:100%!important;min-width:0!important;overflow:hidden!important}
+        .week-current b{display:block!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+        .days{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+        .stats,.parts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        .card,.part,.rr,.rh{min-width:0!important}
+        .card b,.card small,.rr span,.rr b{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      }
     </style>
   </head>
   <body>
