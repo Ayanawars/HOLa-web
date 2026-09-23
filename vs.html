@@ -960,6 +960,23 @@
       .modal{background:rgba(10,47,60,.56);padding:16px}.modal-box{background:#fffaf0;border:1px solid var(--line);box-shadow:0 20px 60px rgba(24,42,41,.35);color:var(--ink)}.modal-head{background:linear-gradient(110deg,#0d6d8d,#09a8c0);color:#fffaf0}.modal-head p{color:#fff3ca}.close,.tab{border-color:var(--line);color:var(--ink);background:#fffdf6}.tab.active{background:var(--nile-dark);color:#fff}.stats-content .stat-card,.stats-content .compliance-card,.stats-content .daily-card{background:#fffdf6!important;border-color:var(--line)!important;color:var(--ink)!important}.stats-content h3,.stats-content h4{color:var(--ink)!important}.stats-admin-row{border-top-color:var(--line)}.stats-admin-gear{background:var(--gold);color:#fff}
       @media(max-width:700px){.headin{min-height:105px;padding:10px 14px;grid-template-columns:50px 1fr 50px}.desert-back,.translator-btn{width:43px;height:43px}.brand-logo{width:105px;max-height:59px}.title h1{font-size:24px}.title p{font-size:10px}.stats{grid-template-columns:repeat(2,1fr)}.parts{grid-template-columns:repeat(2,1fr)}.card b{font-size:23px}.days{grid-template-columns:repeat(4,1fr)}.day:last-child{grid-column:2 / span 2}.rh,.rr{grid-template-columns:45px 1fr 92px;padding:12px}.stats-launch{align-items:flex-start;flex-direction:column}.stats-launch .open{width:100%}}
     </style>
+    <style id="vs-egypt-card-final">
+      /* Sustituye los paneles heredados del tema oscuro por papiro egipcio. */
+      .card,.box,.part,.rr,.ranking-more,.modal-box,.stats-content .stat-card,.stats-content .compliance-card,.stats-content .daily-card{
+        color:#173f5c!important;
+        border-color:#e4c979!important;
+        background:linear-gradient(135deg,rgba(255,253,246,.98),rgba(255,243,210,.94))!important;
+        box-shadow:0 10px 25px rgba(93,61,10,.13)!important;
+      }
+      .card:nth-child(2){border-left-color:#3da76a!important}
+      .card:nth-child(3){border-left-color:#dca926!important}
+      .card:nth-child(4){border-left-color:#8e71bf!important}
+      .card span,.card small,.names,.member-label{color:#657888!important}
+      .card b,.part b,.rr b:last-child{color:#08779f!important}
+      .rh{background:linear-gradient(90deg,#08789a,#0aaec0)!important;color:#fff8dc!important;border-color:#dca926!important}
+      .rr:nth-child(odd){background:linear-gradient(135deg,#fffdf6,#fff1cf)!important}
+      .day:not(.active){background:linear-gradient(135deg,#fffdf6,#fff0ca)!important;color:#496271!important}
+    </style>
   </head>
   <body>
     <header class="head">
