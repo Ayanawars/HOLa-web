@@ -977,6 +977,30 @@
       .rr:nth-child(odd){background:linear-gradient(135deg,#fffdf6,#fff1cf)!important}
       .day:not(.active){background:linear-gradient(135deg,#fffdf6,#fff0ca)!important;color:#496271!important}
       .week-current,.week-current b,.week-current span{color:#173f5c!important;text-shadow:none!important}
+      @media(max-width:700px){
+        .headin{min-height:82px!important;padding:7px 11px!important;grid-template-columns:40px 1fr 40px!important}
+        .desert-back,.translator-btn{width:38px!important;height:38px!important;font-size:23px!important}
+        .brand-logo{width:74px!important;max-height:30px!important;margin-bottom:0!important}
+        .title h1{font-size:19px!important;line-height:1!important;letter-spacing:.05em!important}
+        .title p{margin-top:3px!important;font-size:9px!important;line-height:1.15!important}
+        .wrap{padding:13px 10px 48px!important}
+        .week{gap:7px!important;margin-bottom:10px!important}
+        .week-current{min-width:0!important;flex:1!important;padding:9px 7px!important;gap:5px!important}
+        .week-current b{font-size:13px!important;line-height:1.15!important}
+        .week-current span{font-size:17px!important}
+        .week-arrow{width:38px!important;height:38px!important;min-width:38px!important;border-radius:11px!important;font-size:27px!important}
+        .days{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+        .day{min-width:0!important;overflow:hidden!important;padding:9px 3px!important;font-size:11px!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+        .day:last-child{grid-column:2 / span 2!important}
+        .stats{gap:8px!important;margin-top:12px!important}
+        .card{min-height:0!important;padding:12px!important;border-radius:16px!important;border-left-width:5px!important}
+        .card span{font-size:9px!important;line-height:1.1!important}
+        .card b{margin-top:5px!important;font-size:20px!important;line-height:1.05!important}
+        .card small{font-size:11px!important;line-height:1.15!important}
+        h2{margin:21px 0 9px!important;font-size:21px!important}
+        .rh,.rr{grid-template-columns:37px minmax(0,1fr) 76px!important;gap:6px!important;padding:10px!important;font-size:11px!important}
+        .part{padding:12px!important}
+      }
     </style>
   </head>
   <body>
