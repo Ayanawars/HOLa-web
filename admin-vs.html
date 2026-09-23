@@ -2360,10 +2360,18 @@
             body: fd,
           });
         } catch (networkError) {
-          throw new Error(
-            "No se pudo conectar con OCR.space: " +
-              (networkError?.message || String(networkError)),
+          // Si OCR.space ni siquiera responde (Failed to fetch, CORS,
+          // conexión caída, bloqueo temporal, etc.), activamos el mismo
+          // cortacircuitos que con el 429: esta captura y todas las siguientes
+          // pasan directamente a Tesseract durante esta sesión.
+          ocrSpaceBlockedForSession = true;
+          ocrStatus.textContent =
+            "⚠ OCR.space no respondió. Cambio automático a Tesseract local; no se harán más peticiones a OCR.space en esta sesión.";
+          showOcrToast(
+            "🧠 Cambio automático a Tesseract",
+            "OCR.space no respondió. Continuamos localmente con esta captura y las siguientes.",
           );
+          return runTesseractPass(selected);
         }
 
         let data = null;
@@ -2395,16 +2403,27 @@
         }
 
         if (!r.ok) {
-          throw new Error(
-            apiMessage ||
-              `OCR.space respondió con error ${r.status}.`,
+          // Cualquier rechazo HTTP de OCR.space activa el respaldo local.
+          // Evitamos seguir gastando peticiones fallidas con las capturas restantes.
+          ocrSpaceBlockedForSession = true;
+          ocrStatus.textContent =
+            `⚠ OCR.space respondió con error ${r.status}. Cambio automático a Tesseract local.`;
+          showOcrToast(
+            "🧠 Cambio automático a Tesseract",
+            `OCR.space respondió con error ${r.status}. Las siguientes capturas ya no usarán la API.`,
           );
+          return runTesseractPass(selected);
         }
 
         if (data?.IsErroredOnProcessing) {
-          throw new Error(
-            apiMessage || "OCR.space no pudo procesar la imagen.",
+          ocrSpaceBlockedForSession = true;
+          ocrStatus.textContent =
+            "⚠ OCR.space rechazó la captura. Cambio automático a Tesseract local.";
+          showOcrToast(
+            "🧠 Cambio automático a Tesseract",
+            apiMessage || "OCR.space no pudo procesar la captura.",
           );
+          return runTesseractPass(selected);
         }
 
         return data?.ParsedResults || [];
