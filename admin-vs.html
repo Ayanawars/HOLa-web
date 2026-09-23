@@ -848,6 +848,7 @@
         // siempre devolver el nombre oficial actual guardado en Supabase.
         const renamedMembers = new Map([
           [normName("TaajB"), "مثالـي25"],
+          [normName("Lolo"), "مثالـي25"],
           [normName("Memofex042"), "Memofex042 ᓚᘏᗢ"],
           [normName("Laz Ziyaa"), "Laz Ziyaaa ᓚᘏᗢ"],
           [normName("Laz Ziyaaa"), "Laz Ziyaaa ᓚᘏᗢ"],
@@ -1302,6 +1303,7 @@
         // OCR árabe puede invertir la parte numérica y la textual.
         [normName("25مثالي"), normName("مثالـي25")],
         [normName("مثالي25"), normName("مثالـي25")],
+        [normName("Lolo"), normName("مثالـي25")],
       ]);
 
       const decoratedMemberBases = [
