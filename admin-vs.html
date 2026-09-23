@@ -1347,12 +1347,22 @@
           }
 
           // Caso especial frecuente: Laz Ziyaa / Laz Ziyaaa.
-          if (
-            entry.base === "Laz Ziyaaa" &&
-            (key.startsWith(normName("Laz Ziyaa")) ||
-              key.startsWith(normName("Laz Ziyaaa")))
-          ) {
-            return { name: official, score: 0.97 };
+          // En esta fila OCR.space puede pegar también "[HOLa] Heroes of Last Area"
+          // o basura equivalente detrás del nombre. Por eso aceptamos cualquier
+          // texto extra después de un prefijo suficientemente cercano al nombre base.
+          if (entry.base === "Laz Ziyaaa") {
+            const lazA = normName("Laz Ziyaaa");
+            const lazB = normName("Laz Ziyaa");
+            const lazPrefix = key.slice(0, lazA.length);
+            const lazPrefixShort = key.slice(0, lazB.length);
+            if (
+              key.startsWith(lazA) ||
+              key.startsWith(lazB) ||
+              levenshtein(lazPrefix, lazA) <= 1 ||
+              levenshtein(lazPrefixShort, lazB) <= 1
+            ) {
+              return { name: official, score: 0.97 };
+            }
           }
         }
         return null;
@@ -1645,8 +1655,16 @@
 
         const results = [];
         for (const line of lines) {
-          const possibleName = cleanName(stripScoreText(line.raw));
+          let possibleName = cleanName(stripScoreText(line.raw));
           if (!possibleName || isBadName(possibleName)) continue;
+
+          // El OCR puede fusionar el nombre con la línea de alianza.
+          // Cortamos antes de [HOLa]/Heroes of Last Area si aparece pegado.
+          possibleName = possibleName
+            .replace(/\s*\[?h[o0]l[a4]\]?\s*heroes\s+of\s+last\s+area.*$/iu, "")
+            .replace(/\s*heroes\s+of\s+last\s+area.*$/iu, "")
+            .trim();
+
           const match = matchMemberName(possibleName);
           if (!match) continue;
 
