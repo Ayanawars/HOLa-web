@@ -1116,7 +1116,8 @@
         sel = "TOTAL",
         weekType = "push",
         currentTab = "summary",
-        selectedWeek = monday();
+        selectedWeek = monday(),
+        hasSelectedInitialWeek = false;
       const dayNames = [
         "",
         "Lunes",
@@ -1394,6 +1395,24 @@
         ]);
         if (a.error) throw a.error;
         if (b.error) console.warn(b.error);
+
+        // Al abrir, muestra directamente la última semana que sí tiene datos.
+        // Así no parece que el selector esté vacío cuando aún no hay resultados
+        // guardados para la semana actual.
+        if (!hasSelectedInitialWeek && !(a.data || []).length) {
+          const latest = await sb
+            .from("vs_scores")
+            .select("vs_date")
+            .order("vs_date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!latest.error && latest.data?.vs_date) {
+            selectedWeek = new Date(`${latest.data.vs_date}T12:00:00`);
+            hasSelectedInitialWeek = true;
+            return load();
+          }
+        }
+        hasSelectedInitialWeek = true;
         scores = a.data || [];
         players = b.data || [];
         weekType = scores.find((x) => x.week_type)?.week_type || "push";
