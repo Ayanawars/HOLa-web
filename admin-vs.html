@@ -1574,7 +1574,12 @@
       // En vez de exigir una línea 100% numérica, buscamos números grandes dentro
       // de las palabras de la misma fila y los asociamos al miembro oficial por Y.
       function scoreValuesFromText(value) {
-        const raw = String(value || "").replace(/[Oo]/g, "0");
+        const raw = String(value || "").replace(/[Oo]/g, "0").trim();
+
+        // Nunca extraemos puntos de textos con letras. Esto evita que nombres
+        // como ENIGMA31415 se conviertan por error en 31.415 puntos.
+        if (/[\p{L}]/u.test(raw)) return [];
+
         const matches =
           raw.match(
             /\d{1,3}(?:[\s.,]\d{3})+(?:[KkMmBb])?|\d{5,12}(?:[KkMmBb])?|\d+(?:[.,]\d+)[KkMmBb]/g,
@@ -1595,6 +1600,96 @@
           )
           .replace(/\s+/g, " ")
           .trim();
+      }
+
+      function scoreCandidatesFromLine(line) {
+        const words = (line?.Words || [])
+          .map((word) => ({
+            text: String(word.WordText || "").trim(),
+            left: Number(word.Left || 0),
+            top: Number(word.Top ?? line.MinTop ?? 0),
+            width: Number(word.Width || 0),
+            height: Number(word.Height ?? line.MaxHeight ?? 0),
+          }))
+          .filter((word) => word.text);
+
+        const numericWords = words
+          .filter((word) => !/[\p{L}]/u.test(word.text))
+          .filter((word) => /\d/.test(word.text))
+          .sort((a, b) => a.left - b.left);
+
+        const groups = [];
+        let current = [];
+        for (const word of numericWords) {
+          if (!current.length) {
+            current = [word];
+            continue;
+          }
+
+          const prev = current[current.length - 1];
+          const gap = word.left - (prev.left + prev.width);
+
+          // OCR.space a veces divide "26,974,062" en "26,974" + "062".
+          // Solo unimos trozos muy próximos para no mezclar el puesto del ranking.
+          if (gap >= -4 && gap <= 38) {
+            current.push(word);
+          } else {
+            groups.push(current);
+            current = [word];
+          }
+        }
+        if (current.length) groups.push(current);
+
+        const candidates = [];
+        for (const group of groups) {
+          const rawJoined = group.map((word) => word.text).join("");
+          const digits = rawJoined.replace(/\D/g, "");
+          if (digits.length < 5) continue;
+
+          const value = Number(digits);
+          if (!Number.isFinite(value) || value < 1000) continue;
+
+          const left = group[0].left;
+          const last = group[group.length - 1];
+          candidates.push({
+            value,
+            top: Math.min(...group.map((word) => word.top)),
+            height: Math.max(...group.map((word) => word.height)),
+            left,
+            right: last.left + last.width,
+          });
+        }
+
+        // También aceptamos una palabra numérica completa sin necesidad de agrupar.
+        for (const word of numericWords) {
+          for (const value of scoreValuesFromText(word.text)) {
+            candidates.push({
+              value,
+              top: word.top,
+              height: word.height,
+              left: word.left,
+              right: word.left + word.width,
+            });
+          }
+        }
+
+        // Si dos candidatos comparten posición, nos quedamos con el que tenga
+        // más dígitos, que suele ser el valor completo.
+        const unique = [];
+        for (const candidate of candidates.sort(
+          (a, b) =>
+            String(b.value).length - String(a.value).length ||
+            b.left - a.left,
+        )) {
+          const duplicate = unique.some(
+            (item) =>
+              Math.abs(item.left - candidate.left) <= 8 &&
+              Math.abs(item.top - candidate.top) <= 8 &&
+              item.value === candidate.value,
+          );
+          if (!duplicate) unique.push(candidate);
+        }
+        return unique;
       }
 
       function pairsFromKnownMembersOverlay(overlay) {
@@ -1623,34 +1718,12 @@
 
         const scoreCandidates = [];
         for (const line of lines) {
-          for (const word of line.words) {
-            const values = scoreValuesFromText(word.WordText || "");
-            for (const value of values) {
-              scoreCandidates.push({
-                value,
-                top: Number(word.Top ?? line.top),
-                height: Number(word.Height ?? line.height),
-                left: Number(word.Left ?? line.left),
-                right:
-                  Number(word.Left ?? line.left) +
-                  Number(word.Width ?? Math.max(0, line.right - line.left)),
-              });
-            }
-          }
-
-          // Algunos motores devuelven la cifra unida a otros caracteres en LineText.
-          // La añadimos como respaldo aunque no haya una palabra numérica limpia.
-          if (!line.words.length || !line.words.some((w) => scoreValuesFromText(w.WordText || "").length)) {
-            for (const value of scoreValuesFromText(line.raw)) {
-              scoreCandidates.push({
-                value,
-                top: line.top,
-                height: line.height,
-                left: Math.max(line.left, line.right - 180),
-                right: line.right,
-              });
-            }
-          }
+          const rawLine = {
+            MinTop: line.top,
+            MaxHeight: line.height,
+            Words: line.words,
+          };
+          scoreCandidates.push(...scoreCandidatesFromLine(rawLine));
         }
 
         const results = [];
@@ -1703,17 +1776,9 @@
       function collectScoreCandidates(parsed) {
         const values = [];
         for (const result of parsed || []) {
-          for (const value of scoreValuesFromText(result?.ParsedText || "")) {
-            values.push(value);
-          }
           for (const line of result?.TextOverlay?.Lines || []) {
-            for (const value of scoreValuesFromText(line.LineText || "")) {
-              values.push(value);
-            }
-            for (const word of line.Words || []) {
-              for (const value of scoreValuesFromText(word.WordText || "")) {
-                values.push(value);
-              }
+            for (const candidate of scoreCandidatesFromLine(line)) {
+              values.push(candidate.value);
             }
           }
         }
