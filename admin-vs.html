@@ -698,9 +698,9 @@
       <section class="panel">
         <h2>📸 SUBIR SCREENSHOTS</h2>
         <p>
-          Selecciona todas las capturas del ranking. Un solo botón hace el OCR
-          normal y, si falta el jugador árabe, activa automáticamente la lectura
-          especial en árabe sobre las mismas capturas.
+          Selecciona todas las capturas del ranking. Se hace una sola lectura
+          OCR por captura. El alias personal Lolo se asigna automáticamente al
+          jugador oficial مثالـي25.
         </p>
         <div class="drop">
           <b>Capturas del ranking</b><br /><input
@@ -2191,58 +2191,90 @@
           body: fd,
         });
 
-        if (!r.ok) throw new Error("OCR.space respondió con error " + r.status);
-        const data = await r.json();
-        if (data.IsErroredOnProcessing) {
-          throw new Error(
-            (Array.isArray(data.ErrorMessage)
+        let data = null;
+        try {
+          data = await r.json();
+        } catch (_) {}
+
+        const apiMessage = data
+          ? (Array.isArray(data.ErrorMessage)
               ? data.ErrorMessage.join(" ")
-              : data.ErrorMessage) || "No se pudo procesar la imagen.",
+              : data.ErrorMessage) ||
+            data.ErrorDetails ||
+            data.ErrorMessage
+          : "";
+
+        if (!r.ok) {
+          throw new Error(
+            apiMessage ||
+              `OCR.space respondió con error ${r.status}. Puede ser límite temporal o cuota agotada.`,
           );
         }
-        return data.ParsedResults || [];
+
+        if (data?.IsErroredOnProcessing) {
+          throw new Error(
+            apiMessage || "OCR.space no pudo procesar la imagen.",
+          );
+        }
+
+        return data?.ParsedResults || [];
       }
 
       async function readScreenshot(selected) {
-        // Pasada 1: nombres y estructura general.
-        const rankingCrop = await cropRankingForOcr(selected);
-        const parsedRanking = await runOcrPass(rankingCrop, "eng", "2");
+        // Una sola petición por captura. Del mismo overlay obtenemos nombres
+        // y reconstruimos la columna derecha de puntos por coordenadas.
+        const cropped = await cropRankingForOcr(selected);
+        const parsed = await runOcrPass(cropped, "eng", "2");
 
-        // Pasada 2: exclusivamente la columna de puntos.
-        // Esta es la fuente prioritaria de las cifras.
-        const pointsCrop = await cropPointsForOcr(selected);
-        const parsedPoints = await runOcrPass(pointsCrop, "eng", "2");
+        const robust = [];
+        const fallback = [];
 
-        const memberRows = [];
-        for (const result of parsedRanking) {
-          memberRows.push(...memberRowsFromOverlay(result.TextOverlay));
+        for (const result of parsed) {
+          const members = memberRowsFromOverlay(result.TextOverlay);
+          const pointsRows = scoreCandidatesFromOverlay(result.TextOverlay)
+            .map((row) => ({
+              value: Number(row.value),
+              top: Number(row.top || 0),
+              height: Number(row.height || 0),
+              center:
+                Number(row.top || 0) + Number(row.height || 0) / 2,
+            }))
+            .sort((a, b) => a.center - b.center);
+
+          const paired = pairMemberRowsWithPoints(members, pointsRows);
+          robust.push(...paired.found);
+
+          const oldDetected = pairsFromOverlay(result.TextOverlay);
+          fallback.push(...oldDetected);
         }
 
-        const pointRows = [];
-        for (const result of parsedPoints) {
-          pointRows.push(...numericRowsFromPointsOverlay(result.TextOverlay));
-        }
-
-        const paired = pairMemberRowsWithPoints(memberRows, pointRows);
-
-        // Conservamos el detector anterior solo como respaldo para nombres que
-        // la nueva asociación por filas no haya podido enlazar.
-        const fallback = extractAndMatchPlayers(parsedRanking);
+        // La lectura por columna es prioritaria. Esto evita que una lectura
+        // truncada como 2.697.406 sustituya a 26.974.062 en Chadriavis.
         const byName = new Map();
-
-        for (const item of paired.found) {
-          byName.set(normName(item.name), item);
+        for (const item of robust) {
+          const match = matchMemberName(item.name);
+          if (!match) continue;
+          byName.set(normName(match.name), {
+            ...item,
+            name: match.name,
+            source: "column",
+          });
         }
 
         for (const item of fallback) {
-          const key = normName(item.name);
-          if (!byName.has(key)) byName.set(key, item);
+          const match = matchMemberName(item.name);
+          if (!match) continue;
+          const key = normName(match.name);
+          if (!byName.has(key)) {
+            byName.set(key, {
+              ...item,
+              name: match.name,
+              source: "fallback",
+            });
+          }
         }
 
-        return {
-          found: [...byName.values()],
-          unmatchedPoints: paired.unmatchedPoints,
-        };
+        return [...byName.values()];
       }
 
       function findArabicRowScore(parsed) {
@@ -2560,7 +2592,6 @@
         }
         const allFound = [];
         const foundByName = new Map();
-        const unmatchedPointFrequency = new Map();
         let processed = 0;
         const errors = [];
 
@@ -2573,18 +2604,7 @@
             ocrStatus.textContent = `Leyendo ${processed} de ${selected.length}: ${file.name}`;
 
             try {
-              const result = await readScreenshot(file);
-              const found = result.found || [];
-
-              for (const value of result.unmatchedPoints || []) {
-                const numeric = Number(value);
-                if (!Number.isFinite(numeric)) continue;
-                unmatchedPointFrequency.set(
-                  numeric,
-                  (unmatchedPointFrequency.get(numeric) || 0) + 1,
-                );
-              }
-
+              const found = await readScreenshot(file);
               for (const x of found) {
                 const key = normName(x.name);
                 const prev = foundByName.get(key);
@@ -2603,55 +2623,8 @@
             }
           }
 
-          // Si solo falta el miembro árabe, usamos la fila de puntos que no
-          // quedó emparejada con ningún nombre. Ya no necesitamos leer árabe.
-          const arabicMember = memberNames.find((name) =>
-            /[\u0600-\u06FF]/u.test(name),
-          );
-          const arabicKey = arabicMember ? normName(arabicMember) : "";
-
-          if (arabicMember && !foundByName.has(arabicKey)) {
-            const usedScores = new Set(
-              [...foundByName.values()].map((item) => Number(item.points)),
-            );
-
-            const candidates = [...unmatchedPointFrequency.entries()]
-              .map(([value, count]) => ({
-                value: Number(value),
-                count: Number(count),
-              }))
-              .filter(
-                (item) =>
-                  Number.isFinite(item.value) &&
-                  item.value >= 0 &&
-                  !usedScores.has(item.value),
-              )
-              .sort(
-                (a, b) =>
-                  b.count - a.count ||
-                  b.value - a.value,
-              );
-
-            // Cuando las capturas se solapan, la fila árabe suele aparecer más
-            // de una vez. Si hay una candidata claramente dominante, la usamos.
-            let chosen = null;
-            if (candidates.length === 1) {
-              chosen = candidates[0];
-            } else if (
-              candidates.length > 1 &&
-              candidates[0].count > candidates[1].count
-            ) {
-              chosen = candidates[0];
-            }
-
-            if (chosen) {
-              foundByName.set(arabicKey, {
-                name: arabicMember,
-                points: chosen.value,
-                score: 1,
-              });
-            }
-          }
+          // El jugador árabe se reconoce mediante el alias personal "Lolo",
+          // que se convierte internamente al nombre oficial مثالـي25.
 
           // Barrera final: solo miembros únicos de la lista actual y nunca más
           // resultados que miembros reales de la alianza.
