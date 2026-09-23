@@ -2541,14 +2541,11 @@
             : `✓ Guardado correctamente: los ${memberNames.length} miembros están completos.`;
           alert(message);
 
-          // Limpiamos solo las capturas: las filas pendientes se conservan para
-          // completar inmediatamente los puntos que no detectó el OCR.
+          // Limpiamos solo el selector único de capturas. Las filas pendientes
+          // se conservan para completar inmediatamente los puntos que no detectó el OCR.
           img.value = "";
-          arabicImg.value = "";
           fileLabel.textContent = "";
-          arabicFileLabel.textContent = "";
           ocrStatus.textContent = "";
-          arabicOcrStatus.textContent = "";
         } catch (e) {
           console.error("Error al guardar en Supabase:", e);
           const message = "⚠ ERROR AL GUARDAR\n\n" + (e?.message || String(e));
