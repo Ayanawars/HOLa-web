@@ -422,8 +422,19 @@ let detected = [];
 
 $("participantDate").value = battleDate;
 
+function cleanParticipantName(value){
+  return String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
+}
 function participants(){
-  return $("participants").value.split(/\n|,/).map(x=>x.trim()).filter(Boolean);
+  const seen=new Set();
+  return $("participants").value.split(/\n|,/)
+    .map(cleanParticipantName)
+    .filter(name=>{
+      const key=norm(name);
+      if(!key||seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function openEventModal(){
@@ -591,8 +602,19 @@ function norm(s){
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]/g,"");
 }
+function cleanParticipantName(value){
+  return String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
+}
 function participants(){
-  return $("participants").value.split(/\n|,/).map(x=>x.trim()).filter(Boolean);
+  const seen=new Set();
+  return $("participants").value.split(/\n|,/)
+    .map(cleanParticipantName)
+    .filter(name=>{
+      const key=norm(name);
+      if(!key||seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 function matchPlayer(ocrName){
   const list=participants();
