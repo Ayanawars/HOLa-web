@@ -698,9 +698,10 @@
       <section class="panel">
         <h2>📸 SUBIR SCREENSHOTS</h2>
         <p>
-          Selecciona todas las capturas del ranking. Se hace una sola lectura
-          OCR por captura. El alias personal Lolo se asigna automáticamente al
-          jugador oficial مثالـي25.
+          Selecciona todas las capturas del ranking. Primero usa OCR.space.
+          Si recibe un límite 429, cambia automáticamente a Tesseract local y
+          no vuelve a consultar OCR.space durante esa sesión. Lolo se asigna
+          automáticamente al jugador oficial مثالـي25.
         </p>
         <div class="drop">
           <b>Capturas del ranking</b><br /><input
@@ -2174,7 +2175,173 @@
         return { found, unmatchedPoints };
       }
 
+      let ocrSpaceBlockedForSession = false;
+      let tesseractWorkerPromise = null;
+      let tesseractLoaderPromise = null;
+
+      function isOcrSpaceLimitError(status, message) {
+        const text = String(message || "").toLowerCase();
+        return (
+          Number(status) === 429 ||
+          /too many|rate.?limit|quota|maximum.*request|limit.*request|requests.*limit/.test(
+            text,
+          )
+        );
+      }
+
+      async function loadTesseractLibrary() {
+        if (window.Tesseract?.createWorker) return window.Tesseract;
+
+        if (!tesseractLoaderPromise) {
+          tesseractLoaderPromise = new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src =
+              "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+            script.async = true;
+            script.onload = () => {
+              if (window.Tesseract?.createWorker) resolve(window.Tesseract);
+              else reject(new Error("Tesseract.js no se cargó correctamente."));
+            };
+            script.onerror = () =>
+              reject(new Error("No se pudo descargar Tesseract.js."));
+            document.head.appendChild(script);
+          });
+        }
+
+        return tesseractLoaderPromise;
+      }
+
+      async function getTesseractWorker() {
+        if (!tesseractWorkerPromise) {
+          tesseractWorkerPromise = (async () => {
+            const Tesseract = await loadTesseractLibrary();
+            return Tesseract.createWorker("eng", 1, {
+              logger: (message) => {
+                if (!message) return;
+                if (message.status === "recognizing text") {
+                  const pct = Math.round((Number(message.progress) || 0) * 100);
+                  ocrStatus.textContent =
+                    `🧠 Tesseract local: leyendo captura... ${pct}%`;
+                } else if (
+                  message.status === "loading language traineddata" ||
+                  message.status === "loading tesseract core"
+                ) {
+                  ocrStatus.textContent =
+                    "🧠 Preparando Tesseract local por primera vez...";
+                }
+              },
+            });
+          })();
+        }
+
+        return tesseractWorkerPromise;
+      }
+
+      async function releaseTesseractWorker() {
+        if (!tesseractWorkerPromise) return;
+
+        try {
+          const worker = await tesseractWorkerPromise;
+          await worker.terminate();
+        } catch (error) {
+          console.warn("No se pudo cerrar Tesseract:", error);
+        } finally {
+          tesseractWorkerPromise = null;
+        }
+      }
+
+      function tesseractDataToParsedResults(data) {
+        const rawWords = Array.isArray(data?.words) ? data.words : [];
+        const words = rawWords
+          .map((word) => {
+            const box = word.bbox || {};
+            const left = Number(box.x0 || 0);
+            const top = Number(box.y0 || 0);
+            const right = Number(box.x1 || left);
+            const bottom = Number(box.y1 || top);
+            return {
+              text: String(word.text || "").trim(),
+              left,
+              top,
+              width: Math.max(0, right - left),
+              height: Math.max(1, bottom - top),
+              center: top + Math.max(1, bottom - top) / 2,
+            };
+          })
+          .filter((word) => word.text);
+
+        const grouped = [];
+        for (const word of words.sort(
+          (a, b) => a.center - b.center || a.left - b.left,
+        )) {
+          let line = grouped.find(
+            (candidate) =>
+              Math.abs(candidate.center - word.center) <=
+              Math.max(14, Math.min(32, word.height * 0.9)),
+          );
+
+          if (!line) {
+            line = { center: word.center, words: [] };
+            grouped.push(line);
+          }
+
+          line.words.push(word);
+          line.center =
+            line.words.reduce((sum, item) => sum + item.center, 0) /
+            line.words.length;
+        }
+
+        const Lines = grouped
+          .map((line) => {
+            const lineWords = line.words.sort((a, b) => a.left - b.left);
+            const minTop = Math.min(...lineWords.map((word) => word.top));
+            const maxHeight = Math.max(...lineWords.map((word) => word.height));
+
+            return {
+              LineText: lineWords.map((word) => word.text).join(" "),
+              MinTop: minTop,
+              MaxHeight: maxHeight,
+              Words: lineWords.map((word) => ({
+                WordText: word.text,
+                Left: word.left,
+                Top: word.top,
+                Width: word.width,
+                Height: word.height,
+              })),
+            };
+          })
+          .sort((a, b) => Number(a.MinTop) - Number(b.MinTop));
+
+        return [
+          {
+            ParsedText: String(data?.text || ""),
+            TextOverlay: { Lines },
+          },
+        ];
+      }
+
+      async function runTesseractPass(selected) {
+        const worker = await getTesseractWorker();
+        const result = await worker.recognize(selected);
+
+        const parsed = tesseractDataToParsedResults(result?.data);
+        if (
+          !parsed[0]?.TextOverlay?.Lines?.length &&
+          !String(result?.data?.text || "").trim()
+        ) {
+          throw new Error("Tesseract no detectó texto en la captura.");
+        }
+
+        return parsed;
+      }
+
       async function runOcrPass(selected, language, engine = "2") {
+        // Tras el primer 429 no volvemos a consultar OCR.space durante esta
+        // sesión de página. Todas las capturas restantes pasan a Tesseract.
+        if (ocrSpaceBlockedForSession) {
+          return runTesseractPass(selected);
+        }
+
         const fd = new FormData();
         fd.append("file", selected);
         fd.append("language", language);
@@ -2185,11 +2352,19 @@
         fd.append("isTable", "true");
         fd.append("isCreateSearchablePDF", "false");
 
-        const r = await fetch("https://api.ocr.space/parse/image", {
-          method: "POST",
-          headers: { apikey: OCR_API_KEY },
-          body: fd,
-        });
+        let r;
+        try {
+          r = await fetch("https://api.ocr.space/parse/image", {
+            method: "POST",
+            headers: { apikey: OCR_API_KEY },
+            body: fd,
+          });
+        } catch (networkError) {
+          throw new Error(
+            "No se pudo conectar con OCR.space: " +
+              (networkError?.message || String(networkError)),
+          );
+        }
 
         let data = null;
         try {
@@ -2201,13 +2376,28 @@
               ? data.ErrorMessage.join(" ")
               : data.ErrorMessage) ||
             data.ErrorDetails ||
-            data.ErrorMessage
+            ""
           : "";
+
+        if (
+          isOcrSpaceLimitError(r.status, apiMessage) ||
+          (data?.IsErroredOnProcessing &&
+            isOcrSpaceLimitError(r.status, apiMessage))
+        ) {
+          ocrSpaceBlockedForSession = true;
+          ocrStatus.textContent =
+            "⚠ OCR.space alcanzó el límite. Cambio automático a Tesseract local; no se harán más peticiones a OCR.space en esta sesión.";
+          showOcrToast(
+            "🧠 Cambio automático a Tesseract",
+            "OCR.space devolvió límite/cuota. Las capturas restantes se procesarán localmente.",
+          );
+          return runTesseractPass(selected);
+        }
 
         if (!r.ok) {
           throw new Error(
             apiMessage ||
-              `OCR.space respondió con error ${r.status}. Puede ser límite temporal o cuota agotada.`,
+              `OCR.space respondió con error ${r.status}.`,
           );
         }
 
@@ -2682,6 +2872,7 @@
           console.error(e);
           ocrStatus.textContent = "⚠ Error OCR: " + e.message;
         } finally {
+          await releaseTesseractWorker();
           ocrBtn.disabled = false;
           ocrBtn.textContent = "🔍 LEER TODO CON OCR";
         }
