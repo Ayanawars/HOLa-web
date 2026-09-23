@@ -1844,6 +1844,45 @@
           ),
         ]);
 
+      // Tras cada guardado comprobamos el día contra los miembros actuales.
+      // Los que no aparezcan se cargan como filas listas para introducir su puntuación.
+      async function prepareMissingMemberRows(day, week_type, vs_date) {
+        await loadMemberNames();
+
+        const { data: savedRows, error } = await withTimeout(
+          sb
+            .from("vs_scores")
+            .select("player_name")
+            .eq("day", day)
+            .eq("week_type", week_type)
+            .eq("vs_date", vs_date),
+          20000,
+          "La comprobación de miembros pendientes",
+        );
+        if (error) throw new Error(`Supabase: ${error.message}`);
+
+        const savedNames = new Set(
+          (savedRows || []).map((row) => normName(row.player_name)),
+        );
+        const missing = memberNames.filter(
+          (name) => !savedNames.has(normName(name)),
+        );
+
+        rows.innerHTML = "";
+        if (missing.length) {
+          missing.forEach((name) => add(name, ""));
+          requestAnimationFrame(() =>
+            rows.children[0]?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            }),
+          );
+        } else {
+          add();
+        }
+        return missing;
+      }
+
       // Guardado robusto: todo el flujo queda dentro de try/finally para que el botón
       // nunca se quede bloqueado en "GUARDANDO..." aunque falle una línea inesperada.
 
@@ -1960,21 +1999,24 @@
           }
 
           const total = inserted + updated;
-          const message = `💾 PUNTUACIONES GUARDADAS\n\n${total} jugadores procesados\n➕ Nuevos: ${inserted}\n🔄 Actualizados: ${updated}`;
-          status.textContent = `✓ Guardado correctamente: ${total} jugadores. Nuevos: ${inserted}. Actualizados: ${updated}.`;
+          const missing = await prepareMissingMemberRows(day, week_type, vs_date);
+          const missingText = missing.length
+            ? `\n\n⚠ FALTAN ${missing.length} MIEMBRO${missing.length === 1 ? "" : "S"}\nYa aparecen abajo para rellenar su puntuación y guardar otra vez.`
+            : "\n\n✓ Los 99 miembros de la alianza están completos.";
+          const message = `💾 PUNTUACIONES GUARDADAS\n\n${total} jugadores procesados\n➕ Nuevos: ${inserted}\n🔄 Actualizados: ${updated}${missingText}`;
+          status.textContent = missing.length
+            ? `✓ Guardado. Faltan ${missing.length} miembro${missing.length === 1 ? "" : "s"}: rellena sus puntos abajo y vuelve a guardar.`
+            : `✓ Guardado correctamente: los ${memberNames.length} miembros están completos.`;
           alert(message);
 
-          // Tras confirmar el guardado, limpiamos la captura y la lista para dejar
-          // VS ADMIN preparado para subir la siguiente screenshot. La fecha y el
-          // tipo de semana se conservan para poder continuar guardando el mismo día.
-          rows.innerHTML = "";
+          // Limpiamos solo las capturas: las filas pendientes se conservan para
+          // completar inmediatamente los puntos que no detectó el OCR.
           img.value = "";
           arabicImg.value = "";
           fileLabel.textContent = "";
           arabicFileLabel.textContent = "";
           ocrStatus.textContent = "";
           arabicOcrStatus.textContent = "";
-          add();
         } catch (e) {
           console.error("Error al guardar en Supabase:", e);
           const message = "⚠ ERROR AL GUARDAR\n\n" + (e?.message || String(e));
