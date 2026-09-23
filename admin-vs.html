@@ -1321,6 +1321,23 @@
           }
         }
 
+        // En algunos perfiles el adorno queda pegado al nombre. Aceptamos
+        // únicamente un nombre oficial largo al inicio y un sufijo corto.
+        for (const key of variants) {
+          for (const name of memberNames) {
+            const memberKey = normName(name);
+            const suffixLength = key.length - memberKey.length;
+            if (
+              memberKey.length >= 6 &&
+              suffixLength > 0 &&
+              suffixLength <= 8 &&
+              key.startsWith(memberKey)
+            ) {
+              return { name, score: 0.98 };
+            }
+          }
+        }
+
         let best = null;
         for (const name of memberNames) {
           const k = normName(name);
