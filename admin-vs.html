@@ -1283,6 +1283,11 @@
       // El destino siempre se resuelve en la lista actual de la alianza.
       const ocrNameAliases = new Map([
         [normName("Sinsiflex"), normName("sinsifeX")],
+        [normName("JEBRAWW"), normName("JEBRAWUU")],
+        [normName("Laz Ziyaa"), normName("Laz Ziyaaa")],
+        // OCR árabe puede invertir la parte numérica y la textual.
+        [normName("25مثالي"), normName("مثالـي25")],
+        [normName("مثالي25"), normName("مثالـي25")],
       ]);
 
       function matchMemberName(detected) {
