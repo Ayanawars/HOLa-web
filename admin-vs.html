@@ -347,6 +347,7 @@
             PUNTUACIONES: "SCORES",
             "Capturas normales": "Normal screenshots",
             "LEER CON OCR": "READ WITH OCR",
+            "LEER TODO CON OCR": "READ ALL WITH OCR",
             "AÑADIR JUGADOR": "ADD PLAYER",
             "GUARDAR EN SUPABASE": "SAVE TO SUPABASE",
             "COMPROBAR TOTAL SEMANAL": "CHECK WEEKLY TOTAL",
@@ -697,34 +698,22 @@
       <section class="panel">
         <h2>📸 SUBIR SCREENSHOTS</h2>
         <p>
-          Usa el OCR normal para las capturas habituales. Para el jugador con
-          nombre árabe, usa el botón especial: así el OCR normal sigue siendo
-          rápido.
+          Selecciona todas las capturas del ranking. Un solo botón hace el OCR
+          normal y, si falta el jugador árabe, activa automáticamente la lectura
+          especial en árabe sobre las mismas capturas.
         </p>
         <div class="drop">
-          <b>Capturas normales</b><br /><input
+          <b>Capturas del ranking</b><br /><input
             id="img"
             type="file"
             accept="image/*"
             multiple
           />
           <div class="note" id="file"></div>
-          <button class="btn" id="ocrBtn" type="button">🔍 LEER CON OCR</button>
-          <div class="status" id="ocrStatus"></div>
-        </div>
-        <div class="drop" style="margin-top: 14px">
-          <b>🌍 Captura para nombre árabe</b><br />
-          <div class="note">
-            Selecciona solo la captura donde aparece el nombre árabe. Este modo
-            hace una lectura específica en árabe y enlaza el nombre con los
-            puntos de su misma fila. Se añade sin borrar los resultados del OCR normal.
-          </div>
-          <input id="arabicImg" type="file" accept="image/*" multiple />
-          <div class="note" id="arabicFile"></div>
-          <button class="btn" id="arabicOcrBtn" type="button">
-            🌍 LEER NOMBRE ÁRABE
+          <button class="btn" id="ocrBtn" type="button">
+            🔍 LEER TODO CON OCR
           </button>
-          <div class="status" id="arabicOcrStatus"></div>
+          <div class="status" id="ocrStatus"></div>
         </div>
       </section>
       <section class="panel">
@@ -840,10 +829,6 @@
         fileLabel = document.getElementById("file"),
         ocrBtn = document.getElementById("ocrBtn"),
         ocrStatus = document.getElementById("ocrStatus"),
-        arabicImg = document.getElementById("arabicImg"),
-        arabicFileLabel = document.getElementById("arabicFile"),
-        arabicOcrBtn = document.getElementById("arabicOcrBtn"),
-        arabicOcrStatus = document.getElementById("arabicOcrStatus"),
         dayDate = document.getElementById("dayDate"),
         dayDateLabel = document.getElementById("dayDateLabel"),
         status = document.getElementById("status");
@@ -2272,6 +2257,46 @@
             }
           }
 
+          // Si el OCR normal no encontró al jugador árabe, lo buscamos
+          // automáticamente en las mismas capturas. El usuario no necesita
+          // seleccionar otra imagen ni pulsar un segundo botón.
+          const arabicMember = memberNames.find((name) =>
+            /[\u0600-\u06FF]/u.test(name),
+          );
+          const arabicKey = arabicMember ? normName(arabicMember) : "";
+
+          if (arabicMember && !foundByName.has(arabicKey)) {
+            ocrStatus.textContent =
+              "🌍 Buscando automáticamente el jugador árabe...";
+
+            for (let i = 0; i < selected.length; i++) {
+              ocrBtn.textContent = `🌍 ÁRABE ${i + 1}/${selected.length}`;
+
+              try {
+                const arabicResults = await readArabicScreenshot(selected[i]);
+                const arabicResult = arabicResults.find(
+                  (item) =>
+                    normName(item.name) === arabicKey &&
+                    Number(item.points) > 0,
+                );
+
+                if (arabicResult) {
+                  foundByName.set(arabicKey, {
+                    ...arabicResult,
+                    name: arabicMember,
+                  });
+                  break;
+                }
+              } catch (error) {
+                console.warn(
+                  "No se pudo leer árabe en",
+                  selected[i].name,
+                  error,
+                );
+              }
+            }
+          }
+
           // Barrera final: solo miembros únicos de la lista actual y nunca más
           // resultados que miembros reales de la alianza.
           const allowedMembers = new Map(
@@ -2329,84 +2354,11 @@
           ocrStatus.textContent = "⚠ Error OCR: " + e.message;
         } finally {
           ocrBtn.disabled = false;
-          ocrBtn.textContent = "🔍 LEER CON OCR";
+          ocrBtn.textContent = "🔍 LEER TODO CON OCR";
         }
       };
 
-      arabicImg.onchange = (e) => {
-        const selected = [...e.target.files];
-        arabicFileLabel.textContent = selected.length
-          ? `${selected.length} captura${selected.length === 1 ? "" : "s"} árabe${selected.length === 1 ? "" : "s"} seleccionada${selected.length === 1 ? "" : "s"}: ${selected.map((f) => f.name).join(" · ")}`
-          : "";
-        arabicOcrStatus.textContent = "";
-      };
-
-      arabicOcrBtn.onclick = async () => {
-        const selected = [...arabicImg.files];
-        if (!selected.length) {
-          arabicOcrStatus.textContent =
-            "⚠ Selecciona primero la captura donde aparece el nombre árabe.";
-          return;
-        }
-
-        arabicOcrBtn.disabled = true;
-        try {
-          arabicOcrStatus.textContent =
-            "Comprobando los miembros actuales de la alianza...";
-          await loadMemberNames();
-        } catch (e) {
-          arabicOcrBtn.disabled = false;
-          arabicOcrStatus.textContent =
-            "⚠ No se pudo comprobar la lista actual de la alianza. El OCR no se ha ejecutado.";
-          return;
-        }
-        const foundByName = new Map(),
-          errors = [];
-        try {
-          for (let i = 0; i < selected.length; i++) {
-            const f = selected[i];
-            arabicOcrBtn.textContent = `⏳ LEYENDO ÁRABE ${i + 1}/${selected.length}`;
-            arabicOcrStatus.textContent = `Leyendo captura árabe ${i + 1} de ${selected.length}: ${f.name}`;
-            try {
-              const found = await readArabicScreenshot(f);
-              for (const x of found) {
-                const key = normName(x.name),
-                  prev = foundByName.get(key);
-                if (
-                  !prev ||
-                  (Number(prev.points) === 0 && Number(x.points) !== 0)
-                )
-                  foundByName.set(key, x);
-              }
-            } catch (e) {
-              console.error("Arabic OCR error:", f.name, e);
-              errors.push(`${f.name}: ${e.message}`);
-            }
-          }
-
-          const allFound = [...foundByName.values()];
-          if (!allFound.length)
-            throw new Error(
-              errors.length
-                ? errors.join(" | ")
-                : "No se detectó ningún jugador árabe válido.",
-            );
-          addOrUpdateDetectedRows(allFound);
-          arabicOcrStatus.textContent = `✓ OCR árabe completado: ${allFound.length} jugador${allFound.length === 1 ? "" : "es"} añadido${allFound.length === 1 ? "" : "s"} sin borrar los resultados anteriores.`;
-          if (errors.length)
-            arabicOcrStatus.textContent += ` Problemas: ${errors.join(" · ")}`;
-          showOcrToast(
-            "✓ Nombre árabe actualizado",
-            `${allFound.length} jugador${allFound.length === 1 ? "" : "es"} añadido${allFound.length === 1 ? "" : "s"}.`,
-          );
-        } catch (e) {
-          console.error(e);
-          arabicOcrStatus.textContent = "⚠ Error OCR árabe: " + e.message;
-        } finally {
-          arabicOcrBtn.disabled = false;
-          arabicOcrBtn.textContent = "🌍 LEER NOMBRE ÁRABE";
-        }
-      };
+      // El OCR árabe se ejecuta automáticamente desde el botón principal.
       document.getElementById("add").onclick = () => add();
       const withTimeout = (promise, ms = 15000, label = "Supabase") =>
         Promise.race([
