@@ -1602,6 +1602,106 @@
           .trim();
       }
 
+      function scoreCandidatesFromOverlay(overlay) {
+        const words = [];
+        for (const line of overlay?.Lines || []) {
+          for (const word of line.Words || []) {
+            const text = String(word.WordText || "").trim();
+            if (!text || !/\d/.test(text)) continue;
+            words.push({
+              text,
+              left: Number(word.Left || 0),
+              top: Number(word.Top ?? line.MinTop ?? 0),
+              width: Number(word.Width || 0),
+              height: Number(word.Height ?? line.MaxHeight ?? 0),
+            });
+          }
+        }
+        if (!words.length) return [];
+
+        const maxRight = Math.max(
+          ...words.map((word) => word.left + word.width),
+          1,
+        );
+
+        // La puntuación está siempre en la zona derecha del ranking.
+        // Así nunca usamos dígitos de nombres como ENIGMA31415.
+        const pointColumnStart = maxRight * 0.52;
+        const numeric = words
+          .filter((word) => word.left >= pointColumnStart)
+          .filter((word) => !/[\p{L}]/u.test(word.text))
+          .filter((word) => /\d/.test(word.text))
+          .sort(
+            (a, b) =>
+              a.top + a.height / 2 - (b.top + b.height / 2) ||
+              a.left - b.left,
+          );
+
+        const rows = [];
+        for (const word of numeric) {
+          const cy = word.top + word.height / 2;
+          let row = rows.find(
+            (candidate) =>
+              Math.abs(candidate.cy - cy) <=
+              Math.max(15, Math.min(30, word.height * 1.15)),
+          );
+          if (!row) {
+            row = { cy, words: [] };
+            rows.push(row);
+          }
+          row.words.push(word);
+          row.cy =
+            row.words.reduce(
+              (sum, item) => sum + item.top + item.height / 2,
+              0,
+            ) / row.words.length;
+        }
+
+        const candidates = [];
+        for (const row of rows) {
+          const rowWords = row.words.sort((a, b) => a.left - b.left);
+
+          // Dividimos solo cuando hay un salto horizontal enorme.
+          // OCR.space puede separar 26,974,062 en 26,974 + 06 + 2.
+          let groups = [];
+          let group = [];
+          for (const word of rowWords) {
+            if (!group.length) {
+              group = [word];
+              continue;
+            }
+            const prev = group[group.length - 1];
+            const gap = word.left - (prev.left + prev.width);
+            if (gap <= 75) {
+              group.push(word);
+            } else {
+              groups.push(group);
+              group = [word];
+            }
+          }
+          if (group.length) groups.push(group);
+
+          for (const items of groups) {
+            const digits = items.map((item) => item.text).join("").replace(/\D/g, "");
+            if (digits.length < 5) continue;
+            const value = Number(digits);
+            if (!Number.isFinite(value) || value < 1000) continue;
+
+            const first = items[0];
+            const last = items[items.length - 1];
+            candidates.push({
+              value,
+              top: Math.min(...items.map((item) => item.top)),
+              height: Math.max(...items.map((item) => item.height)),
+              left: first.left,
+              right: last.left + last.width,
+            });
+          }
+        }
+
+        return candidates;
+      }
+
       function scoreCandidatesFromLine(line) {
         const words = (line?.Words || [])
           .map((word) => ({
@@ -1716,15 +1816,9 @@
           })
           .filter((line) => line.raw.trim());
 
-        const scoreCandidates = [];
-        for (const line of lines) {
-          const rawLine = {
-            MinTop: line.top,
-            MaxHeight: line.height,
-            Words: line.words,
-          };
-          scoreCandidates.push(...scoreCandidatesFromLine(rawLine));
-        }
+        // Reconstruimos la columna de puntos con todas las palabras del overlay,
+        // incluso cuando OCR.space parte una cifra en varias líneas/palabras.
+        const scoreCandidates = scoreCandidatesFromOverlay(overlay);
 
         const results = [];
         for (const line of lines) {
@@ -1776,10 +1870,10 @@
       function collectScoreCandidates(parsed) {
         const values = [];
         for (const result of parsed || []) {
-          for (const line of result?.TextOverlay?.Lines || []) {
-            for (const candidate of scoreCandidatesFromLine(line)) {
-              values.push(candidate.value);
-            }
+          for (const candidate of scoreCandidatesFromOverlay(
+            result?.TextOverlay,
+          )) {
+            values.push(candidate.value);
           }
         }
         return [...new Set(values.filter((value) => value >= 1000))];
