@@ -1279,6 +1279,12 @@
         return [...variants];
       }
 
+      // Lecturas conocidas de OCR para nombres con adornos del juego.
+      // El destino siempre se resuelve en la lista actual de la alianza.
+      const ocrNameAliases = new Map([
+        [normName("Sinsiflex"), normName("sinsifeX")],
+      ]);
+
       function matchMemberName(detected) {
         // Reaplicamos la limpieza aquí para todos los caminos del OCR, incluidos
         // los textos que no llegaron desde las líneas con coordenadas.
@@ -1300,6 +1306,14 @@
         for (const key of variants) {
           const exact = memberNames.find((name) => normName(name) === key);
           if (exact) return { name: exact, score: 1 };
+
+          const aliasKey = ocrNameAliases.get(key);
+          if (aliasKey) {
+            const alias = memberNames.find(
+              (name) => normName(name) === aliasKey,
+            );
+            if (alias) return { name: alias, score: 1 };
+          }
         }
 
         let best = null;
@@ -1320,7 +1334,9 @@
         );
         // La coincidencia aproximada solo corrige errores claros de OCR; nunca
         // convierte libremente a un jugador ajeno en un miembro de la alianza.
-        const threshold = minLen <= 4 ? 0.9 : minLen <= 7 ? 0.84 : 0.8;
+        // Sin coincidencia exacta o alias, solo aceptamos errores mínimos.
+        // Esto impide que texto ajeno del ranking se convierta en un miembro.
+        const threshold = minLen <= 4 ? 0.92 : minLen <= 7 ? 0.9 : 0.87;
         return best.score >= threshold ? best : null;
       }
 
@@ -1735,7 +1751,25 @@
             }
           }
 
-          allFound.push(...foundByName.values());
+          // Barrera final: solo miembros únicos de la lista actual y nunca más
+          // resultados que miembros reales de la alianza.
+          const allowedMembers = new Map(
+            memberNames.map((name) => [normName(name), name]),
+          );
+          const accepted = new Map();
+          for (const item of foundByName.values()) {
+            const official = allowedMembers.get(normName(item.name));
+            if (!official) continue;
+            const key = normName(official);
+            const previous = accepted.get(key);
+            if (
+              !previous ||
+              (Number(previous.points) === 0 && Number(item.points) !== 0)
+            ) {
+              accepted.set(key, { ...item, name: official });
+            }
+          }
+          allFound.push(...[...accepted.values()].slice(0, memberNames.length));
 
           if (!allFound.length) {
             throw new Error(
@@ -1756,7 +1790,7 @@
           allFound.forEach((x) => add(x.name, x.points));
 
           const zeroPlayers = allFound.filter((x) => Number(x.points) === 0);
-          ocrStatus.textContent = `✓ OCR completado: ${allFound.length} jugadores detectados en ${processed} captura${processed === 1 ? "" : "s"}. Revisa antes de guardar.`;
+          ocrStatus.textContent = `✓ OCR completado: ${allFound.length}/${memberNames.length} miembros únicos detectados en ${processed} captura${processed === 1 ? "" : "s"}. Revisa antes de guardar.`;
           if (zeroPlayers.length) {
             ocrStatus.textContent += ` Se detectaron ${zeroPlayers.length} jugador${zeroPlayers.length === 1 ? "" : "es"} con 0 puntos.`;
           }
