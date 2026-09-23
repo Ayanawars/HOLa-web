@@ -1511,6 +1511,149 @@
         return result;
       }
 
+
+      // Recuperación reforzada para filas que OCR.space separa de forma irregular.
+      // En vez de exigir una línea 100% numérica, buscamos números grandes dentro
+      // de las palabras de la misma fila y los asociamos al miembro oficial por Y.
+      function scoreValuesFromText(value) {
+        const raw = String(value || "").replace(/[Oo]/g, "0");
+        const matches =
+          raw.match(
+            /\d{1,3}(?:[\s.,]\d{3})+(?:[KkMmBb])?|\d{5,12}(?:[KkMmBb])?|\d+(?:[.,]\d+)[KkMmBb]/g,
+          ) || [];
+        const out = [];
+        for (const token of matches) {
+          const value = points(token);
+          if (Number.isFinite(value) && value >= 1000) out.push(value);
+        }
+        return out;
+      }
+
+      function stripScoreText(value) {
+        return String(value || "")
+          .replace(
+            /\d{1,3}(?:[\s.,]\d{3})+(?:[KkMmBb])?|\d{5,12}(?:[KkMmBb])?|\d+(?:[.,]\d+)[KkMmBb]/g,
+            " ",
+          )
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function pairsFromKnownMembersOverlay(overlay) {
+        const lines = (overlay?.Lines || [])
+          .map((line, index) => {
+            const words = line.Words || [];
+            const left = Math.min(
+              ...words.map((w) => Number(w.Left || 99999)),
+              99999,
+            );
+            const right = Math.max(
+              ...words.map((w) => Number(w.Left || 0) + Number(w.Width || 0)),
+              0,
+            );
+            return {
+              raw: String(line.LineText || ""),
+              top: Number(line.MinTop || 0),
+              height: Number(line.MaxHeight || 0),
+              left,
+              right,
+              words,
+              index,
+            };
+          })
+          .filter((line) => line.raw.trim());
+
+        const scoreCandidates = [];
+        for (const line of lines) {
+          for (const word of line.words) {
+            const values = scoreValuesFromText(word.WordText || "");
+            for (const value of values) {
+              scoreCandidates.push({
+                value,
+                top: Number(word.Top ?? line.top),
+                height: Number(word.Height ?? line.height),
+                left: Number(word.Left ?? line.left),
+                right:
+                  Number(word.Left ?? line.left) +
+                  Number(word.Width ?? Math.max(0, line.right - line.left)),
+              });
+            }
+          }
+
+          // Algunos motores devuelven la cifra unida a otros caracteres en LineText.
+          // La añadimos como respaldo aunque no haya una palabra numérica limpia.
+          if (!line.words.length || !line.words.some((w) => scoreValuesFromText(w.WordText || "").length)) {
+            for (const value of scoreValuesFromText(line.raw)) {
+              scoreCandidates.push({
+                value,
+                top: line.top,
+                height: line.height,
+                left: Math.max(line.left, line.right - 180),
+                right: line.right,
+              });
+            }
+          }
+        }
+
+        const results = [];
+        for (const line of lines) {
+          const possibleName = cleanName(stripScoreText(line.raw));
+          if (!possibleName || isBadName(possibleName)) continue;
+          const match = matchMemberName(possibleName);
+          if (!match) continue;
+
+          const nameCenter = line.top + line.height / 2;
+          const tolerance = Math.max(58, Math.min(125, line.height * 3));
+
+          const candidates = scoreCandidates
+            .map((candidate) => {
+              const scoreCenter = candidate.top + candidate.height / 2;
+              const dy = Math.abs(scoreCenter - nameCenter);
+              const rightPenalty =
+                candidate.left + 8 < line.left ? 250 : candidate.left < line.right ? 25 : 0;
+              return {
+                ...candidate,
+                dy,
+                rankScore: dy * 3 + rightPenalty,
+              };
+            })
+            .filter((candidate) => candidate.dy <= tolerance)
+            .sort((a, b) => a.rankScore - b.rankScore);
+
+          const chosen = candidates[0];
+          if (!chosen) continue;
+
+          results.push({
+            name: match.name,
+            points: chosen.value,
+            top: line.top,
+            score: match.score,
+          });
+        }
+
+        return results;
+      }
+
+      function collectScoreCandidates(parsed) {
+        const values = [];
+        for (const result of parsed || []) {
+          for (const value of scoreValuesFromText(result?.ParsedText || "")) {
+            values.push(value);
+          }
+          for (const line of result?.TextOverlay?.Lines || []) {
+            for (const value of scoreValuesFromText(line.LineText || "")) {
+              values.push(value);
+            }
+            for (const word of line.Words || []) {
+              for (const value of scoreValuesFromText(word.WordText || "")) {
+                values.push(value);
+              }
+            }
+          }
+        }
+        return [...new Set(values.filter((value) => value >= 1000))];
+      }
+
       /* Respaldo si OCR.space no devuelve coordenadas. */
       function pairs(text) {
         const lines = String(text || "")
@@ -1658,25 +1801,17 @@
         if (found.some((x) => normName(x.name) === normName(arabicMember)))
           return found;
 
-        // Recoger todos los números grandes de puntos detectados, incluso si el
-        // nombre de esa fila no pudo ser leído.
-        const scoreCandidates = [];
-        const raw = parsed.map((x) => x.ParsedText || "").join("\n");
-        const pushScores = (s) => {
-          const matches =
-            String(s || "").match(
-              /\b\d{1,3}(?:[,\s.]\d{3})+\b|\b\d{5,12}\b/g,
-            ) || [];
-          for (const m of matches) {
-            const points = Number(m.replace(/[^\d]/g, ""));
-            if (points >= 1000) scoreCandidates.push(points);
-          }
-        };
-        pushScores(raw);
+        // Recoger todas las cifras grandes, incluso cuando OCR.space las mezcla
+        // con símbolos o las separa en varias palabras de la fila.
+        const scoreCandidates = collectScoreCandidates(parsed);
 
         // Preferimos un valor de puntos que no esté ya asignado a otro jugador.
         const used = new Set(found.map((x) => Number(x.points)));
-        let points = scoreCandidates.find((p) => !used.has(p));
+        const unusedScores = scoreCandidates.filter((p) => !used.has(Number(p)));
+        let points =
+          unusedScores.length === 1
+            ? unusedScores[0]
+            : unusedScores.find((p) => !used.has(Number(p)));
         if (points === undefined && scoreCandidates.length)
           points = scoreCandidates[scoreCandidates.length - 1];
 
@@ -1693,6 +1828,11 @@
         for (const x of parsed) {
           const detected = pairsFromOverlay(x.TextOverlay);
           if (detected.length) found.push(...detected);
+
+          // Segunda lectura por coordenadas, más tolerante con nombres decorados,
+          // texto árabe y cifras que OCR.space mezcla con otros caracteres.
+          const recovered = pairsFromKnownMembersOverlay(x.TextOverlay);
+          if (recovered.length) found.push(...recovered);
         }
 
         const fallback = pairs(raw)
@@ -1721,6 +1861,30 @@
             byName.set(key, canonical);
           }
         }
+        // Si solo queda una cifra sin asignar en esta captura y todavía falta
+        // el único miembro con nombre árabe, la asociación es inequívoca.
+        const arabicMember = memberNames.find((name) =>
+          /[\u0600-\u06FF]/.test(name),
+        );
+        if (
+          arabicMember &&
+          !byName.has(normName(arabicMember))
+        ) {
+          const usedScores = new Set(
+            [...byName.values()].map((item) => Number(item.points)),
+          );
+          const remainingScores = collectScoreCandidates(parsed).filter(
+            (value) => !usedScores.has(Number(value)),
+          );
+          if (remainingScores.length === 1) {
+            byName.set(normName(arabicMember), {
+              name: arabicMember,
+              points: remainingScores[0],
+              score: 1,
+            });
+          }
+        }
+
         return [...byName.values()];
       }
 
