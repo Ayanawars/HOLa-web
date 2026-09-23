@@ -848,96 +848,10 @@
         dayDateLabel = document.getElementById("dayDateLabel"),
         status = document.getElementById("status");
 
-      const baseMemberNames = [
-        "Rey Excalibur",
-        "colludo",
-        "atEr",
-        "N6C6R6",
-        "dAndrei20",
-        "Frizante",
-        "Kinedaniii",
-        "Ayana wars",
-        "Naranjitox82",
-        "RIKIp",
-        "IonuțBogdan",
-        "ENIGMA31415",
-        "TurboCat93",
-        "Sergio endwar",
-        "ASSASSIN428",
-        "naVia",
-        "Bola7ad",
-        "whiteshii",
-        "SilentBG",
-        "jimmyjingjog",
-        "crachy",
-        "Pippins 2nd breakfst",
-        "Aspackad",
-        "Arturlion",
-        "PDub87",
-        "Jhaizel",
-        "iR4UL",
-        "Ucigăltoaca",
-        "Bassline187",
-        "PaTToNeiToR",
-        "txipi",
-        "Metropolitano C",
-        "Andriy0601",
-        "OSASUNAa",
-        "jack daniels g",
-        "Lil Niño",
-        "Fiexter",
-        "guerra ANDR",
-        "silviu maya",
-        "Cristina1106",
-        "Dimon02",
-        "JamesLLD",
-        "N3v3r89",
-        "Moltó17",
-        "Bumblebee222",
-        "Super Andy 3",
-        "Fenix 04",
-        "Kay433",
-        "Macvet",
-        "Matrat FC",
-        "Viking1970",
-        "OfficelAgnes",
-        "lavin hhh",
-        "margaros",
-        "mohsenjamaa",
-        "Apocalipto",
-        "Please Dont Bite",
-        "Jannettix",
-        "TREX9",
-        "Com Hannibal Smith",
-        "Constangeles",
-        "GroZ",
-        "Black pantherix",
-        "Loïc1791",
-        "IDK What Am I Doing",
-        "Ipieyoh",
-        "Larry53",
-        "Ayrix62",
-        "NutyDuck",
-        "Grička vještica",
-        "Nadezhdaaa",
-        "مثالـي25",
-        "Thedarkknightt",
-        "BostonApp",
-        "PikABoo",
-        "ГоШа",
-        "IX BORSAN",
-        "Niklas78",
-        "Fab745",
-        "Crystall",
-        "ElCoudou",
-        "Álvaro97",
-        "Lmario313",
-        "FuryAmsterdam",
-        "Mia Miu",
-        "ℒoℒα",
-        "Gosamyr",
-      ];
-      let memberNames = [...baseMemberNames];
+      // La fuente de verdad es la tabla `players` de Supabase.
+      // No mantenemos una lista local: un cambio de nombre o una salida de la
+      // alianza no puede colarse después en el OCR.
+      let memberNames = [];
 
       // Normalización tolerante con caracteres decorativos, griegos y cirílicos.
       // Ejemplos: ℒoℒα -> lola, ГоШа -> gosha.
@@ -1031,28 +945,25 @@
       }
 
       async function loadMemberNames() {
-        try {
-          const { data, error } = await sb.from("players").select("name");
-          if (error) throw error;
-          const extra = (data || [])
+        const { data, error } = await sb.from("players").select("name");
+        if (error) throw error;
+
+        const currentMembers = uniqueMemberNames(
+          (data || [])
             .map((x) => canonicalMemberName(String(x.name || "").trim()))
-            .filter(Boolean);
-          memberNames = uniqueMemberNames([
-            ...baseMemberNames.map(canonicalMemberName),
-            ...extra,
-          ]);
-          document
-            .querySelectorAll(".member-select")
-            .forEach((select) =>
-              populateMemberSelect(select, select.dataset.detected || ""),
-            );
-        } catch (e) {
-          console.warn(
-            "No se pudo actualizar la lista de miembros desde Supabase:",
-            e,
-          );
-          memberNames = uniqueMemberNames(baseMemberNames);
+            .filter(Boolean),
+        );
+        if (!currentMembers.length) {
+          throw new Error("La lista actual de miembros está vacía.");
         }
+
+        memberNames = currentMembers;
+        document
+          .querySelectorAll(".member-select")
+          .forEach((select) =>
+            populateMemberSelect(select, select.dataset.detected || ""),
+          );
+        return memberNames;
       }
 
       function populateMemberSelect(select, detectedName = "") {
@@ -1075,7 +986,11 @@
         select.classList.toggle("has-selection", !!select.value);
       }
 
-      loadMemberNames();
+      // Cargamos al abrir y volvemos a comprobarla justo antes de cada OCR.
+      // Si Supabase no responde, no aceptamos resultados sin validar.
+      loadMemberNames().catch((e) =>
+        console.warn("No se pudo cargar la lista de miembros:", e),
+      );
 
       dayDate.value = new Date().toISOString().split("T")[0];
 
@@ -1386,7 +1301,9 @@
             Math.min(key.length, normName(best.name).length),
           ),
         );
-        const threshold = minLen <= 4 ? 0.76 : minLen <= 7 ? 0.72 : 0.67;
+        // La coincidencia aproximada solo corrige errores claros de OCR; nunca
+        // convierte libremente a un jugador ajeno en un miembro de la alianza.
+        const threshold = minLen <= 4 ? 0.9 : minLen <= 7 ? 0.84 : 0.8;
         return best.score >= threshold ? best : null;
       }
 
@@ -1759,6 +1676,15 @@
         }
 
         ocrBtn.disabled = true;
+        try {
+          ocrStatus.textContent = "Comprobando los miembros actuales de la alianza...";
+          await loadMemberNames();
+        } catch (e) {
+          ocrBtn.disabled = false;
+          ocrStatus.textContent =
+            "⚠ No se pudo comprobar la lista actual de la alianza. El OCR no se ha ejecutado.";
+          return;
+        }
         const allFound = [];
         const foundByName = new Map();
         let processed = 0;
@@ -1844,6 +1770,16 @@
         }
 
         arabicOcrBtn.disabled = true;
+        try {
+          arabicOcrStatus.textContent =
+            "Comprobando los miembros actuales de la alianza...";
+          await loadMemberNames();
+        } catch (e) {
+          arabicOcrBtn.disabled = false;
+          arabicOcrStatus.textContent =
+            "⚠ No se pudo comprobar la lista actual de la alianza. El OCR no se ha ejecutado.";
+          return;
+        }
         const foundByName = new Map(),
           errors = [];
         try {
@@ -1937,7 +1873,7 @@
               const official =
                 r.querySelector(".member-select")?.value.trim() || "";
               return {
-                player_name: official || detected,
+                // Solo se guarda un miembro confirmado de la lista actual.\n                player_name: official,
                 day,
                 week_type,
                 vs_date,
