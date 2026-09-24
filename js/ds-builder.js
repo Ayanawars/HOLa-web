@@ -76,8 +76,8 @@ async function refreshOther(){
  ]);
  if(pErr||lErr)throw new Error("No se pudo verificar el otro equipo: "+(pErr?.message||lErr?.message));
  const otherRoster=[...(plan?.draft?.roster||[]),...(plan?.published?.roster||[])];
- if(otherRoster.length)for(const r of otherRoster)if(r?.name)rosterOther.add(normal(r.name));
- else for(const r of legacy||[])rosterOther.add(normal(r.player_name));
+ if(otherRoster.length){for(const r of otherRoster)if(r?.name)rosterOther.add(normal(r.name));}
+ else {for(const r of legacy||[])rosterOther.add(normal(r.player_name));}
 }
 async function loadDraft(show=true){
  const d=$("battleDate").value,t=$("team").value;if(!d){notice("Selecciona una fecha válida.","error");return;}
