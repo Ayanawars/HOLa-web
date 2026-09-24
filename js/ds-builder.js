@@ -239,7 +239,7 @@ function renderProposals(){
    (msg?'<div class="review-warn" role="status">'+esc(msg)+'</div>':"")+
    '<div class="two"><div class="field"><label>Miembro oficial</label><select class="proposal-name">'+playerOption(p.name,"Seleccionar nombre")+'</select></div><div class="field"><label>B del juego</label><select class="proposal-role"><option value="">Revisar tipo</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
    '<div class="two"><div class="field"><label>THP (millones)</label><input class="proposal-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div><div class="field"><label>Estado</label><span class="counter '+(p.confirmed?"":"warn")+'">'+(p.confirmed?"Verificado":"Pendiente")+'</span></div></div>'+
-   '<label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:5px"><input type="checkbox" class="proposal-confirm" '+(p.confirmed?"checked":"")+' style="width:20px;height:20px;accent-color:#28805c"> He comprobado nombre, columna B y THP</label>'+
+   '<label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:5px"><input type="checkbox" class="proposal-confirm" '+(p.confirmed?"checked":"")+' style="width:20px;height:20px;accent-color:#28805c"> Confirmo nombre, B y THP; añadir al equipo</label>'+
    '<button type="button" class="btn good proposal-add" data-add-index="'+i+'">✓ Confirmar y añadir '+roleText+'</button>'+
    '</article>';
  }).join("");
@@ -303,7 +303,15 @@ function proposalChange(e){
  const badge=row.querySelector(".counter");
  if(badge){badge.textContent=ready?"Verificado":"Pendiente";badge.classList.toggle("warn",!ready);}
  const checkbox=row.querySelector(".proposal-confirm");if(checkbox)checkbox.checked=ready;
+ const addButton=row.querySelector(".proposal-add");
+ if(addButton)addButton.textContent="✓ Confirmar y añadir "+(p.role==="starter"?"titular":p.role==="sub"?"suplente":"jugador");
  const warning=row.querySelector(".review-warn");if(warning&&ready)warning.remove();
+ // For a manually corrected row, ticking "Sí" is itself the acceptance.
+ // Guard against browsers firing both input and change for the same checkbox.
+ if(e.target.classList.contains("proposal-confirm")&&ready&&!row.dataset.autoAdded){
+  row.dataset.autoAdded="1";
+  acceptOneProposal(Number(row.dataset.index));
+ }
 }
 function focusProposal(index){
  const el=$("ocrProposals").querySelector('[data-index="'+index+'"]');
