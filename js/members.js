@@ -593,51 +593,68 @@
     if(!p) return;
     const aboutEl=document.getElementById('profileAbout');
     const quoteEl=document.getElementById('profileQuote');
+    const statusEl=document.getElementById('profileTranslationStatus');
     if(!aboutEl||!quoteEl) return;
-
+    const requestId=++profileTextRequestId;
+    if(statusEl){statusEl.hidden=true;statusEl.textContent='';}
     const originalAbout=String(p.about_me||'').trim();
     const originalQuote=String(p.epic_quote||'').trim();
     if(!originalAbout&&!originalQuote){
       aboutEl.textContent=t().aboutEmpty;
-      quoteEl.textContent=`“${t().quoteEmpty}”`;
+      quoteEl.textContent='“'+t().quoteEmpty+'”';
       return;
     }
-
     const cacheKey=[String(p.name||''),String(p.updated_at||''),currentLang].join('|');
     const cached=profileTextCache.get(cacheKey);
-    if(cached){
+    const staleTurkish=cached&&currentLang==='tr'&&
+      cached.about_me===originalAbout&&cached.epic_quote===originalQuote&&
+      /\b(?:juego|desconectar|divertirme|subestimes|silencio|me gusta)\b/i.test(originalAbout+' '+originalQuote);
+    if(cached&&!staleTurkish){
       aboutEl.textContent=cached.about_me||originalAbout||t().aboutEmpty;
-      quoteEl.textContent=`“${cached.epic_quote||originalQuote||t().quoteEmpty}”`;
+      quoteEl.textContent='“'+(cached.epic_quote||originalQuote||t().quoteEmpty)+'”';
       return;
     }
-
-    const requestId=++profileTextRequestId;
+    if(staleTurkish)profileTextCache.delete(cacheKey);
+    if(statusEl&&currentLang==='tr'){
+      statusEl.textContent='Türkçeye çevriliyor…';
+      statusEl.hidden=false;
+    }
     try{
-      const response=await fetch(`${SUPABASE_URL}/functions/v1/translate-profile-text`,{
+      const response=await fetch(SUPABASE_URL+'/functions/v1/translate-profile-text',{
         method:'POST',
         headers:{
           'Content-Type':'application/json',
           'apikey':SUPABASE_PUBLISHABLE_KEY,
-          'Authorization':`Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+          'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
         },
         body:JSON.stringify({name:p.name,lang:currentLang})
       });
       const data=await response.json().catch(()=>({}));
-      if(!response.ok||!data?.ok) throw new Error(data?.error||`HTTP ${response.status}`);
+      if(!response.ok||!data?.ok)throw new Error(data?.error||'HTTP '+response.status);
       const value={
         about_me:String(data.about_me||'').trim(),
         epic_quote:String(data.epic_quote||'').trim()
       };
+      if(currentLang==='tr'&&
+         value.about_me===originalAbout&&value.epic_quote===originalQuote&&
+         /\b(?:juego|desconectar|divertirme|subestimes|silencio|me gusta)\b/i.test(originalAbout+' '+originalQuote))
+        throw new Error('UNTRANSLATED_RESPONSE');
+      if(requestId!==profileTextRequestId||currentProfilePlayer!==p)return;
       profileTextCache.set(cacheKey,value);
-      if(requestId!==profileTextRequestId||currentProfilePlayer!==p) return;
       aboutEl.textContent=value.about_me||originalAbout||t().aboutEmpty;
-      quoteEl.textContent=`“${value.epic_quote||originalQuote||t().quoteEmpty}”`;
+      quoteEl.textContent='“'+(value.epic_quote||originalQuote||t().quoteEmpty)+'”';
+      if(statusEl){statusEl.hidden=true;statusEl.textContent='';}
     }catch(error){
       console.warn('HOLa members · profile translation:',error);
-      // Si la traducción falla, se conserva el texto original en vez de romper la ficha.
+      if(requestId!==profileTextRequestId||currentProfilePlayer!==p)return;
+      aboutEl.textContent=originalAbout||t().aboutEmpty;
+      quoteEl.textContent='“'+(originalQuote||t().quoteEmpty)+'”';
+      if(statusEl&&currentLang==='tr'){
+        statusEl.textContent='Türkçe çeviri şu anda yüklenemedi. Orijinal metin gösteriliyor.';
+        statusEl.hidden=false;
+      }else if(statusEl){statusEl.hidden=true;statusEl.textContent='';}
     }
   }
-
 
   function ensureAvatarManager(){
     let box=document.getElementById('profileAvatarManager');
