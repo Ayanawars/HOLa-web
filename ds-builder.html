@@ -45,6 +45,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .ocr-missing-grid select,.ocr-missing-grid input{width:100%;min-width:0;min-height:42px;border:1px solid #d8ba76;border-radius:9px;background:white;padding:8px;color:#163f5a}
 .ocr-missing-grid button{grid-column:1/-1;min-height:45px}
 @media(max-width:680px){.ocr-missing-grid{grid-template-columns:1fr}.ocr-missing-grid button{grid-column:1}}
+.ocr-needed{margin-top:12px;padding:12px;border:2px solid #dda24f;background:#fff1d1;border-radius:12px;font-size:14px;line-height:1.55;color:#724813}.ocr-needed strong{display:block;font-size:16px;margin-bottom:4px}.ocr-complete{margin-top:12px;padding:10px;background:#e0f8e9;border-radius:10px;color:#21704d;font-weight:800}.ocr-missing[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -90,7 +91,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
     <h3 id="ocrReviewTitle">⚠ Lecturas por revisar</h3>
     <p class="muted">Elige el nombre de la lista oficial, comprueba si la B es de titular o suplente y pulsa «Añadir». El THP se puede completar después.</p>
     <div id="ocrProposals" class="ocr-proposals"></div>
-    <div id="ocrDiscarded" class="ocr-proposals"></div>
   </section>
   <details class="ocr-missing" id="ocrMissingDetails">
     <summary>¿Falta un jugador que no ha leído el OCR? Añádelo desde miembros HOLa</summary>
@@ -100,6 +100,11 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
       <div class="field"><label>THP (M), opcional</label><input id="ocrMissingPower" type="number" min="0.01" max="9999" step="any" inputmode="decimal" placeholder="Se puede completar después"></div>
       <button type="button" class="btn outline" id="ocrAddMissing">＋ Añadir jugador que falta</button>
     </div>
+  </details>
+  <details id="ocrRawDetails" class="ocr-missing" hidden>
+    <summary id="ocrRawSummary">Fragmentos de OCR no reconocidos</summary>
+    <p class="muted">Estos textos no se cuentan como jugadores. Abre esta sección solo si todavía falta alguien que aparezca en las capturas.</p>
+    <div id="ocrDiscarded" class="ocr-proposals"></div>
   </details>
   <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
 </div>
@@ -130,6 +135,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
-<script type="module" src="js/ds-builder.js?v=20260924-ocr-acceptall-v1"></script>
+<script type="module" src="js/ds-builder.js?v=20260924-ocr-dedupe-v2"></script>
 <script src="js/hola-tr-ui.js"></script>
 </body></html>
