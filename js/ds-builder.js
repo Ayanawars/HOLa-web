@@ -13,7 +13,7 @@ SILO:{label:"Nuclear Silo",icon:"☢️",x:51,y:48},ARSENAL:{label:"Arsenal",ico
 MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false;
+let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -170,7 +170,6 @@ function parseCandidates(lines,prep){
   if(row.y<minY||row.y>maxY||row.x<prep.w*.19||row.x>prep.w*.57)continue;
   const raw=String(row.text||"").replace(/^\s*\d{1,3}\s*[.)-]\s*/,"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").replace(/\s{2,}/g," ").trim();
   if(raw.length<3||raw.length>65||generic.test(raw))continue;
-  // Only official HOLa members are counted. OCR text is NOT a participant.
   const matched=matchMember(raw);
   let power=parsePower(raw);
   for(let j=i+1;j<Math.min(lines.length,i+5)&&power==null;j++){
@@ -179,18 +178,24 @@ function parseCandidates(lines,prep){
   }
   const role=readRole(prep,row.y);
   if(!matched.name){
-   // Keep likely missed names visible for manual correction, but never count them.
-   if(role.role&&power!=null&&/[\p{L}]/u.test(raw)&&!generic.test(raw)){
+   // Unrecognized OCR is NOT a player. Show likely game rows in a separate
+   // correction panel, with an official-member picker; ignore screen labels.
+   if(role.role&&power!=null&&/[\p{L}]/u.test(raw)){
     const key=normal(raw);
-    if(key&&!rejectedOCR.has(key)&&rejectedOCR.size<35)rejectedOCR.set(key,{text:raw,file:prep.name});
+    if(key&&!rejectedOCR.has(key)&&rejectedOCR.size<35)
+     rejectedOCR.set(key,{text:raw,file:prep.name,role:role.role,power,note:""});
+    else if(key&&rejectedOCR.has(key)){
+     const old=rejectedOCR.get(key);
+     if(old.role!==role.role){old.role="";old.note="B diferente entre capturas: comprueba si es titular o suplente.";}
+     if(old.power!=null&&Math.abs(old.power-power)>.15){old.power=null;old.note="THP diferente entre capturas: comprueba la cifra.";}
+    }
    }
    continue;
   }
-  const note=!matched.exact?"Comprueba el nombre: coincidencia OCR aproximada.":role.note||(power==null?"No se pudo leer el THP: comprueba la cifra.":"");
+  const note=!matched.exact?"Comprueba el nombre oficial.":role.note||(power==null?"THP no leído; podrás completarlo después.":"");
   const confirmed=matched.exact&&!!role.role&&power!=null&&!note;
-  out.push({ocrName:raw,name:matched.name,exact:matched.exact,power,role:role.role,confirmed,note,file:prep.name});
+  out.push({ocrName:raw,name:matched.name,exact:matched.exact,power,role:role.role,confirmed,note,file:prep.name,manual:false});
  }
- // Deduplicate by official player identity, not by slightly different OCR text.
  const unique=new Map();
  for(const candidate of out){
   const key=normal(candidate.name),old=unique.get(key);
@@ -245,35 +250,42 @@ function renderProposals(){
  }).join("");
 }
 async function readShots(){
- const shots=[...$("participantShots").files];if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
- if(busy)return;busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();renderProposals();
- const errors=[];let azureUsed=0;
+ const shots=[...$("participantShots").files];
+ if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
+ if(busy||acceptBusy)return;
+ busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();renderProposals();
+ const errors=[];let azureUsed=0,worker=null;
  try{
-  const worker=await getOCRWorker();
+  try{worker=await getOCRWorker();}
+  catch(e){errors.push("Tesseract: "+String(e?.message||e)+". Probando Azure.");}
   for(let i=0;i<shots.length;i++){
    $("ocrStatus").textContent="Leyendo captura "+(i+1)+"/"+shots.length+" · "+shots[i].name;
    try{
     const prep=await prepareImage(shots[i]);
-    const {data}=await worker.recognize(prep.blob,{}, {text:true,blocks:true});
-    const local=parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep);
-    mergeProposals(local);
-    // Revisit screenshots with incomplete rows, even when Tesseract has 4 names.
-    if(local.length<7||local.some(p=>!p.confirmed)){
+    // Azure is a second independent reading of EVERY screenshot. A Tesseract
+    // failure must never prevent Azure from finding the missing participant.
+    if(worker){
      try{
-      $("ocrStatus").textContent="Verificando nombres de "+shots[i].name+" con Azure…";
-      const azure=parseCandidates(await azureLines(prep),prep);azureUsed++;
-      mergeProposals(azure);
-     }catch(e){errors.push("Azure "+shots[i].name+": "+e.message);}
+      const {data}=await worker.recognize(prep.blob,{}, {text:true,blocks:true});
+      mergeProposals(parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep));
+     }catch(e){errors.push("Tesseract "+shots[i].name+": "+String(e?.message||e));}
     }
-   }catch(e){errors.push(shots[i].name+": "+e.message);}
+    try{
+     $("ocrStatus").textContent="Cotejando "+shots[i].name+" con Azure…";
+     mergeProposals(parseCandidates(await azureLines(prep),prep));azureUsed++;
+    }catch(e){errors.push("Azure "+shots[i].name+": "+String(e?.message||e));}
+   }catch(e){errors.push(shots[i].name+": "+String(e?.message||e));}
   }
   proposals.sort((a,b)=>a.role===b.role?(Number(b.power||0)-Number(a.power||0)):(a.role==="starter"?-1:1));
   renderProposals();
-  const ready=proposals.filter(p=>p.confirmed).length,uncertain=proposals.length-ready;
-  $("ocrStatus").textContent="Coincidencias únicas con miembros: "+proposals.length+" ("+ready+" listas, "+uncertain+" por revisar). Azure: "+azureUsed+" captura(s). "+(errors.length?"Avisos: "+errors.join(" · "):"");
-  notice(proposals.length?"OCR depurado: "+proposals.length+" coincidencias de miembros; "+uncertain+" necesitan revisión. No se han guardado jugadores.":"No se identificaron miembros. Prueba otras capturas o añádelos manualmente.",proposals.length?"info":"error");
- }catch(e){notice("Error al iniciar OCR: "+e.message,"error");}
- finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;}
+  const eligible=proposals.filter(canAcceptAutomatically);
+  const pending=proposals.length-eligible.length+rejectedOCR.size;
+  $("ocrStatus").textContent="Lectura terminada: "+eligible.length+" cotejados con HOLa y "+pending+
+   " por revisar. Azure: "+azureUsed+"/"+shots.length+" capturas."+
+   (errors.length?" Avisos: "+errors.join(" · "):"");
+  notice(eligible.length||pending?"Lectura terminada. Pulsa «Aceptar todos» y después corrige solo los pendientes. Todavía no se han incorporado lecturas nuevas.":"No se identificaron miembros. Puedes añadir al jugador que falte desde el recuadro de revisión.",eligible.length||pending?"info":"error");
+ }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
+ finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;renderProposals();}
 }
 function proposalProblems(p){
  const problems=[];
