@@ -2444,6 +2444,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
 }
 </style>
 
+<style id="survey-tr-guide">html:not([lang="tr"]) .hola-tr-guide{display:none!important}html[lang="tr"] .start-image,html[lang="tr"] #thpWhereFindImage{display:none!important}.hola-tr-guide{width:100%;padding:18px 15px;border:1px solid rgba(9,155,187,.5);border-radius:17px;background:linear-gradient(145deg,#102942,#144d60);color:#edf9ff;text-align:left;line-height:1.55;box-shadow:0 7px 20px #091f3752}.hola-tr-guide h3{margin:0 0 12px;font-size:19px;color:#ffdc75}.hola-tr-guide p{margin:9px 0;font-size:14px}.hola-tr-guide strong{color:#88e8ff}.hola-tr-guide small{display:block;margin-top:14px;color:#c7eaf2;font-size:12px}</style>
 </head>
 
 <body>
@@ -2480,6 +2481,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
   <section id="surveyStartGate" aria-label="Survey introduction">
     <div class="start-image-wrap">
       <img class="start-image" src="assets/survey-preparation-guide.webp" alt="Survey preparation instructions">
+      <div class="hola-tr-guide" role="note"><h3>📸 Başlamadan önce iki ekran görüntüsü hazırla</h3><p><strong>1. THP:</strong> Last War oyununda Sıralama → Toplam Kahraman Gücü bölümünü aç. Kendi adının bulunduğu yeşil satırı gösterecek şekilde tam ekran görüntüsü al.</p><p><strong>2. Birlikler:</strong> En güçlü üç birliğinin gücünün göründüğü tek bir tam ekran görüntüsü al.</p><small>Her iki görüntü de orijinal, kırpılmamış ve düzenlenmemiş olmalıdır. Oyuncu adını doğrulamak için THP görüntüsü kullanılır.</small></div>
     </div>
 
     <div class="start-confirm-card">
@@ -3890,6 +3892,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     <div id="thpWhereFindImageWrap" class="thp-where-find-image-wrap" hidden>
       <!-- Aquí se mostrará la imagen que me proporciones. -->
       <img id="thpWhereFindImage" alt="Dónde encontrar el THP" src="assets/thp-guide.webp">
+      <div class="hola-tr-guide" role="note"><h3>THP değerimi nerede bulabilirim?</h3><p>Last War oyununda <strong>Sıralama → Toplam Kahraman Gücü</strong> sayfasını aç. Kendi adının yanındaki toplam kahraman gücünü kullan.</p><p><strong>Toplam Oyuncu Gücü</strong> değeri farklıdır; ankete bunu girme.</p><small>Yapay zekânın adını ve THP değerini doğrulayabilmesi için yeşil oyuncu satırını içeren, kırpılmamış ekran görüntüsü yükle.</small></div>
     </div>
   </div>
 </div>
