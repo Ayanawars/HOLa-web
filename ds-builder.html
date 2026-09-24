@@ -22,6 +22,29 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .output{min-height:145px;font:12px/1.55 ui-monospace,Consolas,monospace!important;white-space:pre-wrap}.poster-preview{display:block;max-width:min(100%,450px);max-height:500px;margin:12px auto;border:2px solid #cfaa59;border-radius:12px;background:#f2d8a9}.foot{color:#826d4d;font-size:11px;text-align:center;padding:10px}
 @media(max-width:750px){.brand{width:65px;height:64px}.head{padding:11px;gap:8px;min-height:103px}.heading h1{font-size:23px}.heading p{display:none}main{padding:12px 9px 55px}.section{padding:14px}.section h2{font-size:21px}.steps button{font-size:10px;padding:11px 4px}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.assignment-grid{grid-template-columns:1fr}.pin{padding:3px;min-width:40px;max-width:76px;font-size:8px}.roster-card{grid-template-columns:1fr 85px 33px}.roster-card .person-name{grid-column:1/-1}.roster-card .role-field{grid-column:1/3}.roster-card .remove{grid-column:3;grid-row:2}.phase-switch button{font-size:10px}}
 @media(max-width:420px){.form-grid{grid-template-columns:1fr}.brand{display:none}.steps button{font-size:9px}.pin{font-size:7px;max-width:64px}}
+
+/* OCR en dos pasos: aceptar cotejados y corregir solo las excepciones. */
+.ocr-workflow{display:grid;gap:15px}
+.ocr-workflow[hidden],.ocr-review-box[hidden],.ocr-auto-panel[hidden]{display:none!important}
+.ocr-workflow h3{margin:0 0 9px;color:#194967;font-size:18px}
+.ocr-summary{padding:13px;border:1px solid #bbd6c1;border-radius:13px;background:#f0fbf3;color:#26573e;font-weight:800;line-height:1.55;font-size:13px}
+.ocr-summary .ocr-counts{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}
+.ocr-summary .ocr-counts span{padding:5px 9px;border-radius:999px;background:#fff;border:1px solid #bed5bc;color:#164e65}
+.ocr-auto-panel,.ocr-review-box,.ocr-missing{padding:13px;border:1px solid #d6bd85;border-radius:14px;background:#fffbf2}
+.ocr-review-box{background:#fff6e5;border-color:#deb57c}
+.ocr-ready-list{font-size:12px;color:#285972;line-height:1.6;margin:7px 0 13px;overflow-wrap:anywhere}
+.ocr-ready-list details{border:1px solid #dcdfd0;padding:10px;border-radius:10px;background:white}
+.ocr-ready-list summary,.ocr-missing summary{cursor:pointer;font-weight:850;color:#185e77}
+.ocr-ready-list .ocr-ready-person{display:inline-block;margin:4px 5px 0 0;padding:5px 8px;background:#eaf8ee;border-radius:8px;border:1px solid #c4dfcc}
+.ocr-accept-all{width:100%;min-height:49px;font-size:14px!important}
+.ocr-accept-all:disabled{opacity:.5;cursor:not-allowed}
+.ocr-review-box .ocr-proposals{margin:10px 0}
+.ocr-proposal .proposal-add,.ocr-proposal .ocr-unmatched-add{width:100%;min-height:45px}
+.ocr-missing summary{line-height:1.5}
+.ocr-missing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.ocr-missing-grid select,.ocr-missing-grid input{width:100%;min-width:0;min-height:42px;border:1px solid #d8ba76;border-radius:9px;background:white;padding:8px;color:#163f5a}
+.ocr-missing-grid button{grid-column:1/-1;min-height:45px}
+@media(max-width:680px){.ocr-missing-grid{grid-template-columns:1fr}.ocr-missing-grid button{grid-column:1}}
 </style>
 </head>
 <body>
@@ -54,7 +77,32 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="eyebrow">02 · CONVOCATORIA CERRADA</div><h2>Participantes y suplentes</h2>
 <p class="muted">La B de la izquierda identifica titulares; la B de la derecha, suplentes. Revisa cualquier lectura dudosa antes de incorporarla. No se completan plazas libres automáticamente.</p>
 <div class="upload"><strong>📸 Importar capturas de «Seleccionar participantes»</strong><br><input type="file" id="participantShots" accept="image/*" multiple><div class="muted" id="filesInfo" style="margin-top:7px">Puedes subir varias capturas solapadas.</div><div class="row actions"><button class="btn" id="readShots" type="button">🔎 Leer participantes con OCR</button><button class="btn outline" id="importLegacy" type="button">Importar nombres del DS anterior</button></div><div class="muted" id="ocrStatus" role="status" aria-live="polite"></div></div>
-<div id="ocrReview" class="section" hidden style="margin-top:13px;border:2px solid #dfb554;box-shadow:none"><h2>Revisar lecturas OCR</h2><p class="muted">Corrige el nombre oficial, la B y el THP. Al marcar «Confirmo nombre, B y THP», el jugador se añade al equipo. También puedes usar el botón individual. Si falta un dato o el equipo está completo, verás el motivo. Los datos sin confirmar nunca se guardan.</p><div id="ocrDiscarded" class="muted"></div><div id="ocrProposals" class="ocr-proposals"></div><div class="row actions"><button type="button" class="btn good" id="acceptVerified">✓ Incorporar lecturas confirmadas</button><button type="button" class="btn outline" id="closeReview">Cerrar revisión</button></div></div>
+<div id="ocrReview" class="section ocr-workflow" hidden style="margin-top:13px;border:2px solid #dfb554;box-shadow:none">
+  <h2>Resultado de las capturas</h2>
+  <p class="muted">Primero acepta los miembros cotejados con HOLa. Después corrige únicamente las lecturas dudosas. Ningún nombre inventado por el OCR se incorpora automáticamente.</p>
+  <div id="ocrSummary" class="ocr-summary" role="status" aria-live="polite"></div>
+  <section id="ocrAutoPanel" class="ocr-auto-panel">
+    <h3>✓ Miembros identificados</h3>
+    <div id="ocrAutoList" class="ocr-ready-list"></div>
+    <button type="button" class="btn good ocr-accept-all" id="acceptVerified">✓ Aceptar todos los identificados</button>
+  </section>
+  <section id="ocrReviewBox" class="ocr-review-box" hidden>
+    <h3 id="ocrReviewTitle">⚠ Lecturas por revisar</h3>
+    <p class="muted">Elige el nombre de la lista oficial, comprueba si la B es de titular o suplente y pulsa «Añadir». El THP se puede completar después.</p>
+    <div id="ocrProposals" class="ocr-proposals"></div>
+    <div id="ocrDiscarded" class="ocr-proposals"></div>
+  </section>
+  <details class="ocr-missing" id="ocrMissingDetails">
+    <summary>¿Falta un jugador que no ha leído el OCR? Añádelo desde miembros HOLa</summary>
+    <div class="ocr-missing-grid">
+      <div class="field"><label>Miembro de HOLa</label><select id="ocrMissingPlayer"></select></div>
+      <div class="field"><label>Inscripción</label><select id="ocrMissingRole"><option value="starter">B izquierda · Titular</option><option value="sub">B derecha · Suplente</option></select></div>
+      <div class="field"><label>THP (M), opcional</label><input id="ocrMissingPower" type="number" min="0.01" max="9999" step="any" inputmode="decimal" placeholder="Se puede completar después"></div>
+      <button type="button" class="btn outline" id="ocrAddMissing">＋ Añadir jugador que falta</button>
+    </div>
+  </details>
+  <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
+</div>
 <div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div>
 <div class="row"><select class="member-entry" id="manualPlayer" aria-label="Miembro para añadir"><option value="">Elegir miembro de HOLa</option></select><button type="button" class="btn outline" id="addPlayer">＋ Añadir jugador</button></div>
 <div id="rosterList" class="roster-list"></div>
@@ -82,6 +130,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
-<script type="module" src="js/ds-builder.js?v=20260924-sinsifex-confirm-v3"></script>
+<script type="module" src="js/ds-builder.js?v=20260924-ocr-acceptall-v1"></script>
 <script src="js/hola-tr-ui.js"></script>
 </body></html>
