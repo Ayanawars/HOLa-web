@@ -348,6 +348,28 @@
       }
     </style>
 
+
+    <style id="rank-review-visual-style">
+      #rankReviewPanel[hidden]{display:none!important}
+      #rankReviewPanel{margin:16px 0 20px;padding:18px;border:3px solid #b83142;border-radius:18px;background:linear-gradient(145deg,#fff9ee,#ffe8e3);color:#731e2b;box-shadow:0 7px 0 rgba(152,40,52,.13),0 16px 34px rgba(152,40,52,.17);scroll-margin-top:24px}
+      .rank-review-banner-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+      .rank-review-banner-icon{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:13px;background:#b72b3b;color:white;font-size:28px;font-weight:900;box-shadow:0 5px 13px rgba(145,33,50,.25)}
+      #rankReviewTitle{color:#7b1d2c;font:bold clamp(20px,4.5vw,27px)/1.16 Georgia,"Times New Roman",serif;margin:0}
+      #rankReviewText{color:#863746;font-size:15px;font-weight:600;line-height:1.5;margin:7px 0}
+      #rankReviewNames{color:#681c29;font-weight:900;overflow-wrap:anywhere;margin:8px 0 13px}
+      #rankReviewJump{width:100%;min-height:48px;border:0;border-radius:12px;background:#aa2637;color:white;font-size:15px;font-weight:900;box-shadow:0 5px 12px rgba(151,31,49,.22);cursor:pointer}
+      #rankReviewPanel.is-reviewed{border-color:#2e9666;background:linear-gradient(145deg,#f5fff7,#e4faed);color:#205f43;box-shadow:0 8px 0 rgba(47,150,102,.12)}
+      #rankReviewPanel.is-reviewed #rankReviewTitle,#rankReviewPanel.is-reviewed #rankReviewText{color:#205f43}
+      #rankReviewPanel.is-reviewed .rank-review-banner-icon{background:#2e9666}
+      #rankReviewPanel.is-reviewed #rankReviewJump{display:none}
+      .score.rank-review{background:#fff2e9!important;border:3px solid #c63a48!important;box-shadow:0 5px 18px rgba(166,48,64,.16);scroll-margin-top:16px}
+      .score.rank-review .rank-warning{background:#ffe9e2;border:1px solid #d26b65;color:#752535;font-size:14px}
+      .score.rank-review .rank-warning strong{font-size:17px}
+      .score.rank-review .rank-confirm{color:#702837}
+      .score.rank-review.rank-checked{border-color:#30976a!important;background:#f1fff6!important}
+      .score.rank-review.rank-checked .rank-warning{background:#e5f9ec;border-color:#69b98e;color:#205f43}
+      @media(max-width:550px){#rankReviewPanel{padding:14px}.rank-review-banner-icon{width:40px;height:40px;flex-basis:40px;font-size:24px}#rankReviewText{font-size:14px}}
+    </style>
     <style id="stats-v2-style"></style>
 
     <style id="hola-i18n-css">
@@ -754,6 +776,15 @@
       </section>
       <section class="panel">
         <h2>✏️ PUNTUACIONES</h2>
+        <div id="rankReviewPanel" role="alert" aria-live="assertive" hidden>
+          <div class="rank-review-banner-head">
+            <div class="rank-review-banner-icon" aria-hidden="true">!</div>
+            <h3 id="rankReviewTitle">Puntuación OCR para revisar</h3>
+          </div>
+          <div id="rankReviewText"></div>
+          <div id="rankReviewNames"></div>
+          <button id="rankReviewJump" type="button">↓ IR A LA PUNTUACIÓN SOSPECHOSA</button>
+        </div>
         <div id="rows"></div>
         <button class="btn" id="add">＋ AÑADIR JUGADOR</button><br /><button
           class="btn save"
@@ -2982,6 +3013,54 @@
         );
       }
 
+      const rankReviewPanel = document.getElementById("rankReviewPanel");
+      const rankReviewTitle = document.getElementById("rankReviewTitle");
+      const rankReviewText = document.getElementById("rankReviewText");
+      const rankReviewNames = document.getElementById("rankReviewNames");
+      const rankReviewJump = document.getElementById("rankReviewJump");
+
+      function updateRankReviewPanel() {
+        const flagged = [...rows.querySelectorAll(".score.rank-review")];
+        if (!flagged.length) {
+          rankReviewPanel.hidden = true;
+          rankReviewPanel.classList.remove("is-reviewed");
+          return;
+        }
+
+        const pending = flagged.filter(
+          (row) => !row.querySelector(".rank-confirm-check")?.checked,
+        );
+        rankReviewPanel.hidden = false;
+        rankReviewPanel.classList.toggle("is-reviewed", pending.length === 0);
+        if (!pending.length) {
+          rankReviewTitle.textContent = "✓ REVISIONES COMPLETADAS";
+          rankReviewText.textContent =
+            "Has confirmado las puntuaciones señaladas. Ya puedes continuar con el guardado.";
+          rankReviewNames.textContent = "";
+          return;
+        }
+        rankReviewTitle.textContent =
+          "⚠ " + pending.length + " PUNTUACIÓN" +
+          (pending.length === 1 ? " SOSPECHOSA" : "ES SOSPECHOSAS");
+        rankReviewText.textContent =
+          "El OCR podría haber perdido algún dígito. Comprueba las filas rojas antes de guardar en Supabase.";
+        rankReviewNames.textContent = pending
+          .map((row) =>
+            row.querySelector(".member-select")?.value ||
+            row.querySelector(".n")?.value ||
+            "Jugador sin nombre",
+          )
+          .join(" · ");
+      }
+
+      rankReviewJump.onclick = () => {
+        const first = [...rows.querySelectorAll(".score.rank-review")].find(
+          (row) => !row.querySelector(".rank-confirm-check")?.checked,
+        );
+        first?.scrollIntoView({ behavior: "smooth", block: "center" });
+        first?.querySelector(".p")?.focus({ preventScroll: true });
+      };
+
       function renderRankOrderWarning(row, issue) {
         row.classList.add("rank-review");
         const box = document.createElement("div");
@@ -3023,10 +3102,18 @@
         box.append(heading, info, confirm);
         row.appendChild(box);
 
-        // Si se modifica la puntuación después de confirmar, requiere volver
-        // a verificarla antes de guardar.
+        checkbox.addEventListener("change", () => {
+          row.classList.toggle("rank-checked", checkbox.checked);
+          updateRankReviewPanel();
+        });
+        // Si se cambia la puntuación, hay que confirmarla de nuevo.
         row.querySelector(".p")?.addEventListener("input", () => {
           checkbox.checked = false;
+          row.classList.remove("rank-checked");
+          updateRankReviewPanel();
+        });
+        row.querySelector(".del")?.addEventListener("click", () => {
+          requestAnimationFrame(updateRankReviewPanel);
         });
       }
 
@@ -3077,6 +3164,7 @@
 
         try {
           rows.innerHTML = "";
+          updateRankReviewPanel();
 
           // FASE 1 — Tesseract local.
           // No consume ninguna API ni tiene cuota.
@@ -3187,6 +3275,7 @@
             const issue = warningsByMember.get(normName(x.name));
             if (issue) renderRankOrderWarning(rows.lastElementChild, issue);
           });
+          updateRankReviewPanel();
 
           const zeroPlayers = allFound.filter(
             (x) => Number(x.points) === 0,
@@ -3222,6 +3311,15 @@
           if (errors.length) {
             ocrStatus.textContent +=
               ` Avisos: ${errors.join(" · ")}`;
+          }
+
+          if (rankWarnings.length) {
+            requestAnimationFrame(() =>
+              rankReviewPanel.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              }),
+            );
           }
 
           showOcrToast(
@@ -3289,6 +3387,7 @@
         );
 
         rows.innerHTML = "";
+        updateRankReviewPanel();
         if (missing.length) {
           missing.forEach((name) => add(name, ""));
           requestAnimationFrame(() =>
