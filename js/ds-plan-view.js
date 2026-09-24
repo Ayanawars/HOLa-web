@@ -36,6 +36,7 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
  if(!plan||!Array.isArray(plan.roster))return false;
  const strategy=$("strategyContent"),map=$("mapWrap"),roster=$("players");if(!strategy||!map)return false;installStyle();
  const t=D[options.language]||D.en,team=plan.team||"",subOf=new Map();
+ const mapImage=typeof plan.baseMapDataUrl==="string"&&plan.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(plan.baseMapDataUrl)?plan.baseMapDataUrl:"assets/ds-battlefield.svg";
  H.forEach(k=>(plan.subs?.[k]||[]).forEach(n=>subOf.set(normalize(n),k)));
  const isMission=n=>Object.values(plan.missions||{}).flat().some(x=>normalize(x)===normalize(n));
  if(roster){roster.innerHTML=plan.roster.map((r,i)=>'<div class="player"><span class="player__n">'+String(i+1).padStart(2,"0")+'</span><span class="player__name">'+esc(r.name)+'<span class="ds-roster-extra"><span class="ds-badge '+(r.role==="sub"?"sub":"")+'">'+esc(r.role==="sub"?t[4]:t[3])+'</span>'+(r.power==null?"":" · "+esc(r.power)+"M")+(r.role==="sub"&&subOf.has(normalize(r.name))?" · "+esc(B[subOf.get(normalize(r.name))][0]):"")+'</span></span></div>').join("");if($("summaryPlayers"))$("summaryPlayers").textContent=plan.roster.length;if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");}
@@ -54,7 +55,7 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
    '</article>').join("")+'</div>'+(phase==="phase1"?'<div class="ds-brief">'+esc(t[13])+'</div>':"");
   strategy.querySelectorAll(".ds-switch button").forEach(b=>b.onclick=()=>{phase=b.dataset.phase;focus=phase==="final"?"SILO":"H1";draw();});
   map.classList.add("ds-public-map");
-  map.innerHTML='<div class="ds-board"><img src="assets/ds-battlefield.svg" alt="Desert Storm battlefield">'+keys.map(k=>'<button type="button" class="ds-pin '+(focus===k?"active":"")+'" style="left:'+B[k][2]+'%;top:'+B[k][3]+'%" data-bld="'+k+'">'+esc(B[k][0].replace("Field Hospital ","H").replace("Oil Refinery ","Ref "))+'<small>'+(phase==="final"?"!":(data[k]?.length||0))+'</small></button>').join("")+'</div><div class="ds-map-hint">'+esc(t[9])+'</div>';
+  map.innerHTML='<div class="ds-board"><img src="'+esc(mapImage)+'" alt="Desert Storm battlefield">'+keys.map(k=>'<button type="button" class="ds-pin '+(focus===k?"active":"")+'" style="left:'+B[k][2]+'%;top:'+B[k][3]+'%" data-bld="'+k+'">'+esc(B[k][0].replace("Field Hospital ","H").replace("Oil Refinery ","Ref "))+'<small>'+(phase==="final"?"!":(data[k]?.length||0))+'</small></button>').join("")+'</div><div class="ds-map-hint">'+esc(t[9])+'</div>';
   map.querySelectorAll("[data-bld]").forEach(b=>b.onclick=()=>{focus=b.dataset.bld;draw();$("ds-card-"+focus)?.scrollIntoView({behavior:"smooth",block:"center"});});
   if($("summaryMap"))$("summaryMap").textContent="✓";
  }
