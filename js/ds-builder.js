@@ -182,7 +182,7 @@ function parseCandidates(lines,prep){
   if(!matched.name){
    // Unrecognized OCR is NOT a player. Show likely game rows in a separate
    // correction panel, with an official-member picker; ignore screen labels.
-   if(role.role&&power!=null&&/[\p{L}]/u.test(raw)){
+   if(power!=null&&/[\p{L}]{3}/u.test(raw)&&!/^[\d\s.,]+\s*[KMB]$/i.test(raw)){
     const key=normal(raw);
     if(key&&!rejectedOCR.has(key)&&rejectedOCR.size<35)
      rejectedOCR.set(key,{text:raw,file:prep.name,role:role.role,power,note:""});
