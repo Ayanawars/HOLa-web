@@ -164,5 +164,6 @@
     async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html')}$('logoutTop').addEventListener('click',logout);
     const ok=await verify();if(!ok){await deny()}else{try{await loadPlayers();$('guard').hidden=true;$('app').hidden=false;renderResults('');$('searchResults').hidden=true}catch(e){await deny()}}
   </script>
+<script src="js/hola-tr-ui.js"></script>
 </body>
 </html>
