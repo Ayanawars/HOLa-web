@@ -20,7 +20,7 @@
   const avatarQueue = [];
   const avatarQueued = new Set();
   let avatarWorkerRunning = false;
-  let currentLang = localStorage.getItem('hola-lang') || 'es';
+  let currentLang = localStorage.getItem('hola-language') || localStorage.getItem('hola-lang') || ((navigator.language||'').slice(0,2)==='tr'?'tr':'es');
   let currentProfilePlayer = null;
   let currentProfileTab = 'about';
   const profileTextCache = new Map();
@@ -45,6 +45,7 @@
 
 
   const translations = {
+    tr:{"membersTitle":"ÜYELER","roster":"İttifak kadrosu","members":"üye","surveys":"anket","search":"Oyuncu ara...","all":"Tümü","tank":"Tank","air":"Hava","missile":"Füze","loading":"Üyeler yükleniyor...","loadError":"Üyeler yüklenemedi.","noResults":"Aramanıza uygun oyuncu bulunamadı.","noLocation":"Konum belirtilmedi","surveyDone":"✓ Anket tamamlandı","surveyPending":"○ Anket bekleniyor","squads":"⚔ Birlikler","about":"▣ Hakkımda","aboutEmpty":"Bu üye henüz hikâyesini paylaşmadı.","profession":"Meslek","engineer":"Mühendis","warlord":"Savaş Lordu","unknown":"—","tankSquad":"Tank Birliği","airSquad":"Hava Birliği","missileSquad":"Füze Birliği","hasOverlord":"♛ Overlord","noOverlord":"Overlord yok","myQuote":"Sözüm","quoteEmpty":"Bu oyuncunun etkileyici sözü burada görünecek.","tabAbout":"Hakkımda","tabSquads":"Birlikler","tabProgress":"İlerleme","progressSurvey":"Anket","progressHQ":"Karargâh","progressTHP":"THP","progressProfession":"Meslek","progressT10":"T10","progressOverlord":"Overlord","progressRank":"Rütbe","showMore":"Daha fazla göster"},
     es:{membersTitle:'MIEMBROS',roster:'Alliance roster',members:'miembros',surveys:'encuestas',search:'Buscar jugador...',all:'Todos',tank:'Tanque',air:'Aéreo',missile:'Misil',loading:'Cargando miembros...',loadError:'No se pudieron cargar los miembros.',noResults:'No hay jugadores que coincidan.',noLocation:'Ubicación no indicada',surveyDone:'✓ Encuesta completada',surveyPending:'○ Encuesta pendiente',squads:'⚔ Escuadrones',about:'▣ Sobre mí',aboutEmpty:'Este miembro todavía no ha añadido su historia.',profession:'Profesión',engineer:'Ingeniero',warlord:'Warlord',unknown:'—',tankSquad:'Escuadrón Tanque',airSquad:'Escuadrón Aéreo',missileSquad:'Escuadrón Misil',hasOverlord:'♛ Overlord',noOverlord:'Sin Overlord',myQuote:'Mi frase',quoteEmpty:'Aquí irá la frase épica de este jugador.',tabAbout:'Sobre mí',tabSquads:'Squads',tabProgress:'Progreso',progressSurvey:'Encuesta',progressHQ:'HQ',progressTHP:'THP',progressProfession:'Profesión',progressT10:'T10',progressOverlord:'Overlord',progressRank:'Rango',showMore:'Mostrar más'},
     en:{membersTitle:'MEMBERS',roster:'Alliance roster',members:'members',surveys:'surveys',search:'Search player...',all:'All',tank:'Tank',air:'Aircraft',missile:'Missile',loading:'Loading members...',loadError:'Members could not be loaded.',noResults:'No matching players.',noLocation:'Location not provided',surveyDone:'✓ Survey completed',surveyPending:'○ Survey pending',squads:'⚔ Squads',about:'▣ About me',aboutEmpty:'This member has not added their story yet.',profession:'Profession',engineer:'Engineer',warlord:'Warlord',unknown:'—',tankSquad:'Tank Squad',airSquad:'Aircraft Squad',missileSquad:'Missile Squad',hasOverlord:'♛ Overlord',noOverlord:'No Overlord',myQuote:'My quote',quoteEmpty:"This player's epic quote will appear here.",tabAbout:'About me',tabSquads:'Squads',tabProgress:'Progress',progressSurvey:'Survey',progressHQ:'HQ',progressTHP:'THP',progressProfession:'Profession',progressT10:'T10',progressOverlord:'Overlord',progressRank:'Rank',showMore:'Show more'},
     fr:{membersTitle:'MEMBRES',roster:'Alliance roster',members:'membres',surveys:'sondages',search:'Rechercher un joueur...',all:'Tous',tank:'Char',air:'Aérien',missile:'Missile',loading:'Chargement des membres...',loadError:'Impossible de charger les membres.',noResults:'Aucun joueur correspondant.',noLocation:'Localisation non indiquée',surveyDone:'✓ Sondage terminé',surveyPending:'○ Sondage en attente',squads:'⚔ Escouades',about:'▣ À propos',aboutEmpty:"Ce membre n'a pas encore ajouté son histoire.",profession:'Profession',engineer:'Ingénieur',warlord:'Warlord',unknown:'—',tankSquad:'Escouade Char',airSquad:'Escouade Aérienne',missileSquad:'Escouade Missile',hasOverlord:'♛ Overlord',noOverlord:'Sans Overlord',myQuote:'Ma phrase',quoteEmpty:'La phrase épique de ce joueur apparaîtra ici.',tabAbout:'À propos',tabSquads:'Escouades',tabProgress:'Progression',progressSurvey:'Sondage',progressHQ:'HQ',progressTHP:'THP',progressProfession:'Profession',progressT10:'T10',progressOverlord:'Overlord',progressRank:'Rang',showMore:'Afficher plus'},
@@ -745,6 +746,7 @@
       if(tx[key]!==undefined) el.placeholder=tx[key];
     });
     localStorage.setItem('hola-lang',currentLang);
+    localStorage.setItem('hola-language',currentLang);
     if(players.length) renderRoster(false);
     if(!profile.hidden){
       const name=document.getElementById('profileName').textContent;
