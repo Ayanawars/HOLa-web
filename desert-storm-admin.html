@@ -1186,7 +1186,8 @@ loadContent();
 <script>
 (function(){
 const T={
-es:{
+tr:{"kicker":"⚡ İTTİFAK KOMUTASI","title":"🌪️ DESERT STORM","subtitle":"Katılımcı ve sonuç yönetimi · veriler Supabase'e kaydedilir","badge":"YÖNETİCİ","participants":"KATILIMCILAR","participantsHelp":"Desert Storm'a kayıtlı oyuncuları her satıra bir ad gelecek şekilde buraya yapıştır. Bu liste etkinlikten önce kaydedilir ve daha sonra gerçek sonuçlarla karşılaştırılır.","saveParticipants":"💾 KATILIMCILARI KAYDET","load":"↻ KAYITLI LİSTEYİ YÜKLE","pending":"Liste henüz kaydedilmedi.","selected":"SAVAŞ GÜNÜ","notSelected":"Henüz seçilmedi","ocr":"OCR.SPACE","ocrHelp":"Sonuç postasının tam ekran görüntülerini yükle. OCR sıra ve tarihi atlayarak adları ve puanları okur ve tek bir sıralamada birleştirir.","shots":"Sonuç ekran görüntüleri","configured":"OCR.Space otomatik olarak yapılandırıldı.","auto":"⚡ Görüntüler seçildiğinde analiz otomatik başlar.","waiting":"Görüntüler bekleniyor…","results":"TESPİT EDİLEN SONUÇLAR","resultsHelp":"Tespit edilen adları ve puanları kontrol et. Sıralama en yüksek puandan en düşüğe göre yapılır. Yalnızca katılımcı listesindeki oyuncular kaydedilir.","empty":"Henüz sonuç yok.","save":"💾 SUPABASE'E KAYDET","nothing":"Kaydedilecek değişiklik yok.","modalTitle":"Hangi gün ve hangi takım?","modalHelp":"Bu katılımcı listesinin ait olduğu savaş gününü seç.","date":"GÜN","team":"TAKIM","confirm":"💾 ONAYLA VE KAYDET","cancel":"İPTAL"},
+ es:{
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administración de participantes y resultados · datos guardados en Supabase",badge:"ADMIN",
   participants:"PARTICIPANTES",participantsHelp:"Pega aquí la lista de jugadores apuntados para Desert Storm, uno por línea. Esta lista se guarda antes del evento y será la referencia para comparar después con los resultados reales.",
   saveParticipants:"💾 GUARDAR PARTICIPANTES",load:"↻ CARGAR LISTA GUARDADA",pending:"Lista pendiente de guardar.",selected:"JORNADA",notSelected:"Aún no seleccionada",
@@ -1271,8 +1272,8 @@ const saved=localStorage.getItem("hola-language");
 const detectedLang=(navigator.language||"es").slice(0,2).toLowerCase();
 let lang=keys.includes(saved)?saved:(keys.includes(detectedLang)?detectedLang:"es");
 
-const labels={es:"🇪🇸 Español",en:"🇬🇧 English",pt:"🇵🇹 Português",ro:"🇷🇴 Română",fr:"🇫🇷 Français",it:"🇮🇹 Italiano",de:"🇩🇪 Deutsch",uk:"🇺🇦 Українська"};
-const flags={es:"es",en:"gb",pt:"pt",ro:"ro",fr:"fr",it:"it",de:"de",uk:"ua"};
+const labels={es:"🇪🇸 Español",en:"🇬🇧 English",pt:"🇵🇹 Português",ro:"🇷🇴 Română",fr:"🇫🇷 Français",it:"🇮🇹 Italiano",de:"🇩🇪 Deutsch",uk:"🇺🇦 Українська",tr:"🇹🇷 Türkçe"};
+const flags={es:"es",en:"gb",pt:"pt",ro:"ro",fr:"fr",it:"it",de:"de",uk:"ua",tr:"tr"};
 const box=document.createElement("div");box.id="hola-language-selector";
 box.innerHTML=`<button type="button" id="languageSelect" class="language__toggle" aria-label="Language" aria-expanded="false"><img class="language__current" alt=""></button><div class="language__list" hidden></div>`;
 const toggle=box.querySelector(".language__toggle"),currentFlag=box.querySelector(".language__current"),list=box.querySelector(".language__list");
@@ -1312,6 +1313,7 @@ apply();
 <script>
 (function(){
  const labels={
+ tr:{"title":"STRATEJİ VE HARİTA","help":"Oyuncuların herkese açık Desert Storm sayfasında göreceği bilgileri burada hazırlarsın.","day":"GÜN","strategy":"STRATEJİ","map":"HARİTA / GÖRSEL","upload":"GÖRSEL YÜKLE","uploadHelp":"Bu takımın harita görselini seç.","save":"💾 STRATEJİ VE HARİTAYI KAYDET","load":"↻ KAYITLI VERİLERİ YÜKLE","empty":"Henüz görsel yüklenmedi.","resultTitle":"SAVAŞ SONUCU","resultHelp":"Bu takımın savaşı kazanıp kazanmadığını belirt.","noResult":"— SONUÇ YOK —","win":"🟢 ZAFER","loss":"🔴 YENİLGİ","draw":"🟡 BERABERLİK"},
  es:{title:"ESTRATEGIA Y MAPA",help:"Aquí preparas la información que verán los jugadores en la página pública de Desert Storm.",day:"DÍA",strategy:"ESTRATEGIA",map:"MAPA / IMAGEN",upload:"SUBIR IMAGEN",uploadHelp:"Selecciona la imagen del mapa para este equipo.",save:"💾 GUARDAR ESTRATEGIA Y MAPA",load:"↻ CARGAR DATOS GUARDADOS",empty:"No hay imagen cargada.",resultTitle:"RESULTADO DE LA BATALLA",resultHelp:"Indica si este equipo ganó o perdió esta jornada.",noResult:"— SIN RESULTADO —",win:"🟢 VICTORIA",loss:"🔴 DERROTA",draw:"🟡 EMPATE"},
  en:{title:"STRATEGY & MAP",help:"Prepare here the information players will see on the public Desert Storm page.",day:"DAY",strategy:"STRATEGY",map:"MAP / IMAGE",upload:"UPLOAD IMAGE",uploadHelp:"Select the map image for this team.",save:"💾 SAVE STRATEGY & MAP",load:"↻ LOAD SAVED DATA",empty:"No image loaded.",resultTitle:"BATTLE RESULT",resultHelp:"Indicate whether this team won or lost this battle.",noResult:"— NO RESULT —",win:"🟢 WIN",loss:"🔴 LOSS",draw:"🟡 DRAW"},
  pt:{title:"ESTRATÉGIA E MAPA",help:"Prepare aqui as informações que os jogadores verão na página pública do Desert Storm.",day:"DIA",strategy:"ESTRATÉGIA",map:"MAPA / IMAGEM",upload:"CARREGAR IMAGEM",uploadHelp:"Selecione a imagem do mapa desta equipa.",save:"💾 GUARDAR ESTRATÉGIA E MAPA",load:"↻ CARREGAR DADOS GUARDADOS",empty:"Nenhuma imagem carregada.",resultTitle:"RESULTADO DA BATALHA",resultHelp:"Indique se esta equipa ganhou ou perdeu esta batalha.",noResult:"— SEM RESULTADO —",win:"🟢 VITÓRIA",loss:"🔴 DERROTA",draw:"🟡 EMPATE"},
