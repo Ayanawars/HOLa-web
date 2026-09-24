@@ -372,12 +372,18 @@ async function readShots(){
   }
   proposals.sort((a,b)=>a.role===b.role?(Number(b.power||0)-Number(a.power||0)):(a.role==="starter"?-1:1));
   renderProposals();
-  const eligible=proposals.filter(canAcceptAutomatically);
-  const pending=proposals.length-eligible.length+rejectedOCR.size;
-  $("ocrStatus").textContent="Lectura terminada: "+eligible.length+" cotejados con HOLa y "+pending+
-   " por revisar. Azure: "+azureUsed+"/"+shots.length+" capturas."+
+  const {accepted,toAdd,pending,unmatched}=ocrTriage();
+  const {starter,sub}=counts();
+  $("ocrStatus").textContent="Lectura terminada: "+accepted.length+" ya inscritos · "+
+   toAdd.length+" nuevos · "+pending.length+" jugadores por revisar. "+
+   unmatched.length+" fragmentos de OCR opcionales (no son jugadores confirmados). Azure: "+
+   azureUsed+"/"+shots.length+" capturas."+
    (errors.length?" Avisos: "+errors.join(" · "):"");
-  notice(eligible.length||pending?"Lectura terminada. Pulsa «Aceptar todos» y después corrige solo los pendientes. Todavía no se han incorporado lecturas nuevas.":"No se identificaron miembros. Puedes añadir al jugador que falte desde el recuadro de revisión.",eligible.length||pending?"info":"error");
+  notice("Equipo: "+starter+"/20 titulares y "+sub+" suplentes. "+
+   (toAdd.length?"Acepta los "+toAdd.length+" nuevos identificados. ":"")+
+   (starter<20?"Faltan "+(20-starter)+" titulares; corrige una lectura o elige el miembro desde la lista.":"Los titulares están completos.")+
+   (pending.length?" Hay "+pending.length+" lecturas identificadas que necesitan revisión.":""),
+   "info");
  }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
  finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;renderProposals();}
 }
@@ -476,13 +482,15 @@ async function addMissingPlayer(){
 async function acceptProposals(){
  if(busy||acceptBusy)return;
  const eligible=proposals.filter(canAcceptAutomatically);
- if(!eligible.length){notice("No hay lecturas seguras para aceptar. Revisa el recuadro de pendientes.","info");return;}
+ if(!eligible.length){const n=counts();notice("No hay jugadores nuevos cotejados para incorporar. Inscritos: "+n.starter+"/20 titulares y "+n.sub+" suplentes. Si falta alguien, usa la selección de miembros HOLa.","info");return;}
  acceptBusy=true;renderProposals();
  let added=0,already=0;const rejected=[];
  try{
   await refreshOther();
   const remaining=[];
   for(const p of proposals){
+   const existing=existingRosterRecord(p.name);
+   if(existing&&existing.role===p.role){already++;continue;}
    if(!canAcceptAutomatically(p)){
     if(rosterOther.has(normal(canonical(p.name))))p.note="Este jugador figura en el otro equipo. Comprueba su inscripción.";
     remaining.push(p);continue;
