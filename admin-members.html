@@ -115,7 +115,7 @@
       const wanted=normalizeName(admin.display_name); const officer=list.find(p=>['R4','R5'].includes(String(p.rank||'').toUpperCase())&&normalizeName(p.name)===wanted); if(!officer)return false;
       $('adminName').textContent=officer.name;$('adminRank').textContent=officer.rank;return true;
     }
-    function formatDate(value){if(!value)return '';try{return new Intl.DateTimeFormat('es-ES',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));}catch{return String(value)}}
+    function formatDate(value){if(!value)return '';try{return new Intl.DateTimeFormat(localStorage.getItem('hola-language')==='tr'?'tr-TR':'es-ES',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));}catch{return String(value)}}
     function renderResults(query=''){
       const box=$('searchResults'); const q=normalizeName(query); let list=players;
       if(q)list=players.filter(p=>normalizeName(p.name).includes(q));
