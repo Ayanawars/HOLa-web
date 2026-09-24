@@ -18,7 +18,7 @@ const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
 function notice(msg,type="info"){$("message").textContent=msg;$("message").className="notice "+type;}
-function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:"en",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]}};}
+function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:"en",baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]}};}
 function canonical(raw){
  const key=normal(raw);
  const aliases={"lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW"};
@@ -38,9 +38,11 @@ function matchMember(raw){
 }
 function levenshtein(a,b){let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){const next=[i+1];for(let j=0;j<b.length;j++)next.push(Math.min(next[j]+1,row[j+1]+1,row[j]+(a[i]===b[j]?0:1)));row=next;}return row[b.length];}
 function playerOption(selected="",empty="Elegir miembro"){return '<option value="">'+esc(empty)+'</option>'+members.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");}
-function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:Number.isFinite(Number(r.power))?Number(r.power):null}));for(const field of ["phase1","phase2","missions","subs"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}return s;}
+function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(typeof input.baseMapDataUrl==="string"&&input.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(input.baseMapDataUrl))s.baseMapDataUrl=input.baseMapDataUrl;if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:Number.isFinite(Number(r.power))?Number(r.power):null}));for(const field of ["phase1","phase2","missions","subs"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}return s;}
 function localKey(){return "hola-ds-builder-v1:"+$("battleDate").value+":"+$("team").value;}
 function storeLocal(){if(state)try{localStorage.setItem(localKey(),JSON.stringify(state));}catch{}}
+function mapSource(){return state?.baseMapDataUrl||"assets/ds-battlefield.svg";}
+async function useOriginalMap(file){if(!file)return;try{const picture=await new Promise((res,rej)=>{const im=new Image(),url=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(url);res(im);};im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("No se pudo abrir la imagen."));};im.src=url;});const canvas=document.createElement("canvas");canvas.width=1200;canvas.height=850;canvas.getContext("2d").drawImage(picture,0,0,1200,850);let data=canvas.toDataURL("image/webp",.83);if(data.length>530000)data=canvas.toDataURL("image/webp",.62);if(data.length>530000)throw new Error("El mapa es demasiado grande. Prueba con un JPG o WebP más ligero.");state.baseMapDataUrl=data;mutate();notice("Mapa original incorporado a esta estrategia. Guarda el borrador para conservarlo y publícalo cuando esté listo.","success");}catch(e){notice("No se pudo usar el mapa: "+e.message,"error");}}
 function mutate(){storeLocal();renderStats();renderMap();renderValidation();renderOutputs();}
 function switchTab(next){currentTab=next;document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===next));for(const t of ["setup","roster","plan","publish"])$("tab-"+t).hidden=t!==next;window.scrollTo({top:0,behavior:"smooth"});if(next==="plan"){renderMap();}if(next==="publish"){renderValidation();renderOutputs();}}
 function updateSetup(){
@@ -73,8 +75,9 @@ async function refreshOther(){
   sb.from("desert_storm_participants").select("player_name").eq("battle_date",d).eq("team",t)
  ]);
  if(pErr||lErr)throw new Error("No se pudo verificar el otro equipo: "+(pErr?.message||lErr?.message));
- for(const r of [...(plan?.draft?.roster||[]),...(plan?.published?.roster||[])])if(r?.name)rosterOther.add(normal(r.name));
- for(const r of legacy||[])rosterOther.add(normal(r.player_name));
+ const otherRoster=[...(plan?.draft?.roster||[]),...(plan?.published?.roster||[])];
+ if(otherRoster.length)for(const r of otherRoster)if(r?.name)rosterOther.add(normal(r.name));
+ else for(const r of legacy||[])rosterOther.add(normal(r.player_name));
 }
 async function loadDraft(show=true){
  const d=$("battleDate").value,t=$("team").value;if(!d){notice("Selecciona una fecha válida.","error");return;}
@@ -193,7 +196,7 @@ async function readShots(){
    $("ocrStatus").textContent="Leyendo captura "+(i+1)+"/"+shots.length+" · "+shots[i].name;
    try{const prep=await prepareImage(shots[i]);const {data}=await worker.recognize(prep.blob,{}, {text:true,blocks:true});
     let candidates=parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep);
-    if(candidates.filter(p=>!!p.name).length<3){try{const azure=parseCandidates(await azureLines(prep),prep);azureUsed++;for(const p of azure){const old=candidates.find(x=>normal(x.name||x.ocrName)===normal(p.name||p.ocrName));if(!old)candidates.push(p);else if(!old.verified&&p.verified)Object.assign(old,p);}}catch(e){errors.push("Azure "+shots[i].name+": "+e.message);}}
+    if(candidates.filter(p=>!!p.name).length<4){try{const azure=parseCandidates(await azureLines(prep),prep);azureUsed++;for(const p of azure){const old=candidates.find(x=>normal(x.name||x.ocrName)===normal(p.name||p.ocrName));if(!old)candidates.push(p);else if(!old.verified&&p.verified)Object.assign(old,p);}}catch(e){errors.push("Azure "+shots[i].name+": "+e.message);}}
     mergeProposals(candidates);
    }catch(e){errors.push(shots[i].name+": "+e.message);}
   }
@@ -220,7 +223,7 @@ function addSpecial(type,name){if(!name)return;if(type==="SUB"){const r=state.ro
 function removeSpecial(type,slot,name){if(type==="SUB")state.subs[slot]=state.subs[slot].filter(n=>n!==name);else state.missions[type]=state.missions[type].filter(n=>n!==name);mutate();}
 function listPersons(names,kind="",removable=true){return names.length?names.map(n=>{const r=state.roster.find(x=>x.name===n);return '<div class="person '+esc(kind)+'"><span>'+esc(n)+'</span><span class="power">'+(r?.power==null?"":number(r.power)+"M")+'</span>'+(removable?'<button type="button" data-remove="'+esc(n)+'" aria-label="Quitar '+esc(n)+'">×</button>':"")+'</div>';}).join(""):'<div class="muted">Sin asignar</div>';}
 function renderMap(){
- if(!state)return;document.querySelectorAll("[data-phase]").forEach(b=>b.classList.toggle("active",b.dataset.phase===phase));
+ if(!state)return;const boardImage=document.querySelector("#board > img");const mapSrc=mapSource();if(boardImage&&boardImage.getAttribute("src")!==mapSrc)boardImage.src=mapSrc;document.querySelectorAll("[data-phase]").forEach(b=>b.classList.toggle("active",b.dataset.phase===phase));
  $("autoAssign").disabled=phase==="final";$("clearPhase").disabled=phase==="final";$("lastAssault").hidden=phase!=="final";
  $("specialSection").hidden=phase==="final";const shown=phase==="phase1"?[...P1,"INFO","REF1","REF2"]:phase==="phase2"?P2:["SILO","INFO"];
  const obj=phaseSlots(),targets=phaseTargets();$("phaseCount").textContent=phase==="final"?"Orden activada por palabra clave":assignedNames(obj).length+"/20 asignados";
@@ -317,7 +320,7 @@ function drawText(ctx,text,x,y,maxWidth,font,color){ctx.font=font;ctx.fillStyle=
 async function createPoster(what="phase1"){
  const isCombined=what==="combined";const width=1080,unitHeight=1740,height=isCombined?unitHeight*2:unitHeight;
  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const ctx=canvas.getContext("2d");
- const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar el mapa de edificios."));i.src="assets/ds-battlefield.svg";});
+ const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar el mapa de edificios."));i.src=mapSource();});
  function drawPhase(which,offset){
   ctx.fillStyle="#081d32";ctx.fillRect(0,offset,width,unitHeight);
   let grad=ctx.createLinearGradient(0,offset,0,offset+230);grad.addColorStop(0,"#073454");grad.addColorStop(1,"#081c31");ctx.fillStyle=grad;ctx.fillRect(0,offset,width,220);
@@ -351,7 +354,7 @@ async function createPoster(what="phase1"){
 function renderMain(){renderRoster();mutate();syncSetup();}
 function events(){
  document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
- $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());
+ $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());$("customMap").addEventListener("change",e=>useOriginalMap(e.target.files?.[0]));
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
  $("loadDraft").onclick=()=>loadDraft();$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
