@@ -21,7 +21,7 @@ function notice(msg,type="info"){$("message").textContent=msg;$("message").class
 function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]}};}
 function canonical(raw){
  const key=normal(raw);
- const aliases={"lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW"};
+ const aliases={"lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW"};
  const alias=aliases[key];if(alias&&memberByKey.has(normal(alias)))return memberByKey.get(normal(alias));
  return memberByKey.get(key)||"";
 }
@@ -230,11 +230,19 @@ function renderProposals(){
  $("ocrReview").hidden=!proposals.length&&!rejectedOCR.size;
  const unresolved=[...rejectedOCR.values()].slice(0,18);
  $("ocrDiscarded").innerHTML=unresolved.length?'<details><summary>Otras lecturas sin coincidencia en miembros ('+rejectedOCR.size+'). No se cuentan como jugadores.</summary><p class="muted">Si alguno es un jugador real, búscalo en la lista de miembros y añádelo manualmente.</p><p class="muted">'+unresolved.map(r=>esc(r.text)+' · '+esc(r.file)).join("<br>")+'</p></details>':"";
- $("ocrProposals").innerHTML=proposals.map((p,i)=>'<article class="ocr-proposal '+(p.confirmed?"good":"")+'" data-index="'+i+'"><div><strong>'+esc(p.ocrName)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
- (p.note?'<div class="review-warn">'+esc(p.note)+'</div>':"")+
- '<div class="two"><div class="field"><label>Miembro oficial</label><select class="proposal-name">'+playerOption(p.name,"Seleccionar nombre")+'</select></div><div class="field"><label>B del juego</label><select class="proposal-role"><option value="">Revisar tipo</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
- '<div class="two"><div class="field"><label>THP (millones)</label><input class="proposal-power" type="number" min="0" max="9999" step=".1" value="'+(p.power??"")+'"></div><div class="field"><label>Estado</label><span class="counter '+(p.confirmed?"":"warn")+'">'+(p.confirmed?"Listo":"Revisar")+'</span></div></div>'+
- '<label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:5px"><input type="checkbox" class="proposal-confirm" '+(p.confirmed?"checked":"")+' style="width:20px;height:20px;accent-color:#28805c"> He comprobado nombre, columna B y THP</label></article>').join("");
+ $("ocrProposals").innerHTML=proposals.map((p,i)=>{
+  const blockers=proposalProblems(p);
+  const roleText=p.role==="starter"?"titular":p.role==="sub"?"suplente":"jugador";
+  const msg=p.note||(!p.confirmed?blockers.join(" "):"");
+  return '<article class="ocr-proposal '+(p.confirmed?"good":"")+'" data-index="'+i+'">'+
+   '<div><strong>'+esc(p.ocrName)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
+   (msg?'<div class="review-warn" role="status">'+esc(msg)+'</div>':"")+
+   '<div class="two"><div class="field"><label>Miembro oficial</label><select class="proposal-name">'+playerOption(p.name,"Seleccionar nombre")+'</select></div><div class="field"><label>B del juego</label><select class="proposal-role"><option value="">Revisar tipo</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
+   '<div class="two"><div class="field"><label>THP (millones)</label><input class="proposal-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div><div class="field"><label>Estado</label><span class="counter '+(p.confirmed?"":"warn")+'">'+(p.confirmed?"Verificado":"Pendiente")+'</span></div></div>'+
+   '<label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:5px"><input type="checkbox" class="proposal-confirm" '+(p.confirmed?"checked":"")+' style="width:20px;height:20px;accent-color:#28805c"> He comprobado nombre, columna B y THP</label>'+
+   '<button type="button" class="btn good proposal-add" data-add-index="'+i+'">✓ Confirmar y añadir '+roleText+'</button>'+
+   '</article>';
+ }).join("");
 }
 async function readShots(){
  const shots=[...$("participantShots").files];if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
@@ -267,32 +275,82 @@ async function readShots(){
  }catch(e){notice("Error al iniciar OCR: "+e.message,"error");}
  finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;}
 }
+function proposalProblems(p){
+ const problems=[];
+ if(!p?.name||!canonical(p.name))problems.push("Selecciona el miembro oficial de HOLa.");
+ if(!["starter","sub"].includes(p?.role))problems.push("Elige B izquierda (titular) o B derecha (suplente).");
+ if(p?.power==null||!Number.isFinite(Number(p.power))||Number(p.power)<=0)
+  problems.push("Escribe un THP válido en millones.");
+ if(!p?.confirmed)problems.push("Marca la casilla «He comprobado nombre, columna B y THP».");
+ return problems;
+}
 function proposalChange(e){
  const row=e.target.closest("[data-index]");if(!row)return;
  const p=proposals[Number(row.dataset.index)];if(!p)return;
  if(e.target.classList.contains("proposal-name"))p.name=e.target.value;
  if(e.target.classList.contains("proposal-role"))p.role=e.target.value;
- if(e.target.classList.contains("proposal-power"))p.power=e.target.value===""?null:Number(e.target.value);
- if(e.target.classList.contains("proposal-confirm"))p.confirmed=e.target.checked&&!!p.name&&!!p.role&&p.power!=null;
+ if(e.target.classList.contains("proposal-power")){
+  const raw=String(e.target.value||"").trim().replace(",",".");
+  p.power=raw===""?null:Number(raw);
+ }
+ if(e.target.classList.contains("proposal-confirm"))
+  p.confirmed=e.target.checked&&!!p.name&&!!p.role&&p.power!=null&&Number(p.power)>0;
  else if(e.target.matches(".proposal-name,.proposal-role,.proposal-power"))p.confirmed=false;
- const ready=!!p.confirmed&&!!p.name&&!!p.role&&p.power!=null;
+ if(e.target.matches(".proposal-name,.proposal-role,.proposal-power,.proposal-confirm"))p.note="";
+ const ready=!!p.confirmed&&!!p.name&&!!p.role&&p.power!=null&&Number(p.power)>0;
  p.confirmed=ready;
  row.classList.toggle("good",ready);
- const badge=row.querySelector(".counter");if(badge){badge.textContent=ready?"Listo":"Revisar";badge.classList.toggle("warn",!ready);}
+ const badge=row.querySelector(".counter");
+ if(badge){badge.textContent=ready?"Verificado":"Pendiente";badge.classList.toggle("warn",!ready);}
  const checkbox=row.querySelector(".proposal-confirm");if(checkbox)checkbox.checked=ready;
+ const warning=row.querySelector(".review-warn");if(warning&&ready)warning.remove();
+}
+function focusProposal(index){
+ const el=$("ocrProposals").querySelector('[data-index="'+index+'"]');
+ if(el){el.scrollIntoView({block:"center",behavior:"smooth"});el.querySelector(".proposal-name")?.focus({preventScroll:true});}
+}
+function acceptOneProposal(index){
+ const p=proposals[index];if(!p)return false;
+ const problems=proposalProblems(p);
+ if(problems.length){
+  p.note=problems.join(" ");
+  renderProposals();notice(p.ocrName+": "+p.note,"error");focusProposal(index);
+  return false;
+ }
+ try{
+  // addRoster is authoritative: it enforces the other team, roster size,
+  // role conflicts and canonical member identity.
+  const name=canonical(p.name),added=addRoster(name,p.role,p.power);
+  proposals.splice(index,1);
+  renderProposals();renderRoster();mutate();
+  notice((added?"✓ Añadido como ":"Ya estaba inscrito como ")+(p.role==="starter"?"titular: ":"suplente: ")+name+".","success");
+  const card=[...$("rosterList").querySelectorAll(".roster-card")].find(el=>el.dataset.name===name);
+  card?.scrollIntoView({block:"center",behavior:"smooth"});
+  return true;
+ }catch(e){
+  p.note=String(e?.message||e);p.confirmed=false;
+  renderProposals();notice(p.name+": "+p.note,"error");focusProposal(index);
+  return false;
+ }
 }
 function acceptProposals(){
  let added=0,already=0;const remaining=[],errors=[],seen=new Set();
  for(const p of proposals){
-  if(!p.confirmed||!p.name||!p.role||p.power==null){remaining.push(p);continue;}
-  const id=normal(p.name);
-  if(seen.has(id)){p.note="El mismo miembro aparece dos veces en la revisión. Comprueba la asignación.";p.confirmed=false;remaining.push(p);continue;}
+  const problems=proposalProblems(p);
+  if(problems.length){p.note=problems.join(" ");remaining.push(p);continue;}
+  const name=canonical(p.name),id=normal(name);
+  if(seen.has(id)){p.note="Jugador duplicado en la revisión.";p.confirmed=false;remaining.push(p);continue;}
   seen.add(id);
-  try{if(addRoster(p.name,p.role,p.power))added++;else already++;}
-  catch(e){p.note=e.message;p.confirmed=false;remaining.push(p);errors.push(p.name+": "+e.message);}
+  try{
+   if(addRoster(name,p.role,p.power))added++;
+   else already++;
+  }catch(e){p.note=String(e?.message||e);p.confirmed=false;remaining.push(p);errors.push(name+": "+p.note);}
  }
  proposals=remaining;renderProposals();renderRoster();mutate();
- notice("Incorporados "+added+" · repetidos "+already+" · pendientes de comprobar "+remaining.length+". "+(errors.length?errors.join(" · "):""),errors.length?"error":"success");
+ const message="Incorporados "+added+" · ya inscritos "+already+" · pendientes "+remaining.length+
+  (errors.length?". "+errors.join(" · "):"")+".";
+ notice(message,errors.length||(!added&&!already&&remaining.length)?"error":"success");
+ if(remaining.length&&(!added&&!already||errors.length))focusProposal(0);
 }
 function phaseTargets(){return phase==="phase1"?TARGET1:TARGET2;}
 function phaseSlots(){return phase==="phase1"?state.phase1:state.phase2;}
@@ -476,7 +534,7 @@ function events(){
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
  $("loadDraft").onclick=()=>loadDraft();$("saveTemplate").onclick=saveTemplate;$("loadTemplate").onclick=loadTemplate;$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
- $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("acceptVerified").onclick=acceptProposals;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
+ $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("acceptVerified").onclick=acceptProposals;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=()=>{try{if(addRoster($("manualPlayer").value,"starter",null)){renderRoster();mutate();notice("Participante añadido. Revisa su poder y si es titular o suplente.","success");$("manualPlayer").value="";}}catch(e){notice(e.message,"error");}};
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
  $("toPlan").onclick=()=>switchTab("plan");$("toPublish").onclick=()=>switchTab("publish");
