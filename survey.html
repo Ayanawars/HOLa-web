@@ -2760,10 +2760,16 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
   <div id="weeklyAiCard" class="weekly-ai-card">
     <div class="weekly-ai-title" data-i18n="weeklyAiTitle">DETECTAR THP + SQUADS CON IA</div>
     <div class="weekly-ai-subtitle" data-i18n="weeklyAiText">SUBE LAS DOS CAPTURAS: 1) THP  2) SQUADS. SOLO UNA PETICIÓN A LA IA POR SEMANA.</div>
-    <input id="weeklyAiImages" type="file" accept="image/*" multiple hidden onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this);}">
-    <button type="button" class="thp-ai-btn weekly-ai-detect" id="weeklyAiSelectBtn">
-      <span class="thp-ai-icon">⌾</span><span data-i18n="weeklyAiSelect">SELECCIONAR 2 CAPTURAS</span>
-    </button>
+    <div class="weekly-ai-file-grid">
+      <div class="weekly-ai-file" id="weeklyAiThpField">
+        <input id="weeklyAiThpImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Seleccionar captura de THP" onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this,'thp');}">
+        <span id="weeklyAiThpLabel">📸 1 · CAPTURA THP</span>
+      </div>
+      <div class="weekly-ai-file" id="weeklyAiSquadField">
+        <input id="weeklyAiSquadImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Seleccionar captura de squads" onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this,'squad');}">
+        <span id="weeklyAiSquadLabel">📸 2 · CAPTURA SQUADS</span>
+      </div>
+    </div>
     <button type="button" class="thp-ai-btn weekly-ai-detect" id="weeklyAiDetectBtn" aria-disabled="false" onclick="if(window.holaWeeklyAiRun){window.holaWeeklyAiRun();}else if(window.HOLaShowBrowserWarning){window.HOLaShowBrowserWarning();}">
       <span class="thp-ai-icon">⌾</span><span data-i18n="weeklyAiDetect">DETECTAR LAS DOS CON IA</span>
     </button>
@@ -3999,6 +4005,19 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
 </style>
 
 
+<style id="weekly-ai-iphone-fix">
+.weekly-ai-file-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}
+.weekly-ai-file{position:relative;display:flex;align-items:center;justify-content:center;min-height:65px;min-width:0;padding:10px;border:2px solid #40bfd9;border-radius:12px;background:linear-gradient(125deg,#123c56,#126b79);color:#f5ffff;text-align:center;font:800 12px/1.3 system-ui,sans-serif;overflow:hidden}
+.weekly-ai-file.has-image{background:linear-gradient(125deg,#125a49,#187c60);border-color:#44d798}
+.weekly-ai-file input[type=file]{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;z-index:2;cursor:pointer;font-size:100px}
+.weekly-ai-file span{display:block;max-width:100%;overflow-wrap:anywhere;pointer-events:none}
+#weeklyAiStatus{display:block!important;min-height:29px;padding:10px 9px;margin-top:9px;border-radius:10px;color:#eafaff;white-space:normal;overflow-wrap:anywhere;text-align:left;font:700 12px/1.48 system-ui,sans-serif}
+#weeklyAiStatus.ai-error{background:#fff0e8;color:#882c20;border:1px solid #e5aa85}
+#weeklyAiStatus.ai-working{background:#eaf8ff;color:#124f80;border:1px solid #95cbe1}
+#weeklyAiStatus.ai-success{background:#eafcf3;color:#176847;border:1px solid #8ed6ae}
+.weekly-ai-file input[type=file]:disabled{cursor:not-allowed}
+@media(max-width:520px){.weekly-ai-file-grid{grid-template-columns:1fr}.weekly-ai-file{min-height:59px}}
+</style>
 <style id="weekly-ai-card-style">
 .weekly-ai-card{margin:14px 0 12px;padding:14px;border:1px solid rgba(0,210,237,.38);border-radius:18px;background:linear-gradient(135deg,rgba(16,21,34,.98),rgba(18,26,45,.98));box-shadow:0 8px 22px rgba(0,0,0,.18),inset 0 0 18px rgba(0,210,237,.035);text-align:center}.weekly-ai-title{font-weight:900;font-size:15px;color:#fff;margin-bottom:6px}.weekly-ai-subtitle{font-size:11px;line-height:1.35;color:#aeb8c9;margin-bottom:11px}.weekly-ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}.weekly-ai-upload{height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#101827;color:#eaf0f8;font-weight:800;font-size:11px}.weekly-ai-upload.has-image{border-color:#39ff88;color:#39ff88;box-shadow:0 0 9px rgba(57,255,136,.2)}.weekly-ai-detect{width:100%!important;margin:0!important}.weekly-ai-detect.ai-scanning{border-color:#00D2ED!important;color:#fff!important;background:linear-gradient(100deg,rgba(0,210,237,.42),rgba(217,35,226,.42),rgba(255,208,0,.28))!important;box-shadow:0 0 10px rgba(0,210,237,.55),0 0 24px rgba(217,35,226,.38),0 0 38px rgba(255,208,0,.18),inset 0 0 18px rgba(255,255,255,.08)!important;animation:weeklyAiPulse 1.15s ease-in-out infinite!important}@keyframes weeklyAiPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.018);filter:brightness(1.22)}}#detectThpBtn,#scanSquadPowersAI,#thpAiStatus,#allSquadsOcrStatus{display:none!important}@media(max-width:520px){.weekly-ai-actions{grid-template-columns:1fr}.weekly-ai-subtitle{font-size:10px}}
 </style>
@@ -4663,6 +4682,7 @@ document.addEventListener("DOMContentLoaded", () => {
  function d(){return texts[lang()]||texts.es;}
  function fill(s,map){return String(s||"").replace(/\{(\w+)\}/g,function(_,k){return map&&map[k]!=null?map[k]:"";});}
  var selectedFiles=[];
+ var weeklyBusy=false;
  var weeklyLocked=false;
  var weeklyLockedName="";
  function isoWeekNow(){
@@ -4671,26 +4691,49 @@ document.addEventListener("DOMContentLoaded", () => {
   var ys=new Date(Date.UTC(x.getUTCFullYear(),0,1));
   return x.getUTCFullYear()+"-W"+String(Math.ceil((((x.getTime()-ys.getTime())/86400000)+1)/7)).padStart(2,"0");
  }
- function setStatus(value,kind,map){var e=$("weeklyAiStatus");if(!e)return;e.classList.remove("ai-working","ai-success");var text=kind?fill(d()[kind],map):(value||"");e.textContent=text;if(kind==="working")e.classList.add("ai-working");if(["verified","already","selected"].indexOf(kind)>=0)e.classList.add("ai-success");}
+ function setStatus(value,kind,map){var e=$("weeklyAiStatus");if(!e)return;e.classList.remove("ai-working","ai-success","ai-error");var text=kind?fill(d()[kind],map):(value||"");e.textContent=text;if(kind==="working")e.classList.add("ai-working");if(["verified","already","selected"].indexOf(kind)>=0)e.classList.add("ai-success");}
  function canRecoverIdentity(){
   var name=String($("playerName")?.value||"").trim();
   return !!(weeklyLocked&&name&&normalizeName(name)===normalizeName(weeklyLockedName)&&!verification.get(name));
  }
- function refreshSelection(){
-  var btn=$("weeklyAiDetectBtn"),pick=$("weeklyAiSelectBtn"),input=$("weeklyAiImages"),count=selectedFiles.length;
-  var recovery=canRecoverIdentity();
-  if(weeklyLocked&&!recovery){
-    if(btn){btn.disabled=true;btn.setAttribute("aria-disabled","true");btn.classList.remove("is-ready");}
-    if(pick){pick.disabled=true;pick.setAttribute("aria-disabled","true");}
-    if(input)input.disabled=true;
-    return;
+ function refreshSelection(preserveStatus){
+  var btn=$("weeklyAiDetectBtn"),thp=$("weeklyAiThpImage"),squad=$("weeklyAiSquadImage");
+  var count=selectedFiles.filter(Boolean).length,recovery=canRecoverIdentity();
+  var locked=weeklyLocked&&!recovery;
+  if(thp)thp.disabled=locked;
+  if(squad)squad.disabled=locked;
+  if(btn){btn.disabled=locked||weeklyBusy||count!==2;btn.setAttribute("aria-disabled",String(btn.disabled));btn.classList.toggle("is-ready",!btn.disabled);}
+  var tl=$("weeklyAiThpLabel"),sl=$("weeklyAiSquadLabel"),tf=$("weeklyAiThpField"),sf=$("weeklyAiSquadField");
+  if(tl)tl.textContent=selectedFiles[0]?"✓ THP: "+selectedFiles[0].name:"📸 1 · CAPTURA THP";
+  if(sl)sl.textContent=selectedFiles[1]?"✓ SQUADS: "+selectedFiles[1].name:"📸 2 · CAPTURA SQUADS";
+  if(tf)tf.classList.toggle("has-image",!!selectedFiles[0]);
+  if(sf)sf.classList.toggle("has-image",!!selectedFiles[1]);
+  if(!preserveStatus&&!weeklyBusy){
+   if(locked)setStatus("",verification.get(String($("playerName")?.value||""))?"already":"alreadyNo");
+   else if(count===2)setStatus("","selected");
+   else if(count===1)setStatus("✓ "+(selectedFiles[0]?"THP":"SQUADS")+" · 1 / 2",null);
+   else if(recovery)setStatus("","alreadyNo");
+   else setStatus("",null);
   }
-  if(pick){pick.disabled=false;pick.setAttribute("aria-disabled","false");}
-  if(input)input.disabled=false;
-  if(btn){btn.disabled=false;btn.setAttribute("aria-disabled","false");if(count===2)btn.classList.add("is-ready");else btn.classList.remove("is-ready");}
-  if(count===2)setStatus("","selected");else if(count===1)setStatus("1 / 2",null);else if(recovery)setStatus("","alreadyNo");else setStatus("",null);
  }
- window.holaWeeklyAiPick=function(input){try{if(weeklyLocked&&!canRecoverIdentity()){refreshSelection();return;}var incoming=input&&input.files?input.files:null;if(!incoming||!incoming.length){refreshSelection();return;}if(incoming.length>=2)selectedFiles=[incoming[0],incoming[1]];else{if(selectedFiles.length>=2)selectedFiles=[];selectedFiles.push(incoming[0]);}try{input.value="";}catch(e){}refreshSelection();}catch(err){console.error("HOLa AI file selection error",err);setStatus("⚠ Error preparando las capturas",null);}};
+ window.holaWeeklyAiPick=function(input,kind){
+  try{
+   if(weeklyBusy)return;
+   if(weeklyLocked&&!canRecoverIdentity()){refreshSelection(true);return;}
+   var incoming=input&&input.files?Array.from(input.files):[];
+   if(!incoming.length)return;
+   var file=incoming[0];
+   if(!/^image\/(?:png|jpe?g|webp)$/i.test(file.type||"")&&!/\.(?:png|jpe?g|webp)$/i.test(file.name||"")){
+     setStatus("⚠ Usa capturas PNG o JPG. No se admiten archivos HEIC en esta versión.",null);
+     $("weeklyAiStatus")?.classList.add("ai-error");
+     return;
+   }
+   var pos=kind==="squad"?1:0;
+   selectedFiles[pos]=file;
+   try{input.value="";}catch(e){}
+   refreshSelection();
+  }catch(err){console.error("HOLa AI file selection error",err);setStatus("⚠ No se ha podido seleccionar esa captura.",null);$("weeklyAiStatus")?.classList.add("ai-error");}
+ };
  function prepare(file){return new Promise(function(resolve,reject){if(!file){reject(new Error("Missing screenshot"));return;}var reader=new FileReader();reader.onerror=function(){reject(new Error("Could not read screenshot"));};reader.onload=function(){var original=String(reader.result||"");if(original.indexOf("data:image/")!==0){reject(new Error("Invalid screenshot"));return;}var img=new Image();img.onload=function(){try{var max=1600,scale=Math.min(1,max/Math.max(img.naturalWidth||1,img.naturalHeight||1)),c=document.createElement("canvas");c.width=Math.max(1,Math.round((img.naturalWidth||1)*scale));c.height=Math.max(1,Math.round((img.naturalHeight||1)*scale));var x=c.getContext("2d");if(!x){resolve(original);return;}x.drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL("image/jpeg",.82)||original);}catch(e){resolve(original);}};img.onerror=function(){resolve(original);};img.src=original;};try{reader.readAsDataURL(file);}catch(e){reject(e);}});}
  function applyData(data){if(data.thp){var thp=$("playerThp");if(thp){thp.value=data.thp;thp.dispatchEvent(new Event("input",{bubbles:true}));}}if(Array.isArray(data.squads)){var powers=[];for(var j=0;j<data.squads.length;j++)if(data.squads[j]&&data.squads[j].power)powers.push(data.squads[j].power);for(var i=1;i<=3;i++){var el=$("s"+i+"power");if(el&&powers[i-1]){el.value=powers[i-1];el.dispatchEvent(new Event("input",{bubbles:true}));}}}}
  window.HOLaWeeklyAiLoadSavedState=function(name,row){
@@ -4706,14 +4749,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   refreshSelection();
  };
- async function run(){var name=String($("playerName")?.value||"").trim(),btn=$("weeklyAiDetectBtn");if(weeklyLocked&&normalizeName(name)===normalizeName(weeklyLockedName)){var existing=verification.get(name);if(existing){setStatus("","already");refreshSelection();return;}}if(!name){setStatus("","noName");return;}if(selectedFiles.length!==2){setStatus("",weeklyLocked?"alreadyNo":"need");return;}if(btn){btn.classList.add("ai-scanning");btn.disabled=true;}setStatus("","working");try{var thpImage=await prepare(selectedFiles[0]),squadImage=await prepare(selectedFiles[1]);var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({mode:"combined",name:name,thpImage:thpImage,squadImage:squadImage})});var data={};try{data=await res.json();}catch(e){}if(!res.ok){if(data.code==="NAME_MISMATCH"){verification.clear(name);setStatus("","mismatch",{selected:data.selectedName||name,detected:data.detectedName||"?"});return;}if(data.code==="NAME_UNREADABLE"){verification.clear(name);setStatus("","unreadable");return;}var be=String(data.error||"");if(res.status===429||/rate limit|tokens per min|too many requests/i.test(be)){setStatus("","rateLimit");return;}throw new Error(be||("AI HTTP "+res.status));}
+ async function run(){var name=String($("playerName")?.value||"").trim(),btn=$("weeklyAiDetectBtn");if(weeklyLocked&&normalizeName(name)===normalizeName(weeklyLockedName)){var existing=verification.get(name);if(existing){setStatus("","already");refreshSelection();return;}}if(!name){setStatus("","noName");return;}if(selectedFiles.filter(Boolean).length!==2){setStatus("",weeklyLocked?"alreadyNo":"need");return;}weeklyBusy=true;if(btn){btn.classList.add("ai-scanning");btn.disabled=true;}setStatus("","working");try{var thpImage=await prepare(selectedFiles[0]),squadImage=await prepare(selectedFiles[1]);var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({mode:"combined",name:name,thpImage:thpImage,squadImage:squadImage})});var data={};try{data=await res.json();}catch(e){}if(!res.ok){if(data.code==="NAME_MISMATCH"){verification.clear(name);setStatus("","mismatch",{selected:data.selectedName||name,detected:data.detectedName||"?"});$("weeklyAiStatus")?.classList.add("ai-error");return;}if(data.code==="NAME_UNREADABLE"){verification.clear(name);setStatus("","unreadable");$("weeklyAiStatus")?.classList.add("ai-error");return;}var be=String(data.error||"");if(res.status===429||/rate limit|tokens per min|too many requests/i.test(be)){setStatus("","rateLimit");$("weeklyAiStatus")?.classList.add("ai-error");return;}throw new Error(be||("AI HTTP "+res.status));}
  applyData(data);
  if(data.verificationToken){verification.set(name,data.verificationToken,data.verificationExpiresAt,data.detectedName||name);weeklyLocked=true;weeklyLockedName=name;selectedFiles=[];setStatus("","verified",{name:data.detectedName||name});try{document.dispatchEvent(new CustomEvent("weekly-ai-detected"));}catch(e){}}
  else if(data.alreadyDetected){weeklyLocked=true;weeklyLockedName=name;selectedFiles=[];var existing=verification.get(name);setStatus("",existing?"already":"alreadyNo");}
  else setStatus("","genericError");
- }catch(e){var m=String(e&&e.message?e.message:e).replace(/[<>]/g,"").replace(/\s+/g," ").trim();setStatus(m?"⚠ "+m.slice(0,260):d().genericError,null);}finally{if(btn){btn.classList.remove("ai-scanning");}refreshSelection();}}
+ }catch(e){var m=String(e&&e.message?e.message:e).replace(/[<>]/g,"").replace(/\s+/g," ").trim();setStatus(m?"⚠ "+m.slice(0,260):d().genericError,null);$("weeklyAiStatus")?.classList.add("ai-error");}finally{weeklyBusy=false;if(btn){btn.classList.remove("ai-scanning");}refreshSelection(true);}}
  window.holaWeeklyAiRun=run;
- function bind(){var input=$("weeklyAiImages"),selectBtn=$("weeklyAiSelectBtn"),detectBtn=$("weeklyAiDetectBtn");if(!input||!selectBtn||!detectBtn)return;if(selectBtn.getAttribute("data-bound")!=="1"){selectBtn.setAttribute("data-bound","1");selectBtn.addEventListener("click",function(){if(weeklyLocked&&!canRecoverIdentity())return;input.click();});}refreshSelection();}
+ function bind(){if(!$("weeklyAiThpImage")||!$("weeklyAiSquadImage")||!$("weeklyAiDetectBtn"))return;refreshSelection();}
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
  window.__weeklyAiTexts=texts;
  function apply(){var x=d(),nodes=document.querySelectorAll("#weeklyAiCard [data-i18n]"),map={weeklyAiTitle:"title",weeklyAiText:"text",weeklyAiSelect:"select",weeklyAiDetect:"detect"};for(var i=0;i<nodes.length;i++){var k=nodes[i].getAttribute("data-i18n");if(map[k])nodes[i].textContent=x[map[k]];}}
