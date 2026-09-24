@@ -1091,6 +1091,7 @@
           <li><button class="language__option" data-code="ua" data-html="uk" data-name="Українська"><img src="https://flagcdn.com/w40/ua.png" alt="">Українська</button></li>
           <li><button class="language__option" data-code="it" data-html="it" data-name="Italiano"><img src="https://flagcdn.com/w40/it.png" alt="">Italiano</button></li>
           <li><button class="language__option" data-code="pl" data-html="pl" data-name="Polski"><img src="https://flagcdn.com/w40/pl.png" alt="">Polski</button></li>
+          <li><button class="language__option" data-code="tr" data-html="tr" data-name="Türkçe"><img src="https://flagcdn.com/w40/tr.png" alt="">Türkçe</button></li>
         </ul>
       </div>
       <div class="hero__edge" aria-hidden="true"></div>
@@ -1236,6 +1237,7 @@
     const flag=document.getElementById('currentFlag');
 
     const translations={
+      tr:{"pageTitle":"HOLa — İttifak Merkezi","overview":"İttifaka Genel Bakış","strategy":"Strateji","teamwork":"Takım Çalışması","family":"Aile","victory":"Zafer","members":"Üyeler","countries":"Ülkeler","thp":"THP","eventsTitle":"Yaklaşan Etkinlikler","viewAll":"Tümünü gör →","allianceExercise":"İttifak Tatbikatı","zombieSiege":"Zombi Kuşatması","desertStorm":"Çöl Fırtınası","zombieInvasion":"Zombi İstilası","quickAccess":"Hızlı Erişim","quickMembers":"Üyeler","quickMembersSub":"İttifakla tanış","openMembers":"Üyeleri aç","changeLanguage":"Dili değiştir","openDesertStorm":"Desert Storm'u aç","adminCenter":"Yönetim merkezi","allianceStats":"İttifak İstatistikleri","surveyBannerEyebrow":"İTTİFAK GÖREVİ","surveyBannerTitle":"HOLa profilini güncelle","surveyBannerText":"THP, birlik ve üye bilgilerini güncel tut.","surveyBannerCta":"Anketi doldur / güncelle","openSurvey":"Anketi doldur veya güncelle","surveyBannerAria":"Oyuncu anketi","surveyProgress":"{total} kişiden {completed} kişi tamamladı","webNewsLabel":"YENİ","webNewsAvatarTitle":"Artık kendi HOLa avatarını oluşturabilirsin","webNewsAvatarCta":"Hemen dene","webNewsAria":"Web sitesi haberleri","webNewsAvatarAria":"HOLa avatarı oluştur"},
       es:{pageTitle:'HOLa — Centro de la alianza',overview:'Resumen de la alianza',strategy:'Estrategia',teamwork:'Equipo',family:'Familia',victory:'Victoria',members:'Miembros',countries:'Países',thp:'THP',eventsTitle:'Próximos eventos',viewAll:'Ver todos →',allianceExercise:'Ejercicio de alianza',zombieSiege:'Asedio zombi',desertStorm:'Tormenta del desierto',zombieInvasion:'Invasión zombi',quickAccess:'Acceso rápido',quickMembers:'Miembros',quickMembersSub:'Conoce a la alianza',openMembers:'Abrir miembros',changeLanguage:'Cambiar idioma',openDesertStorm:'Abrir Desert Storm',adminCenter:'Centro de administración',allianceStats:'Estadísticas de la alianza',surveyBannerEyebrow:'MISIÓN DE ALIANZA',surveyBannerTitle:'Actualiza tu perfil HOLa',surveyBannerText:'Mantén al día tu THP, squads y perfil de miembro.',surveyBannerCta:'Completar / actualizar encuesta',openSurvey:'Completar o actualizar encuesta',surveyBannerAria:'Encuesta de jugadores',surveyProgress:'{completed} de {total} completadas',webNewsLabel:'NUEVO',webNewsAvatarTitle:'Ahora puedes crear tu avatar HOLa',webNewsAvatarCta:'Pruébalo',webNewsAria:'Noticias de la web',webNewsAvatarAria:'Crear avatar HOLa'},
       en:{pageTitle:'HOLa — Alliance Tracker',overview:'Alliance Overview',strategy:'Strategy',teamwork:'Teamwork',family:'Family',victory:'Victory',members:'Members',countries:'Countries',thp:'THP',eventsTitle:'Upcoming events',viewAll:'View all →',allianceExercise:'Alliance Exercise',zombieSiege:'Zombie Siege',desertStorm:'Desert Storm',zombieInvasion:'Zombie Invasion',quickAccess:'Quick Access',quickMembers:'Members',quickMembersSub:'Meet the alliance',openMembers:'Open members',changeLanguage:'Change language',openDesertStorm:'Open Desert Storm',adminCenter:'Administration center',allianceStats:'Alliance statistics',surveyBannerEyebrow:'ALLIANCE MISSION',surveyBannerTitle:'Update your HOLa profile',surveyBannerText:'Keep your THP, squads and member profile up to date.',surveyBannerCta:'Complete / update survey',openSurvey:'Complete or update survey',surveyBannerAria:'Player survey',surveyProgress:'{completed} of {total} completed',webNewsLabel:'NEW',webNewsAvatarTitle:'You can now create your HOLa avatar',webNewsAvatarCta:'Try it',webNewsAria:'Website news',webNewsAvatarAria:'Create HOLa avatar'},
       fr:{pageTitle:'HOLa — Centre de l’alliance',overview:'Vue de l’alliance',strategy:'Stratégie',teamwork:'Équipe',family:'Famille',victory:'Victoire',members:'Membres',countries:'Pays',thp:'THP',eventsTitle:'Événements à venir',viewAll:'Voir tout →',allianceExercise:'Exercice d’alliance',zombieSiege:'Siège zombie',desertStorm:'Tempête du désert',zombieInvasion:'Invasion zombie',quickAccess:'Accès rapide',quickMembers:'Membres',quickMembersSub:'Découvrez l’alliance',openMembers:'Ouvrir les membres',changeLanguage:'Changer de langue',openDesertStorm:'Ouvrir Desert Storm',adminCenter:'Centre d’administration',allianceStats:'Statistiques de l’alliance',surveyBannerEyebrow:'MISSION D’ALLIANCE',surveyBannerTitle:'Mets à jour ton profil HOLa',surveyBannerText:'Garde ton THP, tes squads et ton profil de membre à jour.',surveyBannerCta:'Remplir / mettre à jour',openSurvey:'Remplir ou mettre à jour l’enquête',surveyBannerAria:'Enquête des joueurs',surveyProgress:'{completed} sur {total} terminées',webNewsLabel:'NOUVEAU',webNewsAvatarTitle:'Tu peux maintenant créer ton avatar HOLa',webNewsAvatarCta:'Essaie-le',webNewsAria:'Actualités du site',webNewsAvatarAria:'Créer un avatar HOLa'},
@@ -1399,6 +1401,8 @@
       flag.src=`https://flagcdn.com/w80/${option.dataset.code}.png`;
       flag.alt=option.dataset.name;
       applyLanguage(option.dataset.html);
+      localStorage.setItem('hola-language',option.dataset.html);
+      localStorage.setItem('hola-lang',option.dataset.html);
       closeLanguages();
     });
 
@@ -1498,7 +1502,11 @@
       if(playback)playback.catch(()=>{});
     },{once:true});
 
-    applyLanguage('es');
+    const savedLang=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang')||((navigator.language||'es').slice(0,2)==='tr'?'tr':'es');
+    const initial=translations[savedLang]?savedLang:'es';
+    const languageOption=list.querySelector('[data-html="'+initial+'"]');
+    if(languageOption){flag.src='https://flagcdn.com/w80/'+languageOption.dataset.code+'.png';flag.alt=languageOption.dataset.name;}
+    applyLanguage(initial);
     loadAllianceStats();
     loadUpcomingEvents();
   </script>
