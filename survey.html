@@ -2436,6 +2436,8 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
 .survey-review-item span{display:block;color:#788895;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
 .survey-review-item strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#173f5e;font-size:12px;font-weight:850}
 .survey-review-item.ok strong::before{content:'✓ ';color:#2b9b71}
+.survey-review-item.needs-verification{border-color:#e6a46e;background:#fff5ec}
+.survey-review-item.needs-verification strong{color:#a34f26;white-space:normal;text-overflow:clip}
 .survey-review-note{margin-top:10px;color:#7a715f;font-size:10px;line-height:1.35}
 @media(max-width:600px){
   .survey-wizard-chrome{margin-bottom:9px;padding:10px 12px}.survey-wizard-topline{font-size:10px}
@@ -4440,18 +4442,22 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     if(target && typeof target.focus==='function' && !target.matches?.('[readonly]')){try{target.focus({preventScroll:true})}catch(_){}}
   }
 
+  const IDENTITY_REVIEW={"es":["VERIFICACIÓN IA","Identidad verificada","Falta verificar las dos capturas"],"en":["AI VERIFICATION","Identity verified","Both screenshots must be verified"],"tr":["YAPAY ZEKÂ DOĞRULAMASI","Kimlik doğrulandı","İki ekran görüntüsü henüz doğrulanmadı"],"fr":["VÉRIFICATION IA","Identité vérifiée","Les deux captures doivent être vérifiées"],"de":["KI-VERIFIZIERUNG","Identität bestätigt","Beide Screenshots müssen bestätigt werden"],"it":["VERIFICA IA","Identità verificata","Verifica entrambe le schermate"],"pt":["VERIFICAÇÃO IA","Identidade verificada","Verifica as duas capturas"],"ro":["VERIFICARE AI","Identitate verificată","Verifică ambele capturi"],"pl":["WERYFIKACJA AI","Tożsamość potwierdzona","Zweryfikuj oba zrzuty ekranu"],"uk":["ПЕРЕВІРКА ШІ","Особу підтверджено","Підтвердьте обидва знімки екрана"]};
   function renderReview(){
     const grid=q('#surveyReviewGrid'); if(!grid)return;
     const yn=v=>v==='yes'?tt('yes'):v==='no'?tt('no'):'—';
     const prof=checked('profession');
+    const identityOk=!!window.HOLaSurveyVerification?.get(val('playerName'))?.token;
+    const identityLabels=IDENTITY_REVIEW[lang()]||IDENTITY_REVIEW.es;
     const items=[
       [tt('player'),val('playerName')||'—'],[tt('flagLabel'),q('#playerFlag')?.selectedOptions?.[0]?.textContent?.trim()||val('playerFlag')||'—'],
       [tt('avatarLabel'),avatarOk()?'OK':'—'],[tt('thpLabel'),val('playerThp')||'—'],
+      [identityLabels[0],identityOk?identityLabels[1]:identityLabels[2],identityOk],
       [tt('squadLabel'),[1,2,3].map(i=>`${val(`s${i}type`)} ${val(`s${i}power`)}`).join(' · ')],
       [tt('hqLabel'),val('hqLevelProgress')||'—'],[tt('t10Label'),yn(checked('t10'))],
       [tt('professionLabel'),prof?prof.charAt(0).toUpperCase()+prof.slice(1):'—'],[tt('supremeLabel'),yn(checked('supremeLord'))]
     ];
-    grid.innerHTML=items.map(([label,value])=>`<div class="survey-review-item ok"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+    grid.innerHTML=items.map(([label,value,ready])=>`<div class="survey-review-item ${ready===false?'needs-verification':'ok'}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     const title=q('#surveyReviewTitle'); if(title)title.textContent=tt('review');
     const note=q('#surveyReviewNote'); if(note)note.textContent=tt('optional');
   }
