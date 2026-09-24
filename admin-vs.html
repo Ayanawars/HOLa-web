@@ -154,6 +154,41 @@
         color: #8fa5b9;
         margin-top: 1px;
       }
+      .score.rank-review {
+        border: 2px solid #c68a2d;
+        border-radius: 12px;
+        background: rgba(238, 177, 61, 0.09);
+        padding: 10px;
+        margin: 8px 0;
+      }
+      .rank-warning {
+        grid-column: 1 / -1;
+        border: 1px solid #c68a2d;
+        border-radius: 9px;
+        background: rgba(222, 161, 44, 0.13);
+        color: #ffe6b2;
+        padding: 10px;
+        line-height: 1.5;
+        font-size: 13px;
+      }
+      .rank-warning strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+      .rank-confirm {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        margin-top: 9px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .rank-confirm input {
+        width: 19px;
+        height: 19px;
+        flex: 0 0 auto;
+        accent-color: #3f9c61;
+      }
       .del {
         background: #55252c;
         color: #ffb4bc;
@@ -1960,11 +1995,15 @@
           canvas.toBlob(resolve, "image/jpeg", 0.96),
         );
         if (!blob) throw new Error("No se pudo preparar el recorte para OCR.");
-        return new File(
+        const prepared = new File(
           [blob],
           selected.name.replace(/\.[^.]+$/, "_ranking.jpg"),
           { type: "image/jpeg" },
         );
+        // Conservamos la altura original para excluir la fila verde fija
+        // del jugador propio en la comprobación del orden del ranking.
+        prepared.rankingHeight = height;
+        return prepared;
       }
 
       async function cropPointsForOcr(selected) {
@@ -2427,13 +2466,19 @@
       async function readScreenshotTesseract(selected) {
         const cropped = await cropRankingForOcr(selected);
         const parsed = await runTesseractPass(cropped);
-        return extractRankingFromParsed(parsed, "Tesseract");
+        return extractRankingFromParsed(parsed, "Tesseract").map((item) => ({
+          ...item,
+          rankingHeight: cropped.rankingHeight,
+        }));
       }
 
       async function readScreenshotAzure(selected) {
         const cropped = await cropRankingForOcr(selected);
         const parsed = await runAzurePass(cropped);
-        return extractRankingFromParsed(parsed, "Azure");
+        return extractRankingFromParsed(parsed, "Azure").map((item) => ({
+          ...item,
+          rankingHeight: cropped.rankingHeight,
+        }));
       }
 
       async function runOcrPass(selected, language, engine = "2") {
@@ -2825,6 +2870,166 @@
         return null;
       }
 
+      // La puntuación del ranking diario debe ir siempre de mayor a menor
+      // según la posición VERTICAL de las filas visibles en cada captura.
+      // No dependemos del número del puesto (queda fuera del recorte OCR).
+      // Usamos los vecinos de cada fila para detectar una cifra truncada que
+      // haría caer al jugador decenas de posiciones al ordenar los puntos.
+      function findRankOrderWarnings(screenshots, accepted) {
+        const orderedScores = [...accepted.values()].sort(
+          (a, b) =>
+            Number(b.points || 0) - Number(a.points || 0) ||
+            String(a.name).localeCompare(String(b.name), "es", {
+              sensitivity: "base",
+            }),
+        );
+        const ranked = new Map(
+          orderedScores.map((item, index) => [normName(item.name), index + 1]),
+        );
+        const issues = new Map();
+
+        for (const screenshot of screenshots) {
+          const perImage = new Map();
+          // Azure sustituye a Tesseract solamente si revisó esta imagen.
+          // Para nombres que Azure no leyó, mantenemos la posición de Tesseract.
+          for (const entry of [
+            ...(screenshot.found || []),
+            ...(screenshot.azureFound || []),
+          ]) {
+            const key = normName(entry.name);
+            if (!accepted.has(key) || !ranked.has(key)) continue;
+            const top = Number(entry.top);
+            const height = Number(entry.rankingHeight || 0);
+            if (!Number.isFinite(top) || top <= 0) continue;
+            // La fila verde fija "Ayana wars" se repite al pie de TODAS las
+            // capturas y no pertenece al tramo del ranking mostrado.
+            if (height > 0 && top >= height * 0.78) continue;
+
+            const existing = perImage.get(key);
+            if (!existing || top < existing.top) {
+              perImage.set(key, { key, top, name: accepted.get(key).name });
+            }
+          }
+
+          const visualRows = [...perImage.values()].sort(
+            (a, b) => a.top - b.top,
+          );
+          if (visualRows.length < 3) continue;
+
+          for (let i = 0; i < visualRows.length; i++) {
+            const row = visualRows[i];
+            const saved = accepted.get(row.key);
+            if (Number(saved?.points || 0) === 0) continue;
+
+            const actualRank = ranked.get(row.key);
+            const estimates = [];
+
+            for (
+              let j = Math.max(0, i - 2);
+              j <= Math.min(visualRows.length - 1, i + 2);
+              j++
+            ) {
+              if (j === i) continue;
+              const neighbor = visualRows[j];
+              if (Number(accepted.get(neighbor.key)?.points || 0) === 0)
+                continue;
+              const neighborRank = ranked.get(neighbor.key);
+              if (!Number.isFinite(neighborRank)) continue;
+              estimates.push(neighborRank + i - j);
+            }
+            if (estimates.length < 2) continue;
+
+            estimates.sort((a, b) => a - b);
+            const middle = Math.floor(estimates.length / 2);
+            const expectedRank =
+              estimates.length % 2
+                ? estimates[middle]
+                : (estimates[middle - 1] + estimates[middle]) / 2;
+            const displacement = Math.abs(actualRank - expectedRank);
+
+            // Un empate o una posición de diferencia no indican error.
+            // Una caída >= 8 posiciones sí requiere revisar la captura.
+            if (displacement < 8) continue;
+
+            const previous = i > 0 ? visualRows[i - 1] : null;
+            const next =
+              i + 1 < visualRows.length ? visualRows[i + 1] : null;
+            const near = [previous, next]
+              .filter(Boolean)
+              .map((neighbor) => ({
+                name: neighbor.name,
+                points: Number(accepted.get(neighbor.key)?.points || 0),
+              }));
+
+            const existing = issues.get(row.key);
+            if (!existing || displacement > existing.displacement) {
+              issues.set(row.key, {
+                key: row.key,
+                name: row.name,
+                points: Number(saved.points),
+                sortedRank: actualRank,
+                nearbyRank: Math.round(expectedRank),
+                displacement,
+                fileName: screenshot.file?.name || "captura del ranking",
+                near,
+              });
+            }
+          }
+        }
+
+        return [...issues.values()].sort(
+          (a, b) => b.displacement - a.displacement,
+        );
+      }
+
+      function renderRankOrderWarning(row, issue) {
+        row.classList.add("rank-review");
+        const box = document.createElement("div");
+        box.className = "rank-warning";
+        const heading = document.createElement("strong");
+        heading.textContent = "⚠ Posible puntuación OCR incorrecta";
+        const info = document.createElement("div");
+        const neighbors = issue.near
+          .map(
+            (item) =>
+              item.name +
+              " (" +
+              Number(item.points).toLocaleString("es-ES") +
+              ")",
+          )
+          .join(" · ");
+        info.textContent =
+          "El OCR ha leído " +
+          issue.points.toLocaleString("es-ES") +
+          " puntos, que colocarían a este jugador en el puesto " +
+          issue.sortedRank +
+          ". Sin embargo, en la captura aparece junto a jugadores cercanos al puesto " +
+          issue.nearbyRank +
+          ". " +
+          (neighbors ? "Vecinos: " + neighbors + ". " : "") +
+          "Captura: " +
+          issue.fileName +
+          ". Comprueba la puntuación en el juego y corrígela aquí si es necesario.";
+
+        const confirm = document.createElement("label");
+        confirm.className = "rank-confirm";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "rank-confirm-check";
+        const text = document.createElement("span");
+        text.textContent =
+          "He comprobado esta puntuación en la captura y es correcta o ya la he corregido.";
+        confirm.append(checkbox, text);
+        box.append(heading, info, confirm);
+        row.appendChild(box);
+
+        // Si se modifica la puntuación después de confirmar, requiere volver
+        // a verificarla antes de guardar.
+        row.querySelector(".p")?.addEventListener("input", () => {
+          checkbox.checked = false;
+        });
+      }
+
       ocrBtn.onclick = async () => {
         const selected = [...img.files];
         if (!selected.length) {
@@ -2919,6 +3124,7 @@
 
               try {
                 const found = await readScreenshotAzure(item.file);
+                item.azureFound = found;
                 azureUsed++;
                 // Azure tiene prioridad en las capturas que revisa, por lo que
                 // también puede corregir una puntuación truncada de Tesseract.
@@ -2972,7 +3178,15 @@
             );
           }
 
-          allFound.forEach((x) => add(x.name, x.points));
+          const rankWarnings = findRankOrderWarnings(tessByFile, accepted);
+          const warningsByMember = new Map(
+            rankWarnings.map((issue) => [issue.key, issue]),
+          );
+          allFound.forEach((x) => {
+            add(x.name, x.points);
+            const issue = warningsByMember.get(normName(x.name));
+            if (issue) renderRankOrderWarning(rows.lastElementChild, issue);
+          });
 
           const zeroPlayers = allFound.filter(
             (x) => Number(x.points) === 0,
@@ -2996,16 +3210,30 @@
               ` Faltan ${missing.length}: ${missing.join(" · ")}.`;
           }
 
+          if (rankWarnings.length) {
+            ocrStatus.textContent +=
+              " ⚠ " +
+              rankWarnings.length +
+              " posible(s) error(es) de puntuación por orden del ranking: " +
+              rankWarnings.map((issue) => issue.name).join(" · ") +
+              ". Revisa las filas amarillas y confírmalas antes de guardar.";
+          }
+
           if (errors.length) {
             ocrStatus.textContent +=
               ` Avisos: ${errors.join(" · ")}`;
           }
 
           showOcrToast(
-            allFound.length === memberNames.length
-              ? "✓ OCR 99/99"
-              : "✓ OCR terminado",
-            `Tesseract ${afterTesseract}/${memberNames.length} · Azure ${azureUsed} captura${azureUsed === 1 ? "" : "s"} · Resultado ${allFound.length}/${memberNames.length}.`,
+            rankWarnings.length
+              ? "⚠ Revisar puntuaciones OCR"
+              : allFound.length === memberNames.length
+                ? "✓ OCR 99/99"
+                : "✓ OCR terminado",
+            rankWarnings.length
+              ? rankWarnings.length +
+                " puntuación(es) fuera de orden. Comprueba las filas amarillas antes de guardar."
+              : `Tesseract ${afterTesseract}/${memberNames.length} · Azure ${azureUsed} captura${azureUsed === 1 ? "" : "s"} · Resultado ${allFound.length}/${memberNames.length}.`,
           );
         } catch (e) {
           console.error(e);
@@ -3084,6 +3312,23 @@
         let dayInfo, day, week_type, vs_date;
 
         try {
+          const notReviewed = [
+            ...rows.querySelectorAll(".score.rank-review"),
+          ].filter(
+            (row) => !row.querySelector(".rank-confirm-check")?.checked,
+          );
+          if (notReviewed.length) {
+            notReviewed[0].scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            throw new Error(
+              "Hay " +
+                notReviewed.length +
+                " puntuación(es) con posible error de OCR. Comprueba la captura original y marca la casilla de revisión en cada fila amarilla antes de guardar.",
+            );
+          }
+
           dayInfo = getDayAndWeekStart(dayDate.value);
           day = Number(selectedDay);
           week_type = document.getElementById("weekType").value;
