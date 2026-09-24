@@ -47,7 +47,7 @@ function matchMember(raw){
 }
 function levenshtein(a,b){let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){const next=[i+1];for(let j=0;j<b.length;j++)next.push(Math.min(next[j]+1,row[j+1]+1,row[j]+(a[i]===b[j]?0:1)));row=next;}return row[b.length];}
 function playerOption(selected="",empty="Elegir miembro"){return '<option value="">'+esc(empty)+'</option>'+members.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");}
-function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(typeof input.baseMapDataUrl==="string"&&input.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(input.baseMapDataUrl))s.baseMapDataUrl=input.baseMapDataUrl;if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:Number.isFinite(Number(r.power))?Number(r.power):null}));for(const field of ["phase1","phase2","missions","subs"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}return s;}
+function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(typeof input.baseMapDataUrl==="string"&&input.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(input.baseMapDataUrl))s.baseMapDataUrl=input.baseMapDataUrl;if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:r.power==null||r.power===""?null:(Number.isFinite(Number(r.power))?Number(r.power):null)}));for(const field of ["phase1","phase2","missions","subs"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}return s;}
 function localKey(){return "hola-ds-builder-v1:"+$("battleDate").value+":"+$("team").value;}
 function storeLocal(){if(state)try{localStorage.setItem(localKey(),JSON.stringify(state));}catch{}}
 function mapSource(){return state?.baseMapDataUrl||"assets/ds-battlefield.svg";}
@@ -500,9 +500,10 @@ async function acceptProposals(){
    }catch(e){p.note=String(e?.message||e);p.manual=true;remaining.push(p);rejected.push(p.name+": "+p.note);}
   }
   proposals=remaining;renderRoster();mutate();
-  const pending=proposals.length+rejectedOCR.size,actual=counts();
-  notice("✓ Incorporados "+added+" · ya inscritos "+already+" · pendientes "+pending+
+  const pending=ocrTriage().pending.length,raw=ocrTriage().unmatched.length,actual=counts();
+  notice("✓ Incorporados "+added+" · ya inscritos "+already+" · jugadores por revisar "+pending+
    ". Titulares "+actual.starter+"/20 · suplentes "+actual.sub+"."+
+   (raw?" "+raw+" fragmentos OCR opcionales, no son jugadores confirmados.":"")+
    (rejected.length?" Revisa: "+rejected.join(" · "):""),
    rejected.length?"error":"success");
  }catch(e){notice("No se pudo cotejar el otro equipo: "+String(e?.message||e),"error");}
