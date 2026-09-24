@@ -352,14 +352,16 @@ function loadTemplate(){
 function drawText(ctx,text,x,y,maxWidth,font,color){ctx.font=font;ctx.fillStyle=color;ctx.fillText(String(text),x,y,maxWidth);}
 async function createPoster(what="phase1"){
  const isCombined=what==="combined";const width=1080,unitHeight=1740,height=isCombined?unitHeight*2:unitHeight;
+ const tr=state.language==="tr";
+ const trBuildings={H1:"Saha Hastanesi 1",H2:"Saha Hastanesi 2",H3:"Saha Hastanesi 3",H4:"Saha Hastanesi 4",HUB:"Bilim Merkezi",INFO:"Bilgi Merkezi",SILO:"Nükleer Silo",ARSENAL:"Cephanelik",MERC:"Paralı Asker Fabrikası"};
  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const ctx=canvas.getContext("2d");
  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar el mapa de edificios."));i.src=mapSource();});
  function drawPhase(which,offset){
   ctx.fillStyle="#081d32";ctx.fillRect(0,offset,width,unitHeight);
   let grad=ctx.createLinearGradient(0,offset,0,offset+230);grad.addColorStop(0,"#073454");grad.addColorStop(1,"#081c31");ctx.fillStyle=grad;ctx.fillRect(0,offset,width,220);
   drawText(ctx,state.templateName.toUpperCase()+" · TEAM "+state.team,45,offset+54,970,"900 32px Georgia","#eac55b");
-  drawText(ctx,which==="phase1"?"PHASE 1 · 00:00–10:00":"PHASE 2 · AFTER 10:00",45,offset+135,980,"900 62px system-ui","#fff8e9");
-  drawText(ctx,state.battle_date+" · "+state.serverTime+" SERVER",47,offset+186,900,"700 24px system-ui","#8adeeb");
+  drawText(ctx,tr?(which==="phase1"?"FAZ 1 · 00:00–10:00":"FAZ 2 · 10:00 SONRASI"):(which==="phase1"?"PHASE 1 · 00:00–10:00":"PHASE 2 · AFTER 10:00"),45,offset+135,980,"900 62px system-ui","#fff8e9");
+  drawText(ctx,state.battle_date+" · "+state.serverTime+(tr?" SUNUCU SAATİ":" SERVER"),47,offset+186,900,"700 24px system-ui","#8adeeb");
   ctx.drawImage(img,0,offset+218,width,765);
   // Cada cartel conserva el mapa y coloca las asignaciones en tarjetas legibles debajo.
   const keys=which==="phase1"?P1:P2,columns=2,cardW=488,rowH=which==="phase1"?112:93,y0=offset+1000;
@@ -367,7 +369,7 @@ async function createPoster(what="phase1"){
    const x=42+(index%columns)*510,y=y0+Math.floor(index/columns)*rowH,w=cardW,h=rowH-7;
    ctx.fillStyle="rgba(11,40,62,.95)";ctx.beginPath();ctx.roundRect(x,y,w,h,12);ctx.fill();
    ctx.strokeStyle="#d6aa4f";ctx.lineWidth=2;ctx.stroke();
-   drawText(ctx,BUILDINGS[k].icon+" "+BUILDINGS[k].label,x+12,y+25,w-25,"bold 19px system-ui","#f0c75a");
+   drawText(ctx,BUILDINGS[k].icon+" "+(tr?trBuildings[k]:BUILDINGS[k].label),x+12,y+25,w-25,"bold 19px system-ui","#f0c75a");
    const names=state[which][k]||[];
    const half=names.length>2?Math.ceil(names.length/2):names.length;
    drawText(ctx,names.slice(0,half).join(", "),x+12,y+54,w-25,"bold 17px system-ui","#fff");
@@ -377,7 +379,7 @@ async function createPoster(what="phase1"){
   let footer=which==="phase1"?"INFO: "+state.missions.INFO.join(", ")+"  ·  REF1: "+state.missions.REF1.join(", ")+"  ·  REF2: "+state.missions.REF2.join(", "):"ARSENAL ↔ INFO CENTER   •   MERCENARY ↔ SCIENCE HUB";
   ctx.fillStyle="#09243e";ctx.fillRect(0,offset+unitHeight-132,width,132);
   drawText(ctx,footer,40,offset+unitHeight-90,1000,"bold 19px system-ui","#7de6b0");
-  drawText(ctx,"FINAL: "+state.keyword+" · "+(state.leader||"Caller TBD")+" · HOLa · Heroes of Last Area",40,offset+unitHeight-37,1000,"bold 23px system-ui","#e9cb72");
+  drawText(ctx,(tr?"SON HÜCUM: ":"FINAL: ")+state.keyword+" · "+(state.leader||(tr?"Komutan belirlenmedi":"Caller TBD"))+" · HOLa · Heroes of Last Area",40,offset+unitHeight-37,1000,"bold 23px system-ui","#e9cb72");
  }
  if(isCombined){drawPhase("phase1",0);drawPhase("phase2",unitHeight);}else drawPhase(what,0);
  const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));if(!blob)throw new Error("No se pudo generar el PNG.");const url=URL.createObjectURL(blob);
