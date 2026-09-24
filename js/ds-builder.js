@@ -280,32 +280,39 @@ function ocrCandidateReason(p){
 }
 function renderProposals(){
  if(!$("ocrReview"))return;
- const ready=proposals.map((p,i)=>({p,i})).filter(({p})=>canAcceptAutomatically(p));
- const pending=proposals.map((p,i)=>({p,i})).filter(({p})=>!canAcceptAutomatically(p));
- const unmatched=[...rejectedOCR.entries()];
- const pendingCount=pending.length+unmatched.length;
- $("ocrReview").hidden=!ocrHasRead&&!proposals.length&&!unmatched.length;
+ const {accepted,toAdd,pending,unmatched}=ocrTriage();
+ const pendingCount=pending.length,unknownCount=unmatched.length;
+ $("ocrReview").hidden=!ocrHasRead&&!proposals.length&&!unknownCount;
  const rosterCounts=state?counts():{starter:0,sub:0};
- const readyStarter=ready.filter(({p})=>p.role==="starter").length;
- const readySub=ready.filter(({p})=>p.role==="sub").length;
+ const newStarters=toAdd.filter(({p})=>p.role==="starter").length;
+ const newSubs=toAdd.filter(({p})=>p.role==="sub").length;
  const missingStarters=Math.max(0,20-rosterCounts.starter);
- $("ocrSummary").innerHTML='<strong>'+ready.length+' cotejados con miembros HOLa · '+pendingCount+' por revisar</strong>'+
-  '<div class="ocr-counts"><span>Por aceptar: '+readyStarter+' titulares y '+readySub+' suplentes</span>'+
-  '<span>Inscritos: '+rosterCounts.starter+'/20 titulares</span>'+
-  '<span>Suplentes inscritos: '+rosterCounts.sub+' (máximo 10)</span></div>'+
-  (missingStarters&&ready.length===0?'<p class="muted">Quedan '+missingStarters+' plazas de titular por cubrir. Comprueba las lecturas pendientes o añade el jugador que falta.</p>':"");
- $("ocrAutoPanel").hidden=!ready.length;
- $("ocrAutoList").innerHTML=ready.length?
-  '<details><summary>Ver '+ready.length+' nombres cotejados con HOLa</summary><div>'+
-  ready.map(({p})=>'<span class="ocr-ready-person">'+esc(canonical(p.name))+
+ const needAfterAccept=Math.max(0,missingStarters-newStarters);
+ const registeredText=rosterCounts.starter+"/20 titulares · "+rosterCounts.sub+" suplentes";
+ $("ocrSummary").innerHTML='<strong>Inscritos en el equipo: '+registeredText+'</strong>'+
+  '<div class="ocr-counts">'+
+  '<span>Ya estaban inscritos: '+accepted.length+' lecturas</span>'+
+  '<span>Nuevos identificados: '+toAdd.length+'</span>'+
+  '<span>Revisión de jugadores: '+pendingCount+'</span></div>'+
+  (missingStarters?
+   '<div class="ocr-needed" role="status"><strong>Faltan '+missingStarters+
+   ' titular'+(missingStarters===1?'':'es')+' para completar los 20.</strong>'+
+   (newStarters?' Hay '+newStarters+' titular'+(newStarters===1?'':'es')+' identificado'+(newStarters===1?'':'s')+' pendiente'+(newStarters===1?'':'s')+' de aceptar.':'')+
+   (needAfterAccept?' Si no aparece en las lecturas, selecciónalo abajo de los miembros HOLa.':'')+
+   '</div>':
+   '<div class="ocr-complete">✓ Los 20 titulares están inscritos. No hace falta completar 10 suplentes.</div>');
+ $("ocrAutoPanel").hidden=!toAdd.length;
+ $("ocrAutoList").innerHTML=toAdd.length?
+  '<details><summary>Ver '+toAdd.length+' jugadores nuevos cotejados con HOLa</summary><div>'+
+  toAdd.map(({p})=>'<span class="ocr-ready-person">'+esc(canonical(p.name))+
    ' · '+(p.role==="starter"?"Titular":"Suplente")+(p.power==null?' · THP pendiente':'')+'</span>').join("")+
   '</div></details>':
-  '<p class="muted">No quedan lecturas que se puedan incorporar automáticamente.</p>';
+  '<p class="muted">No quedan nuevos jugadores identificados para incorporar.</p>';
  const bulk=$("acceptVerified");
- bulk.disabled=!ready.length||busy||acceptBusy;
- bulk.textContent=acceptBusy?"Cotejando equipo…":"✓ Aceptar todos los "+ready.length+" identificados";
+ bulk.disabled=!toAdd.length||busy||acceptBusy;
+ bulk.textContent=acceptBusy?"Comprobando inscripciones…":"✓ Aceptar los "+toAdd.length+" jugadores nuevos";
  $("ocrReviewBox").hidden=!pendingCount;
- $("ocrReviewTitle").textContent="⚠ Por revisar · "+pendingCount;
+ $("ocrReviewTitle").textContent="⚠ Jugadores que necesitan revisión · "+pendingCount;
  $("ocrProposals").innerHTML=pending.map(({p,i})=>{
   const roleText=p.role==="starter"?"Titular":p.role==="sub"?"Suplente":"Sin identificar";
   return '<article class="ocr-proposal" data-index="'+i+'">'+
@@ -317,19 +324,24 @@ function renderProposals(){
    '<button type="button" class="btn good proposal-add" data-add-index="'+i+'">✓ Añadir al equipo como '+roleText.toLowerCase()+'</button>'+
    '</article>';
  }).join("");
+ $("ocrRawDetails").hidden=!unknownCount;
+ $("ocrRawSummary").textContent=unknownCount+
+  " fragmentos de texto no reconocidos (opcionales · no cuentan como jugadores)";
  $("ocrDiscarded").innerHTML=unmatched.map(([key,p],i)=>
   '<article class="ocr-proposal" data-raw-index="'+i+'">'+
    '<div><strong>Texto OCR: '+esc(p.text)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
-   '<div class="review-warn" role="status">'+esc(p.note||"No coincide con un miembro de HOLa: selecciona su nombre si realmente es un jugador.")+'</div>'+
-   '<div class="two"><div class="field"><label>Miembro oficial</label><select class="unmatched-name">'+playerOption("","Seleccionar miembro")+'</select></div>'+
+   '<div class="review-warn" role="status">'+esc(p.note||"Esta lectura no coincide con un miembro HOLa. Si es un jugador real, selecciónalo; si no, ignórala.")+'</div>'+
+   '<div class="two"><div class="field"><label>Miembro oficial</label><select class="unmatched-name">'+eligibleMemberOptions("","Seleccionar miembro que falta")+'</select></div>'+
    '<div class="field"><label>B del juego</label><select class="unmatched-role"><option value="">Seleccionar</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
    '<div class="field"><label>THP en millones (opcional)</label><input class="unmatched-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div>'+
    '<button type="button" class="btn good ocr-unmatched-add">✓ Añadir jugador corregido</button>'+
    '</article>'
  ).join("");
- $("ocrMissingPlayer").innerHTML=playerOption($("ocrMissingPlayer").value||"","Elegir miembro que falta");
+ const missingSelect=$("ocrMissingPlayer"),selectedMissing=missingSelect.value||"";
+ missingSelect.innerHTML=eligibleMemberOptions(selectedMissing,"Elegir miembro que falta");
  const missing=$("ocrMissingDetails");
- if(ocrHasRead&&ready.length===0&&pendingCount===0&&missingStarters>0)missing.open=true;
+ if(ocrHasRead&&missingStarters>0&&newStarters===0)missing.open=true;
+ if(!missingStarters&&missing.open)missing.open=false;
 }
 async function readShots(){
  const shots=[...$("participantShots").files];
