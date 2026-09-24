@@ -60,11 +60,11 @@
       const wanted=normalizeName(admin.display_name); const player=players.find(p=>['R4','R5'].includes(String(p.rank||'').toUpperCase())&&normalizeName(p.name)===wanted); if(!player)return false;
       $('adminName').textContent=player.name;$('adminRank').textContent=player.rank;return true;
     }
-    const dayFmt=new Intl.DateTimeFormat('es-ES',{weekday:'short',timeZone:'UTC'}); const dateFmt=new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',timeZone:'UTC'});
+    const eventLocale=()=>localStorage.getItem('hola-language')==='tr'?'tr-TR':'es-ES';
     function renderPreview(card){
       const date=card.querySelector('[data-field="date"]').value; const time=card.querySelector('[data-field="time"]').value; const out=card.querySelector('[data-preview]');
       if(!date||!time){out.textContent='Sin fecha programada';return;}
-      const d=new Date(date+'T12:00:00Z'); const day=dayFmt.format(d).replace('.','').toUpperCase(); const dp=dateFmt.format(d).replace('.','').toUpperCase(); out.textContent=`${day} · ${dp} · ${time} SERVER TIME`;
+      const d=new Date(date+'T12:00:00Z'); const day=new Intl.DateTimeFormat(eventLocale(),{weekday:'short',timeZone:'UTC'}).format(d).replace('.','').toLocaleUpperCase(eventLocale()); const dp=new Intl.DateTimeFormat(eventLocale(),{day:'2-digit',month:'short',timeZone:'UTC'}).format(d).replace('.','').toLocaleUpperCase(eventLocale()); out.textContent=`${day} · ${dp} · ${time} ${eventLocale()==='tr-TR'?'SUNUCU SAATİ':'SERVER TIME'}`;
     }
     document.querySelectorAll('.event').forEach(card=>card.querySelectorAll('input').forEach(input=>input.addEventListener('input',()=>renderPreview(card))));
     async function load(){
@@ -79,6 +79,7 @@
     }
     async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html');}
     $('saveEvents').addEventListener('click',save);$('logoutTop').addEventListener('click',logout);
+    document.addEventListener('hola:languagechange',()=>document.querySelectorAll('.event[data-event]').forEach(renderPreview));
     const ok=await verify();if(!ok){await deny();}else{await load();$('guard').hidden=true;$('app').hidden=false;}
   </script>
 <script src="js/hola-tr-ui.js"></script>
