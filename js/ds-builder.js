@@ -331,7 +331,7 @@ async function saveTemplate(){
  }catch(e){notice("No se pudo guardar la plantilla: "+e.message,"error");}
 }
 function loadTemplate(){
- const row=storedTemplates[Number($("storedTemplate").value)];if(!row){notice("Elige una plantilla guardada.","error");return;}
+ const chosen=$("storedTemplate").value,row=chosen===""?null:storedTemplates[Number(chosen)];if(!row){notice("Elige una plantilla guardada.","error");return;}
  const l=row.layout||{},starters=new Set(state.roster.filter(r=>r.role==="starter").map(r=>r.name)),subs=new Set(state.roster.filter(r=>r.role==="sub").map(r=>r.name));
  for(const field of ["phase1","phase2","missions","subs"]){
   if(!l[field])continue;
