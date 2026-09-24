@@ -233,15 +233,36 @@ function mergeProposals(rows){
   old.confirmed=!!old.exact&&!!old.role&&old.power!=null&&!old.note;
  }
 }
+function existingRosterRecord(name){
+ const nameKey=normal(canonical(name)||name);
+ return nameKey?state?.roster?.find(r=>normal(canonical(r.name)||r.name)===nameKey)||null:null;
+}
+function ocrTriage(){
+ const accepted=[],toAdd=[],pending=[];
+ for(let i=0;i<proposals.length;i++){
+  const p=proposals[i],existing=existingRosterRecord(p.name);
+  if(existing&&existing.role===p.role){accepted.push({p,i});continue;}
+  if(canAcceptAutomatically(p))toAdd.push({p,i});
+  else pending.push({p,i});
+ }
+ return {accepted,toAdd,pending,unmatched:[...rejectedOCR.entries()]};
+}
+function eligibleMemberOptions(selected="",label="Elegir miembro de HOLa"){
+ const options=members.filter(n=>{
+  const key=normal(n);
+  return key===normal(selected)||(!existingRosterRecord(n)&&!rosterOther.has(key));
+ });
+ return '<option value="">'+esc(label)+'</option>'+options.map(n=>
+  '<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");
+}
 function canAcceptAutomatically(p){
  if(!p||!p.name||!p.exact||p.manual||p.roleConflict||p.powerConflict)return false;
  const name=canonical(p.name);
  if(!name||!["starter","sub"].includes(p.role)||rosterOther.has(normal(name)))return false;
- const existing=state?.roster?.find(r=>normal(r.name)===normal(name));
- if(existing&&existing.role!==p.role)return false;
+ // The OCR result may be from a previous accepted batch. Never offer to
+ // "add" somebody who is already in the roster or silently change their THP.
+ if(existingRosterRecord(name))return false;
  if(p.power!=null&&(!Number.isFinite(Number(p.power))||Number(p.power)<=0))return false;
- // A missing THP is not a missing player: add with power=null and complete
- // the score later in the roster. Other OCR uncertainties require review.
  const note=String(p.note||"").trim();
  return !note||/^(?:THP no leído|No se pudo leer el THP|Completa el THP)/i.test(note);
 }
