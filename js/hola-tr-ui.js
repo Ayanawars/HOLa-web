@@ -58,7 +58,7 @@ function sync(){
 function init(){
  if(document.getElementById("hola-tr-switch"))return;
  const button=document.createElement("button");button.id="hola-tr-switch";button.type="button";button.setAttribute("aria-label","Türkçe / Español");
- button.style.cssText="position:fixed;top:8px;right:9px;z-index:2147483640;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:2px solid #e5bf59;border-radius:22px;color:#fff;background:#0b577a;font:800 12px/1 system-ui,sans-serif;box-shadow:0 5px 16px #123a4966";
+ button.style.cssText="position:fixed;bottom:15px;right:12px;z-index:2147483640;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:2px solid #e5bf59;border-radius:22px;color:#fff;background:#0b577a;font:800 12px/1 system-ui,sans-serif;box-shadow:0 5px 16px #123a4966";
  button.onclick=()=>{lang=lang==="tr"?"es":"tr";localStorage.setItem("hola-language",lang);sync();};
  document.body.appendChild(button);sync();
  let scheduled=false;
