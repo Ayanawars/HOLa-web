@@ -4403,6 +4403,11 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
       if(!avatarOk()){ok=false;msg=tt('avatar');targets.push(q('#avatarUpload'));}
     }else if(index===2){
       if(!validPower(val('playerThp'))){ok=false;msg=tt('thp');targets.push(q('#playerThp'));}
+      // The THP number is not proof of identity. The weekly AI step must
+      // have issued an unexpired verification token before continuing.
+      if(!window.HOLaSurveyVerification?.get(val('playerName'))?.token){
+        ok=false;msg=tt('thp');targets.push(q('#weeklyAiSelectBtn'));
+      }
     }else if(index===3){
       const allowed=new Set(['Tank','Aircraft','Missile']);
       for(let i=1;i<=3;i++){
@@ -4487,7 +4492,7 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     for(let i=0;i<=4;i++){
       const r=stepValidation(i);
       if(!r.ok){
-        if(options.navigate!==false){showStep(i);showError(i,{...r,msg:options.message||tt('all')});}
+        if(options.navigate!==false){showStep(i);showError(i,{...r,msg:options.message||r.msg});}
         return {ok:false,step:i,result:r};
       }
     }
@@ -4601,10 +4606,38 @@ document.addEventListener("DOMContentLoaded", () => {
  function $(id){return document.getElementById(id);}
  function normalizeName(v){return String(v||"").trim().toLowerCase().replace(/\s+/g," ");}
  function storageKey(name){return "hola_identity_v1:"+normalizeName(name);}
+ // iOS private browsing can restrict storage. Keep the server-issued verification
+ // in this tab's memory first, then try sessionStorage and localStorage.
+ // A lost or expired session still requires fresh AI verification; never bypass it.
+ var identityMemory=Object.create(null);
+ function safeIdentityRead(store,key){try{return window[store].getItem(key);}catch(e){return null;}}
+ function safeIdentityWrite(store,key,value){try{window[store].setItem(key,value);}catch(e){}}
+ function safeIdentityRemove(store,key){try{window[store].removeItem(key);}catch(e){}}
  var verification={
-  get:function(name){try{var raw=localStorage.getItem(storageKey(name));if(!raw)return null;var v=JSON.parse(raw);if(!v||!v.token||!v.expiresAt||Date.parse(v.expiresAt)<=Date.now()){localStorage.removeItem(storageKey(name));return null;}return v;}catch(e){return null;}},
-  set:function(name,token,expiresAt,detectedName){try{localStorage.setItem(storageKey(name),JSON.stringify({token:token,expiresAt:expiresAt,detectedName:detectedName||name}));}catch(e){}},
-  clear:function(name){try{localStorage.removeItem(storageKey(name));}catch(e){}}
+  get:function(name){
+   var key=storageKey(name),v=identityMemory[key]||null,raw;
+   if(!v){
+    raw=safeIdentityRead("sessionStorage",key)||safeIdentityRead("localStorage",key);
+    if(raw){try{v=JSON.parse(raw);}catch(e){v=null;}}
+   }
+   var expires=v&&v.expiresAt?Date.parse(v.expiresAt):NaN;
+   if(!v||!v.token||!Number.isFinite(expires)||expires<=Date.now()){this.clear(name);return null;}
+   identityMemory[key]=v;
+   return v;
+  },
+  set:function(name,token,expiresAt,detectedName){
+   var key=storageKey(name),v={token:token,expiresAt:expiresAt,detectedName:detectedName||name};
+   identityMemory[key]=v;
+   var serialized=JSON.stringify(v);
+   safeIdentityWrite("sessionStorage",key,serialized);
+   safeIdentityWrite("localStorage",key,serialized);
+  },
+  clear:function(name){
+   var key=storageKey(name);
+   delete identityMemory[key];
+   safeIdentityRemove("sessionStorage",key);
+   safeIdentityRemove("localStorage",key);
+  }
  };
  window.HOLaSurveyVerification=verification;
 
