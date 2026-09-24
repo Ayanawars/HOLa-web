@@ -2527,7 +2527,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
         <span data-i18n="flagLabel">BANDERA</span>
       </label>
       <div class="flag-select-wrap">
-        <select id="playerFlag" class="flag-selector" aria-label="Seleccionar bandera">
+        <select id="playerFlag" class="flag-selector" aria-label="Seleccionar bandera"><option value="" data-country-code="" selected>Selecciona tu país o comunidad</option>
         <option value="Afganistán" data-country-code="AF">🇦🇫 Afganistán</option>
         <option value="Albania" data-country-code="AL">🇦🇱 Albania</option>
         <option value="Alemania" data-country-code="DE">🇩🇪 Alemania</option>
@@ -3029,7 +3029,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     // Un cambio manual a otro país/comunidad no debe conservar una ciudad antigua.
     if (source === "manual") {
       const sameCountry = !previous.countryCode || previous.countryCode === parts.countryCode;
-      const sameRegion = !parts.regionCode || !previous.regionCode || previous.regionCode === parts.regionCode;
+      const sameRegion = previous.regionCode === parts.regionCode;
       if (!sameCountry || !sameRegion) city = "";
     }
 
@@ -3038,7 +3038,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
   }
 
   window.HOLaGetSurveyLocation = function () {
-    if (!surveyLocation.country) syncSurveyLocationFromFlag({ source:"selection" });
+    if (!surveyLocation.country && document.getElementById("playerFlag")?.value) syncSurveyLocationFromFlag({ source:"selection" });
     return { ...surveyLocation };
   };
 
@@ -3047,18 +3047,18 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
   window.HOLaApplySavedLocation = function (row) {
     const select = document.getElementById("playerFlag");
     if (!select || !row) return;
-    if (surveyLocation.source === "auto" && surveyLocation.countryCode) return;
+    if (surveyLocation.source === "manual") return; // Explicit player choice takes priority.
 
     const savedFlag = String(row.flag || "").trim();
     const savedCommunity = String(row.community || "").trim();
     const savedCountry = String(row.country || "").trim();
-    let target = savedFlag || savedCommunity || savedCountry;
-    if (target) {
-      const match = Array.from(select.options).find(o => normalizedLocationText(o.value) === normalizedLocationText(target));
-      if (match) select.value = match.value;
-    }
-
-    const parts = selectedFlagParts();
+    const target = savedFlag || savedCommunity || savedCountry;
+    if(!target)return;
+    const match=Array.from(select.options).find(o=>o.value&&
+      normalizedLocationText(o.value)===normalizedLocationText(target));
+    if(!match)return; // Never silently use an unrelated default country.
+    select.value=match.value;
+    const parts=selectedFlagParts();
     const expectedCountry = parts.country;
     const countryMatches = !savedCountry ||
       normalizedLocationText(savedCountry) === normalizedLocationText(expectedCountry) ||
@@ -3261,20 +3261,21 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     });
 
     function setDetectedFlag(option) {
+      if(manuallyChanged || surveyLocation.source === "manual" || surveyLocation.source === "saved")return false;
       programmaticChange = true;
       flagSelect.value = option.value;
       flagSelect.dispatchEvent(new Event("change", { bubbles: true }));
       programmaticChange = false;
+      return true;
     }
 
     function selectByCountryCode(code, allowManual = false) {
-      if (!code || (manuallyChanged && !allowManual)) return false;
+      if (!code || manuallyChanged || surveyLocation.source === "saved" || surveyLocation.source === "manual") return false;
       const wanted = String(code).trim().toUpperCase();
       for (const option of flagSelect.options) {
         const c = String(option.dataset.countryCode || "").toUpperCase();
         if (c === wanted) {
-          setDetectedFlag(option);
-          return true;
+          return setDetectedFlag(option);
         }
       }
       return false;
@@ -3320,13 +3321,12 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     }
 
     function selectByRegionCode(code) {
-      if (!code || manuallyChanged) return false;
+      if (!code || manuallyChanged || surveyLocation.source === "saved" || surveyLocation.source === "manual") return false;
       const wanted = regionAliases[String(code).trim().toUpperCase()];
       if (!wanted) return false;
       for (const option of flagSelect.options) {
         if (String(option.dataset.regionCode || "").toUpperCase() === wanted) {
-          setDetectedFlag(option);
-          return true;
+          return setDetectedFlag(option);
         }
       }
       return false;
@@ -3343,79 +3343,53 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
       return false;
     }
 
-    // 1) Si el navegador declara explícitamente catalán/euskera/gallego,
-    //    podemos inferir la comunidad correspondiente.
-    try {
-      const locales = [];
-      if (Array.isArray(navigator.languages)) locales.push(...navigator.languages);
-      if (navigator.language) locales.push(navigator.language);
-      for (const locale of locales) {
-        const base = String(locale || "").split(/[-_]/)[0].toLowerCase();
-        if (base === "ca" && selectByRegionCode("CT")) return;
-        if (base === "eu" && selectByRegionCode("PV")) return;
-        if (base === "gl" && selectByRegionCode("GA")) return;
-      }
-    } catch (_) {}
+    // The browser's preferred language is not proof of geographic location.
+    // Do not infer Catalonia, Galicia or the Basque Country from a language.
 
     // 2) Geolocalización por IP. Usamos JSON para obtener país + región.
     const providers = [
-      async () => {
-        const r = await fetch("https://ipapi.co/json/", { cache: "no-store" });
+      async (signal) => {
+        const r = await fetch("https://ipapi.co/json/", { cache: "no-store", signal });
         if (!r.ok) throw new Error("ipapi");
         return await r.json();
       },
-      async () => {
-        const r = await fetch("https://ipwho.is/", { cache: "no-store" });
+      async (signal) => {
+        const r = await fetch("https://ipwho.is/", { cache: "no-store", signal });
         if (!r.ok) throw new Error("ipwhois");
         return await r.json();
       }
     ];
 
     for (const getGeo of providers) {
-      if (manuallyChanged) return;
+      if (manuallyChanged || surveyLocation.source === "manual" || surveyLocation.source === "saved") return;
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 5000);
         let geo;
-        try { geo = await getGeo(); } finally { clearTimeout(timer); }
-        if (!geo || manuallyChanged) continue;
+        try { geo = await getGeo(controller.signal); } finally { clearTimeout(timer); }
+        if (!geo || manuallyChanged || surveyLocation.source === "manual" || surveyLocation.source === "saved") return;
 
         const country = String(geo.country_code || geo.countryCode || geo.country || geo.country_code_iso2 || "").toUpperCase();
         const regionCode = String(geo.region_code || geo.regionCode || geo.state_code || geo.stateCode || "").toUpperCase();
         const regionName = geo.region || geo.region_name || geo.state || geo.state_name || geo.regionName || "";
         const city = String(geo.city || geo.town || geo.locality || geo.city_name || "").trim();
 
-        // Guardamos también la ciudad detectada. La selección del país/comunidad
-        // que viene justo después completará los nombres canónicos visibles.
-        Object.assign(surveyLocation, {
-          city,
-          countryCode: country,
-          regionCode,
-          source: "auto"
-        });
-
-        if (country === "ES" || /spain|españa|espana/i.test(String(geo.country || ""))) {
-          // Región antes que país: si estamos en Cataluña, selecciona Cataluña.
-          if (selectByRegionCode(regionCode)) return;
-          if (selectByRegionName(regionName)) return;
-          // Si no hay comunidad, España.
-          if (selectByCountryCode("ES")) return;
-        } else if (country) {
-          // Para cualquier otro país solo se usa el código de país.
-          if (selectByCountryCode(country)) return;
+        // IP data is approximate. Save only after matching a real option.
+        let chosen=false;
+        if(country==="ES"||/spain|españa|espana/i.test(String(geo.country||""))){
+          chosen=selectByRegionCode(regionCode)||selectByRegionName(regionName)||selectByCountryCode("ES");
+        }else if(/^[A-Z]{2}$/.test(country)){
+          chosen=selectByCountryCode(country);
         }
+        if(chosen && surveyLocation.source === "auto")surveyLocation.city=city;
+        if(chosen)return;
       } catch (error) {
         console.warn("No se pudo detectar automáticamente la ubicación:", error);
       }
     }
 
-    // 3) Fallback del locale: SOLO país, nunca comunidad.
-    try {
-      const locale = String(navigator.language || "");
-      const match = locale.match(/[-_]([A-Za-z]{2})$/);
-      if (match) selectByCountryCode(match[1]);
-    } catch (_) {}
-    if (!surveyLocation.country) syncSurveyLocationFromFlag({ source:"selection" });
+    // If the IP providers fail, let the player select the country explicitly.
+    if (!surveyLocation.country && document.getElementById("playerFlag")?.value) syncSurveyLocationFromFlag({ source:"selection" });
   }
 
   lockSurvey(true);
