@@ -13,7 +13,7 @@ SILO:{label:"Nuclear Silo",icon:"☢️",x:51,y:48},ARSENAL:{label:"Arsenal",ico
 MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false;
+let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -231,29 +231,88 @@ function mergeProposals(rows){
   old.confirmed=!!old.exact&&!!old.role&&old.power!=null&&!old.note;
  }
 }
+function canAcceptAutomatically(p){
+ if(!p||!p.name||!p.exact||p.manual||p.roleConflict||p.powerConflict)return false;
+ const name=canonical(p.name);
+ if(!name||!["starter","sub"].includes(p.role)||rosterOther.has(normal(name)))return false;
+ const existing=state?.roster?.find(r=>normal(r.name)===normal(name));
+ if(existing&&existing.role!==p.role)return false;
+ if(p.power!=null&&(!Number.isFinite(Number(p.power))||Number(p.power)<=0))return false;
+ // A missing THP is not a missing player: add with power=null and complete
+ // the score later in the roster. Other OCR uncertainties require review.
+ const note=String(p.note||"").trim();
+ return !note||/^(?:THP no leído|No se pudo leer el THP|Completa el THP)/i.test(note);
+}
+function ocrCandidateReason(p){
+ if(p.note)return String(p.note);
+ if(!p.name||!canonical(p.name))return "Selecciona el nombre oficial de HOLa.";
+ if(rosterOther.has(normal(canonical(p.name))))return "Este jugador ya figura en el otro equipo de esta jornada.";
+ const existing=state?.roster?.find(r=>normal(r.name)===normal(canonical(p.name)));
+ if(existing&&existing.role!==p.role)return "Ya está inscrito como "+(existing.role==="starter"?"titular":"suplente")+". Revisa la B.";
+ if(!["starter","sub"].includes(p.role))return "No se distingue la B. Indica titular o suplente.";
+ if(p.roleConflict)return "B contradictoria entre capturas. Elige la columna correcta.";
+ if(p.powerConflict)return "THP contradictorio entre capturas. Corrige el valor o déjalo vacío.";
+ if(!p.exact)return "Confirma el nombre que ha propuesto el OCR.";
+ return "Comprueba esta lectura y pulsa «Añadir al equipo».";
+}
 function renderProposals(){
- $("ocrReview").hidden=!proposals.length&&!rejectedOCR.size;
- const unresolved=[...rejectedOCR.values()].slice(0,18);
- $("ocrDiscarded").innerHTML=unresolved.length?'<details><summary>Otras lecturas sin coincidencia en miembros ('+rejectedOCR.size+'). No se cuentan como jugadores.</summary><p class="muted">Si alguno es un jugador real, búscalo en la lista de miembros y añádelo manualmente.</p><p class="muted">'+unresolved.map(r=>esc(r.text)+' · '+esc(r.file)).join("<br>")+'</p></details>':"";
- $("ocrProposals").innerHTML=proposals.map((p,i)=>{
-  const blockers=proposalProblems(p);
-  const roleText=p.role==="starter"?"titular":p.role==="sub"?"suplente":"jugador";
-  const msg=p.note||(!p.confirmed?blockers.join(" "):"");
-  return '<article class="ocr-proposal '+(p.confirmed?"good":"")+'" data-index="'+i+'">'+
-   '<div><strong>'+esc(p.ocrName)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
-   (msg?'<div class="review-warn" role="status">'+esc(msg)+'</div>':"")+
-   '<div class="two"><div class="field"><label>Miembro oficial</label><select class="proposal-name">'+playerOption(p.name,"Seleccionar nombre")+'</select></div><div class="field"><label>B del juego</label><select class="proposal-role"><option value="">Revisar tipo</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
-   '<div class="two"><div class="field"><label>THP (millones)</label><input class="proposal-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div><div class="field"><label>Estado</label><span class="counter '+(p.confirmed?"":"warn")+'">'+(p.confirmed?"Verificado":"Pendiente")+'</span></div></div>'+
-   '<label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:5px"><input type="checkbox" class="proposal-confirm" '+(p.confirmed?"checked":"")+' style="width:20px;height:20px;accent-color:#28805c"> Confirmo nombre, B y THP; añadir al equipo</label>'+
-   '<button type="button" class="btn good proposal-add" data-add-index="'+i+'">✓ Confirmar y añadir '+roleText+'</button>'+
+ if(!$("ocrReview"))return;
+ const ready=proposals.map((p,i)=>({p,i})).filter(({p})=>canAcceptAutomatically(p));
+ const pending=proposals.map((p,i)=>({p,i})).filter(({p})=>!canAcceptAutomatically(p));
+ const unmatched=[...rejectedOCR.entries()];
+ const pendingCount=pending.length+unmatched.length;
+ $("ocrReview").hidden=!ocrHasRead&&!proposals.length&&!unmatched.length;
+ const rosterCounts=state?counts():{starter:0,sub:0};
+ const readyStarter=ready.filter(({p})=>p.role==="starter").length;
+ const readySub=ready.filter(({p})=>p.role==="sub").length;
+ const missingStarters=Math.max(0,20-rosterCounts.starter);
+ $("ocrSummary").innerHTML='<strong>'+ready.length+' cotejados con miembros HOLa · '+pendingCount+' por revisar</strong>'+
+  '<div class="ocr-counts"><span>Por aceptar: '+readyStarter+' titulares y '+readySub+' suplentes</span>'+
+  '<span>Inscritos: '+rosterCounts.starter+'/20 titulares</span>'+
+  '<span>Suplentes inscritos: '+rosterCounts.sub+' (máximo 10)</span></div>'+
+  (missingStarters&&ready.length===0?'<p class="muted">Quedan '+missingStarters+' plazas de titular por cubrir. Comprueba las lecturas pendientes o añade el jugador que falta.</p>':"");
+ $("ocrAutoPanel").hidden=!ready.length;
+ $("ocrAutoList").innerHTML=ready.length?
+  '<details><summary>Ver '+ready.length+' nombres cotejados con HOLa</summary><div>'+
+  ready.map(({p})=>'<span class="ocr-ready-person">'+esc(canonical(p.name))+
+   ' · '+(p.role==="starter"?"Titular":"Suplente")+(p.power==null?' · THP pendiente':'')+'</span>').join("")+
+  '</div></details>':
+  '<p class="muted">No quedan lecturas que se puedan incorporar automáticamente.</p>';
+ const bulk=$("acceptVerified");
+ bulk.disabled=!ready.length||busy||acceptBusy;
+ bulk.textContent=acceptBusy?"Cotejando equipo…":"✓ Aceptar todos los "+ready.length+" identificados";
+ $("ocrReviewBox").hidden=!pendingCount;
+ $("ocrReviewTitle").textContent="⚠ Por revisar · "+pendingCount;
+ $("ocrProposals").innerHTML=pending.map(({p,i})=>{
+  const roleText=p.role==="starter"?"Titular":p.role==="sub"?"Suplente":"Sin identificar";
+  return '<article class="ocr-proposal" data-index="'+i+'">'+
+   '<div><strong>Lectura: '+esc(p.ocrName||p.name||"—")+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
+   '<div class="review-warn" role="status">'+esc(ocrCandidateReason(p))+'</div>'+
+   '<div class="two"><div class="field"><label>Miembro oficial de HOLa</label><select class="proposal-name">'+playerOption(p.name||"","Seleccionar miembro")+'</select></div>'+
+   '<div class="field"><label>B del juego</label><select class="proposal-role"><option value="">Seleccionar</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
+   '<div class="field"><label>THP en millones (opcional)</label><input class="proposal-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div>'+
+   '<button type="button" class="btn good proposal-add" data-add-index="'+i+'">✓ Añadir al equipo como '+roleText.toLowerCase()+'</button>'+
    '</article>';
  }).join("");
+ $("ocrDiscarded").innerHTML=unmatched.map(([key,p],i)=>
+  '<article class="ocr-proposal" data-raw-index="'+i+'">'+
+   '<div><strong>Texto OCR: '+esc(p.text)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
+   '<div class="review-warn" role="status">'+esc(p.note||"No coincide con un miembro de HOLa: selecciona su nombre si realmente es un jugador.")+'</div>'+
+   '<div class="two"><div class="field"><label>Miembro oficial</label><select class="unmatched-name">'+playerOption("","Seleccionar miembro")+'</select></div>'+
+   '<div class="field"><label>B del juego</label><select class="unmatched-role"><option value="">Seleccionar</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
+   '<div class="field"><label>THP en millones (opcional)</label><input class="unmatched-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div>'+
+   '<button type="button" class="btn good ocr-unmatched-add">✓ Añadir jugador corregido</button>'+
+   '</article>'
+ ).join("");
+ $("ocrMissingPlayer").innerHTML=playerOption($("ocrMissingPlayer").value||"","Elegir miembro que falta");
+ const missing=$("ocrMissingDetails");
+ if(ocrHasRead&&ready.length===0&&pendingCount===0&&missingStarters>0)missing.open=true;
 }
 async function readShots(){
  const shots=[...$("participantShots").files];
  if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
  if(busy||acceptBusy)return;
- busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();renderProposals();
+ busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();ocrHasRead=true;renderProposals();
  const errors=[];let azureUsed=0,worker=null;
  try{
   try{worker=await getOCRWorker();}
@@ -287,14 +346,12 @@ async function readShots(){
  }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
  finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;renderProposals();}
 }
-function proposalProblems(p){
- const problems=[];
- if(!p?.name||!canonical(p.name))problems.push("Selecciona el miembro oficial de HOLa.");
- if(!["starter","sub"].includes(p?.role))problems.push("Elige B izquierda (titular) o B derecha (suplente).");
- if(p?.power==null||!Number.isFinite(Number(p.power))||Number(p.power)<=0)
-  problems.push("Escribe un THP válido en millones.");
- if(!p?.confirmed)problems.push("Marca la casilla «He comprobado nombre, columna B y THP».");
- return problems;
+function reviewedPower(value){
+ const text=String(value??"").trim().replace(",",".");
+ if(!text)return null;
+ const number=Number(text);
+ if(!Number.isFinite(number)||number<=0||number>9999)throw new Error("Introduce un THP válido en millones o déjalo vacío para completarlo después.");
+ return number;
 }
 function proposalChange(e){
  const row=e.target.closest("[data-index]");if(!row)return;
@@ -302,75 +359,111 @@ function proposalChange(e){
  if(e.target.classList.contains("proposal-name"))p.name=e.target.value;
  if(e.target.classList.contains("proposal-role"))p.role=e.target.value;
  if(e.target.classList.contains("proposal-power")){
-  const raw=String(e.target.value||"").trim().replace(",",".");
-  p.power=raw===""?null:Number(raw);
+  try{p.power=reviewedPower(e.target.value);}catch{p.power=null;}
  }
- if(e.target.classList.contains("proposal-confirm"))
-  p.confirmed=e.target.checked&&!!p.name&&!!p.role&&p.power!=null&&Number(p.power)>0;
- else if(e.target.matches(".proposal-name,.proposal-role,.proposal-power"))p.confirmed=false;
- if(e.target.matches(".proposal-name,.proposal-role,.proposal-power,.proposal-confirm"))p.note="";
- const ready=!!p.confirmed&&!!p.name&&!!p.role&&p.power!=null&&Number(p.power)>0;
- p.confirmed=ready;
- row.classList.toggle("good",ready);
- const badge=row.querySelector(".counter");
- if(badge){badge.textContent=ready?"Verificado":"Pendiente";badge.classList.toggle("warn",!ready);}
- const checkbox=row.querySelector(".proposal-confirm");if(checkbox)checkbox.checked=ready;
- const addButton=row.querySelector(".proposal-add");
- if(addButton)addButton.textContent="✓ Confirmar y añadir "+(p.role==="starter"?"titular":p.role==="sub"?"suplente":"jugador");
- const warning=row.querySelector(".review-warn");if(warning&&ready)warning.remove();
- // For a manually corrected row, ticking "Sí" is itself the acceptance.
- // Guard against browsers firing both input and change for the same checkbox.
- if(e.target.classList.contains("proposal-confirm")&&ready&&!row.dataset.autoAdded){
-  row.dataset.autoAdded="1";
-  acceptOneProposal(Number(row.dataset.index));
- }
+ if(!e.target.matches(".proposal-name,.proposal-role,.proposal-power"))return;
+ p.manual=true;p.confirmed=false;p.note="";
+ const reason=ocrCandidateReason(p),warn=row.querySelector(".review-warn");
+ if(warn)warn.textContent=reason;
+ const add=row.querySelector(".proposal-add");
+ if(add)add.textContent="✓ Añadir al equipo como "+(p.role==="starter"?"titular":p.role==="sub"?"suplente":"jugador");
 }
-function focusProposal(index){
- const el=$("ocrProposals").querySelector('[data-index="'+index+'"]');
- if(el){el.scrollIntoView({block:"center",behavior:"smooth"});el.querySelector(".proposal-name")?.focus({preventScroll:true});}
+function reviewMessage(card,message,type="error"){
+ const warning=card?.querySelector(".review-warn");
+ if(warning){warning.textContent=message;warning.scrollIntoView({block:"nearest",behavior:"smooth"});}
+ notice(message,type);
 }
-function acceptOneProposal(index){
+async function acceptOneProposal(index){
+ if(busy||acceptBusy)return false;
  const p=proposals[index];if(!p)return false;
- const problems=proposalProblems(p);
- if(problems.length){
-  p.note=problems.join(" ");
-  renderProposals();notice(p.ocrName+": "+p.note,"error");focusProposal(index);
-  return false;
+ const card=$("ocrProposals").querySelector('[data-index="'+index+'"]');
+ const name=canonical(p.name);
+ if(!name||!["starter","sub"].includes(p.role)){
+  reviewMessage(card,"Selecciona un miembro de HOLa y su B (titular o suplente).");return false;
  }
+ let power;
+ try{power=reviewedPower(card?.querySelector(".proposal-power")?.value??p.power);}
+ catch(e){reviewMessage(card,String(e.message));return false;}
+ acceptBusy=true;
  try{
-  // addRoster is authoritative: it enforces the other team, roster size,
-  // role conflicts and canonical member identity.
-  const name=canonical(p.name),added=addRoster(name,p.role,p.power);
-  proposals.splice(index,1);
-  renderProposals();renderRoster();mutate();
-  notice((added?"✓ Añadido como ":"Ya estaba inscrito como ")+(p.role==="starter"?"titular: ":"suplente: ")+name+".","success");
-  const card=[...$("rosterList").querySelectorAll(".roster-card")].find(el=>el.dataset.name===name);
-  card?.scrollIntoView({block:"center",behavior:"smooth"});
+  await refreshOther();
+  const added=addRoster(name,p.role,power);
+  proposals.splice(index,1);renderRoster();mutate();
+  notice((added?"✓ Añadido: ":"✓ Ya inscrito: ")+name+" · "+(p.role==="starter"?"Titular":"Suplente")+
+   (power==null?" · THP pendiente.":".") ,"success");
   return true;
  }catch(e){
-  p.note=String(e?.message||e);p.confirmed=false;
-  renderProposals();notice(p.name+": "+p.note,"error");focusProposal(index);
-  return false;
- }
+  p.note=String(e?.message||e);p.manual=true;
+  reviewMessage(card,p.note);return false;
+ }finally{acceptBusy=false;renderProposals();}
 }
-function acceptProposals(){
- let added=0,already=0;const remaining=[],errors=[],seen=new Set();
- for(const p of proposals){
-  const problems=proposalProblems(p);
-  if(problems.length){p.note=problems.join(" ");remaining.push(p);continue;}
-  const name=canonical(p.name),id=normal(name);
-  if(seen.has(id)){p.note="Jugador duplicado en la revisión.";p.confirmed=false;remaining.push(p);continue;}
-  seen.add(id);
-  try{
-   if(addRoster(name,p.role,p.power))added++;
-   else already++;
-  }catch(e){p.note=String(e?.message||e);p.confirmed=false;remaining.push(p);errors.push(name+": "+p.note);}
+async function acceptUnmatched(index){
+ if(busy||acceptBusy)return false;
+ const pair=[...rejectedOCR.entries()][index];if(!pair)return false;
+ const [key,item]=pair;
+ const card=$("ocrDiscarded").querySelector('[data-raw-index="'+index+'"]');
+ const name=canonical(card?.querySelector(".unmatched-name")?.value||"");
+ const role=card?.querySelector(".unmatched-role")?.value||"";
+ if(!name||!["starter","sub"].includes(role)){
+  reviewMessage(card,"Elige el miembro oficial y si aparece como titular o suplente.");return false;
  }
- proposals=remaining;renderProposals();renderRoster();mutate();
- const message="Incorporados "+added+" · ya inscritos "+already+" · pendientes "+remaining.length+
-  (errors.length?". "+errors.join(" · "):"")+".";
- notice(message,errors.length||(!added&&!already&&remaining.length)?"error":"success");
- if(remaining.length&&(!added&&!already||errors.length))focusProposal(0);
+ let power;
+ try{power=reviewedPower(card?.querySelector(".unmatched-power")?.value);}
+ catch(e){reviewMessage(card,String(e.message));return false;}
+ acceptBusy=true;
+ try{
+  await refreshOther();
+  const added=addRoster(name,role,power);
+  rejectedOCR.delete(key);renderRoster();mutate();
+  notice((added?"✓ Añadido: ":"✓ Ya inscrito: ")+name+" · "+(role==="starter"?"Titular":"Suplente")+".","success");
+  return true;
+ }catch(e){item.note=String(e?.message||e);reviewMessage(card,item.note);return false;}
+ finally{acceptBusy=false;renderProposals();}
+}
+async function addMissingPlayer(){
+ if(busy||acceptBusy)return false;
+ const name=canonical($("ocrMissingPlayer").value),role=$("ocrMissingRole").value;
+ if(!name||!["starter","sub"].includes(role)){notice("Elige un miembro oficial y su tipo de inscripción.","error");return false;}
+ let power;
+ try{power=reviewedPower($("ocrMissingPower").value);}
+ catch(e){notice(String(e.message),"error");return false;}
+ acceptBusy=true;
+ try{
+  await refreshOther();
+  const added=addRoster(name,role,power);
+  $("ocrMissingPlayer").value="";$("ocrMissingPower").value="";
+  renderRoster();mutate();
+  notice((added?"✓ Añadido manualmente: ":"✓ Ya inscrito: ")+name+" · "+(role==="starter"?"Titular":"Suplente")+".","success");
+  return true;
+ }catch(e){notice("No se pudo añadir: "+String(e?.message||e),"error");return false;}
+ finally{acceptBusy=false;renderProposals();}
+}
+async function acceptProposals(){
+ if(busy||acceptBusy)return;
+ const eligible=proposals.filter(canAcceptAutomatically);
+ if(!eligible.length){notice("No hay lecturas seguras para aceptar. Revisa el recuadro de pendientes.","info");return;}
+ acceptBusy=true;renderProposals();
+ let added=0,already=0;const rejected=[];
+ try{
+  await refreshOther();
+  const remaining=[];
+  for(const p of proposals){
+   if(!canAcceptAutomatically(p)){
+    if(rosterOther.has(normal(canonical(p.name))))p.note="Este jugador figura en el otro equipo. Comprueba su inscripción.";
+    remaining.push(p);continue;
+   }
+   try{
+    if(addRoster(p.name,p.role,p.power))added++;else already++;
+   }catch(e){p.note=String(e?.message||e);p.manual=true;remaining.push(p);rejected.push(p.name+": "+p.note);}
+  }
+  proposals=remaining;renderRoster();mutate();
+  const pending=proposals.length+rejectedOCR.size,actual=counts();
+  notice("✓ Incorporados "+added+" · ya inscritos "+already+" · pendientes "+pending+
+   ". Titulares "+actual.starter+"/20 · suplentes "+actual.sub+"."+
+   (rejected.length?" Revisa: "+rejected.join(" · "):""),
+   rejected.length?"error":"success");
+ }catch(e){notice("No se pudo cotejar el otro equipo: "+String(e?.message||e),"error");}
+ finally{acceptBusy=false;renderProposals();}
 }
 function phaseTargets(){return phase==="phase1"?TARGET1:TARGET2;}
 function phaseSlots(){return phase==="phase1"?state.phase1:state.phase2;}
@@ -554,7 +647,7 @@ function events(){
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
  $("loadDraft").onclick=()=>loadDraft();$("saveTemplate").onclick=saveTemplate;$("loadTemplate").onclick=loadTemplate;$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
- $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("acceptVerified").onclick=acceptProposals;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
+ $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=()=>{try{if(addRoster($("manualPlayer").value,"starter",null)){renderRoster();mutate();notice("Participante añadido. Revisa su poder y si es titular o suplente.","success");$("manualPlayer").value="";}}catch(e){notice(e.message,"error");}};
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
  $("toPlan").onclick=()=>switchTab("plan");$("toPublish").onclick=()=>switchTab("publish");
