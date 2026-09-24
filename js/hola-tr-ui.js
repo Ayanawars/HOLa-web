@@ -46,9 +46,12 @@ function sync(){
   button.title=lang==="tr"?"İspanyolcaya geç":"Türkçeye geç";
  });
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){
-  const prev=original.get(node);
-  if(lang!=="tr"&&prev&&node.nodeValue===prev.last){original.set(node,{base:prev.base,last:prev.base});node.nodeValue=prev.base;}
-  else inspect(node);
+  if(skip(node))continue;
+  const previous=original.get(node);
+  const base=previous&&node.nodeValue===previous.last?previous.base:node.nodeValue;
+  const target=lang==="tr"?translate(base):base;
+  original.set(node,{base,last:target});
+  if(node.nodeValue!==target)node.nodeValue=target;
  }
  visit(document.body);
 }
