@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" role="img" aria-label="Desert Storm battlefield - fixed building positions">
+<defs>
+ <linearGradient id="sand" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#edaf6d"/><stop offset=".56" stop-color="#d78e51"/><stop offset="1" stop-color="#b96743"/></linearGradient>
+ <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d2c3a9"/><stop offset=".4" stop-color="#647b8a"/><stop offset="1" stop-color="#263d50"/></linearGradient>
+ <linearGradient id="gold" x1="0" x2=".7" y2="1"><stop stop-color="#fff4ab"/><stop offset=".45" stop-color="#e7b530"/><stop offset="1" stop-color="#90601f"/></linearGradient>
+ <pattern id="sanddots" width="44" height="32" patternUnits="userSpaceOnUse"><circle cx="6" cy="8" r="1" fill="#9d5637" opacity=".21"/><circle cx="32" cy="27" r="1.3" fill="#fce6b1" opacity=".24"/></pattern>
+ <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="2" dy="9" stdDeviation="7" flood-color="#63351c" flood-opacity=".4"/></filter>
+ <g id="hosp" filter="url(#shadow)"><ellipse cy="37" rx="57" ry="16" fill="#6f4638" opacity=".42"/><path d="M-43 21 L-42 -4 -19 -14 21 -14 43 0 43 22 15 35 -22 34Z" fill="#9c743e" stroke="#73543b" stroke-width="4"/><path d="M-37 -7 L-9 -29 31 -17 43 0 12 14 -17 9Z" fill="url(#gold)" stroke="#fff3bd" stroke-width="3"/><path d="M-18 -16 L-5 -16 -5 -27 7 -27 7 -16 19 -16 19 -5 7 -5 7 7 -5 7 -5 -5 -18 -5Z" fill="#bc3e3d"/><rect x="-8" y="15" width="16" height="19" rx="2" fill="#435665"/><path d="M-35 0L-23 8M25 2L37 12" stroke="#fff1b8" stroke-width="3"/></g>
+ <g id="oil" filter="url(#shadow)"><ellipse cy="38" rx="60" ry="16" fill="#704331" opacity=".44"/><path d="M-48 25L-48 4-27 -8-3 6 4 28 -18 37Z" fill="url(#steel)" stroke="#354b5b" stroke-width="4"/><path d="M10 24L10 -1 30 -12 50 0 50 25 28 39Z" fill="url(#steel)" stroke="#354b5b" stroke-width="4"/><ellipse cx="-23" cy="-11" rx="19" ry="8" fill="#9edac5" stroke="#d4e5bd" stroke-width="4"/><ellipse cx="29" cy="-14" rx="18" ry="8" fill="#9edac5" stroke="#d4e5bd" stroke-width="4"/><path d="M-51 25L-12 36M5 28L49 37" stroke="#dfb245" stroke-width="7"/></g>
+ <g id="hub" filter="url(#shadow)"><ellipse cy="40" rx="60" ry="16" fill="#6f4638" opacity=".4"/><path d="M-55 18 L-30 -1 28 -1 55 17 31 33 -31 33Z" fill="url(#steel)" stroke="#53636c" stroke-width="4"/><path d="M-20 19 L-19 -25 0 -39 18 -26 20 19Z" fill="url(#gold)" stroke="#8c6b38" stroke-width="4"/><ellipse cx="0" cy="-26" rx="16" ry="7" fill="#d8f9ff"/><path d="M0-40V-58M-10-52L0-58 12-53" stroke="#eceaca" stroke-width="4" fill="none"/></g>
+ <g id="silo" filter="url(#shadow)"><ellipse cy="43" rx="70" ry="18" fill="#6f4638" opacity=".45"/><path d="M-57 22L-52 -8-25 -23 29 -24 57 -6 60 21 27 42-26 39Z" fill="url(#steel)" stroke="#3b4d59" stroke-width="5"/><ellipse cy="-17" rx="31" ry="26" fill="#d7d9cf" stroke="#5e7583" stroke-width="7"/><ellipse cy="-17" rx="13" ry="10" fill="#4b626f"/><path d="M-46 0L-22 7M23 5L47 -3M-24 33L-19 14M21 34L17 16" stroke="#f0c655" stroke-width="11"/></g>
+ <g id="arsenal" filter="url(#shadow)"><ellipse cy="42" rx="60" ry="16" fill="#6f4638" opacity=".43"/><path d="M-45 22L-43 -4 0 -24 47 -5 43 26 0 39Z" fill="url(#steel)" stroke="#364b5e" stroke-width="5"/><path d="M-46-4L-62-43M42-3L62-43" stroke="#62727d" stroke-width="11"/><path d="M-64-51L-54-67 -42-43 -57-36M61-51L51-67 42-43 58-36" fill="#5e727e" stroke="#435766" stroke-width="3"/><path d="M-28 17L-16 31M19 28L29 15" stroke="#f2c747" stroke-width="12"/></g>
+ <g id="merc" filter="url(#shadow)"><ellipse cy="44" rx="68" ry="17" fill="#704331" opacity=".44"/><path d="M-55 31L-48-9 8-30 50-3 49 28 10 44Z" fill="url(#gold)" stroke="#805b37" stroke-width="5"/><path d="M-49-7L11 13 49-3M10 13L10 42" fill="none" stroke="#7a6d50" stroke-width="6"/><rect x="19" y="-23" width="16" height="42" rx="3" fill="url(#steel)" stroke="#f5c74d" stroke-width="4"/><path d="M-42 27L-60 45M-28 34L-45 53" stroke="#687583" stroke-width="10"/></g>
+ <g id="info" filter="url(#shadow)"><ellipse cy="39" rx="56" ry="15" fill="#784833" opacity=".43"/><path d="M-50 20L-36-10 9-21 49 1 45 24 9 40 -33 33Z" fill="url(#steel)" stroke="#536c7b" stroke-width="5"/><path d="M-6 18V-49" stroke="#f4c646" stroke-width="9"/><circle cx="-6" cy="-58" r="22" fill="#f3d053" stroke="#e5f3e6" stroke-width="5"/><path d="M-21-72L9-44M-17-44L4-73" stroke="#588fb6" stroke-width="6"/></g>
+ </defs>
+ <rect width="1200" height="850" fill="url(#sand)"/><rect width="1200" height="850" fill="url(#sanddots)"/>
+ <path d="M0 0H1200V170L1120 108 1072 153 1028 103 957 157 879 79 837 117 784 32 730 74 670 0Z" fill="#d68b5c" opacity=".48"/>
+ <path d="M0 0H388L351 77 303 53 260 115 214 91 171 155 98 109 0 208Z" fill="#9b573e" opacity=".44"/>
+ <path d="M0 676 71 702 103 739 179 727 240 790 322 776 380 850H0Z" fill="#86472f" opacity=".45"/>
+ <path d="M780 850 844 785 899 819 955 750 1033 764 1096 694 1200 731V850Z" fill="#a45439" opacity=".38"/>
+ <path d="M0 560 Q160 510 290 544T620 531T960 505T1200 541V850H0Z" fill="#f8c787" opacity=".18"/>
+ <path d="M0 310 Q200 285 430 313T790 313T1200 287" fill="none" stroke="#f4cb91" stroke-width="13" opacity=".24"/>
+ <path d="M0 426 Q280 412 500 455T850 430T1200 418" fill="none" stroke="#bf7544" stroke-width="11" opacity=".18"/>
+ <path d="M113 352 204 420 112 487 20 420Z" fill="#3eadd7" fill-opacity=".37" stroke="#32bffc" stroke-width="8"/>
+ <path d="M1087 352 1176 420 1087 487 996 420Z" fill="#e85058" fill-opacity=".37" stroke="#ff6472" stroke-width="8"/>
+ <g transform="translate(420 158)"><use href="#info"/></g>
+ <g transform="translate(620 171)"><use href="#arsenal"/></g>
+ <g transform="translate(810 144)"><use href="#hosp"/></g>
+ <g transform="translate(980 284)"><use href="#hosp"/></g>
+ <g transform="translate(259 302)"><use href="#oil"/></g>
+ <g transform="translate(614 411)"><use href="#silo"/></g>
+ <g transform="translate(254 552)"><use href="#hosp"/></g>
+ <g transform="translate(987 532)"><use href="#oil"/></g>
+ <g transform="translate(362 672)"><use href="#hosp"/></g>
+ <g transform="translate(619 653)"><use href="#merc"/></g>
+ <g transform="translate(844 666)"><use href="#hub"/></g>
+</svg>
