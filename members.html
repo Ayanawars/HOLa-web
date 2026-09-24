@@ -897,6 +897,7 @@ button,input{font:inherit}
   background:transparent!important;
 }
 
+.profile-translation-status{display:block;margin:10px auto 0;font:600 12px/1.5 system-ui,sans-serif;color:#885c1b}.profile-translation-status[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -998,6 +999,7 @@ button,input{font:inherit}
             <div class="epic-quote-box">
               <div class="quote-label" data-i18n="myQuote">Mi frase</div>
               <div class="quote" id="profileQuote">—</div>
+              <small id="profileTranslationStatus" class="profile-translation-status" role="status" aria-live="polite" hidden></small>
             </div>
           </section>
 
@@ -1022,7 +1024,7 @@ button,input{font:inherit}
   </footer>
 </div>
 
-<script src="js/members.js"></script>
+<script src="js/members.js?v=20260924-profile-tr-fix"></script>
   <script src="js/hola-language-portal.js"></script>
 </body>
 </html>
