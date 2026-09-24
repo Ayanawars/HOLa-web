@@ -225,8 +225,29 @@
     return [...new Set(types)];
   }
 
-  function mainSquadType(p){
-    return normalizeType(p.squad1_type);
+  function strongestSquad(p){
+    // Compare powers across all three squads; the icon must match the winning squad.
+    const entries=[1,2,3].map(i=>{
+      const type=normalizeType(p['squad'+i+'_type']);
+      const power=p['squad'+i+'_power'];
+      const parsed=thpNumber(power);
+      // Survey values can be stored as millions or complete game numbers.
+      const score=parsed>0?(parsed>=1000?parsed:parsed*1000000):-1;
+      return {type,power,score};
+    });
+    let best=null;
+    for(const entry of entries){
+      if(entry.score>0&&(!best||entry.score>best.score))best=entry;
+    }
+    return best||entries.find(entry=>entry.type)||{type:'',power:null,score:-1};
+  }
+  function mainSquadType(p){return strongestSquad(p).type;}
+  function compactSquadPower(squad){
+    if(!squad||squad.score<=0)return t().unknown;
+    const locale={es:'es-ES',en:'en-GB',tr:'tr-TR',fr:'fr-FR',de:'de-DE',
+      ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL'}[currentLang]||'es-ES';
+    return new Intl.NumberFormat(locale,{minimumFractionDigits:1,maximumFractionDigits:2})
+      .format(squad.score/1000000)+'M';
   }
 
   function playerRank(p){
@@ -322,52 +343,42 @@
   function cardHtml(p,index){
     const loc=locationInfo(p);
     const types=playerTypes(p);
-    const mainType=mainSquadType(p);
+    const strongest=strongestSquad(p);
     const rank=playerRank(p);
-    const countryLine = loc.country || (!loc.city ? t().noLocation : '');
-    const cityLine = (loc.city && String(loc.city).trim().toLowerCase() !== String(loc.country||'').trim().toLowerCase())
-      ? loc.city
-      : '';
-    const icons=[];
-
-    // Squad 1 is the strongest squad and therefore the MAIN squad.
-    if(mainType==='tank') icons.push('<span class="member-badge squad-badge main-squad" title="Main Tank"><img src="assets/icon-tank-custom.png" alt=""></span>');
-    if(mainType==='air') icons.push('<span class="member-badge squad-badge main-squad" title="Main Aircraft"><img src="assets/icon-air-custom.png" alt=""></span>');
-    if(mainType==='missile') icons.push('<span class="member-badge squad-badge main-squad" title="Main Missile"><img src="assets/icon-missile-custom.png" alt=""></span>');
-
-    // Keep secondary squad types visible only when they differ from the main one.
-    const secondaryTypes=[p.squad2_type,p.squad3_type].map(normalizeType).filter(Boolean);
-    [...new Set(secondaryTypes)].forEach(type=>{
-      if(type===mainType) return;
-      if(type==='tank') icons.push('<span class="member-badge squad-badge" title="Tank"><img src="assets/icon-tank-custom.png" alt=""></span>');
-      if(type==='air') icons.push('<span class="member-badge squad-badge" title="Aircraft"><img src="assets/icon-air-custom.png" alt=""></span>');
-      if(type==='missile') icons.push('<span class="member-badge squad-badge" title="Missile"><img src="assets/icon-missile-custom.png" alt=""></span>');
-    });
-
-    const pKind=professionKind(p.profession);
-    if(pKind==='engineer') icons.push('<span class="member-badge role-badge" title="Engineer"><img src="assets/icon-engineer.png" alt=""></span>');
-    if(pKind==='warlord') icons.push('<span class="member-badge role-badge" title="Warlord"><img src="assets/icon-warlord.png" alt=""></span>');
-    if(p.t10) icons.push('<span class="member-badge gold-badge role-badge" title="T10"><img src="assets/icon-t10.png" alt=""></span>');
-    if(p.supreme_lord_unlocked) icons.push('<span class="member-badge gold-badge role-badge" title="Overlord"><img src="assets/icon-overlord.png" alt=""></span>');
-    if(!icons.length) icons.push('<span class="member-badge muted-icon">◇</span>');
-    return `<article class="member" tabindex="0" role="button" data-index="${index}" data-name="${escapeHtml(String(p.name||'').toLowerCase())}" data-main="${escapeHtml(mainType)}" data-types="${types.join(' ')}">
-      <div class="member-top">
-        <div class="avatar-shell"><img class="avatar${p.avatar?'':' avatar-fallback'}" src="${escapeHtml(p.avatar?avatarSrc(p):FALLBACK_AVATAR)}" alt="${escapeHtml(p.name||'Jugador')}" loading="lazy" decoding="async" data-player-index="${index}"></div>
-        <div class="member-copy">
-          <div class="member-headline">
-            <h3>${escapeHtml(p.name||'—')}</h3>
-            ${rank ? `<span class="rank-badge">${escapeHtml(rank)}</span>` : ''}
-          </div>
-          ${countryLine ? `<div class="line country-line">${flagMarkup(loc.code,loc.regionFlag)}<span>${escapeHtml(countryLine)}</span></div>` : ''}
-          ${cityLine ? `<div class="line location-line">📍 ${escapeHtml(cityLine)}</div>` : ''}
-        </div>
-        <span class="dot${p.survey_completed?'':' off'}" title="${escapeHtml(p.survey_completed?t().surveyDone:t().surveyPending)}"></span>
-      </div>
-      <div class="member-icons">${icons.join('')}</div>
-    </article>`;
+    const fullLocation=[loc.country,loc.city].filter(Boolean).join(' · ');
+    const location=loc.city||String(loc.country||'').split(',')[0].trim()||t().noLocation;
+    const label=strongest.type?(t()[strongest.type]||squadLabel(strongest.type)):t().unknown;
+    const power=compactSquadPower(strongest);
+    const icon=strongest.type?squadIconMarkup(strongest.type):
+      '<span class="member-main-fallback" aria-hidden="true">◇</span>';
+    const rankHTML=rank?'<span class="rank-badge">'+escapeHtml(rank)+'</span>':'';
+    return '<article class="member member--compact" tabindex="0" role="button" data-index="'+index+
+      '" data-name="'+escapeHtml(String(p.name||'').toLowerCase())+
+      '" data-main="'+escapeHtml(strongest.type)+'" data-types="'+escapeHtml(types.join(' '))+
+      '" aria-label="'+escapeHtml([p.name,rank,location,label,power].filter(Boolean).join(' · '))+'">'+
+      '<div class="member-top">'+
+        '<div class="avatar-shell"><img class="avatar'+(p.avatar?'':' avatar-fallback')+
+          '" src="'+escapeHtml(p.avatar?avatarSrc(p):FALLBACK_AVATAR)+
+          '" alt="'+escapeHtml(p.name||'Jugador')+
+          '" loading="lazy" decoding="async" data-player-index="'+index+'"></div>'+
+        '<div class="member-copy">'+
+          '<div class="member-headline"><h3 title="'+escapeHtml(p.name||'—')+'">'+
+            escapeHtml(p.name||'—')+'</h3>'+rankHTML+'</div>'+
+          '<div class="line country-line" title="'+escapeHtml(fullLocation||location)+'">'+
+            flagMarkup(loc.code,loc.regionFlag)+'<span>'+escapeHtml(location)+'</span></div>'+
+        '</div>'+
+        '<span class="dot'+(p.survey_completed?'':' off')+
+          '" title="'+escapeHtml(p.survey_completed?t().surveyDone:t().surveyPending)+'"></span>'+
+      '</div>'+
+      '<div class="member-main-squad'+(strongest.type?'':' is-empty')+
+        '" title="'+escapeHtml(label+' · '+power)+'">'+
+        '<span class="member-main-icon">'+icon+'</span>'+
+        '<span class="member-main-label">'+escapeHtml(label)+'</span>'+
+        '<strong class="member-main-power">'+escapeHtml(power)+'</strong>'+
+        '<span class="member-main-arrow" aria-hidden="true">›</span>'+
+      '</div>'+
+    '</article>';
   }
-
-
 
   function getFilteredPlayers(){
     const q=(search.value||'').trim().toLocaleLowerCase();
