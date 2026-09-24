@@ -13,7 +13,7 @@ SILO:{label:"Nuclear Silo",icon:"☢️",x:51,y:48},ARSENAL:{label:"Arsenal",ico
 MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],ocrWorker=null,currentTab="setup",busy=false;
+let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -26,15 +26,24 @@ function canonical(raw){
  return memberByKey.get(key)||"";
 }
 function matchMember(raw){
- let name=canonical(raw);if(name)return {name,exact:true};
- const text=normal(String(raw).replace(/poder.*$/i,"").replace(/^\d{1,3}\s+/,""));
- name=memberByKey.get(text);if(name)return {name,exact:true};
- let best="",distance=99,other=99;
- for(const member of members){const key=normal(member);if(key.length<4)continue;
-  if(text.startsWith(key)&&text.length-key.length<9)return {name:member,exact:false};
-  const d=levenshtein(key,text);if(d<distance){other=distance;distance=d;best=member;}else if(d<other){other=d;}
+ const text=normal(String(raw||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").replace(/^\s*(?:R[1-5]\s*)+/i,"").replace(/\s+\d{1,4}(?:[.,]\d+)?\s*[mM]\b.*$/,"").trim());
+ if(!text||text.length<3)return {name:"",exact:false};
+ const direct=canonical(text)||memberByKey.get(text);
+ if(direct)return {name:direct,exact:true};
+ // Bracketed tags and decorative glyphs should not create new player IDs.
+ const undecorated=text.replace(/[ᓚᘏᗢ]/g,"");
+ if(undecorated!==text&&memberByKey.has(undecorated))return {name:memberByKey.get(undecorated),exact:true};
+ let best="",distance=99,runnerUp=99;
+ for(const member of members){
+  const keys=new Set([normal(member),normal(member.replace(/[ᓚᘏᗢ]/g,""))]);
+  for(const key of keys){
+   if(key.length<4)continue;
+   const d=levenshtein(key,text);
+   if(d<distance){runnerUp=distance;distance=d;best=member;}
+   else if(d<runnerUp&&member!==best)runnerUp=d;
+  }
  }
- return distance<=2&&distance<other&&distance/Math.max(text.length,5)<.24?{name:best,exact:false}:{name:"",exact:false};
+ return distance<=2&&distance<runnerUp&&distance/Math.max(text.length,5)<.24?{name:best,exact:false}:{name:"",exact:false};
 }
 function levenshtein(a,b){let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){const next=[i+1];for(let j=0;j<b.length;j++)next.push(Math.min(next[j]+1,row[j+1]+1,row[j]+(a[i]===b[j]?0:1)));row=next;}return row[b.length];}
 function playerOption(selected="",empty="Elegir miembro"){return '<option value="">'+esc(empty)+'</option>'+members.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");}
@@ -64,7 +73,13 @@ async function verifyAccess(){
  if(pe)throw pe;
  const officer=players.find(p=>["R4","R5"].includes(String(p.rank||"").toUpperCase())&&normal(p.name)===normal(admin.display_name));
  if(!officer){location.replace("admin-login.html");return false;}
- members=players.map(p=>p.name);memberByKey=new Map(members.map(n=>[normal(n),n]));
+ members=players.map(p=>p.name);
+ memberByKey=new Map(members.map(n=>[normal(n),n]));
+ // The cat decoration is part of the official name, but OCR often omits it.
+ for(const name of members){
+  const clean=normal(name.replace(/[ᓚᘏᗢ]/g,""));
+  if(clean&&!memberByKey.has(clean))memberByKey.set(clean,name);
+ }
  $("gate").hidden=true;$("app").hidden=false;notice("Acceso autorizado · "+officer.name+" · R"+officer.rank.replace(/R/i,"").trim(),"success");return true;
 }
 async function refreshOther(){
@@ -148,21 +163,39 @@ function readRole(prep,nameTop){
 }
 function parsePower(raw){const text=String(raw||"").replace(/O(?=\d)|(?<=\d)O/g,"0");const m=text.match(/(\d{1,4}(?:[.,]\d{1,2})?)\s*[mM]\b/);return m?Number(m[1].replace(",",".")):null;}
 function parseCandidates(lines,prep){
- const out=[];const maxY=prep.h*.81,minY=prep.h*.39;
+ const out=[],maxY=prep.h*.81,minY=prep.h*.39;
+ const generic=/\b(?:poder|power|estrateg|seleccion|fuerza especial|búsqueda|batalla|hero|participantes|suplentes|titulares|total|reservas|buscar|battle|confirmed|squad|alliance)\b/i;
  for(let i=0;i<lines.length;i++){
-  const row=lines[i];if(row.y<minY||row.y>maxY||row.x<prep.w*.19||row.x>prep.w*.57)continue;
-  const raw=row.text.replace(/^\s*(?:\d+\s+)?/,"").replace(/\s*\[?HOLa\]?.*$/i,"").trim();
-  if(!raw||/poder|estrateg|seleccion|fuerza especial|búsqueda|batalla|hero|r[2345]\s*\d+/i.test(raw))continue;
-  const match=matchMember(raw);if(!match.name&&raw.length<4)continue;
-  // Puntuación THP suele estar en la línea inmediatamente inferior al nombre.
+  const row=lines[i];
+  if(row.y<minY||row.y>maxY||row.x<prep.w*.19||row.x>prep.w*.57)continue;
+  const raw=String(row.text||"").replace(/^\s*\d{1,3}\s*[.)-]\s*/,"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").replace(/\s{2,}/g," ").trim();
+  if(raw.length<3||raw.length>65||generic.test(raw))continue;
+  // Only official HOLa members are counted. OCR text is NOT a participant.
+  const matched=matchMember(raw);
   let power=parsePower(raw);
-  for(let j=i+1;j<Math.min(lines.length,i+5)&&power==null;j++)if(lines[j].y-row.y>=-5&&lines[j].y-row.y<prep.h*.065)power=parsePower(lines[j].text);
+  for(let j=i+1;j<Math.min(lines.length,i+5)&&power==null;j++){
+   const next=lines[j],dy=next.y-row.y;
+   if(dy>=-5&&dy<prep.h*.065)power=parsePower(next.text);
+  }
   const role=readRole(prep,row.y);
-  if(!match.name&&!/[\p{L}]/u.test(raw))continue;
-  // Los nombres sin coincidencia exacta se revisan: nunca se asignan a ciegas.
-  out.push({ocrName:raw,name:match.name,power,role:role.role,verified:match.exact&&!!role.role&&power!=null,note:role.note||(!match.exact?"Confirma el nombre del jugador.":power==null?"Comprueba el poder detectado.":""),file:prep.name});
+  if(!matched.name){
+   // Keep likely missed names visible for manual correction, but never count them.
+   if(role.role&&power!=null&&/[\p{L}]/u.test(raw)&&!generic.test(raw)){
+    const key=normal(raw);
+    if(key&&!rejectedOCR.has(key)&&rejectedOCR.size<35)rejectedOCR.set(key,{text:raw,file:prep.name});
+   }
+   continue;
+  }
+  const note=!matched.exact?"Comprueba el nombre: coincidencia OCR aproximada.":role.note||(power==null?"No se pudo leer el THP: comprueba la cifra.":"");
+  const confirmed=matched.exact&&!!role.role&&power!=null&&!note;
+  out.push({ocrName:raw,name:matched.name,exact:matched.exact,power,role:role.role,confirmed,note,file:prep.name});
  }
- const unique=new Map();for(const row of out){const key=normal(row.name||row.ocrName);if(!key)continue;const prev=unique.get(key);if(!prev||Number(row.verified)>Number(prev.verified))unique.set(key,row);}
+ // Deduplicate by official player identity, not by slightly different OCR text.
+ const unique=new Map();
+ for(const candidate of out){
+  const key=normal(candidate.name),old=unique.get(key);
+  if(!old||Number(candidate.confirmed)>Number(old.confirmed)||(!old.exact&&candidate.exact))unique.set(key,candidate);
+ }
  return [...unique.values()];
 }
 async function getOCRWorker(){if(ocrWorker)return ocrWorker;if(!window.Tesseract?.createWorker)await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";s.onload=res;s.onerror=()=>rej(new Error("No se pudo descargar Tesseract."));document.head.append(s);});ocrWorker=await window.Tesseract.createWorker("eng",1,{logger:m=>{if(m.status==="recognizing text")$("ocrStatus").textContent="Tesseract · "+Math.round((m.progress||0)*100)+"%";}});return ocrWorker;}
@@ -172,45 +205,95 @@ async function azureLines(prep){
  return azureOCRLines(data,prep.ox,prep.oy,prep.scale);
 }
 function mergeProposals(rows){
- for(const item of rows){const key=normal(item.name||item.ocrName);if(!key)continue;const old=proposals.find(p=>normal(p.name||p.ocrName)===key);
-  if(!old){proposals.push(item);continue;}
-  if(item.name&&old.name&&! (normal(item.name)===normal(old.name)))old.note="Nombre diferente entre capturas: confirma la identidad.";
-  if(item.role&&old.role&&item.role!==old.role){old.note="La columna B difiere entre capturas: confirma el tipo.";old.role="";}
-  if(item.power!=null&&old.power!=null&&Math.abs(item.power-old.power)>.15){old.note="Poder diferente entre capturas: revisa la cifra.";old.power=null;}
-  if(!old.name&&item.name)old.name=item.name;if(old.power==null&&item.power!=null&&!/Poder diferente/.test(old.note))old.power=item.power;if(!old.role&&item.role&&!/columna B difiere/.test(old.note))old.role=item.role;
-  old.verified=old.verified&&item.verified&&!old.note;
+ for(const incoming of rows){
+  if(!incoming.name)continue;
+  const key=normal(incoming.name);
+  const old=proposals.find(p=>normal(p.name)===key);
+  if(!old){proposals.push({...incoming,roleConflict:false,powerConflict:false});continue;}
+  old.exact=old.exact||incoming.exact;
+  if(!old.roleConflict&&old.role&&incoming.role&&old.role!==incoming.role){old.role="";old.roleConflict=true;}
+  else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
+  if(!old.powerConflict&&old.power!=null&&incoming.power!=null&&Math.abs(old.power-incoming.power)>.15){old.power=null;old.powerConflict=true;}
+  else if(!old.powerConflict&&old.power==null&&incoming.power!=null)old.power=incoming.power;
+  if(!old.ocrName&&incoming.ocrName)old.ocrName=incoming.ocrName;
+  const notes=[];
+  if(old.roleConflict)notes.push("La B difiere entre lecturas: comprueba titular o suplente.");
+  if(old.powerConflict)notes.push("El THP difiere entre lecturas: comprueba la cifra.");
+  if(!old.exact)notes.push("Confirma el nombre del jugador.");
+  if(!old.role)notes.push("Selecciona la columna B.");
+  if(old.power==null)notes.push("Completa el THP.");
+  old.note=notes.join(" ");
+  old.confirmed=!!old.exact&&!!old.role&&old.power!=null&&!old.note;
  }
 }
 function renderProposals(){
- $("ocrReview").hidden=!proposals.length;
- $("ocrProposals").innerHTML=proposals.map((p,i)=>'<article class="ocr-proposal '+(p.verified?"good":"")+'" data-index="'+i+'"><div><strong>'+esc(p.ocrName)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
+ $("ocrReview").hidden=!proposals.length&&!rejectedOCR.size;
+ const unresolved=[...rejectedOCR.values()].slice(0,18);
+ $("ocrDiscarded").innerHTML=unresolved.length?'<details><summary>Otras lecturas sin coincidencia en miembros ('+rejectedOCR.size+'). No se cuentan como jugadores.</summary><p class="muted">Si alguno es un jugador real, búscalo en la lista de miembros y añádelo manualmente.</p><p class="muted">'+unresolved.map(r=>esc(r.text)+' · '+esc(r.file)).join("<br>")+'</p></details>':"";
+ $("ocrProposals").innerHTML=proposals.map((p,i)=>'<article class="ocr-proposal '+(p.confirmed?"good":"")+'" data-index="'+i+'"><div><strong>'+esc(p.ocrName)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
  (p.note?'<div class="review-warn">'+esc(p.note)+'</div>':"")+
  '<div class="two"><div class="field"><label>Miembro oficial</label><select class="proposal-name">'+playerOption(p.name,"Seleccionar nombre")+'</select></div><div class="field"><label>B del juego</label><select class="proposal-role"><option value="">Revisar tipo</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
- '<div class="two"><div class="field"><label>THP (millones)</label><input class="proposal-power" type="number" min="0" max="9999" step=".1" value="'+(p.power??"")+'"></div><div class="field"><label>Estado</label><span class="counter '+(p.verified?"":"warn")+'">'+(p.verified?"Reconocido":"Revisar")+'</span></div></div></article>').join("");
+ '<div class="two"><div class="field"><label>THP (millones)</label><input class="proposal-power" type="number" min="0" max="9999" step=".1" value="'+(p.power??"")+'"></div><div class="field"><label>Estado</label><span class="counter '+(p.confirmed?"":"warn")+'">'+(p.confirmed?"Listo":"Revisar")+'</span></div></div>'+
+ '<label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:5px"><input type="checkbox" class="proposal-confirm" '+(p.confirmed?"checked":"")+' style="width:20px;height:20px;accent-color:#28805c"> He comprobado nombre, columna B y THP</label></article>').join("");
 }
 async function readShots(){
  const shots=[...$("participantShots").files];if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
- if(busy)return;busy=true;$("readShots").disabled=true;proposals=[];renderProposals();
- const errors=[];let azureUsed=0;try{const worker=await getOCRWorker();
+ if(busy)return;busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();renderProposals();
+ const errors=[];let azureUsed=0;
+ try{
+  const worker=await getOCRWorker();
   for(let i=0;i<shots.length;i++){
    $("ocrStatus").textContent="Leyendo captura "+(i+1)+"/"+shots.length+" · "+shots[i].name;
-   try{const prep=await prepareImage(shots[i]);const {data}=await worker.recognize(prep.blob,{}, {text:true,blocks:true});
-    let candidates=parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep);
-    if(candidates.filter(p=>!!p.name).length<4){try{const azure=parseCandidates(await azureLines(prep),prep);azureUsed++;for(const p of azure){const old=candidates.find(x=>normal(x.name||x.ocrName)===normal(p.name||p.ocrName));if(!old)candidates.push(p);else if(!old.verified&&p.verified)Object.assign(old,p);}}catch(e){errors.push("Azure "+shots[i].name+": "+e.message);}}
-    mergeProposals(candidates);
+   try{
+    const prep=await prepareImage(shots[i]);
+    const {data}=await worker.recognize(prep.blob,{}, {text:true,blocks:true});
+    const local=parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep);
+    mergeProposals(local);
+    // Revisit screenshots with incomplete rows, even when Tesseract has 4 names.
+    if(local.length<7||local.some(p=>!p.confirmed)){
+     try{
+      $("ocrStatus").textContent="Verificando nombres de "+shots[i].name+" con Azure…";
+      const azure=parseCandidates(await azureLines(prep),prep);azureUsed++;
+      mergeProposals(azure);
+     }catch(e){errors.push("Azure "+shots[i].name+": "+e.message);}
+    }
    }catch(e){errors.push(shots[i].name+": "+e.message);}
   }
-  renderProposals();$("ocrStatus").textContent="OCR terminado: "+proposals.length+" jugadores únicos. Azure usado en "+azureUsed+" captura(s). "+(errors.length?"Avisos: "+errors.join(" · "):"Revisa las lecturas y confirma.");
-  notice(proposals.length?"Lectura terminada. Confirma los "+proposals.length+" participantes antes de incorporarlos.":"No se reconocieron participantes. Prueba otras capturas o añade los nombres manualmente.",proposals.length?"info":"error");
+  proposals.sort((a,b)=>a.role===b.role?(Number(b.power||0)-Number(a.power||0)):(a.role==="starter"?-1:1));
+  renderProposals();
+  const ready=proposals.filter(p=>p.confirmed).length,uncertain=proposals.length-ready;
+  $("ocrStatus").textContent="Coincidencias únicas con miembros: "+proposals.length+" ("+ready+" listas, "+uncertain+" por revisar). Azure: "+azureUsed+" captura(s). "+(errors.length?"Avisos: "+errors.join(" · "):"");
+  notice(proposals.length?"OCR depurado: "+proposals.length+" coincidencias de miembros; "+uncertain+" necesitan revisión. No se han guardado jugadores.":"No se identificaron miembros. Prueba otras capturas o añádelos manualmente.",proposals.length?"info":"error");
  }catch(e){notice("Error al iniciar OCR: "+e.message,"error");}
  finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;}
 }
-function proposalChange(e){const row=e.target.closest("[data-index]");if(!row)return;const p=proposals[Number(row.dataset.index)];if(!p)return;
- if(e.target.classList.contains("proposal-name"))p.name=e.target.value;if(e.target.classList.contains("proposal-role"))p.role=e.target.value;if(e.target.classList.contains("proposal-power"))p.power=e.target.value===""?null:Number(e.target.value);
- p.verified=!!p.name&&!!p.role&&p.power!=null;p.note="";row.classList.toggle("good",p.verified);
+function proposalChange(e){
+ const row=e.target.closest("[data-index]");if(!row)return;
+ const p=proposals[Number(row.dataset.index)];if(!p)return;
+ if(e.target.classList.contains("proposal-name"))p.name=e.target.value;
+ if(e.target.classList.contains("proposal-role"))p.role=e.target.value;
+ if(e.target.classList.contains("proposal-power"))p.power=e.target.value===""?null:Number(e.target.value);
+ if(e.target.classList.contains("proposal-confirm"))p.confirmed=e.target.checked&&!!p.name&&!!p.role&&p.power!=null;
+ else if(e.target.matches(".proposal-name,.proposal-role,.proposal-power"))p.confirmed=false;
+ const ready=!!p.confirmed&&!!p.name&&!!p.role&&p.power!=null;
+ p.confirmed=ready;
+ row.classList.toggle("good",ready);
+ const badge=row.querySelector(".counter");if(badge){badge.textContent=ready?"Listo":"Revisar";badge.classList.toggle("warn",!ready);}
+ const checkbox=row.querySelector(".proposal-confirm");if(checkbox)checkbox.checked=ready;
 }
-function acceptProposals(){let added=0,already=0;const remaining=[],errors=[];for(const p of proposals){if(!p.name||!p.role||p.power==null){remaining.push(p);continue;}try{if(addRoster(p.name,p.role,p.power))added++;else already++;}catch(e){p.note=e.message;remaining.push(p);errors.push(p.name||p.ocrName+": "+e.message);}}
- proposals=remaining;renderProposals();renderRoster();mutate();notice("Incorporados "+added+" · repetidos "+already+" · pendientes "+remaining.length+". "+(errors.length?errors.join(" · "):""),errors.length?"error":"success");}
+function acceptProposals(){
+ let added=0,already=0;const remaining=[],errors=[],seen=new Set();
+ for(const p of proposals){
+  if(!p.confirmed||!p.name||!p.role||p.power==null){remaining.push(p);continue;}
+  const id=normal(p.name);
+  if(seen.has(id)){p.note="El mismo miembro aparece dos veces en la revisión. Comprueba la asignación.";p.confirmed=false;remaining.push(p);continue;}
+  seen.add(id);
+  try{if(addRoster(p.name,p.role,p.power))added++;else already++;}
+  catch(e){p.note=e.message;p.confirmed=false;remaining.push(p);errors.push(p.name+": "+e.message);}
+ }
+ proposals=remaining;renderProposals();renderRoster();mutate();
+ notice("Incorporados "+added+" · repetidos "+already+" · pendientes de comprobar "+remaining.length+". "+(errors.length?errors.join(" · "):""),errors.length?"error":"success");
+}
 function phaseTargets(){return phase==="phase1"?TARGET1:TARGET2;}
 function phaseSlots(){return phase==="phase1"?state.phase1:state.phase2;}
 function assignedNames(obj){return Object.values(obj).flat();}
