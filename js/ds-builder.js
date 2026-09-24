@@ -91,15 +91,17 @@ async function refreshOther(){
  ]);
  if(pErr||lErr)throw new Error("No se pudo verificar el otro equipo: "+(pErr?.message||lErr?.message));
  const otherRoster=[...(plan?.draft?.roster||[]),...(plan?.published?.roster||[])];
- if(otherRoster.length){for(const r of otherRoster)if(r?.name)rosterOther.add(normal(r.name));}
- else {for(const r of legacy||[])rosterOther.add(normal(r.player_name));}
+ for(const r of otherRoster)if(r?.name)rosterOther.add(normal(canonical(r.name)||r.name));
+ for(const r of legacy||[])if(r?.player_name)rosterOther.add(normal(canonical(r.player_name)||r.player_name));
 }
 async function loadDraft(show=true){
  const d=$("battleDate").value,t=$("team").value;if(!d){notice("Selecciona una fecha válida.","error");return;}
  try{await refreshOther();const {data,error}=await sb.from("desert_storm_plans").select("draft,published_at").eq("battle_date",d).eq("team",t).maybeSingle();if(error)throw error;
   const fallback=localStorage.getItem(localKey());const src=data?.draft&&Object.keys(data.draft).length?data.draft:(fallback?JSON.parse(fallback):null);
   state=stateReady(src);state.battle_date=d;state.team=t;state.serverTime=src?.serverTime|| (t==="A"?"18:00":"09:00");
-  syncSetup();renderRoster();mutate();loadTemplates().catch(error=>console.warn("Plantillas DS:",error));if(show)notice(src?"Borrador cargado · Team "+t:"Jornada nueva · Team "+t,"success");
+  // Pending OCR belongs to its own team and day. Never carry it to a different roster.
+  proposals=[];rejectedOCR=new Map();ocrHasRead=false;
+  syncSetup();renderRoster();renderProposals();mutate();loadTemplates().catch(error=>console.warn("Plantillas DS:",error));if(show)notice(src?"Borrador cargado · Team "+t:"Jornada nueva · Team "+t,"success");
  }catch(e){notice("No se pudo cargar la jornada: "+(e.message||e),"error");}
 }
 function syncSetup(){for(const key of ["serverTime","templateName","keyword","language"])$(key).value=state[key];updateLeaders();}
