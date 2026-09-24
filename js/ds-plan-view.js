@@ -1,0 +1,63 @@
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const B={H1:["Field Hospital 1","🏥",22,65],H2:["Field Hospital 2","🏥",82,34],H3:["Field Hospital 3","🏥",30,79],H4:["Field Hospital 4","🏥",68,18],HUB:["Science Hub","🔬",71,80],INFO:["Info Center","📡",35,19],REF1:["Oil Refinery 1","🛢️",22,36],REF2:["Oil Refinery 2","🛢️",82,65],SILO:["Nuclear Silo","☢️",51,48],ARSENAL:["Arsenal","⚔️",52,20],MERC:["Mercenary Factory","🏭",52,79]};
+const H=["H1","H2","H3","H4"],P1=[...H,"HUB"],P2=[...H,"SILO","ARSENAL","MERC","HUB","INFO"];
+const D={
+es:["FASE 1 · 00:00–10:00","FASE 2 · DESDE 10:00","ÚLTIMO ASALTO","Titular","Suplente","Palabra clave","Responsable","Alternativo","Sin asignar","Toca un edificio para ver sus jugadores.","4 titulares por hospital y 4 en Science Hub. Info Center y refinerías son misiones secundarias de los hospitales.","2 titulares por hospital, 4 en Silo y 2 en cada edificio central.","Solo por orden: abandonar hospitales, concentrarse en Silo y tomar Info Center.","Los suplentes entran solo tras comenzar la batalla, si hay plaza, y van al hospital asignado.","hora del servidor"],
+en:["PHASE 1 · 00:00–10:00","PHASE 2 · AFTER 10:00","FINAL ASSAULT","Starter","Substitute","Keyword","Caller","Backup","Unassigned","Tap a building to see its players.","4 starters per hospital and 4 at Science Hub. Info Center and refineries are secondary missions from hospitals.","2 starters per hospital, 4 at Silo and 2 at each central building.","Only on order: leave hospitals, concentrate at Silo and take Info Center.","Substitutes enter only after battle starts if a slot is free. Go to the assigned hospital.","server time"],
+fr:["PHASE 1 · 00:00–10:00","PHASE 2 · APRÈS 10:00","ASSAUT FINAL","Titulaire","Remplaçant","Mot-clé","Responsable","Remplaçant","Non assigné","Touchez un bâtiment pour voir les joueurs.","4 titulaires par hôpital et 4 au Science Hub.","2 par hôpital, 4 au Silo et 2 par bâtiment central.","Seulement sur ordre : quitter les hôpitaux, prendre le Silo et l'Info Center.","Les remplaçants entrent après le début si une place est libre et vont à leur hôpital.","heure serveur"],
+de:["PHASE 1 · 00:00–10:00","PHASE 2 · AB 10:00","LETZTER ANGRIFF","Stammspieler","Ersatz","Codewort","Befehlshaber","Vertretung","Nicht besetzt","Gebäude antippen, um Spieler zu sehen.","4 Spieler je Hospital und 4 im Science Hub.","2 je Hospital, 4 am Silo und 2 je zentralem Gebäude.","Nur auf Befehl: Hospitäler verlassen, Silo und Info Center nehmen.","Ersatzspieler erst nach Beginn bei freiem Platz direkt zum Hospital.","Serverzeit"],
+ro:["FAZA 1 · 00:00–10:00","FAZA 2 · DUPĂ 10:00","ASALT FINAL","Titular","Rezervă","Cuvânt-cheie","Responsabil","Rezervă","Neatribuit","Atingeți o clădire pentru a vedea jucătorii.","4 jucători la fiecare spital și 4 la Science Hub.","2 la spital, 4 la Silo și 2 la clădirile centrale.","Doar la ordin: părăsiți spitalele, luați Silo și Info Center.","Rezervele intră numai după start dacă există loc și merg la spital.","ora serverului"],
+pt:["FASE 1 · 00:00–10:00","FASE 2 · APÓS 10:00","ASSALTO FINAL","Titular","Suplente","Palavra-chave","Responsável","Alternativo","Sem atribuição","Toque num edifício para ver os jogadores.","4 titulares por hospital e 4 no Science Hub.","2 por hospital, 4 no Silo e 2 por edifício central.","Só por ordem: abandonar hospitais, tomar Silo e Info Center.","Suplentes entram após o início com vaga e vão ao hospital atribuído.","hora do servidor"],
+uk:["ФАЗА 1 · 00:00–10:00","ФАЗА 2 · ПІСЛЯ 10:00","ОСТАННІЙ ШТУРМ","Основний","Запасний","Кодове слово","Командир","Запасний","Не призначено","Торкніться будівлі, щоб побачити гравців.","4 гравці у кожному госпіталі та Science Hub.","2 у госпіталях, 4 на Silo та 2 у центральних будівлях.","Лише за наказом: покинути госпіталі, захопити Silo та Info Center.","Запасні входять після початку за наявності місця та йдуть до свого госпіталю.","серверний час"],
+it:["FASE 1 · 00:00–10:00","FASE 2 · DOPO 10:00","ASSALTO FINALE","Titolare","Riserva","Parola chiave","Responsabile","Alternativo","Non assegnato","Tocca un edificio per vedere i giocatori.","4 titolari per ospedale e 4 al Science Hub.","2 per ospedale, 4 al Silo e 2 per edificio centrale.","Solo su ordine: lasciare gli ospedali, prendere Silo e Info Center.","Le riserve entrano dopo l'inizio se c'è posto e vanno al proprio ospedale.","ora server"],
+pl:["FAZA 1 · 00:00–10:00","FAZA 2 · PO 10:00","OSTATNI SZTURM","Podstawowy","Rezerwowy","Hasło","Dowódca","Zastępca","Nieprzydzielony","Dotknij budynku, aby zobaczyć graczy.","4 graczy w szpitalach i Science Hub.","2 w szpitalach, 4 w Silo i 2 w każdym centralnym budynku.","Tylko na rozkaz: opuścić szpitale, zdobyć Silo i Info Center.","Rezerwowi wchodzą dopiero po starcie przy wolnym miejscu i idą do szpitala.","czas serwera"]
+};
+function installStyle(){if($("dsPlanCss"))return;const s=document.createElement("style");s.id="dsPlanCss";
+ s.textContent=[
+ ".ds-head{border:1px solid #d8b76f;border-radius:14px;background:linear-gradient(135deg,#083e5a,#0a7495);padding:13px;color:#fff9e4;margin:7px 0 13px;box-shadow:0 6px 14px rgba(4,45,65,.17)}",
+ ".ds-head strong{display:block;font:900 17px/1.15 Georgia,serif}.ds-head small{display:block;margin-top:6px;font-size:9px;color:#bfeef4;font-weight:800}",
+ ".ds-switch{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border:1px solid #dec38b;background:#f1e3c7;border-radius:13px;padding:4px;margin:10px 0}",
+ ".ds-switch button{border:0;background:transparent;padding:9px 4px;border-radius:9px;color:#46677b;font-size:9px;font-weight:900;line-height:1.15}.ds-switch button.active{background:linear-gradient(135deg,#0785ae,#0eb3c6);color:white}.ds-switch button[data-phase=final].active{background:#a13b44}",
+ ".ds-help{font-size:11px;line-height:1.5;color:#4e6d7d;background:#eaf8fc;border-left:4px solid #13a8c0;border-radius:9px;padding:10px;margin-bottom:10px}",
+ ".ds-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ds-card{padding:9px;border:1px solid #e0c590;border-radius:11px;background:#fffdfa;scroll-margin-top:80px}.ds-card.focus{border:2px solid #0e9fc1}",
+ ".ds-card h3{font-size:10px;color:#165272;margin:0 0 7px}.ds-person{font-size:10px;line-height:1.38;color:#2f5067;font-weight:750;padding:3px 0;overflow-wrap:anywhere}.ds-person.sub{color:#1775b4}.ds-person.mission{color:#15804b}",
+ ".ds-brief{border:1px solid #ddbe77;border-radius:11px;background:#fff8e4;padding:10px;margin-top:9px;font-size:11px;line-height:1.55;color:#795924}",
+ ".ds-call{border:2px solid #b75b58;background:#fff0e8;color:#803838;border-radius:12px;padding:13px;margin:12px 0;text-align:center}.ds-call strong{display:block;font:bold 26px/1.15 Georgia,serif;letter-spacing:.1em;margin:8px 0}",
+ ".map-wrap.ds-public-map{display:block!important;padding:0;min-height:0!important;background:#d89258}.ds-board{position:relative;aspect-ratio:1200/850;width:100%;overflow:hidden}.ds-board img{display:block;width:100%;height:100%;max-height:none!important;object-fit:fill;cursor:default!important}",
+ ".ds-pin{position:absolute;transform:translate(-50%,-50%);padding:3px;border-radius:7px;border:1px solid #e9c86c;background:rgba(5,38,59,.94);color:white;font-size:7px;font-weight:900;line-height:1.1;max-width:77px;min-width:42px;z-index:2}.ds-pin.active{background:#087fb2;border:2px solid white}.ds-pin small{display:block;color:#75e6ff;margin-top:2px}.ds-map-hint{background:#0b3452;color:#ebfaff;padding:7px 9px;font-size:9px;text-align:center}",
+ ".ds-badge{display:inline-block;padding:2px 5px;border-radius:99px;background:#d9efff;color:#0c75a5;font-size:8px;font-weight:900}.ds-badge.sub{background:#e4eeff;color:#305da7}.ds-roster-extra{display:block;font-size:8px;color:#758d9e;margin-top:3px}",
+ "@media(max-width:370px){.ds-grid{grid-template-columns:1fr}.ds-pin{font-size:6px;max-width:68px}}"
+ ].join("");document.head.appendChild(s);}
+function normalize(n){return String(n||"").normalize("NFKD").replace(/[\u0300-\u036f\u0640]/g,"").toLowerCase().replace(/[^\p{L}\p{N}]/gu,"");}
+window.holaRenderDsPublishedPlan=function(plan,options={}){
+ if(!plan||!Array.isArray(plan.roster))return false;
+ const strategy=$("strategyContent"),map=$("mapWrap"),roster=$("players");if(!strategy||!map)return false;installStyle();
+ const t=D[options.language]||D.en,team=plan.team||"",subOf=new Map();
+ H.forEach(k=>(plan.subs?.[k]||[]).forEach(n=>subOf.set(normalize(n),k)));
+ const isMission=n=>Object.values(plan.missions||{}).flat().some(x=>normalize(x)===normalize(n));
+ if(roster){roster.innerHTML=plan.roster.map((r,i)=>'<div class="player"><span class="player__n">'+String(i+1).padStart(2,"0")+'</span><span class="player__name">'+esc(r.name)+'<span class="ds-roster-extra"><span class="ds-badge '+(r.role==="sub"?"sub":"")+'">'+esc(r.role==="sub"?t[4]:t[3])+'</span>'+(r.power==null?"":" · "+esc(r.power)+"M")+(r.role==="sub"&&subOf.has(normalize(r.name))?" · "+esc(B[subOf.get(normalize(r.name))][0]):"")+'</span></span></div>').join("");if($("summaryPlayers"))$("summaryPlayers").textContent=plan.roster.length;if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");}
+ let phase="phase1",focus="H1";
+ const list=(names,sub)=>names?.length?names.map(n=>'<div class="ds-person '+(sub?"sub":isMission(n)?"mission":"")+'">'+(sub?"(":"")+esc(n)+(sub?")":"")+'</div>').join(""):'<div class="ds-person">'+esc(t[8])+'</div>';
+ function draw(){
+  const keys=phase==="phase1"?P1:phase==="phase2"?P2:["SILO","INFO"],data=plan[phase]||{};
+  const help=phase==="phase1"?t[10]:phase==="phase2"?t[11]:t[12];
+  strategy.innerHTML='<div class="ds-head"><strong>'+esc(plan.templateName||"HOLa Strategy")+' · TEAM '+esc(team)+'</strong><small>'+esc(plan.battle_date||"")+' · '+esc(plan.serverTime||"")+" "+esc(t[14])+'</small></div>'+
+   '<div class="ds-switch"><button data-phase="phase1" class="'+(phase==="phase1"?"active":"")+'">'+esc(t[0])+'</button><button data-phase="phase2" class="'+(phase==="phase2"?"active":"")+'">'+esc(t[1])+'</button><button data-phase="final" class="'+(phase==="final"?"active":"")+'">'+esc(t[2])+'</button></div><div class="ds-help">'+esc(help)+'</div>'+
+   (phase==="final"?'<div class="ds-call">'+esc(t[5])+'<strong>'+esc(plan.keyword||"—")+'</strong>'+esc(t[6])+": "+esc(plan.leader||"—")+(plan.alternate?" · "+esc(t[7])+": "+esc(plan.alternate):"")+'</div>':"")+
+   '<div class="ds-grid">'+keys.map(k=>'<article class="ds-card '+(focus===k?"focus":"")+'" id="ds-card-'+k+'"><h3>'+B[k][1]+" "+esc(B[k][0])+'</h3>'+
+   (phase==="final"?'<div class="ds-person">'+esc(k==="SILO"?"ALL AVAILABLE PLAYERS":"TAKE AND HOLD")+'</div>':list(data[k],false))+
+   (phase==="phase1"&&H.includes(k)?Object.entries(plan.missions||{}).map(([goal,names])=>{const own=names.filter(n=>(plan.phase1?.[k]||[]).includes(n));return own.length?'<div class="ds-person mission">'+esc(B[goal]?.[0]||goal)+": "+esc(own.join(", "))+'</div>':"";}).join("")+(plan.subs?.[k]?.length?list(plan.subs[k],true):""):"")+
+   (phase==="phase2"&&["ARSENAL","INFO","MERC","HUB"].includes(k)?'<div class="ds-person mission">↔ '+esc(B[{"ARSENAL":"INFO","INFO":"ARSENAL","MERC":"HUB","HUB":"MERC"}[k]][0])+'</div>':"")+
+   '</article>').join("")+'</div>'+(phase==="phase1"?'<div class="ds-brief">'+esc(t[13])+'</div>':"");
+  strategy.querySelectorAll(".ds-switch button").forEach(b=>b.onclick=()=>{phase=b.dataset.phase;focus=phase==="final"?"SILO":"H1";draw();});
+  map.classList.add("ds-public-map");
+  map.innerHTML='<div class="ds-board"><img src="assets/ds-battlefield.svg" alt="Desert Storm battlefield">'+keys.map(k=>'<button type="button" class="ds-pin '+(focus===k?"active":"")+'" style="left:'+B[k][2]+'%;top:'+B[k][3]+'%" data-bld="'+k+'">'+esc(B[k][0].replace("Field Hospital ","H").replace("Oil Refinery ","Ref "))+'<small>'+(phase==="final"?"!":(data[k]?.length||0))+'</small></button>').join("")+'</div><div class="ds-map-hint">'+esc(t[9])+'</div>';
+  map.querySelectorAll("[data-bld]").forEach(b=>b.onclick=()=>{focus=b.dataset.bld;draw();$("ds-card-"+focus)?.scrollIntoView({behavior:"smooth",block:"center"});});
+  if($("summaryMap"))$("summaryMap").textContent="✓";
+ }
+ draw();return true;
+};
+})();
