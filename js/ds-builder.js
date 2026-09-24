@@ -13,7 +13,7 @@ SILO:{label:"Nuclear Silo",icon:"☢️",x:51,y:48},ARSENAL:{label:"Arsenal",ico
 MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let members=[],memberByKey=new Map(),rosterOther=new Set(),state=null,phase="phase1",selectedBuilding="H1",proposals=[],ocrWorker=null,currentTab="setup",busy=false;
+let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],ocrWorker=null,currentTab="setup",busy=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -84,7 +84,7 @@ async function loadDraft(show=true){
  try{await refreshOther();const {data,error}=await sb.from("desert_storm_plans").select("draft,published_at").eq("battle_date",d).eq("team",t).maybeSingle();if(error)throw error;
   const fallback=localStorage.getItem(localKey());const src=data?.draft&&Object.keys(data.draft).length?data.draft:(fallback?JSON.parse(fallback):null);
   state=stateReady(src);state.battle_date=d;state.team=t;state.serverTime=src?.serverTime|| (t==="A"?"18:00":"09:00");
-  syncSetup();renderRoster();mutate();if(show)notice(src?"Borrador cargado · Team "+t:"Jornada nueva · Team "+t,"success");
+  syncSetup();renderRoster();mutate();loadTemplates().catch(error=>console.warn("Plantillas DS:",error));if(show)notice(src?"Borrador cargado · Team "+t:"Jornada nueva · Team "+t,"success");
  }catch(e){notice("No se pudo cargar la jornada: "+(e.message||e),"error");}
 }
 function syncSetup(){for(const key of ["serverTime","templateName","keyword","language"])$(key).value=state[key];updateLeaders();}
@@ -316,6 +316,36 @@ async function copyPrevious(){
   syncSetup();mutate();notice("Plantilla del "+data[0].battle_date+" copiada. Comprueba los puestos vacíos y asigna los nuevos jugadores.","success");
  }catch(e){notice("No se pudo copiar la anterior: "+e.message,"error");}
 }
+async function loadTemplates(){
+ const {data,error}=await sb.from("desert_storm_templates").select("team,template_name,layout").order("team").order("template_name");
+ if(error)throw error;storedTemplates=data||[];
+ $("storedTemplate").innerHTML='<option value="">Elegir plantilla guardada</option>'+storedTemplates.map((t,i)=>'<option value="'+i+'">TEAM '+esc(t.team)+' · '+esc(t.template_name)+'</option>').join("");
+}
+async function saveTemplate(){
+ if(!state)return;const name=$("templateName").value.trim();
+ if(!name){notice("Pon un nombre a la plantilla.","error");return;}
+ const errors=validate().errors;if(errors.length){notice("Completa y revisa ambas fases antes de guardar una plantilla. "+errors[0],"error");return;}
+ try{const layout={version:1,phase1:state.phase1,phase2:state.phase2,missions:state.missions,subs:state.subs,keyword:state.keyword,leader:state.leader,alternate:state.alternate,serverTime:state.serverTime,language:state.language};
+ const {error}=await sb.from("desert_storm_templates").upsert({team:state.team,template_name:name,layout,updated_at:new Date().toISOString()},{onConflict:"team,template_name"});
+ if(error)throw error;await loadTemplates();notice("✓ Plantilla «"+name+"» guardada en Supabase. Puedes reutilizarla en futuras jornadas.","success");
+ }catch(e){notice("No se pudo guardar la plantilla: "+e.message,"error");}
+}
+function loadTemplate(){
+ const row=storedTemplates[Number($("storedTemplate").value)];if(!row){notice("Elige una plantilla guardada.","error");return;}
+ const l=row.layout||{},starters=new Set(state.roster.filter(r=>r.role==="starter").map(r=>r.name)),subs=new Set(state.roster.filter(r=>r.role==="sub").map(r=>r.name));
+ for(const field of ["phase1","phase2","missions","subs"]){
+  if(!l[field])continue;
+  for(const k of Object.keys(state[field]))state[field][k]=(Array.isArray(l[field][k])?l[field][k]:[]).filter(n=>(field==="subs"?subs:starters).has(n));
+ }
+ state.templateName=row.template_name;
+ if(typeof l.keyword==="string")state.keyword=l.keyword;
+ if(typeof l.language==="string")state.language=l.language;
+ if(row.team===state.team&&typeof l.serverTime==="string")state.serverTime=l.serverTime;
+ if(starters.has(l.leader))state.leader=l.leader;
+ if(starters.has(l.alternate))state.alternate=l.alternate;
+ syncSetup();mutate();
+ notice("Plantilla «"+row.template_name+"» aplicada. Las asignaciones de jugadores que no están en la convocatoria actual han quedado vacías. Revísalas antes de publicar.","success");
+}
 function drawText(ctx,text,x,y,maxWidth,font,color){ctx.font=font;ctx.fillStyle=color;ctx.fillText(String(text),x,y,maxWidth);}
 async function createPoster(what="phase1"){
  const isCombined=what==="combined";const width=1080,unitHeight=1740,height=isCombined?unitHeight*2:unitHeight;
@@ -356,7 +386,7 @@ function events(){
  document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
  $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());$("customMap").addEventListener("change",e=>useOriginalMap(e.target.files?.[0]));
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
- $("loadDraft").onclick=()=>loadDraft();$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
+ $("loadDraft").onclick=()=>loadDraft();$("saveTemplate").onclick=saveTemplate;$("loadTemplate").onclick=loadTemplate;$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("acceptVerified").onclick=acceptProposals;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=()=>{try{if(addRoster($("manualPlayer").value,"starter",null)){renderRoster();mutate();notice("Participante añadido. Revisa su poder y si es titular o suplente.","success");$("manualPlayer").value="";}}catch(e){notice(e.message,"error");}};
