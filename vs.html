@@ -1045,6 +1045,7 @@
               <button type="button" data-lang="ro">🇷🇴 Română</button>
               <button type="button" data-lang="pt">🇵🇹 Português</button>
               <button type="button" data-lang="uk">🇺🇦 Українська</button>
+              <button type="button" data-lang="tr">🇹🇷 Türkçe</button>
             </div>
           </div>
         </div>
@@ -1509,6 +1510,7 @@
     <script id="hola-translator-final">
       (() => {
         const T = {
+          tr:{"Semana actual":"Geçerli hafta","PUNTOS TOTALES":"TOPLAM PUAN","selección actual":"mevcut seçim","PARTICIPANTES":"KATILIMCILAR","con puntos":"puan alan","MEJOR JUGADOR":"EN İYİ OYUNCU","sin datos":"veri yok","MEDIA":"ORTALAMA","por participante":"katılımcı başına","ESTADÍSTICAS DE LA SEMANA":"HAFTALIK İSTATİSTİKLER","Ranking, cumplimiento diario, participación y desglose completo.":"Sıralama, günlük hedefe uyum, katılım ve tüm ayrıntılar.","ABRIR ESTADÍSTICAS →":"İSTATİSTİKLERİ AÇ →","RANKING":"SIRALAMA","RANK":"SIRA","JUGADOR":"OYUNCU","PUNTOS":"PUAN","TOTAL":"TOPLAM","Lunes":"Pazartesi","Martes":"Salı","Miércoles":"Çarşamba","Jueves":"Perşembe","Viernes":"Cuma","Sábado":"Cumartesi","Resumen":"Özet","Cumplimiento":"Hedefe uyum","Incumplimientos":"Hedef dışı","Por día":"Günlere göre","Alianza":"İttifak","Cerrar":"Kapat","Ver nombres":"İsimleri göster","Todavía no hay puntuaciones.":"Henüz puan yok.","SEMANA PUSH":"PUSH HAFTASI","SEMANA SAVE":"SAVE HAFTASI","Puntos por día":"Günlük puanlar","MIEMBROS CON DATOS":"VERİSİ OLAN ÜYELER","TOTAL SUPABASE":"SUPABASE TOPLAMI","TOTAL SUPABASE DE TODOS LOS MIEMBROS":"TÜM ÜYELERİN SUPABASE TOPLAMI","Estadísticas":"İstatistikler","Estadísticas VS":"VS İstatistikleri","Semana ":"Hafta ","Rendimiento y participación de la alianza":"İttifakın performansı ve katılımı","No se pudieron cargar los datos de Supabase.":"Supabase verileri yüklenemedi."},
           en: {
             "Semana actual": "Current week",
             "PUNTOS TOTALES": "TOTAL POINTS",
@@ -1722,6 +1724,7 @@
           ro: "🇷🇴 Română",
           pt: "🇵🇹 Português",
           uk: "🇺🇦 Українська",
+          tr: "🇹🇷 Türkçe",
         };
         let lang = "es";
         const original = new WeakMap();
@@ -1748,6 +1751,7 @@
         }
         function setLanguage(l) {
           lang = l;
+          localStorage.setItem("hola-language",l);
           visit(document.body);
           document.documentElement.lang = l;
           const b = document.getElementById("translatorBtn");
@@ -1783,6 +1787,7 @@
     <script id="hola-header-translation-fix">
       (() => {
         const extra = {
+          tr: {"Rendimiento y participación de la alianza":"İttifakın performansı ve katılımı","Semana ":"Hafta "},
           en: {
             "Rendimiento y participación de la alianza":
               "Alliance performance and participation",
@@ -1854,5 +1859,6 @@
         scan();
       })();
     </script>
+    <script>window.setLanguage?.(localStorage.getItem("hola-language")||((navigator.language||"").slice(0,2)==="tr"?"tr":"es"));</script>
   </body>
 </html>
