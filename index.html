@@ -1253,7 +1253,7 @@
     const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
 
 
-    const EVENT_LOCALES={es:'es-ES',en:'en-GB',fr:'fr-FR',de:'de-DE',ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL'};
+    const EVENT_LOCALES={es:'es-ES',en:'en-GB',fr:'fr-FR',de:'de-DE',ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL',tr:'tr-TR'};
 
     function formatEventSchedule(row,language){
       if(!row?.event_date||!row?.event_time)return '';
@@ -1263,7 +1263,7 @@
       const day=new Intl.DateTimeFormat(locale,{weekday:'short',timeZone:'UTC'}).format(date).replace(/\.$/,'').toUpperCase();
       const datePart=new Intl.DateTimeFormat(locale,{day:'2-digit',month:'short',timeZone:'UTC'}).format(date).replace(/\./g,'').toUpperCase();
       const time=String(row.event_time).slice(0,5);
-      return `${day} · ${datePart} · ${time} <span class="event-card__server">SERVER TIME</span>`;
+      return `${day} · ${datePart} · ${time} <span class="event-card__server">${language==="tr"?"SUNUCU SAATİ":"SERVER TIME"}</span>`;
     }
 
     function renderUpcomingEvents(language){
