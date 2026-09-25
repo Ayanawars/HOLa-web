@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HOLa — DS Scores</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0B0E1B;
+  --cyan:#00D2ED;
+  --magenta:#D923E2;
+  --gold:#FFD000;
+  --panel:#101426;
+  --panel2:#151a2d;
+  --line:rgba(0,210,237,.28);
+  --text:#f4f7ff;
+  --muted:#9ba6bf;
+  --ok:#54e39a;
+  --danger:#ff5e78;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body{min-height:100vh;background:
+ radial-gradient(circle at 10% 0%,rgba(0,210,237,.10),transparent 30%),
+ radial-gradient(circle at 90% 10%,rgba(217,35,226,.10),transparent 28%),
+ linear-gradient(180deg,#0B0E1B 0%,#080a14 100%)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.header{
+ min-height:154px;padding:22px 18px 18px;
+ background:linear-gradient(115deg,#070b16,#10162a 50%,#16112b);
+ border-bottom:1px solid rgba(0,210,237,.38);
+ box-shadow:0 15px 40px rgba(0,0,0,.35),inset 0 -1px 0 rgba(255,255,255,.03);
+ position:relative;overflow:hidden
+}
+.header:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--gold));opacity:.8}
+.header-scan{position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0,transparent 7px,rgba(255,255,255,.015) 8px);pointer-events:none}
+.header-inner{max-width:1180px;margin:auto;display:flex;align-items:center;gap:22px;position:relative;z-index:1}
+.brand{font-weight:1000;font-size:38px;line-height:.8;letter-spacing:-2px;min-width:165px;text-shadow:0 0 18px rgba(0,210,237,.35)}
+.brand .world{font-size:30px;margin:0 2px}
+.brand small{display:block;font-size:9px;letter-spacing:4px;color:var(--cyan);margin-top:13px;font-weight:800}
+.title{flex:1;border-left:1px solid rgba(255,255,255,.10);padding-left:20px}
+.kicker{font-size:10px;letter-spacing:3px;color:var(--magenta);font-weight:900}
+h1{margin:5px 0 4px;font-size:clamp(25px,5vw,40px);letter-spacing:-1px}
+.subtitle{margin:0;color:var(--muted);font-size:13px}
+.badge{border:1px solid rgba(255,208,0,.45);padding:9px 12px;border-radius:10px;color:var(--gold);font-size:11px;font-weight:900;white-space:nowrap}
+.wrap{max-width:1050px;margin:auto;padding:22px 14px 50px}
+.grid{display:grid;grid-template-columns:1fr 1.25fr;gap:14px}
+.card{
+ background:linear-gradient(145deg,rgba(16,20,38,.98),rgba(11,14,27,.98));
+ border:1px solid var(--line);border-radius:16px;padding:17px;
+ box-shadow:0 12px 35px rgba(0,0,0,.22);position:relative;overflow:hidden
+}
+.card:before{content:"";position:absolute;top:0;left:0;width:70px;height:2px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.card.magenta:before{background:var(--magenta);box-shadow:0 0 12px var(--magenta)}
+.card.gold:before{background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.card h2{font-size:15px;margin:0 0 5px;letter-spacing:1px}
+.card p.help{font-size:11px;color:var(--muted);margin:0 0 15px;line-height:1.5}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;color:#cdd5e8;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin:0 0 6px}
+input,select,textarea{
+ width:100%;background:#090c18;border:1px solid rgba(255,255,255,.12);color:var(--text);
+ border-radius:10px;padding:11px 12px;outline:none
+}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,210,237,.10)}
+textarea{min-height:260px;resize:vertical;line-height:1.45}
+.team-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.team-btn{background:#090c18;color:var(--muted);border:1px solid rgba(255,255,255,.12);padding:11px;border-radius:10px;font-weight:1000}
+.team-btn.active.b{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 18px rgba(0,210,237,.10)}
+.team-btn.active.a{border-color:var(--magenta);color:var(--magenta);box-shadow:0 0 18px rgba(217,35,226,.10)}
+.time-note{margin-top:8px;font-size:10px;color:var(--muted)}
+.time-note b{color:var(--gold)}
+.filebox{border:1px dashed rgba(0,210,237,.45);padding:14px;border-radius:12px;background:rgba(0,210,237,.035)}
+input[type=file]{padding:9px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:1000;letter-spacing:.5px}
+.primary{background:linear-gradient(135deg,var(--cyan),#008ca5);color:#001017;box-shadow:0 5px 20px rgba(0,210,237,.15)}
+.secondary{background:#171c30;color:#dce5fb;border:1px solid rgba(255,255,255,.10)}
+.save{background:linear-gradient(135deg,var(--gold),#d49f00);color:#171000}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.status{margin-top:12px;padding:10px;border-radius:10px;background:#090c18;color:var(--muted);font-size:11px;min-height:38px}
+.status.ok{color:var(--ok);border:1px solid rgba(84,227,154,.2)}
+.status.err{color:var(--danger);border:1px solid rgba(255,94,120,.2)}
+.results{margin-top:14px}
+.table-wrap{overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:570px}
+th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left;font-size:12px}
+th{font-size:9px;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;background:#0a0e1b}
+td.points{color:var(--gold);font-weight:1000}
+td.pos{color:#fff;font-weight:900}
+.match{color:var(--ok)}
+.nomatch{color:var(--danger)}
+.capture-time{color:var(--muted);font-size:10px;margin-top:10px}
+.mini{font-size:10px;color:var(--muted)}
+.full{grid-column:1/-1}
+.empty{padding:22px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:760px){
+ .header{min-height:132px;padding:16px 13px}
+ .header-inner{gap:12px;align-items:flex-start}
+ .brand{font-size:27px;min-width:112px}
+ .brand .world{font-size:21px}.brand small{font-size:7px;letter-spacing:2px;margin-top:9px}
+ .title{padding-left:12px}.kicker{font-size:8px;letter-spacing:2px}
+ h1{font-size:22px}.subtitle{font-size:10px}.badge{display:none}
+ .grid{grid-template-columns:1fr}.full{grid-column:auto}
+ .wrap{padding:13px 10px 35px}
+ .card{padding:14px;border-radius:13px}
+ .row{grid-template-columns:1fr 1fr}
+ textarea{min-height:210px}
+}
+.logo-wrap{width:104px;min-width:104px;height:104px;display:grid;place-items:center}
+.hola-logo{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 15px rgba(0,210,237,.18))}
+.step{position:absolute;right:16px;top:14px;font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:1000}
+.participant-card{grid-column:1/-1}
+.participant-actions{align-items:center}
+.selected-event{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,210,237,.035);border:1px solid rgba(0,210,237,.15);font-size:10px}
+.selected-event span{color:var(--muted);font-weight:900;letter-spacing:1px}
+.selected-event strong{color:var(--cyan);font-size:11px;text-align:right}
+.modal-backdrop{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,4,12,.78);backdrop-filter:blur(7px)}
+.modal-backdrop.open{display:flex}
+.event-modal{width:min(470px,100%);position:relative;padding:22px;border-radius:18px;background:linear-gradient(145deg,#141a30,#090c18);border:1px solid rgba(0,210,237,.4);box-shadow:0 25px 80px rgba(0,0,0,.55),0 0 35px rgba(0,210,237,.08)}
+.modal-close{position:absolute;right:12px;top:9px;background:transparent;border:0;color:var(--muted);font-size:28px;line-height:1}
+.modal-kicker{font-size:9px;letter-spacing:3px;color:var(--magenta);font-weight:1000;margin-bottom:6px}
+.event-modal h2{margin:0 32px 6px 0;font-size:22px}
+.event-modal p{margin:0 0 18px;color:var(--muted);font-size:12px;line-height:1.5}
+.modal-field{margin-top:13px}
+.modal-field>label{margin-bottom:7px}
+.modal-actions{display:flex;gap:9px;margin-top:18px}
+.modal-actions .btn{flex:1}
+.modal-status{min-height:20px;margin-top:10px;font-size:11px;text-align:center;color:var(--danger)}
+.team-buttons{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.team-btn span{display:block;margin-top:3px;font-size:9px;font-weight:700;opacity:.8}
+@media(max-width:760px){.logo-wrap{width:70px;min-width:70px;height:70px}.header-inner{align-items:center}.participant-card{grid-column:auto}.participant-actions .btn{flex:1;min-width:0}}
+@media(max-width:500px){.participant-actions{display:grid;grid-template-columns:1fr 1fr}.participant-actions .btn{width:100%;padding:10px 8px;font-size:10px}.selected-event{align-items:flex-start;flex-direction:column}.selected-event strong{text-align:left}.modal-actions{display:grid;grid-template-columns:1fr}}
+
+<style id="participant-save-style">
+.participant-save-box{margin-top:14px;padding:14px;border:1px solid rgba(0,210,237,.28);border-radius:14px;background:rgba(11,14,27,.72)}
+.participant-save-box .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.participant-save-box label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:800;letter-spacing:.08em}
+.participant-save-box select,.participant-save-box input{width:100%;box-sizing:border-box}
+.primary-btn{width:100%;margin-top:4px}
+.save-message{min-height:22px;margin-top:10px;text-align:center;font-weight:800;font-size:13px}
+.save-message.ok{color:#00D2ED}
+.save-message.error{color:#D923E2}
+@media(max-width:600px){.participant-save-box .field-grid{grid-template-columns:1fr}}
+
+.logo-wrap{width:104px;min-width:104px;height:104px;display:grid;place-items:center}
+.hola-logo{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 15px rgba(0,210,237,.18))}
+.step{position:absolute;right:16px;top:14px;font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:1000}
+.participant-card{grid-column:1/-1}
+.participant-actions{align-items:center}
+.selected-event{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,210,237,.035);border:1px solid rgba(0,210,237,.15);font-size:10px}
+.selected-event span{color:var(--muted);font-weight:900;letter-spacing:1px}
+.selected-event strong{color:var(--cyan);font-size:11px;text-align:right}
+.modal-backdrop{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,4,12,.78);backdrop-filter:blur(7px)}
+.modal-backdrop.open{display:flex}
+.event-modal{width:min(470px,100%);position:relative;padding:22px;border-radius:18px;background:linear-gradient(145deg,#141a30,#090c18);border:1px solid rgba(0,210,237,.4);box-shadow:0 25px 80px rgba(0,0,0,.55),0 0 35px rgba(0,210,237,.08)}
+.modal-close{position:absolute;right:12px;top:9px;background:transparent;border:0;color:var(--muted);font-size:28px;line-height:1}
+.modal-kicker{font-size:9px;letter-spacing:3px;color:var(--magenta);font-weight:1000;margin-bottom:6px}
+.event-modal h2{margin:0 32px 6px 0;font-size:22px}
+.event-modal p{margin:0 0 18px;color:var(--muted);font-size:12px;line-height:1.5}
+.modal-field{margin-top:13px}
+.modal-field>label{margin-bottom:7px}
+.modal-actions{display:flex;gap:9px;margin-top:18px}
+.modal-actions .btn{flex:1}
+.modal-status{min-height:20px;margin-top:10px;font-size:11px;text-align:center;color:var(--danger)}
+.team-buttons{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.team-btn span{display:block;margin-top:3px;font-size:9px;font-weight:700;opacity:.8}
+@media(max-width:760px){
+  .logo-wrap{width:70px;min-width:70px;height:70px}
+  .header-inner{align-items:center}
+  .participant-card{grid-column:auto}
+  .participant-actions .btn{flex:1;min-width:0}
+}
+@media(max-width:500px){
+  .participant-actions{display:grid;grid-template-columns:1fr 1fr}
+  .participant-actions .btn{width:100%;padding:10px 8px;font-size:10px}
+  .selected-event{align-items:flex-start;flex-direction:column}
+  .selected-event strong{text-align:left}
+  .modal-actions{display:grid;grid-template-columns:1fr}
+}
+
+.ocr-auto-note{margin-top:12px;padding:11px 13px;border:1px solid rgba(0,210,237,.18);border-radius:10px;background:rgba(0,210,237,.035);color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.2px}
+</style>
+
+<style>
+.content-admin{grid-column:1/-1;border-color:rgba(0,210,237,.28)}
+.admin-content-head{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:end;margin:16px 0}
+.content-date label{display:block;margin-bottom:7px;color:var(--muted);font-size:9px;font-weight:1000;letter-spacing:1.5px}
+.content-date input{width:100%}
+.content-team-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.content-team{min-height:44px;padding:9px 12px;border-radius:10px;border:1px solid rgba(0,210,237,.25);background:rgba(0,210,237,.035);color:#a9b4d0;font-weight:1000;font-size:10px;letter-spacing:.8px;cursor:pointer;transition:.18s}
+.content-team:hover{border-color:rgba(0,210,237,.65);color:#fff}
+.content-team.active{color:#fff;border-color:#00D2ED;box-shadow:0 0 16px rgba(0,210,237,.12),inset 0 0 16px rgba(0,210,237,.04)}
+.content-team[data-content-team="A"].active{border-color:#D923E2;box-shadow:0 0 16px rgba(217,35,226,.12),inset 0 0 16px rgba(217,35,226,.04)}
+.editable-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.editable-panel{position:relative;padding:16px;border-radius:13px;background:rgba(5,8,20,.42);border:1px solid rgba(255,208,0,.15)}
+.editable-panel h3{margin:0 0 10px;font-size:13px;letter-spacing:1.4px}
+.battle-result-panel{margin-top:14px;padding:16px;border-radius:13px;background:rgba(5,8,20,.42);border:1px solid rgba(255,208,0,.18)}
+.battle-result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.battle-result-head h3{margin:0;font-size:13px;letter-spacing:1.4px}.battle-result-head small{color:var(--muted);font-size:9px}
+#battleResult{width:100%;max-width:280px}
+.result-win{border-color:#00D2ED!important;box-shadow:0 0 14px rgba(0,210,237,.12)!important}
+.result-loss{border-color:#D923E2!important;box-shadow:0 0 14px rgba(217,35,226,.12)!important}
+.result-draw{border-color:#FFD000!important;box-shadow:0 0 14px rgba(255,208,0,.12)!important}
+.panel-kicker{position:absolute;right:12px;top:10px;color:var(--muted);font-size:9px;font-weight:1000}
+#strategyText{width:100%;min-height:250px;resize:vertical}
+.image-upload{display:flex;min-height:54px;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:1px dashed rgba(0,210,237,.45);border-radius:10px;background:rgba(0,210,237,.025);cursor:pointer;text-align:center}
+.image-upload span{font-size:10px;font-weight:1000;color:#00D2ED;letter-spacing:1px}.image-upload small{font-size:9px;color:var(--muted)}
+.map-preview{margin-top:10px;min-height:210px;border-radius:10px;overflow:hidden;background:#080b16;border:1px solid rgba(255,208,0,.13);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:10px;padding:8px}
+.map-preview img{display:block;max-width:100%;max-height:420px;width:auto;height:auto;object-fit:contain;border-radius:7px}
+.empty-map{border-style:dashed}
+.map-remove{margin-top:9px!important;width:100%}
+@media(max-width:760px){.content-admin{grid-column:auto}.admin-content-head,.editable-grid{grid-template-columns:1fr}.content-team{font-size:9px;padding:9px 6px}}
+.guard{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:linear-gradient(180deg,#081321,#0b0e1b);color:#eef4ff;text-align:center}.guard[hidden]{display:none}.spinner{width:44px;height:44px;margin:0 auto 12px;border:5px solid rgba(0,210,237,.2);border-top-color:#00d2ed;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<style id="desert-storm-s3-theme">
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Inter:wght@500;700;800;900&display=swap');
+:root{--bg:#f2d9a5;--cyan:#087fc5;--magenta:#d66f9a;--gold:#d6a434;--panel:#fffaf0;--panel2:#f8e4b9;--line:rgba(194,145,48,.45);--text:#173d61;--muted:#60778a;--ok:#197f67;--danger:#ae4b4f}
+html,body{background:#f2d9a5;color:var(--text)}
+body{background:linear-gradient(180deg,rgba(255,249,232,.42),rgba(235,203,139,.88)),url('hola-s3-background-square.png') center top/cover fixed no-repeat}
+.header{min-height:132px;padding:15px 18px;background:linear-gradient(90deg,rgba(5,57,99,.95),rgba(9,123,187,.82) 52%,rgba(207,167,74,.8)),url('hola-s3-background-square.png') center 34%/cover;border-bottom:2px solid rgba(255,221,126,.92);box-shadow:0 12px 27px rgba(66,44,8,.28),inset 0 -28px 44px rgba(3,43,79,.22)}
+.header:before{content:"";position:absolute;inset:0;background:linear-gradient(125deg,rgba(2,28,57,.35),transparent 48%,rgba(255,231,153,.16));pointer-events:none}.header:after{height:3px;background:linear-gradient(90deg,#ffe8a0,#d7a23a,#75dff2,#ffe8a0);opacity:1}.header-scan{display:none}.header-inner{max-width:760px;display:grid;grid-template-columns:1fr auto 1fr;grid-template-areas:"back logo space" "title title title";gap:5px 12px;align-items:center}.header-back{grid-area:back;width:42px;height:42px;display:grid;place-items:center;border:2px solid rgba(255,228,135,.92);border-radius:50%;background:rgba(4,70,122,.82);color:#fff7df;font-size:26px;font-weight:900;line-height:1;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.3),inset 0 0 0 2px rgba(255,255,255,.13)}.header-back:active{transform:scale(.94)}.logo-wrap{grid-area:logo;width:68px;min-width:68px;height:68px}.hola-logo{filter:drop-shadow(0 4px 6px rgba(0,25,57,.62)) drop-shadow(0 0 10px rgba(255,220,119,.35))}.brand,.brand small{color:#fff}.title{grid-area:title;border-left:0!important;padding:0;text-align:center}.kicker,.modal-kicker{color:#ffe59a;text-shadow:0 1px 2px rgba(0,31,61,.75)}h1{font-family:'Cinzel',Georgia,serif;color:#7ce3f5;letter-spacing:.02em;text-shadow:-1px -1px 0 #fff0ba,1px 1px 0 #8a5717,0 4px 7px rgba(0,31,61,.75)}.subtitle{color:#fff7df;text-shadow:0 1px 2px rgba(0,31,61,.8)}.badge{display:none}
+.wrap{padding-bottom:52px}.card{background:linear-gradient(145deg,rgba(255,253,246,.97),rgba(250,228,183,.96));border-color:var(--line);box-shadow:0 10px 24px rgba(92,57,9,.18),inset 0 0 0 3px rgba(255,255,255,.28)}.card:before,.card.magenta:before,.card.gold:before{background:linear-gradient(90deg,#0b7cb9,#d6a434,#e59ab9);box-shadow:none}.card h2,.editable-panel h3,.battle-result-head h3{font-family:'Cinzel',Georgia,serif;color:#174d7d}.card p.help{color:var(--muted)}.step,.panel-kicker{color:#9a751e}.step{background:rgba(255,248,224,.66);border-radius:999px;padding:3px 7px}
+.attendance-panel{margin-top:14px;padding:14px;border:1px solid rgba(201,145,48,.35);border-radius:12px;background:rgba(255,250,237,.72)}.attendance-head{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#174d7d;font-size:12px;font-weight:900}.attendance-count{color:#197f67}.absence-count{color:#ae4b4f}.absence-help{margin:7px 0 9px;color:#60778a;font-size:10px;line-height:1.4}.absence-list{display:flex;flex-wrap:wrap;gap:6px}.absence-chip{padding:5px 8px;border-radius:999px;background:#fbe6de;border:1px solid rgba(174,75,79,.3);color:#8f3c42;font-size:10px;font-weight:800}.attendance-clear{color:#197f67;font-size:11px;font-weight:900}
+label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(185,138,47,.44);color:#173d61;box-shadow:inset 0 1px 2px rgba(75,45,5,.06)}input:focus,select:focus,textarea:focus{border-color:#148cc8;box-shadow:0 0 0 3px rgba(20,140,200,.12)}.team-btn,.content-team{background:linear-gradient(145deg,#fffdf7,#f4dfb4);border-color:rgba(178,130,39,.38);color:#536c7f}.team-btn.active.b,.content-team.active{border-color:#0b8bc7;color:#075f98;box-shadow:0 0 0 2px rgba(11,139,199,.11),inset 0 0 18px rgba(100,212,235,.1)}.team-btn.active.a,.content-team[data-content-team="A"].active{border-color:#d66f9a;color:#a33d67;box-shadow:0 0 0 2px rgba(214,111,154,.12),inset 0 0 18px rgba(255,184,210,.15)}.content-team:hover{border-color:#d6a434;color:#174d7d}.filebox,.image-upload{border-color:rgba(8,127,197,.42);background:rgba(117,223,242,.1)}.image-upload span{color:#087fc5}.image-upload small{color:var(--muted)}.editable-panel,.battle-result-panel,.participant-save-box{background:rgba(255,250,237,.68);border-color:rgba(205,160,55,.35)}.selected-event{background:linear-gradient(90deg,rgba(112,221,242,.14),rgba(255,228,167,.22));border-color:rgba(8,127,197,.22)}.selected-event strong{color:#087fc5}.primary{background:linear-gradient(135deg,#58d4e8,#087fc5);color:#fff}.secondary{background:linear-gradient(135deg,#fffdf6,#ead5a8);color:#254b6c;border-color:rgba(177,127,34,.34)}.save{background:linear-gradient(135deg,#ffe18a,#d39b25);color:#533400;box-shadow:0 5px 14px rgba(145,92,7,.18)}.status{background:#fffdf6;color:var(--muted);border:1px solid rgba(190,146,54,.25)}.status.ok{color:var(--ok);border-color:rgba(25,127,103,.28)}.status.err{color:var(--danger);border-color:rgba(174,75,79,.25)}.table-wrap{border-color:rgba(190,146,54,.35)}th{background:#f4dfb2;color:#155f91}th,td{border-bottom-color:rgba(188,142,48,.2)}td.points{color:#a87010}td.pos{color:#174d7d}.map-preview{background:#f7e5bd;border-color:rgba(204,158,53,.36)}.modal-backdrop{background:rgba(14,52,76,.5)}.event-modal{background:linear-gradient(145deg,#fffdf6,#f4dbab);border-color:rgba(210,160,48,.7);box-shadow:0 25px 70px rgba(40,31,7,.45)}.event-modal h2{font-family:'Cinzel',Georgia,serif;color:#174d7d}.event-modal p,.modal-close{color:#60778a}.guard{background:linear-gradient(180deg,rgba(6,69,113,.96),rgba(234,196,118,.97)),url('hola-s3-background-square.png') center/cover;color:#fff8df}.spinner{border-color:rgba(255,235,173,.32);border-top-color:#7be4f5}
+@media(max-width:760px){.header{min-height:166px;padding:10px 11px 12px}.header-inner{gap:4px 10px}.header-back{width:38px;height:38px;font-size:24px}.logo-wrap{width:62px;min-width:62px;height:62px}h1{font-size:20px}.subtitle{font-size:9px}.kicker{font-size:8px}}
+</style>
+<style id="ds-scores-only-css">
+.ds-scores-only .participant-card{display:none!important}
+.ds-scores-only .content-admin>.step,.ds-scores-only .content-admin>#contentTitle,.ds-scores-only .content-admin>#contentHelp,.ds-scores-only .content-admin>.admin-content-head,.ds-scores-only .content-admin>.editable-grid,.ds-scores-only .content-admin>.actions,.ds-scores-only .content-admin>#contentStatus{display:none!important}
+.ds-scores-only .content-admin .battle-result-panel{display:block!important}
+.scores-setup{margin-bottom:14px}.scores-fields{display:grid;grid-template-columns:1fr 1.4fr;gap:13px}
+.scores-builder-link{display:inline-grid;place-items:center;text-decoration:none}
+.scores-roster{margin-top:12px;padding:12px;border:1px solid rgba(8,127,197,.24);border-radius:12px;background:rgba(242,253,255,.75)}
+.scores-roster summary{cursor:pointer;color:#155f84;font-size:12px;font-weight:900}.scores-chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.scores-chip{display:inline-block;max-width:100%;overflow-wrap:anywhere;border-radius:999px;padding:5px 9px;background:#e6f6fc;border:1px solid #bcdbe6;color:#1f5974;font-size:11px;font-weight:750}
+.scores-fallback{margin-top:12px;padding:12px;border:1px solid #dcba75;border-radius:12px;background:#fffae9}.scores-fallback textarea{min-height:112px;margin-bottom:10px}
+.scores-result-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:13px}
+.scores-manual{margin:15px 0;padding:14px;border:1px solid rgba(8,127,197,.33);border-radius:13px;background:rgba(239,250,255,.82)}
+.scores-manual h3{margin:0 0 7px;font-family:Cinzel,Georgia,serif;color:#16537d;font-size:16px}.scores-manual .help{margin:0 0 11px;font-size:11px;line-height:1.45;color:#58758b}
+.scores-manual-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(110px,.9fr) auto;gap:10px;align-items:end}.scores-manual-grid>.btn{min-height:43px;white-space:normal}
+@media(max-width:680px){.scores-fields{grid-template-columns:1fr}.scores-manual-grid{grid-template-columns:1fr 1fr}.scores-manual-grid>.btn{grid-column:1/-1}}@media(max-width:390px){.scores-manual-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body class="ds-scores-only">
+<div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
+<header class="header">
+  <div class="header-scan"></div>
+  <div class="header-inner">
+    <a class="header-back" href="admin-center-hola_login.html" aria-label="Volver al panel de administración">‹</a>
+    <div class="logo-wrap">
+      <img class="hola-logo" src="hola-s3-logo.png" alt="HOLa — Heroes of Last Area">
+    </div>
+    <div class="title">
+      <div class="kicker" id="uiKicker">⚡ ALLIANCE COMMAND</div>
+      <h1 id="uiTitle">🏆 DS SCORES</h1>
+      <p class="subtitle" id="uiSubtitle">Scores y resultado de batalla · convocatoria desde DS Strategy Builder</p>
+    </div>
+    <div aria-hidden="true"></div>
+  </div>
+</header>
+
+<main class="wrap" id="app" hidden>
+  <section class="card gold scores-setup" aria-labelledby="scoresSetupTitle">
+    <div class="step">01</div>
+    <h2 id="scoresSetupTitle">01 · JORNADA Y EQUIPO</h2>
+    <p class="help" id="scoresSetupHelp">Elige una jornada para recuperar su convocatoria y sus scores guardados.</p>
+    <div class="scores-fields">
+      <div><label id="scoresDateLabel" for="scoresDate">Fecha del DS</label><input type="date" id="scoresDate"></div>
+      <div><label id="scoresTeamLabel">Equipo</label><div class="team-buttons" role="group" aria-label="Equipo de Desert Storm">
+        <button type="button" class="team-btn b active" id="scoresTeamB" aria-pressed="true">TEAM B</button>
+        <button type="button" class="team-btn a" id="scoresTeamA" aria-pressed="false">TEAM A</button>
+      </div></div>
+    </div>
+    <div class="actions"><button type="button" class="btn primary" id="scoresLoadBtn">↻ Cargar convocatoria y scores</button>
+      <a class="btn secondary scores-builder-link" href="ds-builder.html">↗ DS Strategy Builder</a></div>
+    <div class="status" id="scoresRosterStatus" role="status" aria-live="polite">Esperando la convocatoria…</div>
+    <details class="scores-roster" id="scoresRosterDetails" hidden><summary id="scoresRosterSummary">Ver jugadores</summary><div class="scores-chip-list" id="scoresRosterList"></div></details>
+    <div id="scoresFallback" class="scores-fallback" hidden><p id="scoresFallbackHelp" class="help">Sin convocatoria guardada. Puedes usar una lista temporal para el OCR sin modificar el DS.</p>
+      <textarea id="scoresFallbackNames" rows="5" placeholder="Un jugador por línea…"></textarea>
+      <button type="button" class="btn secondary" id="scoresFallbackBtn">Usar esta lista temporal</button>
+    </div>
+  </section>
+
+  <section class="card gold participant-card">
+    <div class="step">01</div>
+    <h2 id="participantsTitle">PARTICIPANTES</h2>
+    <p class="help" id="participantsHelp">
+      Pega aquí la lista de jugadores apuntados para Desert Storm, uno por línea. Esta lista se guarda antes del evento y será la referencia para comparar después con los resultados reales.
+    </p>
+    <textarea id="participants" placeholder="Un jugador por línea..."></textarea>
+
+    <div class="actions participant-actions">
+      <button type="button" id="saveParticipantsBtn" class="btn save">💾 GUARDAR PARTICIPANTES</button>
+      <button type="button" id="loadExisting" class="btn secondary">↻ CARGAR LISTA GUARDADA</button>
+    </div>
+    <div id="participantSaveMessage" class="status">Lista pendiente de guardar.</div>
+
+    <div class="selected-event" id="selectedEvent">
+      <span id="selectedEventLabel">JORNADA</span>
+      <strong id="selectedEventValue">Aún no seleccionada</strong>
+    </div>
+  </section>
+
+  <section class="card content-admin">
+    <div class="step">02</div>
+    <h2 id="contentTitle">ESTRATEGIA Y MAPA</h2>
+    <p class="help" id="contentHelp">Aquí preparas la información que verán los jugadores en la página pública de Desert Storm.</p>
+
+    <div class="admin-content-head">
+      <div class="content-date">
+        <label for="contentDate" id="contentDateLabel">DÍA</label>
+        <input id="contentDate" type="date">
+      </div>
+      <div class="content-team-tabs" role="tablist" aria-label="Equipo">
+        <button type="button" class="content-team active" data-content-team="B">FUERZA ESPECIAL B</button>
+        <button type="button" class="content-team" data-content-team="A">FUERZA ESPECIAL A</button>
+      </div>
+    </div>
+
+    <div class="editable-grid">
+      <div class="editable-panel">
+        <div class="panel-kicker">01</div>
+        <h3 id="strategyTitle">ESTRATEGIA</h3>
+        <textarea id="strategyText" placeholder="Escribe aquí la estrategia de este equipo..."></textarea>
+      </div>
+
+      <div class="editable-panel">
+        <div class="panel-kicker">02</div>
+        <h3 id="mapTitle">MAPA / IMAGEN</h3>
+        <label class="image-upload" for="teamMap">
+          <span id="mapUploadText">SUBIR IMAGEN</span>
+          <small id="mapUploadHelp">Selecciona la imagen del mapa para este equipo.</small>
+        </label>
+        <input id="teamMap" type="file" accept="image/*" hidden>
+        <div id="mapPreview" class="map-preview empty-map">No hay imagen cargada.</div>
+        <button type="button" id="removeMapBtn" class="btn secondary map-remove" hidden>✕ QUITAR IMAGEN</button>
+      </div>
+    </div>
+
+    <div class="battle-result-panel">
+      <div class="battle-result-head">
+        <h3 id="battleResultTitle">RESULTADO DE LA BATALLA</h3>
+        <small id="battleResultHelp">Indica si este equipo ganó o perdió esta jornada.</small>
+      </div>
+      <select id="battleResult">
+        <option value="">— SIN RESULTADO —</option>
+        <option value="WIN">🟢 VICTORIA</option>
+        <option value="LOSS">🔴 DERROTA</option>
+        <option value="DRAW">🟡 EMPATE</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="saveContentBtn" class="btn save">💾 GUARDAR ESTRATEGIA Y MAPA</button>
+      <button type="button" id="loadContentBtn" class="btn secondary">↻ CARGAR ESTRATEGIA GUARDADA</button>
+    </div>
+    <div id="contentStatus" class="status">Nada pendiente de guardar.</div>
+    <div class="scores-result-actions"><button type="button" class="btn save" id="saveBattleResultBtn">💾 Guardar resultado de batalla</button></div>
+    <div class="status" id="scoresBattleResultStatus" role="status" aria-live="polite">El resultado se guarda sin modificar el mapa ni la estrategia.</div>
+  </section>
+
+  <section class="card magenta">
+    <div class="step">03</div>
+    <h2 id="ocrTitle">OCR.SPACE</h2>
+    <p class="help" id="ocrHelp">
+      Sube capturas ya recortadas mostrando las filas de nombre + puntos. El OCR leerá esos dos datos y el TOP se ordenará automáticamente por puntuación.
+    </p>
+    <div class="filebox">
+      <label for="screenshots" id="shotsLabel">Capturas de resultados</label>
+      <input id="screenshots" type="file" accept="image/*" multiple>
+      <div class="mini" id="ocrConfigured">OCR.Space está configurado automáticamente.</div>
+    </div>
+    <div class="ocr-auto-note" id="ocrAutoNote">⚡ El análisis comienza automáticamente al seleccionar las capturas.</div>
+    <div id="ocrStatus" class="status">Esperando capturas…</div>
+  </section>
+
+  <section class="card full results">
+    <div class="step">04</div>
+    <h2 id="resultsTitle">RESULTADOS DETECTADOS</h2>
+    <p class="help" id="resultsHelp">
+      Revisa los nombres y puntos detectados. El TOP se calcula ordenando de mayor a menor puntuación. Solo se guardan jugadores vinculados a la lista de participantes.
+    </p>
+        <section class="scores-manual" aria-labelledby="scoresManualTitle">
+      <h3 id="scoresManualTitle">Introducir o corregir un score</h3>
+      <p class="help">Corrige el OCR o introduce los puntos manualmente. Pulsa Guardar en Supabase para publicarlos.</p>
+      <div class="scores-manual-grid">
+        <div><label id="scoresPlayerLabel" for="scoresManualPlayer">Jugador</label><select id="scoresManualPlayer"><option value="">—</option></select></div>
+        <div><label id="scoresPointsLabel" for="scoresManualPoints">Puntos</label><input id="scoresManualPoints" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 12450000"></div>
+        <button id="scoresAddBtn" type="button" class="btn primary" disabled>＋ Añadir / actualizar</button>
+      </div>
+      <div class="status" id="scoresManualInfo" role="status" aria-live="polite">Recupera una convocatoria para introducir scores.</div>
+    </section>
+    <div id="captureInfo" class="capture-time"></div>
+    <div id="resultsBox" class="empty">Todavía no hay resultados.</div>
+    <div class="actions">
+      <button id="saveBtn" class="btn save" type="button" disabled>💾 GUARDAR EN SUPABASE</button>
+    </div>
+    <div id="saveStatus" class="status">Nada pendiente de guardar.</div>
+  </section>
+
+  <!-- Modal shown only after clicking GUARDAR PARTICIPANTES -->
+  <div id="eventModal" class="modal-backdrop" aria-hidden="true">
+    <div class="event-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">×</button>
+      <div class="modal-kicker">DESERT STORM</div>
+      <h2 id="modalTitle">¿Qué día y qué equipo?</h2>
+      <p id="modalHelp">Selecciona la jornada a la que pertenece esta lista de participantes.</p>
+
+      <div class="modal-field">
+        <label for="participantDate" id="dateLabel">DÍA</label>
+        <input id="participantDate" type="date">
+      </div>
+
+      <div class="modal-field">
+        <label id="teamLabel">EQUIPO</label>
+        <div class="team-buttons">
+          <button class="team-btn b active" data-team="B" type="button">TEAM B <span>13:00–13:30</span></button>
+          <button class="team-btn a" data-team="A" type="button">TEAM A <span>22:00–22:30</span></button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="confirmParticipantsBtn" class="btn save">💾 CONFIRMAR Y GUARDAR</button>
+        <button type="button" id="cancelModalBtn" class="btn secondary">CANCELAR</button>
+      </div>
+      <div id="modalStatus" class="modal-status"></div>
+    </div>
+  </div>
+
+  <div id="loadModal" class="modal-backdrop" aria-hidden="true">
+    <div class="event-modal" role="dialog" aria-modal="true" aria-labelledby="loadModalTitle">
+      <button type="button" class="modal-close" id="loadModalClose" aria-label="Cerrar">×</button>
+      <div class="modal-kicker">DESERT STORM</div>
+      <h2 id="loadModalTitle">Cargar datos guardados</h2>
+      <p id="loadModalHelp">Elige la jornada y el equipo que quieres recuperar.</p>
+      <div class="modal-field">
+        <label for="loadDate">DÍA</label>
+        <input id="loadDate" type="date">
+      </div>
+      <div class="modal-field">
+        <label>EQUIPO</label>
+        <div class="team-buttons" id="loadTeamButtons">
+          <button class="team-btn b active" data-load-team="B" type="button">TEAM B <span>13:00–13:30</span></button>
+          <button class="team-btn a" data-load-team="A" type="button">TEAM A <span>22:00–22:30</span></button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="confirmLoadBtn" class="btn save">CARGAR</button>
+        <button type="button" id="cancelLoadBtn" class="btn secondary">CANCELAR</button>
+      </div>
+      <div id="loadModalStatus" class="modal-status"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://ovybstpiomphrouvqxmf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
+// OCR.Space debe llamarse desde un backend; no se publica ninguna clave en el navegador.
+const DESERT_STORM_OCR_FUNCTION = "desert-storm-ocr-space";
+
+window.holaSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.holaSupabaseClient;
+const $ = id => document.getElementById(id);
+
+let team = "B";
+let battleDate = new Date().toISOString().slice(0,10);
+let detected = [];
+
+$("participantDate").value = battleDate;
+
+function cleanParticipantName(value){
+  return String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
+}
+function participants(){
+  const seen=new Set();
+  return $("participants").value.split(/\n|,/)
+    .map(cleanParticipantName)
+    .filter(name=>{
+      const key=norm(name);
+      if(!key||seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function openEventModal(){
+  const names=participants();
+  if(!names.length){
+    $("participantSaveMessage").className="status err";
+    $("participantSaveMessage").textContent="⚠️ Introduce al menos un participante.";
+    return;
+  }
+  $("participantDate").value=battleDate || new Date().toISOString().slice(0,10);
+  $("modalStatus").textContent="";
+  $("eventModal").classList.add("open");
+  $("eventModal").setAttribute("aria-hidden","false");
+}
+
+function closeEventModal(){
+  $("eventModal").classList.remove("open");
+  $("eventModal").setAttribute("aria-hidden","true");
+}
+
+function updateTeamButtons(){
+  document.querySelectorAll("#eventModal .team-btn").forEach(b=>b.classList.toggle("active",b.dataset.team===team));
+}
+
+function updateSelectedEvent(){
+  const value=$("selectedEventValue");
+  if(value) value.textContent = battleDate ? `${battleDate} · Team ${team}` : "Aún no seleccionada";
+}
+
+document.querySelectorAll("#eventModal .team-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    team=btn.dataset.team;
+    updateTeamButtons();
+  });
+});
+
+$("saveParticipantsBtn").addEventListener("click",openEventModal);
+$("modalClose").addEventListener("click",closeEventModal);
+$("cancelModalBtn").addEventListener("click",closeEventModal);
+$("eventModal").addEventListener("click",e=>{ if(e.target===$("eventModal")) closeEventModal(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && $("eventModal").classList.contains("open")) closeEventModal(); });
+
+$("confirmParticipantsBtn").addEventListener("click",async()=>{
+  const names=[...new Set(participants())];
+  const selectedDate=$("participantDate").value;
+  if(!selectedDate){
+    $("modalStatus").textContent="⚠️ Selecciona un día.";
+    return;
+  }
+  if(team!=="A" && team!=="B"){
+    $("modalStatus").textContent="⚠️ Selecciona Team A o Team B.";
+    return;
+  }
+  if(names.length>25){
+    $("modalStatus").textContent=`⚠️ Desert Storm permite un máximo de 25 participantes. Ahora hay ${names.length}.`;
+    return;
+  }
+
+  const btn=$("confirmParticipantsBtn");
+  btn.disabled=true;
+  $("modalStatus").textContent="⏳ Guardando participantes…";
+
+  try{
+    const rows=names.map(player_name=>({
+      battle_date:selectedDate,
+      team,
+      player_name
+    }));
+
+    const {error:removeError}=await supabaseClient
+      .from("desert_storm_participants")
+      .delete()
+      .eq("battle_date",selectedDate)
+      .eq("team",team);
+    if(removeError) throw removeError;
+
+    const {error}=await supabaseClient
+      .from("desert_storm_participants")
+      .insert(rows);
+    if(error) throw error;
+
+    battleDate=selectedDate;
+    $("participantSaveMessage").className="status ok";
+    $("participantSaveMessage").textContent=`✅ ${rows.length} participantes guardados · Team ${team} · ${selectedDate}`;
+    $("modalStatus").textContent="✅ Lista guardada correctamente.";
+    updateSelectedEvent();
+    setTimeout(closeEventModal,500);
+  }catch(err){
+    console.error(err);
+    $("modalStatus").textContent="❌ No se pudo guardar: "+(err?.message||"error desconocido");
+  }finally{
+    btn.disabled=false;
+  }
+});
+
+async function loadParticipantsFor(selectedDate,selectedTeam){
+  $("participantSaveMessage").className="status";
+  $("participantSaveMessage").textContent="⏳ Consultando Supabase…";
+  try{
+    const {data,error}=await supabaseClient
+      .from("desert_storm_participants")
+      .select("player_name")
+      .eq("battle_date",selectedDate)
+      .eq("team",selectedTeam)
+      .order("player_name",{ascending:true});
+    if(error) throw error;
+    if(!data?.length){
+      $("participantSaveMessage").textContent=`No hay lista guardada para ${selectedDate} · Team ${selectedTeam}.`;
+      return;
+    }
+    $("participants").value=data.map(x=>x.player_name).join("\n");
+    battleDate=selectedDate;
+    team=selectedTeam;
+    $("participantDate").value=battleDate;
+    updateTeamButtons();
+    $("participantSaveMessage").className="status ok";
+    $("participantSaveMessage").textContent=`✅ Cargados ${data.length} participantes · ${battleDate} · Team ${team}`;
+    updateSelectedEvent();
+  }catch(err){
+    $("participantSaveMessage").className="status err";
+    $("participantSaveMessage").textContent="❌ "+(err?.message||"error desconocido");
+  }
+}
+
+let loadMode="participants";
+let loadTeam=team;
+function updateLoadTeamButtons(){
+  document.querySelectorAll("#loadTeamButtons .team-btn").forEach(button=>button.classList.toggle("active",button.dataset.loadTeam===loadTeam));
+}
+function closeLoadModal(){
+  $("loadModal").classList.remove("open");
+  $("loadModal").setAttribute("aria-hidden","true");
+}
+function openLoadModal(mode){
+  loadMode=mode;
+  loadTeam=mode==="participants"?team:contentTeam;
+  const selectedDate=mode==="participants"?battleDate:(contentDateEl.value||battleDate);
+  $("loadDate").value=selectedDate||new Date().toISOString().slice(0,10);
+  $("loadModalTitle").textContent=mode==="participants"?"Cargar lista de participantes":"Cargar estrategia guardada";
+  $("loadModalHelp").textContent=mode==="participants"?"Elige la jornada y el equipo cuya lista quieres recuperar.":"Elige la jornada y el equipo cuya estrategia quieres recuperar.";
+  $("confirmLoadBtn").textContent=mode==="participants"?"CARGAR LISTA":"CARGAR ESTRATEGIA";
+  $("loadModalStatus").textContent="";
+  updateLoadTeamButtons();
+  $("loadModal").classList.add("open");
+  $("loadModal").setAttribute("aria-hidden","false");
+}
+document.querySelectorAll("#loadTeamButtons .team-btn").forEach(button=>button.addEventListener("click",()=>{loadTeam=button.dataset.loadTeam;updateLoadTeamButtons();}));
+$("loadExisting").addEventListener("click",()=>openLoadModal("participants"));
+$("loadModalClose").addEventListener("click",closeLoadModal);
+$("cancelLoadBtn").addEventListener("click",closeLoadModal);
+$("loadModal").addEventListener("click",event=>{if(event.target===$("loadModal"))closeLoadModal();});
+$("confirmLoadBtn").addEventListener("click",async()=>{
+  const date=$("loadDate").value;
+  if(!date){$("loadModalStatus").textContent="Selecciona un día.";return;}
+  const button=$("confirmLoadBtn");button.disabled=true;
+  try{
+    if(loadMode==="participants"){
+      await loadParticipantsFor(date,loadTeam);
+    }else{
+      contentDateEl.value=date;
+      battleDate=date;
+      contentTeam=loadTeam;
+      document.querySelectorAll(".content-team").forEach(item=>item.classList.toggle("active",item.dataset.contentTeam===contentTeam));
+      updateSelectedEvent();
+      await loadContent();
+    }
+    closeLoadModal();
+  }catch(error){
+    $("loadModalStatus").textContent="No se pudieron cargar los datos.";
+  }finally{button.disabled=false;}
+});
+
+function norm(s){
+  return String(s||"").normalize("NFKD").toLowerCase()
+    .replace(/[\u0300-\u036f\u0640]/g,"")
+    .replace(/[^\p{L}\p{N}]/gu,"");
+}
+function cleanParticipantName(value){
+  return String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
+}
+function participants(){
+  const seen=new Set();
+  return $("participants").value.split(/\n|,/)
+    .map(cleanParticipantName)
+    .filter(name=>{
+      const key=norm(name);
+      if(!key||seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+function matchPlayer(ocrName){
+  const list=participants();
+  const n=norm(ocrName);
+  if(!n) return null;
+  let exact=list.find(x=>norm(x)===n);
+  if(exact) return exact;
+  let contained=list.find(x=>n.includes(norm(x)) || norm(x).includes(n));
+  if(contained) return contained;
+  return null;
+}
+
+function parseTime(text){
+  const m=text.match(/(20\d{2})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(!m) return null;
+  const d=`${m[1]}-${String(m[2]).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`;
+  return `${d}T${String(m[4]).padStart(2,"0")}:${m[5]}:${m[6]||"00"}`;
+}
+
+function pointValue(s){
+  let v=String(s||'').trim()
+    .replace(/[Oo]/g,'0').replace(/[Il]/g,'1').replace(/[Ss]/g,'5')
+    .replace(/[|]/g,'');
+  const m=v.match(/(\d+(?:[.,]\d+)?)\s*([MK])\b/i);
+  if(m){
+    const n=Number(m[1].replace(',','.'));
+    return Number.isFinite(n) ? Math.round(n*(m[2].toUpperCase()==='M'?1000000:1000)) : null;
+  }
+  const digits=v.replace(/[^0-9]/g,'');
+  return /^\d{3,12}$/.test(digits) ? Number(digits) : null;
+}
+
+function cleanOCRName(s){
+  return String(s||'')
+    .replace(/^\s*[#|•·.)(:-]+\s*/,'')
+    .replace(/^\[?HOLa\]?\s*/i,'')
+    .replace(/\s*[|•·]+\s*$/,'')
+    .trim();
+}
+
+function looksLikeName(s){
+  s=cleanOCRName(s);
+  if(!s || pointValue(s)!==null) return false;
+  if(/^(rank|position|player|players|points|score|power|name|pts|pos|resultado|resultados)$/i.test(s)) return false;
+  return /[A-Za-zÀ-ÿ]/.test(s) && s.length<=70;
+}
+
+function playerHit(text,wanted){
+  const a=norm(cleanOCRName(text)), b=norm(wanted);
+  if(!a||!b) return false;
+  return a===b || a.includes(b) || b.includes(a) || (b.length>=5 && similarity(a,b)>=0.82);
+}
+
+function dedupeResults(out){
+  const unique=new Map();
+  for(const r of out){
+    const key=norm(r.name);
+    if(!key || r.points===null || r.points<1000) continue;
+    // No elegir la puntuación más alta a ciegas si viene de otra fila OCR.
+    // La selección correcta se hace por posición vertical; aquí solo quitamos duplicados.
+    if(!unique.has(key)) unique.set(key,r);
+  }
+  return [...unique.values()].sort((a,b)=>b.points-a.points);
+}
+
+function parseOverlayResults(overlay, text){
+  const registered=participants();
+  if(!registered.length) return [];
+
+  // OCR.Space puede devolver el nombre y la puntuación en la misma línea
+  // o en dos líneas consecutivas. Como ya conocemos la lista de apuntados,
+  // buscamos CADA participante dentro del texto OCR y asociamos únicamente
+  // la puntuación que aparece en su propia fila.
+  const rawLines=(text||'').split(/\r?\n/)
+    .map(x=>x.replace(/\s+/g,' ').trim())
+    .filter(Boolean);
+
+  // También usamos las palabras del Overlay cuando existen, pero NO exigimos
+  // que la estructura de columnas sea perfecta.
+  const overlayLines=(overlay?.Lines||[]).map(line=>({
+    text:(line.Words||[]).map(w=>String(w.WordText||'').trim()).filter(Boolean).join(' '),
+    words:(line.Words||[]).map(w=>({
+      t:String(w.WordText||'').trim(),
+      left:Number(w.Left)||0, top:Number(w.Top)||0,
+      width:Number(w.Width)||0, height:Number(w.Height)||0
+    })).filter(w=>w.t)
+  })).filter(x=>x.text);
+
+  const lines=overlayLines.length ? overlayLines.map(x=>x.text) : rawLines;
+  const normName=s=>norm(cleanOCRName(String(s||'').replace(/\[?HOLa\]?/ig,'')));
+
+  function nameScore(line,wanted){
+    const b=normName(wanted);
+    if(!b) return 0;
+    const clean=cleanOCRName(line).replace(/\[?HOLa\]?/ig,'');
+    // Quitamos números para poder comparar "Arturlion 4694664".
+    const alpha=clean.replace(/[0-9]/g,' ');
+    const a=normName(alpha);
+    if(a===b) return 1;
+    if(a.includes(b) || b.includes(a)) return .97;
+    const tokens=alpha.split(/\s+/).filter(Boolean);
+    let best=similarity(a,b);
+    for(let i=0;i<tokens.length;i++){
+      for(let len=1;len<=3 && i+len<=tokens.length;len++){
+        best=Math.max(best,similarity(normName(tokens.slice(i,i+len).join(' ')),b));
+      }
+    }
+    return best;
+  }
+
+  function extractPoints(line){
+    // Evita interpretar años/horas como puntos y descarta números imposibles.
+    const candidates=[];
+    const pieces=String(line||'').match(/[0-9][0-9.,]*\s*[MK]?/gi)||[];
+    for(const piece of pieces){
+      const v=pointValue(piece);
+      if(v!==null && v>=1000 && v<=10000000) candidates.push(v);
+    }
+    return candidates;
+  }
+
+  const out=[];
+  const usedPlayers=new Set();
+  const usedPointKeys=new Set();
+
+  // Prioridad: coincidencia exacta > parcial > fuzzy.
+  const candidates=[];
+  for(let i=0;i<lines.length;i++){
+    for(const wanted of registered){
+      const score=nameScore(lines[i],wanted);
+      if(score>=0.72) candidates.push({i,wanted,score});
+    }
+  }
+  candidates.sort((a,b)=>b.score-a.score || a.i-b.i);
+
+  for(const c of candidates){
+    const playerKey=norm(c.wanted);
+    if(usedPlayers.has(playerKey)) continue;
+
+    // Primero buscamos puntos en la misma línea.
+    let point=null, pointLine=c.i;
+    const same=extractPoints(lines[c.i]);
+    if(same.length) point=same[same.length-1];
+
+    // Si no están en la misma línea, buscamos hasta 3 líneas siguientes.
+    // Si aparece otro nombre antes, paramos para no cruzar jugadores.
+    if(point===null){
+      for(let j=c.i+1;j<Math.min(lines.length,c.i+4);j++){
+        const other=registered.some(w=>w!==c.wanted && nameScore(lines[j],w)>=0.88);
+        if(other) break;
+        const pts=extractPoints(lines[j]);
+        if(pts.length){
+          point=pts[0]; pointLine=j; break;
+        }
+      }
+    }
+    if(point===null) continue;
+
+    // Si el mismo jugador aparece en dos capturas, el merge posterior lo
+    // deduplicará. Aquí solo impedimos dos asignaciones dentro de esta lectura.
+    const pointKey=pointLine+':'+point;
+    if(usedPointKeys.has(pointKey)) continue;
+
+    usedPlayers.add(playerKey);
+    usedPointKeys.add(pointKey);
+    out.push({name:c.wanted,ocrName:cleanOCRName(lines[c.i]),points:point});
+  }
+
+  return dedupeResults(out);
+}
+function parseResultsText(text){
+  const lines=text.split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const out=[];
+  const registered=participants();
+
+  // Primero intentamos casar cada participante con una línea cercana que contenga puntos.
+  // No usamos "la puntuación más alta" para evitar desplazar valores entre jugadores.
+  for(const wanted of registered){
+    for(let i=0;i<lines.length;i++){
+      if(!playerHit(lines[i],wanted)) continue;
+      let found=null;
+      for(let d=1;d<=2 && i+d<lines.length;d++){
+        const pts=pointValue(lines[i+d]);
+        if(pts!==null && pts>=1000){found=pts;break;}
+        if(looksLikeName(lines[i+d])) break;
+      }
+      if(found!==null){out.push({name:wanted,points:found});break;}
+    }
+  }
+  return dedupeResults(out);
+}
+
+function parseResults(text){
+  return parseResultsText(text);
+}
+
+function similarity(a,b){
+  if(!a||!b) return 0;
+  const m=a.length,n=b.length;
+  if(Math.abs(m-n)>4) return 0;
+  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)dp[i][0]=i;
+  for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return 1-dp[m][n]/Math.max(m,n);
+}
+
+
+async function cropForOCR(file){
+  // Las capturas que se suben a esta sección YA vienen recortadas por el usuario
+  // para mostrar únicamente las filas de nombre + puntos. No recortamos de nuevo:
+  // hacerlo volvería a cortar parte de los nombres/puntos.
+  return file;
+}
+
+function parseSimpleNamePoints(text){
+  const registered=participants();
+  if(!registered.length) return [];
+
+  const lines=(text||'').split(/\r?\n/)
+    .map(x=>x.replace(/\s+/g,' ').trim())
+    .filter(Boolean);
+
+  // OCR.Space puede separar nombre y puntos en líneas distintas,
+  // unirlos en una sola línea o introducir pequeños errores de OCR.
+  // Buscamos cada fila localmente y damos prioridad a la coincidencia
+  // exacta, después a una coincidencia aproximada.
+  const used=new Set();
+  const out=[];
+
+  function loose(s){
+    return norm(cleanOCRName(String(s||''))
+      .replace(/\[?HOLa\]?/ig,'')
+      .replace(/[|]/g,'I'));
+  }
+
+  function nameScore(a,wanted){
+    const aa=loose(a).replace(/\d+/g,'');
+    const bb=norm(wanted).replace(/\d+/g,'');
+    if(!aa||!bb) return 0;
+    if(aa===bb) return 1;
+    if(aa.includes(bb)||bb.includes(aa)) return .98;
+    return similarity(aa,bb);
+  }
+
+  function numericCandidates(line){
+    const raw=String(line||'');
+    const matches=raw.match(/\b\d[\d\s.,]{2,}\b/g)||[];
+    return matches.map(x=>pointValue(x)).filter(v=>Number.isFinite(v)&&v>=1000&&v<=10000000);
+  }
+
+  for(let i=0;i<lines.length;i++){
+    let best=null;
+    for(const wanted of registered){
+      const key=norm(wanted);
+      if(used.has(key)) continue;
+      const score=nameScore(lines[i],wanted);
+      if(score>=.68 && (!best || score>best.score)) best={wanted,score};
+    }
+    if(!best) continue;
+
+    let points=null;
+    let sourceLine=i;
+    const same=numericCandidates(lines[i]);
+    if(same.length) points=same[same.length-1];
+
+    // Puntos normalmente están justo debajo del nombre.
+    if(points===null){
+      for(let j=i+1;j<=Math.min(i+3,lines.length-1);j++){
+        const pts=numericCandidates(lines[j]);
+        if(pts.length){ points=pts[0]; sourceLine=j; break; }
+        // Si encontramos otro nombre conocido, no saltamos a su puntuación.
+        const another=registered.some(w=>w!==best.wanted && nameScore(lines[j],w)>=.88);
+        if(another) break;
+      }
+    }
+
+    if(points===null) continue;
+    used.add(norm(best.wanted));
+    out.push({
+      name:best.wanted,
+      ocrName:cleanOCRName(lines[i]),
+      points,
+      sourceLine
+    });
+  }
+
+  return out.sort((a,b)=>b.points-a.points);
+}
+
+async function prepareOCRImage(file){
+  // Convertimos cualquier captura a JPEG en el navegador. Esto evita problemas
+  // con formatos móviles como WEBP/HEIC y mantiene el recorte manual del usuario.
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((resolve,reject)=>{
+      const im=new Image();
+      im.onload=()=>resolve(im);
+      im.onerror=()=>reject(new Error("No se pudo leer una de las imágenes."));
+      im.src=url;
+    });
+    const max=2200;
+    const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
+    canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.92));
+    if(!blob) throw new Error("No se pudo preparar la imagen para OCR.");
+    return new File([blob],'desert-storm.jpg',{type:'image/jpeg'});
+  }finally{
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function fileAsDataUrl(file){
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||""));
+    reader.onerror=()=>reject(new Error("No se pudo preparar la imagen para OCR."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function ocrImage(file){
+  const prepared=await prepareOCRImage(file);
+  const imageDataUrl=await fileAsDataUrl(prepared);
+  const {data,error}=await supabaseClient.functions.invoke(DESERT_STORM_OCR_FUNCTION,{body:{imageDataUrl}});
+  if(error){
+    const detail=await error.context?.json?.().catch(()=>null);
+    throw new Error(detail?.error||error.message||"No se pudo conectar con el OCR.");
+  }
+  if(data?.error)throw new Error(data.error);
+  if(!data?.text)throw new Error("No se detectó texto en la captura.");
+  return {text:String(data.text)};
+}
+
+
+function renderResults(){
+  const registered=participants();
+  const present=new Set(detected.filter(r=>r.playerName).map(r=>norm(r.playerName)));
+  const absent=registered.filter(name=>!present.has(norm(name)));
+  const attendance=`<div class="attendance-panel">
+    <div class="attendance-head"><span>ASISTENCIA DEL EVENTO</span><span class="attendance-count">${present.size}/${registered.length} detectados</span></div>
+    <p class="absence-help">Estos jugadores aún no tienen un score cargado; eso no significa que hayan faltado al evento.</p>
+    ${absent.length?`<div class="absence-count">SIN SCORE · ${absent.length}</div><div class="absence-list">${absent.map(name=>`<span class="absence-chip">${escapeHtml(name)}</span>`).join("")}</div>`:`<div class="attendance-clear">✅ Todos los jugadores registrados aparecen en los resultados.</div>`}
+  </div>`;
+  if(!detected.length){
+    $("resultsBox").innerHTML='<div class="empty">No se han detectado resultados.</div>'+attendance;
+    $("saveBtn").disabled=true; return;
+  }
+  const rows=detected.map((r,i)=>`
+    <tr>
+      <td class="pos">${r.position}</td>
+      <td>${escapeHtml(r.ocrName)}</td>
+      <td class="${r.playerName?'match':'nomatch'}">${r.playerName?escapeHtml(r.playerName):"NO ENCONTRADO"}</td>
+      <td class="points">${r.points.toLocaleString("es-ES")}</td>
+      <td>${r.captureTime?escapeHtml(r.captureTime.replace("T"," ")):"—"}</td>
+    </tr>`).join("");
+  $("resultsBox").innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>TOP</th><th>OCR</th><th>Participante</th><th>Puntos</th><th>Hora captura</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>${attendance}`;
+  $("saveBtn").disabled=!detected.some(x=>x.playerName);
+}
+
+
+function escapeHtml(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+
+
+
+async function runOCR(){
+  const files=[...$("screenshots").files];
+  const registered=participants();
+  if(!registered.length){
+    $("ocrStatus").className="status err";
+    $("ocrStatus").textContent="Selecciona la jornada y recupera su convocatoria antes de subir capturas.";
+    return;
+  }
+  if(!battleDate){
+    $("ocrStatus").className="status err";
+    $("ocrStatus").textContent="Selecciona primero el día y el equipo.";
+    return;
+  }
+  if(!files.length){
+    $("ocrStatus").className="status";
+    $("ocrStatus").textContent="Esperando capturas…";
+    return;
+  }
+
+  $("ocrStatus").className="status";
+  detected=[];
+  let allTimes=[];
+  try{
+    for(let i=0;i<files.length;i++){
+      $("ocrStatus").textContent=`⚡ Analizando captura ${i+1} de ${files.length}…`;
+      const ocr=await ocrImage(files[i]);
+      const text=ocr.text;
+      const captureTime=parseTime(text);
+      if(captureTime) allTimes.push(captureTime);
+      const rows=parseSimpleNamePoints(text);
+      rows.forEach(r=>detected.push({position:0,ocrName:r.ocrName,playerName:r.name,points:r.points,captureTime}));
+    }
+
+    const unique=new Map();
+    detected.forEach(r=>{
+      const k=norm(r.playerName||r.ocrName);
+      if(!k) return;
+      if(!unique.has(k)||r.points>unique.get(k).points) unique.set(k,r);
+    });
+    detected=[...unique.values()]
+      .filter(r=>r.playerName&&participants().some(p=>norm(p)===norm(r.playerName)))
+      .sort((a,b)=>b.points-a.points);
+    detected.forEach((r,i)=>r.position=i+1);
+
+    if(allTimes.length){
+      $("captureInfo").textContent=`Hora detectada en captura: ${allTimes[0].replace("T"," ")}`;
+      const hour=Number(allTimes[0].slice(11,13));
+      const valid=team==="B"?hour>=13&&hour<14:hour>=22&&hour<23;
+      if(!valid) $("captureInfo").textContent+=" · ⚠ Revisa el equipo seleccionado.";
+    }else{
+      $("captureInfo").textContent=`Jornada: ${battleDate} · Team ${team}`;
+    }
+    renderResults();
+    const missing=participants().filter(name=>!detected.some(row=>row.playerName&&norm(row.playerName)===norm(name))).length;
+    $("ocrStatus").className=detected.length?"status ok":"status err";
+    $("ocrStatus").textContent=detected.length?`✅ ${detected.length} participaron · ${missing} no aparecen en los resultados.`:"OCR completado, pero no se encontraron filas con el formato esperado.";
+  }catch(e){
+    console.error(e);
+    $("ocrStatus").className="status err";
+    $("ocrStatus").textContent="❌ "+(e.message||"Error procesando OCR.");
+  }
+}
+
+// En cuanto se seleccionan las imágenes, el OCR comienza sin pulsar ningún botón.
+$("screenshots").addEventListener("change",runOCR);
+
+$("saveBtn").addEventListener("click",async()=>{
+  const valid=detected.filter(x=>x.playerName);
+  if(!valid.length || !battleDate) return;
+
+  $("saveBtn").disabled=true;
+  $("saveStatus").className="status";
+  $("saveStatus").textContent="Guardando en Supabase…";
+
+  try{
+    const rows=valid.map(x=>({
+      battle_date:battleDate,
+      team,
+      screenshot_time:x.captureTime||null,
+      player_name:x.playerName,
+      position:x.position,
+      points:x.points
+    }));
+
+    const {error}=await supabaseClient
+      .from("desert_storm_scores")
+      .upsert(rows,{onConflict:"battle_date,team,player_name"});
+
+    if(error) throw error;
+
+    $("saveStatus").className="status ok";
+    $("saveStatus").textContent=`✅ Guardados ${rows.length} resultados · ${battleDate} · Team ${team}.`;
+  }catch(e){
+    $("saveStatus").className="status err";
+    $("saveStatus").textContent="❌ No se pudo guardar: "+(e.message||"error desconocido");
+  }finally{
+    $("saveBtn").disabled=false;
+  }
+});
+
+
+// --- Desert Storm editable strategy + map content ---
+let contentTeam="B";
+let contentMapData=null;
+const contentDateEl=$("contentDate");
+contentDateEl.value=battleDate;
+
+function setContentTeam(t){
+  contentTeam=t;
+  document.querySelectorAll(".content-team").forEach(b=>b.classList.toggle("active",b.dataset.contentTeam===t));
+  loadContent();
+}
+
+document.querySelectorAll(".content-team").forEach(b=>b.addEventListener("click",()=>setContentTeam(b.dataset.contentTeam)));
+contentDateEl.addEventListener("change",()=>{battleDate=contentDateEl.value;updateSelectedEvent();loadContent();});
+
+function showMap(data){
+  contentMapData=data||null;
+  const box=$("mapPreview"), remove=$("removeMapBtn");
+  if(data){ box.className="map-preview"; box.innerHTML="<img alt=\"Mapa Desert Storm\" src=\""+escapeHtml(data)+"\">"; remove.hidden=false; }
+  else { box.className="map-preview empty-map"; box.textContent="No hay imagen cargada."; remove.hidden=true; }
+}
+
+$("teamMap").addEventListener("change",()=>{
+  const file=$("teamMap").files[0];
+  if(!file) return;
+  if(file.size>6*1024*1024){
+    $("contentStatus").className="status err"; $("contentStatus").textContent="⚠️ La imagen supera 6 MB."; $("teamMap").value=""; return;
+  }
+  const reader=new FileReader();
+  reader.onload=()=>showMap(reader.result);
+  reader.readAsDataURL(file);
+});
+
+$("removeMapBtn").addEventListener("click",()=>{showMap(null);$("teamMap").value="";});
+
+function updateBattleResultStyle(){
+  const el=$("battleResult");
+  el.classList.remove("result-win","result-loss","result-draw");
+  if(el.value==="WIN") el.classList.add("result-win");
+  if(el.value==="LOSS") el.classList.add("result-loss");
+  if(el.value==="DRAW") el.classList.add("result-draw");
+}
+$("battleResult").addEventListener("change",updateBattleResultStyle);
+
+async function loadContent(){
+  const date=contentDateEl.value||battleDate;
+  if(!date) return;
+  $("contentStatus").className="status"; $("contentStatus").textContent="⏳ Cargando datos…";
+  try{
+    const {data,error}=await supabaseClient.from("desert_storm_content").select("result").eq("battle_date",date).eq("team",contentTeam).maybeSingle();
+    if(error) throw error;
+    $("strategyText").value=data?.strategy||"";
+    $("battleResult").value=data?.result||"";
+    updateBattleResultStyle();
+    showMap(data?.map_data_url||null);
+    $("contentStatus").textContent=data?"✅ Datos cargados.":"No hay datos guardados para esta jornada y equipo.";
+  }catch(e){
+    console.error(e); $("contentStatus").className="status err"; $("contentStatus").textContent="❌ No se pudieron cargar los datos: "+(e.message||"error");
+  }
+}
+
+$("saveContentBtn").addEventListener("click",async()=>{
+  const date=contentDateEl.value||battleDate;
+  if(!date){$("contentStatus").className="status err";$("contentStatus").textContent="⚠️ Selecciona un día.";return;}
+  const btn=$("saveContentBtn"); btn.disabled=true;
+  $("contentStatus").className="status"; $("contentStatus").textContent="⏳ Guardando…";
+  try{
+    const {error}=await supabaseClient.from("desert_storm_content").upsert({battle_date:date,team:contentTeam,strategy:$("strategyText").value.trim(),map_data_url:contentMapData,result:$("battleResult").value||null},{onConflict:"battle_date,team"});
+    if(error) throw error;
+    $("contentStatus").className="status ok"; $("contentStatus").textContent=`✅ Fuerza Especial ${contentTeam} guardada · ${date}`;
+  }catch(e){
+    console.error(e); $("contentStatus").className="status err"; $("contentStatus").textContent="❌ No se pudo guardar: "+(e.message||"error");
+  }finally{btn.disabled=false;}
+});
+$("loadContentBtn").addEventListener("click",()=>openLoadModal("content"));
+
+updateTeamButtons();
+updateSelectedEvent();
+loadContent();
+</script>
+
+
+
+<script>
+(function(){
+const T={
+tr:{"kicker":"⚡ İTTİFAK KOMUTASI","title":"🌪️ DESERT STORM","subtitle":"Katılımcı ve sonuç yönetimi · veriler Supabase'e kaydedilir","badge":"YÖNETİCİ","participants":"KATILIMCILAR","participantsHelp":"Desert Storm'a kayıtlı oyuncuları her satıra bir ad gelecek şekilde buraya yapıştır. Bu liste etkinlikten önce kaydedilir ve daha sonra gerçek sonuçlarla karşılaştırılır.","saveParticipants":"💾 KATILIMCILARI KAYDET","load":"↻ KAYITLI LİSTEYİ YÜKLE","pending":"Liste henüz kaydedilmedi.","selected":"SAVAŞ GÜNÜ","notSelected":"Henüz seçilmedi","ocr":"OCR.SPACE","ocrHelp":"Sonuç postasının tam ekran görüntülerini yükle. OCR sıra ve tarihi atlayarak adları ve puanları okur ve tek bir sıralamada birleştirir.","shots":"Sonuç ekran görüntüleri","configured":"OCR.Space otomatik olarak yapılandırıldı.","auto":"⚡ Görüntüler seçildiğinde analiz otomatik başlar.","waiting":"Görüntüler bekleniyor…","results":"TESPİT EDİLEN SONUÇLAR","resultsHelp":"Tespit edilen adları ve puanları kontrol et. Sıralama en yüksek puandan en düşüğe göre yapılır. Yalnızca katılımcı listesindeki oyuncular kaydedilir.","empty":"Henüz sonuç yok.","save":"💾 SUPABASE'E KAYDET","nothing":"Kaydedilecek değişiklik yok.","modalTitle":"Hangi gün ve hangi takım?","modalHelp":"Bu katılımcı listesinin ait olduğu savaş gününü seç.","date":"GÜN","team":"TAKIM","confirm":"💾 ONAYLA VE KAYDET","cancel":"İPTAL"},
+ es:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administración de participantes y resultados · datos guardados en Supabase",badge:"ADMIN",
+  participants:"PARTICIPANTES",participantsHelp:"Pega aquí la lista de jugadores apuntados para Desert Storm, uno por línea. Esta lista se guarda antes del evento y será la referencia para comparar después con los resultados reales.",
+  saveParticipants:"💾 GUARDAR PARTICIPANTES",load:"↻ CARGAR LISTA GUARDADA",pending:"Lista pendiente de guardar.",selected:"JORNADA",notSelected:"Aún no seleccionada",
+  ocr:"OCR.SPACE",ocrHelp:"Sube una o varias capturas completas del correo de resultados. El OCR ignora la posición y la fecha, lee nombre + puntos y une todas las capturas en un único TOP.",
+  shots:"Capturas de resultados",configured:"OCR.Space está configurado automáticamente.",auto:"⚡ El análisis comienza automáticamente al seleccionar las capturas.",waiting:"Esperando capturas…",
+  results:"RESULTADOS DETECTADOS",resultsHelp:"Revisa los nombres y puntos detectados. El TOP se calcula ordenando de mayor a menor puntuación. Solo se guardan jugadores vinculados a la lista de participantes.",
+  empty:"Todavía no hay resultados.",save:"💾 GUARDAR EN SUPABASE",nothing:"Nada pendiente de guardar.",
+  modalTitle:"¿Qué día y qué equipo?",modalHelp:"Selecciona la jornada a la que pertenece esta lista de participantes.",date:"DÍA",team:"EQUIPO",confirm:"💾 CONFIRMAR Y GUARDAR",cancel:"CANCELAR"
+},
+en:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Participant and result administration · data saved in Supabase",badge:"ADMIN",
+  participants:"PARTICIPANTS",participantsHelp:"Paste the players registered for Desert Storm, one per line. This list is saved before the event and used later to compare against actual results.",
+  saveParticipants:"💾 SAVE PARTICIPANTS",load:"↻ LOAD SAVED LIST",pending:"List pending save.",selected:"BATTLE",notSelected:"Not selected yet",
+  ocr:"OCR.SPACE",ocrHelp:"Upload already-cropped screenshots showing name + points rows. OCR reads those two fields and TOP is automatically sorted by score.",
+  shots:"Result screenshots",configured:"OCR.Space is configured automatically.",auto:"⚡ Analysis starts automatically when screenshots are selected.",waiting:"Waiting for screenshots…",
+  results:"DETECTED RESULTS",resultsHelp:"Review detected names and points. TOP is sorted from highest to lowest score. Only players linked to the participant list are saved.",
+  empty:"No results yet.",save:"💾 SAVE TO SUPABASE",nothing:"Nothing pending to save.",
+  modalTitle:"Which day and team?",modalHelp:"Select the battle this participant list belongs to.",date:"DAY",team:"TEAM",confirm:"💾 CONFIRM AND SAVE",cancel:"CANCEL"
+},
+pt:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administração de participantes e resultados · dados guardados no Supabase",badge:"ADMIN",
+  participants:"PARTICIPANTES",participantsHelp:"Cole os jogadores inscritos no Desert Storm, um por linha. Esta lista é guardada antes do evento e usada depois para comparar com os resultados reais.",
+  saveParticipants:"💾 GUARDAR PARTICIPANTES",load:"↻ CARREGAR LISTA GUARDADA",pending:"Lista por guardar.",selected:"BATALHA",notSelected:"Ainda não selecionada",
+  ocr:"OCR.SPACE",ocrHelp:"Carregue capturas já recortadas com as linhas nome + pontos. O OCR lê esses dois dados e o TOP é ordenado automaticamente pela pontuação.",
+  shots:"Capturas dos resultados",configured:"OCR.Space está configurado automaticamente.",auto:"⚡ A análise começa automaticamente ao selecionar as capturas.",waiting:"A aguardar capturas…",
+  results:"RESULTADOS DETETADOS",resultsHelp:"Reveja os nomes e pontos detetados. O TOP é ordenado da maior para a menor pontuação. Só serão guardados jogadores ligados à lista de participantes.",
+  empty:"Ainda não há resultados.",save:"💾 GUARDAR NO SUPABASE",nothing:"Nada pendente para guardar.",
+  modalTitle:"Que dia e que equipa?",modalHelp:"Selecione a batalha a que pertence esta lista de participantes.",date:"DIA",team:"EQUIPA",confirm:"💾 CONFIRMAR E GUARDAR",cancel:"CANCELAR"
+},
+ro:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administrarea participanților și rezultatelor · date salvate în Supabase",badge:"ADMIN",
+  participants:"PARTICIPANȚI",participantsHelp:"Introdu jucătorii înscriși la Desert Storm, câte unul pe linie. Lista este salvată înaintea evenimentului și va fi folosită ulterior pentru comparație cu rezultatele reale.",
+  saveParticipants:"💾 SALVEAZĂ PARTICIPANȚII",load:"↻ ÎNCARCĂ LISTA SALVATĂ",pending:"Lista așteaptă salvarea.",selected:"BĂTĂLIE",notSelected:"Nu este selectată",
+  ocr:"OCR.SPACE",ocrHelp:"Încarcă capturi deja decupate cu rândurile nume + puncte. OCR citește aceste date, iar TOP este ordonat automat după punctaj.",
+  shots:"Capturi rezultate",configured:"OCR.Space este configurat automat.",auto:"⚡ Analiza începe automat când sunt selectate capturile.",waiting:"Se așteaptă capturi…",
+  results:"REZULTATE DETECTATE",resultsHelp:"Verifică numele și punctele detectate. TOP este sortat descrescător. Vor fi salvate doar persoanele asociate listei de participanți.",
+  empty:"Nu există încă rezultate.",save:"💾 SALVEAZĂ ÎN SUPABASE",nothing:"Nimic de salvat.",
+  modalTitle:"Ce zi și ce echipă?",modalHelp:"Selectează bătălia căreia îi aparține această listă de participanți.",date:"ZI",team:"ECHIPĂ",confirm:"💾 CONFIRMĂ ȘI SALVEAZĂ",cancel:"ANULEAZĂ"
+},
+fr:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administration des participants et résultats · données enregistrées dans Supabase",badge:"ADMIN",
+  participants:"PARTICIPANTS",participantsHelp:"Collez les joueurs inscrits au Desert Storm, un par ligne. Cette liste est enregistrée avant l'événement et servira ensuite à comparer les résultats réels.",
+  saveParticipants:"💾 ENREGISTRER LES PARTICIPANTS",load:"↻ CHARGER LA LISTE",pending:"Liste en attente d'enregistrement.",selected:"BATAILLE",notSelected:"Pas encore sélectionnée",
+  ocr:"OCR.SPACE",ocrHelp:"Téléversez des captures déjà recadrées avec les lignes nom + points. L'OCR lit ces deux données et le TOP est automatiquement trié par score.",
+  shots:"Captures des résultats",configured:"OCR.Space est configuré automatiquement.",auto:"⚡ L’analyse commence automatiquement lors de la sélection des captures.",waiting:"En attente de captures…",
+  results:"RÉSULTATS DÉTECTÉS",resultsHelp:"Vérifiez les noms et points détectés. Le TOP est trié du score le plus élevé au plus faible. Seuls les joueurs liés à la liste sont enregistrés.",
+  empty:"Aucun résultat pour le moment.",save:"💾 ENREGISTRER DANS SUPABASE",nothing:"Rien à enregistrer.",
+  modalTitle:"Quel jour et quelle équipe ?",modalHelp:"Sélectionnez la bataille à laquelle appartient cette liste de participants.",date:"JOUR",team:"ÉQUIPE",confirm:"💾 CONFIRMER ET ENREGISTRER",cancel:"ANNULER"
+},
+it:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Gestione partecipanti e risultati · dati salvati in Supabase",badge:"ADMIN",
+  participants:"PARTECIPANTI",participantsHelp:"Incolla i giocatori iscritti al Desert Storm, uno per riga. Questa lista viene salvata prima dell'evento e usata in seguito per confrontarla con i risultati reali.",
+  saveParticipants:"💾 SALVA PARTECIPANTI",load:"↻ CARICA LISTA SALVATA",pending:"Lista in attesa di salvataggio.",selected:"BATTAGLIA",notSelected:"Non ancora selezionata",
+  ocr:"OCR.SPACE",ocrHelp:"Carica screenshot già ritagliati con le righe nome + punti. OCR legge questi due dati e il TOP viene ordinato automaticamente per punteggio.",
+  shots:"Screenshot risultati",configured:"OCR.Space è configurato automaticamente.",auto:"⚡ L’analisi inizia automaticamente quando selezioni gli screenshot.",waiting:"In attesa degli screenshot…",
+  results:"RISULTATI RILEVATI",resultsHelp:"Controlla nomi e punti rilevati. Il TOP è ordinato dal punteggio più alto al più basso. Verranno salvati solo i giocatori collegati alla lista partecipanti.",
+  empty:"Nessun risultato.",save:"💾 SALVA IN SUPABASE",nothing:"Niente da salvare.",
+  modalTitle:"Quale giorno e quale squadra?",modalHelp:"Seleziona la battaglia a cui appartiene questa lista di partecipanti.",date:"GIORNO",team:"SQUADRA",confirm:"💾 CONFERMA E SALVA",cancel:"ANNULLA"
+},
+de:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Teilnehmer- und Ergebnisverwaltung · Daten in Supabase gespeichert",badge:"ADMIN",
+  participants:"TEILNEHMER",participantsHelp:"Füge die für Desert Storm angemeldeten Spieler ein, einen pro Zeile. Diese Liste wird vor dem Event gespeichert und später mit den tatsächlichen Ergebnissen verglichen.",
+  saveParticipants:"💾 TEILNEHMER SPEICHERN",load:"↻ GESPEICHERTE LISTE LADEN",pending:"Liste wartet auf Speicherung.",selected:"KAMPF",notSelected:"Noch nicht ausgewählt",
+  ocr:"OCR.SPACE",ocrHelp:"Lade bereits zugeschnittene Screenshots mit Name + Punkten hoch. OCR liest diese beiden Angaben und sortiert das TOP automatisch nach Punkten.",
+  shots:"Ergebnis-Screenshots",configured:"OCR.Space ist automatisch konfiguriert.",auto:"⚡ Die Analyse startet automatisch, sobald Screenshots ausgewählt werden.",waiting:"Warte auf Screenshots…",
+  results:"ERKANNTE ERGEBNISSE",resultsHelp:"Prüfe erkannte Namen und Punkte. Das TOP wird absteigend sortiert. Nur Spieler aus der Teilnehmerliste werden gespeichert.",
+  empty:"Noch keine Ergebnisse.",save:"💾 IN SUPABASE SPEICHERN",nothing:"Nichts zu speichern.",
+  modalTitle:"Welcher Tag und welches Team?",modalHelp:"Wähle den Kampf, zu dem diese Teilnehmerliste gehört.",date:"TAG",team:"TEAM",confirm:"💾 BESTÄTIGEN UND SPEICHERN",cancel:"ABBRECHEN"
+},
+uk:{
+  kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Керування учасниками та результатами · дані збережено в Supabase",badge:"ADMIN",
+  participants:"УЧАСНИКИ",participantsHelp:"Вставте гравців, зареєстрованих на Desert Storm, по одному в рядку. Цей список зберігається до події та пізніше порівнюється з фактичними результатами.",
+  saveParticipants:"💾 ЗБЕРЕГТИ УЧАСНИКІВ",load:"↻ ЗАВАНТАЖИТИ ЗБЕРЕЖЕНИЙ СПИСОК",pending:"Список очікує збереження.",selected:"БІЙ",notSelected:"Ще не вибрано",
+  ocr:"OCR.SPACE",ocrHelp:"Завантажте вже обрізані знімки з рядками ім’я + очки. OCR прочитає ці два поля та автоматично відсортує TOP за очками.",
+  shots:"Знімки результатів",configured:"OCR.Space налаштовано автоматично.",auto:"⚡ Аналіз починається автоматично після вибору знімків.",waiting:"Очікування знімків…",
+  results:"ВИЯВЛЕНІ РЕЗУЛЬТАТИ",resultsHelp:"Перевірте виявлені імена та очки. TOP сортується від найбільшого до найменшого. Зберігаються лише гравці зі списку учасників.",
+  empty:"Результатів ще немає.",save:"💾 ЗБЕРЕГТИ В SUPABASE",nothing:"Немає даних для збереження.",
+  modalTitle:"Який день і яка команда?",modalHelp:"Виберіть бій, до якого належить цей список учасників.",date:"ДЕНЬ",team:"КОМАНДА",confirm:"💾 ПІДТВЕРДИТИ Й ЗБЕРЕГТИ",cancel:"СКАСУВАТИ"
+}};
+const keys=Object.keys(T);
+const saved=localStorage.getItem("hola-language");
+const detectedLang=(navigator.language||"es").slice(0,2).toLowerCase();
+let lang=keys.includes(saved)?saved:(keys.includes(detectedLang)?detectedLang:"es");
+
+const labels={es:"🇪🇸 Español",en:"🇬🇧 English",pt:"🇵🇹 Português",ro:"🇷🇴 Română",fr:"🇫🇷 Français",it:"🇮🇹 Italiano",de:"🇩🇪 Deutsch",uk:"🇺🇦 Українська",tr:"🇹🇷 Türkçe"};
+const flags={es:"es",en:"gb",pt:"pt",ro:"ro",fr:"fr",it:"it",de:"de",uk:"ua",tr:"tr"};
+const box=document.createElement("div");box.id="hola-language-selector";
+box.innerHTML=`<button type="button" id="languageSelect" class="language__toggle" aria-label="Language" aria-expanded="false"><img class="language__current" alt=""></button><div class="language__list" hidden></div>`;
+const toggle=box.querySelector(".language__toggle"),currentFlag=box.querySelector(".language__current"),list=box.querySelector(".language__list");
+for(const k of keys){const option=document.createElement("button");option.type="button";option.className="language__option";option.dataset.language=k;option.innerHTML=`<img src="https://flagcdn.com/w80/${flags[k]}.png" alt=""><span>${labels[k]}</span>`;list.appendChild(option)}
+document.body.appendChild(box);
+const css=document.createElement("style");css.textContent="#hola-language-selector{position:fixed;top:12px;right:12px;z-index:2147483647}.language__toggle{width:40px;height:40px;padding:0;display:grid;place-items:center;border:2px solid rgba(255,228,135,.96);border-radius:50%;background:rgba(4,70,122,.88);box-shadow:0 3px 12px rgba(0,0,0,.32),inset 0 0 0 2px rgba(255,255,255,.13);backdrop-filter:blur(5px);cursor:pointer}.language__current{width:25px;height:25px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px rgba(255,255,255,.85)}.language__list{position:absolute;top:46px;right:0;width:154px;margin:0;padding:6px;display:grid;gap:2px;border:1px solid rgba(255,212,81,.86);border-radius:14px;background:rgba(5,59,104,.97);box-shadow:0 12px 28px rgba(0,0,0,.35);backdrop-filter:blur(9px)}.language__list[hidden]{display:none}.language__option{width:100%;min-height:36px;padding:7px 8px;display:flex;align-items:center;gap:9px;border:0;border-radius:9px;background:transparent;color:#fff;font:700 13px/1 system-ui,sans-serif;text-align:left;cursor:pointer}.language__option:hover,.language__option:focus-visible{outline:none;background:rgba(255,255,255,.14)}.language__option img{width:24px;height:17px;border-radius:3px;object-fit:cover}@media(max-width:700px){#hola-language-selector{top:8px;right:8px}.language__toggle{width:38px;height:38px}.language__list{top:44px;width:150px}}";document.head.appendChild(css);
+
+function apply(){
+  const x=T[lang];
+  document.documentElement.lang=lang;
+  currentFlag.src=`https://flagcdn.com/w80/${flags[lang]}.png`;currentFlag.alt=labels[lang];
+  document.title="HOLa — "+x.title.replace("🌪️ ","");
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set("uiKicker",x.kicker);set("uiTitle",x.title);set("uiSubtitle",x.subtitle);set("uiBadge",x.badge);
+  set("participantsTitle",x.participants);set("participantsHelp",x.participantsHelp);
+  set("saveParticipantsBtn",x.saveParticipants);set("loadExisting",x.load);
+  set("participantSaveMessage",x.pending);set("selectedEventLabel",x.selected);
+  set("ocrTitle",x.ocr);set("ocrHelp",x.ocrHelp);set("shotsLabel",x.shots);set("ocrConfigured",x.configured);
+  set("ocrAutoNote",x.auto);if(!detected.length)set("ocrStatus",x.waiting);
+  set("resultsTitle",x.results);set("resultsHelp",x.resultsHelp);if(!detected.length)set("resultsBox",x.empty);
+  if(document.getElementById("saveBtn").disabled)set("saveBtn",x.save);
+  if(document.getElementById("saveStatus")?.textContent==="Nada pendiente de guardar.")set("saveStatus",x.nothing);
+  set("modalTitle",x.modalTitle);set("modalHelp",x.modalHelp);set("dateLabel",x.date);set("teamLabel",x.team);
+  set("confirmParticipantsBtn",x.confirm);set("cancelModalBtn",x.cancel);
+}
+function closeLanguages(){list.hidden=true;toggle.setAttribute("aria-expanded","false")}
+toggle.addEventListener("click",()=>{const open=list.hidden;list.hidden=!open;toggle.setAttribute("aria-expanded",String(open))});
+list.addEventListener("click",event=>{const option=event.target.closest(".language__option");if(!option)return;lang=option.dataset.language;localStorage.setItem("hola-language",lang);apply();document.dispatchEvent(new Event("hola-language-change"));closeLanguages()});
+document.addEventListener("click",event=>{if(!event.target.closest("#hola-language-selector"))closeLanguages()});
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeLanguages()});
+apply();
+})();
+</script>
+
+
+
+<script>
+(function(){
+ const labels={
+ tr:{"title":"STRATEJİ VE HARİTA","help":"Oyuncuların herkese açık Desert Storm sayfasında göreceği bilgileri burada hazırlarsın.","day":"GÜN","strategy":"STRATEJİ","map":"HARİTA / GÖRSEL","upload":"GÖRSEL YÜKLE","uploadHelp":"Bu takımın harita görselini seç.","save":"💾 STRATEJİ VE HARİTAYI KAYDET","load":"↻ KAYITLI VERİLERİ YÜKLE","empty":"Henüz görsel yüklenmedi.","resultTitle":"SAVAŞ SONUCU","resultHelp":"Bu takımın savaşı kazanıp kazanmadığını belirt.","noResult":"— SONUÇ YOK —","win":"🟢 ZAFER","loss":"🔴 YENİLGİ","draw":"🟡 BERABERLİK"},
+ es:{title:"ESTRATEGIA Y MAPA",help:"Aquí preparas la información que verán los jugadores en la página pública de Desert Storm.",day:"DÍA",strategy:"ESTRATEGIA",map:"MAPA / IMAGEN",upload:"SUBIR IMAGEN",uploadHelp:"Selecciona la imagen del mapa para este equipo.",save:"💾 GUARDAR ESTRATEGIA Y MAPA",load:"↻ CARGAR DATOS GUARDADOS",empty:"No hay imagen cargada.",resultTitle:"RESULTADO DE LA BATALLA",resultHelp:"Indica si este equipo ganó o perdió esta jornada.",noResult:"— SIN RESULTADO —",win:"🟢 VICTORIA",loss:"🔴 DERROTA",draw:"🟡 EMPATE"},
+ en:{title:"STRATEGY & MAP",help:"Prepare here the information players will see on the public Desert Storm page.",day:"DAY",strategy:"STRATEGY",map:"MAP / IMAGE",upload:"UPLOAD IMAGE",uploadHelp:"Select the map image for this team.",save:"💾 SAVE STRATEGY & MAP",load:"↻ LOAD SAVED DATA",empty:"No image loaded.",resultTitle:"BATTLE RESULT",resultHelp:"Indicate whether this team won or lost this battle.",noResult:"— NO RESULT —",win:"🟢 WIN",loss:"🔴 LOSS",draw:"🟡 DRAW"},
+ pt:{title:"ESTRATÉGIA E MAPA",help:"Prepare aqui as informações que os jogadores verão na página pública do Desert Storm.",day:"DIA",strategy:"ESTRATÉGIA",map:"MAPA / IMAGEM",upload:"CARREGAR IMAGEM",uploadHelp:"Selecione a imagem do mapa desta equipa.",save:"💾 GUARDAR ESTRATÉGIA E MAPA",load:"↻ CARREGAR DADOS GUARDADOS",empty:"Nenhuma imagem carregada.",resultTitle:"RESULTADO DA BATALHA",resultHelp:"Indique se esta equipa ganhou ou perdeu esta batalha.",noResult:"— SEM RESULTADO —",win:"🟢 VITÓRIA",loss:"🔴 DERROTA",draw:"🟡 EMPATE"},
+ ro:{title:"STRATEGIE ȘI HARTĂ",help:"Pregătește aici informațiile pe care jucătorii le vor vedea pe pagina publică Desert Storm.",day:"ZI",strategy:"STRATEGIE",map:"HARTĂ / IMAGINE",upload:"ÎNCARCĂ IMAGINEA",uploadHelp:"Selectează imaginea hărții pentru această echipă.",save:"💾 SALVEAZĂ STRATEGIA ȘI HARTA",load:"↻ ÎNCARCĂ DATELE SALVATE",empty:"Nu există imagine încărcată.",resultTitle:"REZULTATUL BĂTĂLIEI",resultHelp:"Indică dacă această echipă a câștigat sau a pierdut această bătălie.",noResult:"— FĂRĂ REZULTAT —",win:"🟢 VICTORIE",loss:"🔴 ÎNFRÂNGERE",draw:"🟡 EGAL"},
+ fr:{title:"STRATÉGIE ET CARTE",help:"Préparez ici les informations que les joueurs verront sur la page publique Desert Storm.",day:"JOUR",strategy:"STRATÉGIE",map:"CARTE / IMAGE",upload:"TÉLÉVERSER UNE IMAGE",uploadHelp:"Sélectionnez l'image de la carte pour cette équipe.",save:"💾 ENREGISTRER LA STRATÉGIE ET LA CARTE",load:"↻ CHARGER LES DONNÉES",empty:"Aucune image chargée.",resultTitle:"RÉSULTAT DE LA BATAILLE",resultHelp:"Indiquez si cette équipe a gagné ou perdu cette bataille.",noResult:"— AUCUN RÉSULTAT —",win:"🟢 VICTOIRE",loss:"🔴 DÉFAITE",draw:"🟡 MATCH NUL"},
+ it:{title:"STRATEGIA E MAPPA",help:"Prepara qui le informazioni che i giocatori vedranno nella pagina pubblica di Desert Storm.",day:"GIORNO",strategy:"STRATEGIA",map:"MAPPA / IMMAGINE",upload:"CARICA IMMAGINE",uploadHelp:"Seleziona l'immagine della mappa per questa squadra.",save:"💾 SALVA STRATEGIA E MAPPA",load:"↻ CARICA DATI SALVATI",empty:"Nessuna immagine caricata.",resultTitle:"RISULTATO DELLA BATTAGLIA",resultHelp:"Indica se questa squadra ha vinto o perso questa battaglia.",noResult:"— NESSUN RISULTATO —",win:"🟢 VITTORIA",loss:"🔴 SCONFITTA",draw:"🟡 PAREGGIO"},
+ de:{title:"STRATEGIE & KARTE",help:"Bereite hier die Informationen vor, die Spieler auf der öffentlichen Desert-Storm-Seite sehen.",day:"TAG",strategy:"STRATEGIE",map:"KARTE / BILD",upload:"BILD HOCHLADEN",uploadHelp:"Wähle das Kartenbild für dieses Team.",save:"💾 STRATEGIE & KARTE SPEICHERN",load:"↻ GESPEICHERTE DATEN LADEN",empty:"Kein Bild geladen.",resultTitle:"KAMPFERGEBNIS",resultHelp:"Gib an, ob dieses Team diesen Kampf gewonnen oder verloren hat.",noResult:"— KEIN ERGEBNIS —",win:"🟢 SIEG",loss:"🔴 NIEDERLAGE",draw:"🟡 UNENTSCHIEDEN"},
+ uk:{title:"СТРАТЕГІЯ ТА КАРТА",help:"Підготуйте тут інформацію, яку гравці бачитимуть на публічній сторінці Desert Storm.",day:"ДЕНЬ",strategy:"СТРАТЕГІЯ",map:"КАРТА / ЗОБРАЖЕННЯ",upload:"ЗАВАНТАЖИТИ ЗОБРАЖЕННЯ",uploadHelp:"Виберіть зображення карти для цієї команди.",save:"💾 ЗБЕРЕГТИ СТРАТЕГІЮ ТА КАРТУ",load:"↻ ЗАВАНТАЖИТИ ЗБЕРЕЖЕНІ ДАНІ",empty:"Зображення не завантажено.",resultTitle:"РЕЗУЛЬТАТ БОЮ",resultHelp:"Вкажіть, чи перемогла або програла ця команда в цьому бою.",noResult:"— БЕЗ РЕЗУЛЬТАТУ —",win:"🟢 ПЕРЕМОГА",loss:"🔴 ПОРАЗКА",draw:"🟡 НІЧИЯ"}
+ };
+ function apply(){
+  const l=labels[localStorage.getItem('hola-language')||'es']||labels.es;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('contentTitle',l.title);set('contentHelp',l.help);set('contentDateLabel',l.day);set('strategyTitle',l.strategy);set('mapTitle',l.map);set('mapUploadText',l.upload);set('mapUploadHelp',l.uploadHelp);set('saveContentBtn',l.save);set('loadContentBtn',l.load);set('battleResultTitle',l.resultTitle);set('battleResultHelp',l.resultHelp);const br=$("battleResult");if(br){br.options[0].textContent=l.noResult;br.options[1].textContent=l.win;br.options[2].textContent=l.loss;br.options[3].textContent=l.draw;}
+ }
+ apply();
+ document.addEventListener('hola-language-change',apply);
+})();
+</script>
+<script src="js/ds-scores-ui.js?v=20260925-scores-v1"></script>
+<script type="module">
+  const normalizeName=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  async function verifyAdminAccess(){
+    const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
+    if(sessionError||!session?.user)return false;
+    const {data:admin,error:adminError}=await supabaseClient.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();
+    if(adminError||!admin)return false;
+    const {data:players,error:playersError}=await supabaseClient.from('players').select('name,rank');
+    if(playersError||!Array.isArray(players))return false;
+    return players.some(player=>['R4','R5'].includes(String(player.rank||'').toUpperCase())&&normalizeName(player.name)===normalizeName(admin.display_name));
+  }
+  try{
+    if(!await verifyAdminAccess())throw new Error('unauthorized');
+    document.getElementById('guard').hidden=true;
+    document.getElementById('app').hidden=false;
+    document.dispatchEvent(new Event('hola-scores-ready'));
+  }catch(_error){
+    location.replace('admin-login.html');
+  }
+</script></body>
+</html>
