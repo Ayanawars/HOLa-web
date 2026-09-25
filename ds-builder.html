@@ -48,6 +48,13 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .ocr-needed{margin-top:12px;padding:12px;border:2px solid #dda24f;background:#fff1d1;border-radius:12px;font-size:14px;line-height:1.55;color:#724813}.ocr-needed strong{display:block;font-size:16px;margin-bottom:4px}.ocr-complete{margin-top:12px;padding:10px;background:#e0f8e9;border-radius:10px;color:#21704d;font-weight:800}.ocr-missing[hidden]{display:none!important}
 .recovery-panel{border:2px solid #c5a756;border-radius:15px;background:linear-gradient(130deg,#fff9e4,#effbf9);padding:13px;margin:9px 0 14px;box-shadow:0 5px 15px rgba(30,65,62,.09)}.recovery-panel summary{cursor:pointer;font-weight:950;color:#17526a;font-size:14px;line-height:1.4}.recovery-panel .muted{margin:10px 0}.saved-draft-list{display:grid;gap:9px}.saved-draft-card{border:1px solid #d8bf83;border-radius:12px;background:#fffefa;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.saved-draft-card strong{display:block;color:#174964}.saved-draft-card small{display:block;color:#577181;line-height:1.5;margin-top:3px}.saved-draft-card button{flex:0 0 auto}
 .team-a-audit{padding:14px;margin:13px 0;border:2px solid #d7af60;border-radius:13px;background:linear-gradient(135deg,#fff8e4,#ebf8f9)}.team-a-audit>strong{color:#1c5874}.team-a-audit>.muted{line-height:1.5;margin:8px 0 12px}.team-a-audit #teamAAuditResult{margin-top:14px}.audit-group{padding:12px;margin:11px 0;background:#fffdf8;border:1px solid #dbc18c;border-radius:11px}.audit-group h3{font-size:15px;margin:0 0 8px;color:#175672}.audit-person{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:9px;padding:10px 0;border-top:1px solid #e9d6ad}.audit-person strong{display:block;font-size:14px;color:#25465b;overflow-wrap:anywhere}.audit-person small{display:block;margin-top:4px;max-width:320px;color:#637c8a;line-height:1.45}.audit-warning{font-weight:850;color:#a25524}
+.builder-language-picker{position:fixed;right:12px;bottom:max(14px,env(safe-area-inset-bottom));z-index:2147483000}
+.builder-language-toggle{min-width:49px;height:49px;border-radius:28px;border:2px solid #f2cb65;background:#0a557b;color:#fff;box-shadow:0 6px 20px #0b354177;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 9px;font-size:23px;font-weight:900}
+.builder-language-chevron{font-size:12px;color:#ffe4a1}
+.builder-language-menu{position:fixed;left:10px;top:10px;width:205px;max-height:400px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;border:2px solid #dab45c;border-radius:14px;background:#104766;padding:6px;box-shadow:0 10px 28px #0a263b99;display:grid;gap:3px}
+.builder-language-menu[hidden]{display:none!important}
+.builder-locale-option{display:block;width:100%;padding:9px 11px;border:0;border-radius:8px;background:transparent;color:#fff8e6;text-align:left;font-size:13px;font-weight:800;white-space:nowrap}
+.builder-locale-option:hover,.builder-locale-option:focus-visible{background:#197b9c;outline:2px solid #f0c976}
 </style>
 </head>
 <body>
@@ -144,6 +151,13 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
+<div class="builder-language-picker" id="builderLanguagePicker"><button type="button" class="builder-language-toggle" id="builderLanguageToggle" aria-label="Idioma" aria-expanded="false"><span id="builderLanguageFlag" aria-hidden="true">🇪🇸</span><span class="builder-language-chevron" aria-hidden="true">▾</span></button><div class="builder-language-menu" id="builderLanguageMenu" hidden></div></div>
+<script src="js/ds-builder-i18n.js?v=20260925-all10-v1"></script>
+<script src="js/ds-builder-locales-west.js?v=20260925-all10-v1"></script>
+<script src="js/ds-builder-locales-center.js?v=20260925-all10-v1"></script>
+<script src="js/ds-builder-locales-east.js?v=20260925-all10-v1"></script>
+<script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
+<script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
+<script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
 <script type="module" src="js/ds-builder.js?v=20260925-roster-counts-v2"></script>
-<script src="js/hola-tr-ui.js"></script>
 </body></html>
