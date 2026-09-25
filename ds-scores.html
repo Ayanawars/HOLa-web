@@ -363,14 +363,14 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
 
   <section class="card magenta">
     <div class="step">03</div>
-    <h2 id="ocrTitle">OCR.SPACE</h2>
+    <h2 id="ocrTitle">OCR LOCAL + AZURE</h2>
     <p class="help" id="ocrHelp">
       Sube capturas ya recortadas mostrando las filas de nombre + puntos. El OCR leerá esos dos datos y el TOP se ordenará automáticamente por puntuación.
     </p>
     <div class="filebox">
       <label for="screenshots" id="shotsLabel">Capturas de resultados</label>
       <input id="screenshots" type="file" accept="image/*" multiple>
-      <div class="mini" id="ocrConfigured">OCR.Space está configurado automáticamente.</div>
+      <div class="mini" id="ocrConfigured">OCR local activo; Azure como respaldo.</div>
     </div>
     <div class="ocr-auto-note" id="ocrAutoNote">⚡ El análisis comienza automáticamente al seleccionar las capturas.</div>
     <div id="ocrStatus" class="status">Esperando capturas…</div>
@@ -459,7 +459,47 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
 const SUPABASE_URL = "https://ovybstpiomphrouvqxmf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
 // OCR.Space debe llamarse desde un backend; no se publica ninguna clave en el navegador.
-const DESERT_STORM_OCR_FUNCTION = "desert-storm-ocr-space";
+// Azure Vision is used only when local OCR cannot reliably identify all participants.
+const DESERT_STORM_AZURE_FUNCTION = "vs-azure-ocr";
+let dsLocalWorkerPromise = null;
+function loadDSLocalOCR(){
+  if(dsLocalWorkerPromise) return dsLocalWorkerPromise;
+  dsLocalWorkerPromise = (async()=>{
+    if(!window.Tesseract){
+      await new Promise((resolve,reject)=>{
+        const script=document.createElement("script");
+        script.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+        script.onload=resolve;
+        script.onerror=()=>reject(new Error("No se pudo cargar el OCR local."));
+        document.head.appendChild(script);
+      });
+    }
+    return await window.Tesseract.createWorker("eng",1,{
+      workerPath:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+      corePath:"https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0",
+      langPath:"https://tessdata.projectnaptha.com/4.0.0"
+    });
+  })().catch(err=>{dsLocalWorkerPromise=null;throw err;});
+  return dsLocalWorkerPromise;
+}
+async function dsLocalOCR(file){
+  const worker=await loadDSLocalOCR();
+  const result=await worker.recognize(file);
+  return {text:String(result?.data?.text||""),provider:"Local"};
+}
+async function dsAzureOCR(file){
+  const prepared=await prepareOCRImage(file);
+  const response=await fetch(SUPABASE_URL+"/functions/v1/"+DESERT_STORM_AZURE_FUNCTION,{
+    method:"POST",
+    headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":prepared.type||"image/jpeg"},
+    body:prepared
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error(data?.error||"Azure HTTP "+response.status);
+  const text=String(data?.ParsedResults?.[0]?.ParsedText||"");
+  if(!text.trim())throw new Error(data?.warning||"Azure no detectó texto.");
+  return {text,provider:"Azure"};
+}
 
 window.holaSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const supabaseClient = window.holaSupabaseClient;
@@ -1002,18 +1042,25 @@ async function fileAsDataUrl(file){
 }
 
 async function ocrImage(file){
-  const prepared=await prepareOCRImage(file);
-  const imageDataUrl=await fileAsDataUrl(prepared);
-  const {data,error}=await supabaseClient.functions.invoke(DESERT_STORM_OCR_FUNCTION,{body:{imageDataUrl}});
-  if(error){
-    const detail=await error.context?.json?.().catch(()=>null);
-    throw new Error(detail?.error||error.message||"No se pudo conectar con el OCR.");
+  let local=null,localError=null;
+  try{
+    local=await dsLocalOCR(file);
+  }catch(err){localError=err;}
+  const localRows=local?.text?parseSimpleNamePoints(local.text):[];
+  // Only call Azure when local OCR produced no usable rows or missed registered participants.
+  if(localRows.length>=participants().length)return local;
+  try{
+    const azure=await dsAzureOCR(file);
+    const azureRows=parseSimpleNamePoints(azure.text);
+    if(azureRows.length>localRows.length)return azure;
+    if(localRows.length)return local;
+    return azure;
+  }catch(err){
+    if(localRows.length)return {...local,warning:"Azure no disponible: "+err.message};
+    throw new Error("OCR local: "+(localError?.message||"sin filas reconocidas")+
+      " · Azure: "+(err?.message||"no disponible"));
   }
-  if(data?.error)throw new Error(data.error);
-  if(!data?.text)throw new Error("No se detectó texto en la captura.");
-  return {text:String(data.text)};
 }
-
 
 function renderResults(){
   const registered=participants();
@@ -1071,10 +1118,14 @@ async function runOCR(){
   $("ocrStatus").className="status";
   detected=[];
   let allTimes=[];
+  const ocrErrors=[];
   try{
     for(let i=0;i<files.length;i++){
       $("ocrStatus").textContent=`⚡ Analizando captura ${i+1} de ${files.length}…`;
-      const ocr=await ocrImage(files[i]);
+      let ocr;
+      try{ocr=await ocrImage(files[i]);}
+      catch(err){ocrErrors.push("Captura "+(i+1)+": "+err.message);continue;}
+      if(ocr.warning)ocrErrors.push("Captura "+(i+1)+": "+ocr.warning);
       const text=ocr.text;
       const captureTime=parseTime(text);
       if(captureTime) allTimes.push(captureTime);
@@ -1104,7 +1155,7 @@ async function runOCR(){
     renderResults();
     const missing=participants().filter(name=>!detected.some(row=>row.playerName&&norm(row.playerName)===norm(name))).length;
     $("ocrStatus").className=detected.length?"status ok":"status err";
-    $("ocrStatus").textContent=detected.length?`✅ ${detected.length} participaron · ${missing} no aparecen en los resultados.`:"OCR completado, pero no se encontraron filas con el formato esperado.";
+    $("ocrStatus").textContent=(detected.length?`✅ ${detected.length} participaron · ${missing} no aparecen en los resultados.`:"OCR completado, pero no se encontraron filas con el formato esperado.")+(ocrErrors.length?" ⚠ "+ocrErrors.join(" | "):"");
   }catch(e){
     console.error(e);
     $("ocrStatus").className="status err";
@@ -1241,8 +1292,8 @@ tr:{"kicker":"⚡ İTTİFAK KOMUTASI","title":"🌪️ DESERT STORM","subtitle":
   kicker:"⚡ ALLIANCE COMMAND",title:"🌪️ DESERT STORM",subtitle:"Administración de participantes y resultados · datos guardados en Supabase",badge:"ADMIN",
   participants:"PARTICIPANTES",participantsHelp:"Pega aquí la lista de jugadores apuntados para Desert Storm, uno por línea. Esta lista se guarda antes del evento y será la referencia para comparar después con los resultados reales.",
   saveParticipants:"💾 GUARDAR PARTICIPANTES",load:"↻ CARGAR LISTA GUARDADA",pending:"Lista pendiente de guardar.",selected:"JORNADA",notSelected:"Aún no seleccionada",
-  ocr:"OCR.SPACE",ocrHelp:"Sube una o varias capturas completas del correo de resultados. El OCR ignora la posición y la fecha, lee nombre + puntos y une todas las capturas en un único TOP.",
-  shots:"Capturas de resultados",configured:"OCR.Space está configurado automáticamente.",auto:"⚡ El análisis comienza automáticamente al seleccionar las capturas.",waiting:"Esperando capturas…",
+  ocr:"OCR LOCAL + AZURE",ocrHelp:"Sube una o varias capturas completas del correo de resultados. El OCR ignora la posición y la fecha, lee nombre + puntos y une todas las capturas en un único TOP.",
+  shots:"Capturas de resultados",configured:"OCR local activo; Azure como respaldo.",auto:"⚡ El análisis comienza automáticamente al seleccionar las capturas.",waiting:"Esperando capturas…",
   results:"RESULTADOS DETECTADOS",resultsHelp:"Revisa los nombres y puntos detectados. El TOP se calcula ordenando de mayor a menor puntuación. Solo se guardan jugadores vinculados a la lista de participantes.",
   empty:"Todavía no hay resultados.",save:"💾 GUARDAR EN SUPABASE",nothing:"Nada pendiente de guardar.",
   modalTitle:"¿Qué día y qué equipo?",modalHelp:"Selecciona la jornada a la que pertenece esta lista de participantes.",date:"DÍA",team:"EQUIPO",confirm:"💾 CONFIRMAR Y GUARDAR",cancel:"CANCELAR"
