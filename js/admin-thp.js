@@ -28,9 +28,34 @@ function savedTHP(value){
  return Number.isFinite(number)&&number>0&&number<=9999?number:null;
 }
 function official(raw){
- const key=normal(raw);
- const alias=aliases[key]||"";
- return byName.get(key)||byName.get(normal(alias))||null;
+ const key=normal(raw),alias=aliases[key]||"",target=alias?normal(alias):key;
+ if(!target)return null;
+ const matches=profiles.filter(player=>normal(player.name)===target);
+ // Never infer the player's identity if the database has two names whose
+ // spelling differs only by decoration; the officer must resolve that case.
+ return matches.length===1?matches[0]:null;
+}
+// OCR may read the alliance's cat glyph ᓚᘏᗢ as "⊂∩∀", "C n U"
+// or "CnV". Only strip those short tails after matching a known, unique
+// member stem; never strip arbitrary characters from an unknown player.
+const catTail=/^(?:c|cn|cnu|cnv|cno|cn0|cny|cnw|cuv|cnuv|cnvu|n|nu|nv|n0|uv|v)$/i;
+function uniqueCatName(input,original){
+ if(!input||input.length<4)return null;
+ const matches=new Map();
+ for(const player of profiles){
+  const officialKey=normal(player.name);
+  const allowed=[officialKey,...Object.entries(aliases).filter(([,target])=>normal(target)===officialKey).map(([key])=>key)];
+  for(const base of allowed){
+   if(!base||!input.startsWith(base))continue;
+   const suffix=input.slice(base.length);
+   if(!suffix||!catTail.test(suffix))continue;
+   // A lone "C" or "N" is too ambiguous on ordinary names, unless the
+   // official player has the cat symbol or the OCR contains its real glyph.
+   if(suffix.length<2&&!/[ᓚᘏᗢ⊂∩∀]/u.test(player.name+" "+original))continue;
+   matches.set(player.name,player);
+  }
+ }
+ return matches.size===1?[...matches.values()][0]:null;
 }
 function distance(a,b){
  let previous=Array.from({length:b.length+1},(_,i)=>i);
@@ -44,6 +69,8 @@ function matchName(raw){
   .replace(/\s{2,}/g," ").trim();
  const found=official(cleaned);if(found)return {name:found.name,exact:true};
  const input=normal(cleaned);if(input.length<4)return {name:"",exact:false};
+ const cat=uniqueCatName(input,cleaned);
+ if(cat)return {name:cat.name,exact:true,catNormalized:true};
  let best=null,lowest=99,runner=99;
  for(const player of profiles){const d=distance(normal(player.name),input);
   if(d<lowest){runner=lowest;lowest=d;best=player;}else if(d<runner)runner=d;}
