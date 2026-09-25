@@ -74,13 +74,15 @@
   let busy=false;
   input.addEventListener("change",async()=>{
    const file=input.files?.[0];if(!file||busy)return;
+   const feedback=$("squadFileFeedback");if(feedback)feedback.textContent="📸 "+file.name+" · "+copy("ready");
    const name=String($("playerName")?.value||"").trim();
    if(!name){status(copy("select"));input.value="";return;}
-   busy=true;input.disabled=true;window.HOLaSquadScanReceipt.clear(name);status(copy("working"));
+   busy=true;input.disabled=true;window.HOLaSquadScanReceipt.clear(name);status(copy("working")+" · "+file.name);
    try{await detect(file,name);}finally{input.disabled=false;input.value="";busy=false;}
   });
   document.addEventListener("hola-player-selected",event=>{
    const selected=String(event.detail?.name||"").trim();
+   const feedback=$("squadFileFeedback");if(feedback)feedback.textContent="";
    for(const key of [...receipt.keys()])if(key!==normalized(selected))receipt.delete(key);
    status("");
   });
