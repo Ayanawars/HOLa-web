@@ -68,7 +68,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="field"><label for="leader">Responsable de la orden</label><select id="leader"><option value="">Elegir responsable</option></select></div>
 <div class="field"><label for="alternate">Responsable alternativo</label><select id="alternate"><option value="">Sin alternativo</option></select></div>
 <div class="field"><label for="language">Idioma del correo y anuncio</label><select id="language"><option value="en">English</option><option value="es">Español</option><option value="tr">Türkçe</option></select></div>
-<div class="field"><label for="customMap">Mapa original (opcional)</label><input type="file" accept="image/png,image/jpeg,image/webp" id="customMap"><small class="muted">Si subes tu mapa original, se usará en el editor, carteles y web pública.</small></div>
+<div class="field"><label for="customMap">Mapa personalizado (opcional)</label><input type="file" accept="image/png,image/jpeg,image/webp" id="customMap"><small class="muted">Se usa tu mapa real por defecto. Si subes otro, se aplicará al editor, los carteles y la web pública.</small></div>
 </div>
 <div class="row actions"><button class="btn gold" id="loadDraft" type="button">↻ Cargar jornada</button><button class="btn outline" id="copyPrevious" type="button">⧉ Copiar estrategia anterior</button><button class="btn" id="saveDraftTop" type="button">💾 Guardar borrador</button></div>
 <div class="row actions"><select class="member-entry" id="storedTemplate" aria-label="Plantilla guardada"><option value="">Elegir plantilla guardada</option></select><button class="btn outline" id="loadTemplate" type="button">↙ Cargar plantilla</button><button class="btn gold" id="saveTemplate" type="button">☆ Guardar como plantilla</button></div>
@@ -117,7 +117,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="eyebrow">03 · DISTRIBUCIÓN TÁCTICA</div><h2>Mapa interactivo</h2><p class="muted">Los edificios mantienen su posición. Toca uno para asignar jugadores. Cada fase tiene su propia distribución.</p>
 <div class="phase-switch" role="group" aria-label="Fase de la estrategia"><button type="button" class="active" data-phase="phase1">FASE 1 · 0–10</button><button type="button" data-phase="phase2">FASE 2 · 10+</button><button type="button" class="final" data-phase="final">ÚLTIMO ASALTO</button></div>
 <div class="row actions"><button type="button" class="btn gold" id="autoAssign">⚖ Repartir según poder</button><button type="button" class="btn outline" id="clearPhase">Vaciar esta fase</button><span class="counter" id="phaseCount">0/20 asignados</span></div>
-<div class="board" id="board"><img src="assets/ds-battlefield.svg" alt="Mapa de Desert Storm con edificios en sus posiciones fijas"><div class="pins" id="pins"></div></div>
+<div class="board" id="board"><img src="assets/ds-battlefield-real.webp" alt="Mapa real de Desert Storm con edificios en sus posiciones fijas"><div class="pins" id="pins"></div></div>
 <div id="phaseHelp" class="info-panel"></div>
 <div id="buildingList" class="assignment-grid"></div>
 <div id="specialSection" class="section" style="margin-top:14px;box-shadow:none;background:#f5fffa"><h2>Misiones y suplentes</h2><p class="muted">Las misiones secundarias no duplican una plaza de titular. Los suplentes van al hospital asignado, independientemente de quién salga.</p><div id="specialList" class="assignment-grid"></div></div>
@@ -135,6 +135,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
-<script type="module" src="js/ds-builder.js?v=20260925-map-poster-v1"></script>
+<script type="module" src="js/ds-builder.js?v=20260925-real-map-v1"></script>
 <script src="js/hola-tr-ui.js"></script>
 </body></html>

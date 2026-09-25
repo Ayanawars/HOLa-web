@@ -50,7 +50,7 @@ function playerOption(selected="",empty="Elegir miembro"){return '<option value=
 function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(typeof input.baseMapDataUrl==="string"&&input.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(input.baseMapDataUrl))s.baseMapDataUrl=input.baseMapDataUrl;if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:r.power==null||r.power===""?null:(Number.isFinite(Number(r.power))?Number(r.power):null)}));for(const field of ["phase1","phase2","missions","subs"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}return s;}
 function localKey(){return "hola-ds-builder-v1:"+$("battleDate").value+":"+$("team").value;}
 function storeLocal(){if(state)try{localStorage.setItem(localKey(),JSON.stringify(state));}catch{}}
-function mapSource(){return state?.baseMapDataUrl||"assets/ds-battlefield.svg";}
+function mapSource(){return state?.baseMapDataUrl||"assets/ds-battlefield-real.webp";}
 async function useOriginalMap(file){if(!file)return;try{const picture=await new Promise((res,rej)=>{const im=new Image(),url=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(url);res(im);};im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("No se pudo abrir la imagen."));};im.src=url;});const canvas=document.createElement("canvas");canvas.width=1200;canvas.height=850;canvas.getContext("2d").drawImage(picture,0,0,1200,850);let data=canvas.toDataURL("image/webp",.83);if(data.length>530000)data=canvas.toDataURL("image/webp",.62);if(data.length>530000)throw new Error("El mapa es demasiado grande. Prueba con un JPG o WebP más ligero.");state.baseMapDataUrl=data;mutate();notice("Mapa original incorporado a esta estrategia. Guarda el borrador para conservarlo y publícalo cuando esté listo.","success");}catch(e){notice("No se pudo usar el mapa: "+e.message,"error");}}
 function mutate(){storeLocal();renderStats();renderMap();renderValidation();renderOutputs();}
 function switchTab(next){currentTab=next;document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===next));for(const t of ["setup","roster","plan","publish"])$("tab-"+t).hidden=t!==next;window.scrollTo({top:0,behavior:"smooth"});if(next==="plan"){renderMap();}if(next==="publish"){renderValidation();renderOutputs();}}
@@ -729,7 +729,7 @@ async function createPoster(what="phase1"){
   posterType(ctx,state.battle_date+" · "+state.serverTime+(tr?" SUNUCU SAATİ":" SERVER"),38,offset+148,985,22,"#9de8f5",750);
   // The original map is 1200 × 850. Only 60 px of empty side margins are cropped.
   // Building positions remain unchanged; no names are placed outside the battlefield.
-  ctx.drawImage(img,60,0,1080,850,0,mapTop,width,mapHeight);
+  ctx.drawImage(img,img.naturalWidth*.05,0,img.naturalWidth*.90,img.naturalHeight,0,mapTop,width,mapHeight);
   ctx.fillStyle="rgba(4,19,32,.16)";ctx.fillRect(0,mapTop,width,mapHeight);
   const layout=which==="phase1"?
    {H1:{x:20,y:342,w:315},H3:{x:20,y:610,w:315},H4:{x:743,y:17,w:316},H2:{x:743,y:240,w:316},HUB:{x:743,y:614,w:316}}:
