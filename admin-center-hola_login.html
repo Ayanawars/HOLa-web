@@ -44,6 +44,7 @@
       <div class="grid">
         <a class="module" href="admin-events.html"><span class="tag">ACTIVO</span><span class="icon">📅</span><div><strong>Próximos eventos</strong><br><small>Fecha y SERVER TIME de los 4 banners</small></div></a>
         <a class="module" href="admin-members.html"><span class="tag">ACTIVO</span><span class="icon">👥</span><div><strong>Miembros</strong><br><small>Editar datos manualmente</small></div></a>
+        <a class="module" href="admin-thp.html"><span class="tag">NUEVO</span><span class="icon">⚡</span><div><strong>Actualizador THP</strong><br><small>OCR semanal de miembros · revisar y sincronizar Supabase</small></div></a>
         <a class="module" href="admin-vs.html"><span class="tag">ACTIVO</span><span class="icon">⚔️</span><div><strong>Versus</strong><br><small>Semanas, OCR y puntuaciones</small></div></a>
         <a class="module" href="ds-builder.html"><span class="tag">NUEVO</span><span class="icon">🗺️</span><div><strong>DS Strategy Builder</strong><br><small>OCR convocatoria · mapas · fases · correo y carteles · publicar</small></div></a>
         <a class="module" href="ds-scores.html"><span class="tag">ACTIVO</span><span class="icon">🏜️</span><div><strong>DS Scores</strong><br><small>OCR de resultados · scores y resultado de batalla</small></div></a>
@@ -83,6 +84,6 @@
     $('logoutTop').addEventListener('click',logout);$('logoutBtn').addEventListener('click',logout);
     const ok=await verify();if(!ok){await deny();}else{$('guard').hidden=true;$('app').hidden=false;}
   </script>
-<script src="js/admin-center-i18n.js?v=20260925-admin-10langs-v1"></script>
+<script src="js/admin-center-i18n.js?v=20260925-weekly-thp-v1"></script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HOLa · Actualizador THP</title>
+<style>
+:root{--navy:#0a2338;--deep:#071622;--gold:#d9b56d;--cream:#fcf3df;--sky:#8dd9dc;--text:#f5f2e7;--muted:#c5d4d7;--green:#77e5ac;--red:#ffa394}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(ellipse at 92% 0,#264354 0,transparent 55%),linear-gradient(165deg,#112b42,var(--deep) 68%);min-height:100vh}
+a{color:inherit}.shell{max-width:1040px;margin:auto;padding:16px 13px 88px}.back{display:inline-flex;align-items:center;text-decoration:none;color:var(--cream);border:1px solid #806c4b;background:#09263b;padding:10px 14px;border-radius:12px;font-weight:800}.hero{position:relative;overflow:hidden;margin:17px 0 15px;border:1px solid #b69758;border-radius:22px;background:linear-gradient(110deg,rgba(8,27,42,.96),rgba(27,59,72,.89)),url("assets/ds-battlefield-real.webp") center/cover;padding:23px 19px;box-shadow:0 14px 36px #030e1980}
+.hero:after{content:"";position:absolute;inset:auto -10% -12px 28%;height:30px;background:linear-gradient(90deg,transparent,#caa96a90,transparent);transform:rotate(-4deg)}.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:900}h1{font-size:clamp(27px,6vw,44px);margin:8px 0;color:var(--cream);line-height:1.1}h2{font-size:20px;margin:0 0 8px;color:var(--cream)}h3{font-size:15px;margin:0;color:var(--gold)}p{line-height:1.5}.sub{color:var(--muted);max-width:670px;font-size:14px}.panel{background:#112c40e8;border:1px solid #547074;border-radius:19px;padding:16px;margin:13px 0;box-shadow:0 7px 20px #0003}.row{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.btn{border:1px solid #d7b46c;border-radius:11px;min-height:43px;padding:10px 14px;font:inherit;font-size:13px;font-weight:850;background:#d7b46c;color:#132b3e;cursor:pointer}.btn.outline{background:#163950;color:#f7e7b8}.btn:disabled{opacity:.5;cursor:not-allowed}.file{width:100%;padding:16px;border:2px dashed #b18c55;border-radius:13px;background:#143b51;color:#f3e4bb}.file::file-selector-button{background:#dfbb77;color:#152b3f;border:0;border-radius:8px;padding:8px;margin-right:9px;font-weight:800}.tip{font-size:12px;color:var(--muted);line-height:1.6}.notice{border:1px solid #638b9c;border-radius:12px;padding:11px 12px;margin:10px 0;background:#18374a;color:#e9f4f4;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}.notice.success{border-color:#4c9e74;color:#b7f2cc}.notice.error{border-color:#ae5f5f;color:#ffcccc}.notice.warn{border-color:#cba25d;color:#ffe6b6}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:15px 0}.stat{border:1px solid #536a6b;background:#092c40;border-radius:12px;padding:11px 6px;text-align:center}.stat b{display:block;font-size:23px;color:var(--gold)}.stat span{font-size:11px;color:#d1e0dd}.results{display:grid;gap:10px}.person{border:1px solid #4b6c75;background:#102a40;border-radius:14px;padding:12px}.person.is-review{border-color:#c29b55}.person.is-ready{border-color:#468965}.person.is-skip{opacity:.8}.head{display:flex;justify-content:space-between;align-items:center;gap:8px}.name{font-weight:900;font-size:15px;color:#fdf3db;overflow-wrap:anywhere}.pill{border-radius:20px;border:1px solid #748998;padding:4px 8px;font-size:11px;font-weight:850;color:#d0e7ee;white-space:nowrap}.pill.good{border-color:#6ab885;color:#85f6b3}.pill.warn{border-color:#d9ae6c;color:#ffdc9f}.pill.muted{color:#b7c9d3}.from{font-size:11px;color:#9ebabf;margin-top:5px;overflow-wrap:anywhere}.fields{display:grid;grid-template-columns:minmax(0,1fr) 104px 104px;gap:9px;margin:12px 0 8px;align-items:end}label{font-size:11px;font-weight:850;color:#cedde0;display:block;margin-bottom:5px}select,input[type=number],input[type=text]{width:100%;min-width:0;border:1px solid #6e8792;background:#092539;color:#fff3db;border-radius:9px;padding:10px 8px;font-size:13px}input:focus,select:focus{outline:2px solid #d9b56d;outline-offset:1px}.current{font-weight:800;color:#87d7ee;font-size:13px;padding:10px 0}.confirm{display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:8px 0;color:#f6e6c2;font-size:12px;line-height:1.5}.confirm input{width:18px;height:18px;accent-color:#d8b76c;flex-shrink:0}.details{margin-top:12px;color:#d2e0d8}.details summary{cursor:pointer;font-weight:800;font-size:13px}.details p{font-size:12px;color:#c6d5d4}.results-empty{text-align:center;padding:28px 12px;color:#b7c9d3}.checklist{border:1px solid #b69a64;padding:12px;border-radius:13px;background:#193748}.results-note{font-size:12px;color:#d3e1df}.footer{font-size:12px;color:#a7bcbb;margin-top:17px}.gate{max-width:600px;margin:70px auto}.gate a{color:#f0cc84}#app[hidden],#gate[hidden],[hidden]{display:none!important}@media(max-width:570px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.fields{grid-template-columns:minmax(0,1fr) 1fr}.fields .member-field{grid-column:1/-1}.panel{padding:13px}.hero{padding:20px 15px}.shell{padding:12px 10px 80px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<a class="back" href="admin-center-hola_login.html" aria-label="Volver al Centro de Administración">‹ &nbsp; Centro de Administración</a>
+<div id="gate" class="panel gate" role="status">Comprobando acceso R4/R5…</div>
+<main id="app" hidden>
+<header class="hero"><div class="eyebrow">HOLa · Heroes of Last Area · S3</div><h1>Actualizador THP</h1><p class="sub">Un lunes, todas las capturas. Solo nombres y THP: sin equipos, plazas ni suplentes. Compara el poder con Supabase, revisa las lecturas y guarda únicamente las subidas confirmadas.</p><div id="officer" class="eyebrow">ACCESO R4/R5</div></header>
+<section class="panel" aria-labelledby="scanTitle">
+<h2 id="scanTitle">01 · Capturas del listado de miembros</h2>
+<p class="tip">Usa el listado que ves como R4/R5 en Desert Storm. Sube capturas con nombres y poderes visibles; se admiten capturas solapadas. Las imágenes no se guardan en Supabase.</p>
+<input id="screenshots" class="file" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-label="Capturas del listado de miembros">
+<div class="row" style="margin-top:12px"><button class="btn" id="scan" type="button">⌕ Leer nombres y THP</button><button class="btn outline" type="button" id="reload">↻ Recargar fichas de Supabase</button></div>
+<div class="tip" id="selected">Ninguna captura seleccionada.</div>
+<div class="notice" id="scanStatus" role="status" aria-live="polite">Primero sube las capturas; no se modificará ningún THP hasta que revises y confirmes.</div>
+</section>
+<section class="panel" id="review" aria-labelledby="reviewTitle" hidden>
+<h2 id="reviewTitle">02 · Revisar y cotejar</h2>
+<p class="tip">El nombre debe coincidir con un miembro de HOLa. Corrige nombres o cifras dudosos y marca únicamente los cambios que quieras guardar. Si la captura muestra menos THP que Supabase, se conserva el mayor.</p>
+<div class="stats"><div class="stat"><b id="detected">0</b><span>Lecturas</span></div><div class="stat"><b id="matched">0</b><span>Miembros cotejados</span></div><div class="stat"><b id="updates">0</b><span>Posibles subidas</span></div><div class="stat"><b id="needsReview">0</b><span>Por revisar</span></div></div>
+<div class="row" style="margin-bottom:12px"><button class="btn outline" id="selectSafe" type="button">✓ Marcar aumentos fiables</button><button class="btn outline" id="unselectAll" type="button">Desmarcar todo</button></div>
+<div id="results" class="results"></div>
+<details class="details" id="missingDetails"><summary id="missingSummary">Miembros no encontrados en las capturas</summary><p id="missingList"></p></details>
+<div class="checklist" style="margin-top:14px"><label class="confirm"><input type="checkbox" id="confirmChanges"><span>He revisado los nombres y los aumentos seleccionados. Confirmo que quiero actualizar estas fichas de HOLa en Supabase.</span></label>
+<div class="row"><button class="btn" id="save" type="button" disabled>↑ Actualizar THP en Supabase</button><span id="saveCount" class="results-note"></span></div></div>
+<div class="notice" id="saveStatus" role="status" aria-live="polite">La lectura y la revisión no cambian Supabase.</div>
+</section>
+<p class="footer">El THP se guarda en players.thp. Los valores inferiores, repetidos o que no se hayan confirmado nunca reducen el poder registrado. Solo una cuenta R4/R5 autorizada puede guardar cambios.</p>
+</main>
+</div>
+<script type="module" src="js/admin-thp.js?v=20260925-weekly-v1"></script>
+</body>
+</html>

@@ -2762,47 +2762,28 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     </label>
   </section>
 
-<section class="thp-card" data-survey-step="2">
-  <div class="section-kicker" data-i18n="thpSection">TOTAL HERO POWER (THP)</div>
-  <h2 data-i18n="thpTitle">THP DEL JUGADOR</h2>
+<section class="thp-card survey-identity-card" data-survey-step="2">
+  <div class="section-kicker" id="verificationSectionKicker">VERIFICACIÓN DEL JUGADOR</div>
+  <h2 id="verificationSectionTitle">VERIFICAR NOMBRE Y SQUADS</h2>
   <div class="thp-line"></div>
-
   <div id="weeklyAiCard" class="weekly-ai-card">
-    <div class="weekly-ai-title" data-i18n="weeklyAiTitle">DETECTAR THP + SQUADS CON IA</div>
-    <div class="weekly-ai-subtitle" data-i18n="weeklyAiText">SUBE LAS DOS CAPTURAS: 1) THP  2) SQUADS. SOLO UNA PETICIÓN A LA IA POR SEMANA.</div>
+    <div class="weekly-ai-title" data-i18n="weeklyAiTitle">VERIFICAR PERFIL Y SQUADS CON IA</div>
+    <div class="weekly-ai-subtitle" data-i18n="weeklyAiText">Sube una captura de tu perfil con el nombre visible y otra de tus squads. No necesitamos tu THP.</div>
     <div class="weekly-ai-file-grid">
-      <div class="weekly-ai-file" id="weeklyAiThpField">
-        <input id="weeklyAiThpImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Seleccionar captura de THP" onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this,'thp');}">
-        <span id="weeklyAiThpLabel">📸 1 · CAPTURA THP</span>
+      <div class="weekly-ai-file" id="weeklyAiProfileField">
+        <input id="weeklyAiProfileImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Captura del perfil con nombre visible" onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this,'profile');}">
+        <span id="weeklyAiProfileLabel">📸 1 · CAPTURA DEL PERFIL</span>
       </div>
       <div class="weekly-ai-file" id="weeklyAiSquadField">
-        <input id="weeklyAiSquadImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Seleccionar captura de squads" onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this,'squad');}">
-        <span id="weeklyAiSquadLabel">📸 2 · CAPTURA SQUADS</span>
+        <input id="weeklyAiSquadImage" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Captura de squads" onchange="if(window.holaWeeklyAiPick){window.holaWeeklyAiPick(this,'squad');}">
+        <span id="weeklyAiSquadLabel">📸 2 · CAPTURA DE SQUADS</span>
       </div>
     </div>
     <button type="button" class="thp-ai-btn weekly-ai-detect" id="weeklyAiDetectBtn" aria-disabled="false" onclick="if(window.holaWeeklyAiRun){window.holaWeeklyAiRun();}else if(window.HOLaShowBrowserWarning){window.HOLaShowBrowserWarning();}">
-      <span class="thp-ai-icon">⌾</span><span data-i18n="weeklyAiDetect">DETECTAR LAS DOS CON IA</span>
+      <span class="thp-ai-icon">⌾</span><span data-i18n="weeklyAiDetect">DETECTAR Y VERIFICAR</span>
     </button>
     <div class="thp-ai-status" id="weeklyAiStatus" aria-live="polite"></div>
   </div>
-
-  <input id="thpCaptureImage" type="file" accept="image/*" hidden>
-  <button type="button" class="thp-ai-btn" id="detectThpBtn">
-    <span class="thp-ai-icon">⌾</span>
-    <span id="detectThpBtnText" data-i18n="detectThp">DETECTAR THP CON IA</span>
-  </button>
-  <div class="thp-ai-status" id="thpAiStatus" aria-live="polite"></div>
-
-  <div class="thp-input-wrap">
-    <span class="thp-lock-icon" aria-hidden="true">✎</span>
-    <input id="playerThp" type="text" inputmode="decimal" autocomplete="off"
-           placeholder="Introduce o corrige el THP" data-i18n-placeholder="thpInputPlaceholder" aria-label="THP del jugador">
-  </div>
-
-  <button type="button" class="thp-confirm-btn" id="confirmThpBtn">
-    <span class="thp-check">✓</span>
-    <span data-i18n="confirmThp">CONFIRMAR THP</span>
-  </button>
 </section>
 
 <div class="squad-detection-card" id="allSquadsOcrBox" data-survey-step="3">
@@ -4328,28 +4309,6 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 
-<div class="thp-confirm-modal" id="thpConfirmModal" aria-hidden="true">
-  <div class="thp-confirm-box" role="dialog" aria-modal="true" aria-labelledby="thpConfirmTitle">
-    <div class="thp-warning">⚠️</div>
-    <h3 id="thpConfirmTitle" data-i18n="confirmTitle">CONFIRMA TU THP</h3>
-    <div class="thp-confirm-subtitle" data-i18n="confirmSubtitle">Has introducido:</div>
-
-    <div class="thp-confirm-value" id="thpConfirmValue">0,00 M</div>
-
-    <div class="thp-confirm-help">
-      <strong data-i18n="confirmHelpStrong1">ASEGÚRATE DE QUE ES EL PODER TOTAL DEL HÉROE</strong> <span data-i18n="confirmHelpMid">que aparece en</span>
-      <strong data-i18n="confirmHelpStrong2">Rankings → Poder Total del Héroe.</strong>
-      <span data-i18n="confirmHelpEnd">No introduzcas tu poder total de jugador.</span>
-    </div>
-
-    <div class="thp-confirm-actions">
-      <button type="button" id="thpEditBtn" class="thp-edit-btn" data-i18n="edit">EDITAR</button>
-      <button type="button" id="thpYesBtn" class="thp-yes-btn" data-i18n="yesConfirm">SÍ, CONFIRMAR</button>
-    </div>
-  </div>
-</div>
-
-
 <script id="squad-detection-script">
 function squadAIRateLimitUntil(message){const m=String(message||"").match(/try again in\s+(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?/i);if(!m)return Date.now()+60*60*1000;const ms=((Number(m[1]||0)*3600)+(Number(m[2]||0)*60)+Number(m[3]||0))*1000;return Date.now()+Math.max(ms,60*1000)}
 function squadSetAIRateLimited(until){try{localStorage.setItem("hola_ai_rate_limit_until",String(until))}catch{};document.querySelectorAll("#detectThpBtn,#scanSquadPowersAI").forEach(btn=>{btn.disabled=true;btn.classList.remove("ai-scanning");btn.setAttribute("aria-disabled","true")});const ts=document.getElementById("thpAiStatus"),ss=document.getElementById("allSquadsOcrStatus");if(ts){ts.className="thp-ai-status is-error";ts.dataset.i18n="aiRateLimit";ts.textContent=(window.__surveyTranslations?.[window.__surveyLanguage]?.aiRateLimit)||"⚠ LÍMITE DE IA ALCANZADO. INTÉNTALO MÁS TARDE."}if(ss){ss.dataset.i18n="aiRateLimit";ss.textContent=(window.__surveyTranslations?.[window.__surveyLanguage]?.aiRateLimit)||"⚠ LÍMITE DE IA ALCANZADO. INTÉNTALO MÁS TARDE."}}
@@ -4373,6 +4332,10 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     pl:['GRACZ','AWATAR','THP','SQUADY','POSTĘP','PROFIL OSOBISTY','SPRAWDŹ I ZAPISZ'],
     uk:['ГРАВЕЦЬ','АВАТАР','THP','SQUADS','ПРОГРЕС','ОСОБИСТИЙ ПРОФІЛЬ','ПЕРЕВІРИТИ Й ЗБЕРЕГТИ']
   };
+  for(const [code,label] of Object.entries({"es":"VERIFICACIÓN","en":"VERIFY","fr":"VÉRIFICATION","de":"PRÜFUNG","ro":"VERIFICARE","pt":"VERIFICAÇÃO","uk":"ПЕРЕВІРКА","it":"VERIFICA","pl":"WERYFIKACJA","tr":"DOĞRULAMA"})){
+    if(!STEP_NAMES[code])STEP_NAMES[code]=["PLAYER","AVATAR",label,"SQUADS","PROGRESS","PERSONAL PROFILE","REVIEW & SAVE"];
+    else STEP_NAMES[code][2]=label;
+  }
   const TXT={
     tr:{"step":"ADIM {n} / {t}","prev":"ÖNCEKİ","next":"DEVAM ET","missing":"Devam etmek için bu adımdaki zorunlu bilgileri tamamla.","name":"HOLa üye listesinden oyuncu adını seç.","flag":"Bayrağını seç.","avatar":"Devam etmek için avatar ekle.","thp":"Ekran görüntüsünün sana ait olduğunu doğrulamak için THP ve birliklerini yapay zekâ ile tespit et.","squads":"3 birliğin gücünü ve türünü doldur.","progress":"T10, karargâh seviyesi, meslek ve Overlord bilgilerini doldur.","all":"Zorunlu bilgiler eksik. Seni ilk eksik adıma götürüyorum.","review":"BİLGİLERİNİ KONTROL ET","optional":"Hakkımda ve efsanevi söz isteğe bağlıdır.","yes":"Evet","no":"Hayır","player":"Oyuncu","flagLabel":"Bayrak","avatarLabel":"Avatar","thpLabel":"THP","squadLabel":"Birlikler","hqLabel":"Karargâh","t10Label":"T10","professionLabel":"Meslek","supremeLabel":"Overlord"},
     es:{step:'PASO {n} DE {t}',prev:'ANTERIOR',next:'CONTINUAR',missing:'Completa los datos obligatorios de este paso para continuar.',name:'Selecciona tu nombre de la lista de miembros HOLa.',flag:'Selecciona tu bandera.',avatar:'Añade tu avatar para continuar.',thp:'Detecta THP + Squads con IA para verificar que la captura pertenece a tu jugador.',squads:'Completa el poder y el tipo de los 3 squads.',progress:'Completa T10, nivel de HQ, profesión y Señor Supremo.',all:'Faltan datos obligatorios. Te llevo al primer paso incompleto.',review:'REVISA TUS DATOS',optional:'Sobre mí y Frase épica son opcionales.',yes:'Sí',no:'No',player:'Jugador',flagLabel:'Bandera',avatarLabel:'Avatar',thpLabel:'THP',squadLabel:'Squads',hqLabel:'HQ',t10Label:'T10',professionLabel:'Profesión',supremeLabel:'Señor Supremo'},
@@ -4385,6 +4348,7 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     pl:{step:'KROK {n} Z {t}',prev:'WSTECZ',next:'KONTYNUUJ',missing:'Uzupełnij wymagane dane w tym kroku.',name:'Wybierz swoją nazwę z listy członków HOLa.',flag:'Wybierz flagę.',avatar:'Dodaj awatar, aby kontynuować.',thp:'Wykryj THP + Squads za pomocą AI, aby sprawdzić, czy zrzut należy do Twojego gracza.',squads:'Uzupełnij siłę i typ 3 squadów.',progress:'Uzupełnij T10, poziom HQ, profesję i Najwyższego Władcę.',all:'Brakuje wymaganych danych. Przechodzę do pierwszego niepełnego kroku.',review:'SPRAWDŹ SWOJE DANE',optional:'O mnie i Epicki cytat są opcjonalne.',yes:'Tak',no:'Nie',player:'Gracz',flagLabel:'Flaga',avatarLabel:'Awatar',thpLabel:'THP',squadLabel:'Squady',hqLabel:'HQ',t10Label:'T10',professionLabel:'Profesja',supremeLabel:'Najwyższy Władca'},
     uk:{step:'КРОК {n} З {t}',prev:'НАЗАД',next:'ПРОДОВЖИТИ',missing:'Заповніть обов’язкові дані цього кроку.',name:'Виберіть своє ім’я зі списку учасників HOLa.',flag:'Виберіть прапор.',avatar:'Додайте аватар, щоб продовжити.',thp:'Виявіть THP + Squads за допомогою ШІ, щоб перевірити, що знімок належить вашому гравцеві.',squads:'Заповніть силу й тип усіх 3 squads.',progress:'Заповніть T10, рівень HQ, професію та Верховного Лорда.',all:'Бракує обов’язкових даних. Перехід до першого незавершеного кроку.',review:'ПЕРЕВІРТЕ СВОЇ ДАНІ',optional:'Про мене та Епічна фраза необов’язкові.',yes:'Так',no:'Ні',player:'Гравець',flagLabel:'Прапор',avatarLabel:'Аватар',thpLabel:'THP',squadLabel:'Squads',hqLabel:'HQ',t10Label:'T10',professionLabel:'Професія',supremeLabel:'Верховний Лорд'}
   };
+  for(const [code,value] of Object.entries({"es":"Sube una captura de tu perfil con el nombre visible y otra de tus squads para verificar la identidad.","en":"Upload a profile screenshot showing your name and a squads screenshot to verify your identity.","fr":"Ajoute une capture de ton profil avec ton nom et une capture de tes squads pour vérifier ton identité.","de":"Lade einen Profilscreenshot mit deinem Namen und einen Squad-Screenshot zur Bestätigung hoch.","ro":"Încarcă o captură a profilului cu numele vizibil și una cu squads pentru verificare.","pt":"Carrega uma captura do perfil com o nome e outra dos squads para verificar a identidade.","uk":"Завантаж знімок профілю з іменем та знімок squads для перевірки.","it":"Carica una schermata del profilo con il nome e una degli squad per la verifica.","pl":"Prześlij zrzut profilu z nazwą i zrzut squadów, aby potwierdzić tożsamość.","tr":"Kimliğini doğrulamak için adının göründüğü profil ve birlik ekran görüntülerini yükle."}))TXT[code].thp=value;
   const q=s=>document.querySelector(s), qa=s=>Array.from(document.querySelectorAll(s));
   const val=id=>String(document.getElementById(id)?.value||'').trim();
   const lang=()=>window.__surveyLanguage||document.documentElement.lang||'es';
@@ -4416,11 +4380,8 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     }else if(index===1){
       if(!avatarOk()){ok=false;msg=tt('avatar');targets.push(q('#avatarUpload'));}
     }else if(index===2){
-      if(!validPower(val('playerThp'))){ok=false;msg=tt('thp');targets.push(q('#playerThp'));}
-      // The THP number is not proof of identity. The weekly AI step must
-      // have issued an unexpired verification token before continuing.
       if(!window.HOLaSurveyVerification?.get(val('playerName'))?.token){
-        ok=false;msg=tt('thp');targets.push(q('#weeklyAiSelectBtn'));
+        ok=false;msg=tt('thp');targets.push(q('#weeklyAiProfileImage'));
       }
     }else if(index===3){
       const allowed=new Set(['Tank','Aircraft','Missile']);
@@ -4454,7 +4415,7 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     if(target && typeof target.focus==='function' && !target.matches?.('[readonly]')){try{target.focus({preventScroll:true})}catch(_){}}
   }
 
-  const IDENTITY_REVIEW={"es":["VERIFICACIÓN IA","Identidad verificada","Falta verificar las dos capturas"],"en":["AI VERIFICATION","Identity verified","Both screenshots must be verified"],"tr":["YAPAY ZEKÂ DOĞRULAMASI","Kimlik doğrulandı","İki ekran görüntüsü henüz doğrulanmadı"],"fr":["VÉRIFICATION IA","Identité vérifiée","Les deux captures doivent être vérifiées"],"de":["KI-VERIFIZIERUNG","Identität bestätigt","Beide Screenshots müssen bestätigt werden"],"it":["VERIFICA IA","Identità verificata","Verifica entrambe le schermate"],"pt":["VERIFICAÇÃO IA","Identidade verificada","Verifica as duas capturas"],"ro":["VERIFICARE AI","Identitate verificată","Verifică ambele capturi"],"pl":["WERYFIKACJA AI","Tożsamość potwierdzona","Zweryfikuj oba zrzuty ekranu"],"uk":["ПЕРЕВІРКА ШІ","Особу підтверджено","Підтвердьте обидва знімки екрана"]};
+  const IDENTITY_REVIEW={"es":["VERIFICACIÓN IA","Nombre verificado","Verifica la captura de perfil y squads"],"en":["AI VERIFICATION","Name verified","Verify profile and squads screenshots"],"fr":["VÉRIFICATION IA","Nom vérifié","Vérifie le profil et les squads"],"de":["KI-VERIFIZIERUNG","Name bestätigt","Profil und Squads überprüfen"],"ro":["VERIFICARE AI","Nume verificat","Verifică profilul și squads"],"pt":["VERIFICAÇÃO IA","Nome verificado","Verifica perfil e squads"],"uk":["ПЕРЕВІРКА ШІ","Ім’я підтверджено","Перевір профіль і squads"],"it":["VERIFICA IA","Nome verificato","Verifica profilo e squad"],"pl":["WERYFIKACJA AI","Nazwa potwierdzona","Zweryfikuj profil i squady"],"tr":["YAPAY ZEKÂ DOĞRULAMASI","Ad doğrulandı","Profil ve birlik görüntülerini doğrula"]};
   function renderReview(){
     const grid=q('#surveyReviewGrid'); if(!grid)return;
     const yn=v=>v==='yes'?tt('yes'):v==='no'?tt('no'):'—';
@@ -4463,7 +4424,7 @@ document.addEventListener("DOMContentLoaded",()=>{const input=document.getElemen
     const identityLabels=IDENTITY_REVIEW[lang()]||IDENTITY_REVIEW.es;
     const items=[
       [tt('player'),val('playerName')||'—'],[tt('flagLabel'),q('#playerFlag')?.selectedOptions?.[0]?.textContent?.trim()||val('playerFlag')||'—'],
-      [tt('avatarLabel'),avatarOk()?'OK':'—'],[tt('thpLabel'),val('playerThp')||'—'],
+      [tt('avatarLabel'),avatarOk()?'OK':'—'],
       [identityLabels[0],identityOk?identityLabels[1]:identityLabels[2],identityOk],
       [tt('squadLabel'),[1,2,3].map(i=>`${val(`s${i}type`)} ${val(`s${i}power`)}`).join(' · ')],
       [tt('hqLabel'),val('hqLevelProgress')||'—'],[tt('t10Label'),yn(checked('t10'))],
@@ -4560,6 +4521,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pl:{verify:"Najpierw zweryfikuj nazwę za pomocą zrzutów THP + Squads.",expired:"Weryfikacja wygasła. Zweryfikuj nazwę ponownie za pomocą obu zrzutów.",incomplete:"Brakuje wymaganych danych. Uzupełnij wskazany krok przed zapisaniem.",error:"Nie udało się zapisać ankiety. Spróbuj ponownie."},
     uk:{verify:"Спочатку підтвердьте ім’я за допомогою знімків THP + Squads.",expired:"Термін перевірки минув. Підтвердьте ім’я знову за допомогою обох знімків.",incomplete:"Бракує обов’язкових даних. Завершіть указаний крок перед збереженням.",error:"Не вдалося зберегти опитування. Спробуйте ще раз."}
   };
+  for(const [code,[verify,expired]] of Object.entries({"es":["Verifica tu nombre con las capturas de perfil y squads.","La verificación ha caducado. Repite las capturas de perfil y squads."],"en":["Verify your name with your profile and squads screenshots.","Verification expired. Upload your profile and squads screenshots again."],"fr":["Vérifie ton nom avec les captures de profil et de squads.","La vérification a expiré. Recommence avec le profil et les squads."],"de":["Bestätige deinen Namen mit Profil- und Squad-Screenshots.","Die Bestätigung ist abgelaufen. Lade Profil und Squads erneut hoch."],"ro":["Verifică numele cu capturile de profil și squads.","Verificarea a expirat. Reîncarcă profilul și squads."],"pt":["Verifica o teu nome com as capturas de perfil e squads.","A verificação expirou. Repete as capturas de perfil e squads."],"uk":["Підтвердьте ім’я знімками профілю та squads.","Термін перевірки минув. Повторіть знімки профілю та squads."],"it":["Verifica il nome con le catture del profilo e delle squad.","La verifica è scaduta. Ripeti le catture di profilo e squad."],"pl":["Potwierdź nazwę zrzutami profilu i squadów.","Weryfikacja wygasła. Prześlij ponownie profil i squady."],"tr":["Adını profil ve birlik ekran görüntüleriyle doğrula.","Doğrulama süresi doldu. Profil ve birlik görüntülerini tekrar yükle."]}))Object.assign(M[code],{verify,expired});
   const msg=k=>(M[window.__surveyLanguage||"es"]||M.es)[k];
 
   btn.addEventListener("click",async()=>{
@@ -4579,7 +4541,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const profile={
       flag:clean(document.getElementById("playerFlag")?.value),
       avatar:clean(document.getElementById("avatarPreview")?.src),
-      thp:clean(document.getElementById("playerThp")?.value),
       hq_level:Number(clean(document.getElementById("hqLevelProgress")?.value)),
       profession,
       squad1_power:clean(document.getElementById("s1power")?.value),squad1_type:squadTypes[0],
@@ -4671,6 +4632,9 @@ document.addEventListener("DOMContentLoaded", () => {
   pl:{title:"WYKRYJ THP + SQUADS ZA POMOCĄ AI",text:"WYBIERZ OBA ZRZUTY: 1) THP  2) SQUADS. ZRZUT THP WERYFIKUJE TAKŻE TWOJĄ NAZWĘ. JEDNO WYKRYCIE AI NA TYDZIEŃ.",select:"WYBIERZ 2 ZRZUTY",detect:"WYKRYJ + ZWERYFIKUJ",selected:"✓ 2 ZRZUTY WYBRANE",working:"✦ AI ANALIZUJE I WERYFIKUJE TWOJĄ NAZWĘ…",verified:"✓ TOŻSAMOŚĆ ZWERYFIKOWANA: {name} · THP I 3 SQUADS WYKRYTE",already:"✓ DANE AI Z TEGO TYGODNIA SĄ ZAPISANE I TA PRZEGLĄDARKA JEST ZWERYFIKOWANA.",alreadyNo:"✓ DANE Z TEGO TYGODNIA SĄ WCZYTANE. TA PRZEGLĄDARKA NIE MA SESJI TOŻSAMOŚCI. WYBIERZ PONOWNIE 2 ZRZUTY I NACIŚNIJ WYKRYJ + ZWERYFIKUJ. DANE TYGODNIOWE NIE ZOSTANĄ ZMIENIONE.",need:"Wybierz dokładnie 2 zrzuty: najpierw THP, potem SQUADS.",noName:"Najpierw wybierz swoją nazwę.",mismatch:"⚠ NAZWA NIE PASUJE. Wybrano: {selected} · Zrzut: {detected}. Użyj własnego zrzutu THP lub wybierz właściwego gracza.",unreadable:"⚠ NIE UDAŁO SIĘ ODCZYTAĆ NAZWY. Użyj pełnego, nieprzyciętego zrzutu THP z widocznym zielonym wierszem.",rateLimit:"⚠ LIMIT AI ZOSTAŁ OSIĄGNIĘTY. SPRÓBUJ PÓŹNIEJ.",genericError:"Wykrywanie AI nie powiodło się. Spróbuj ponownie."},
   uk:{title:"ВИЯВИТИ THP + SQUADS ЗА ДОПОМОГОЮ ШІ",text:"ВИБЕРІТЬ ОБИДВА ЗНІМКИ: 1) THP  2) SQUADS. ЗНІМОК THP ТАКОЖ ПІДТВЕРДЖУЄ ВАШЕ ІМ’Я. ОДНА ШІ-ДЕТЕКЦІЯ НА ТИЖДЕНЬ.",select:"ВИБРАТИ 2 ЗНІМКИ",detect:"ВИЯВИТИ + ПЕРЕВІРИТИ",selected:"✓ 2 ЗНІМКИ ВИБРАНО",working:"✦ ШІ АНАЛІЗУЄ ТА ПЕРЕВІРЯЄ ВАШЕ ІМ’Я…",verified:"✓ ОСОБУ ПІДТВЕРДЖЕНО: {name} · THP І 3 SQUADS ВИЯВЛЕНО",already:"✓ ДАНІ ШІ ЦЬОГО ТИЖНЯ ЗБЕРЕЖЕНО І ЦЕЙ БРАУЗЕР ПІДТВЕРДЖЕНО.",alreadyNo:"✓ ДАНІ ЦЬОГО ТИЖНЯ ЗАВАНТАЖЕНО. ЦЕЙ БРАУЗЕР НЕ МАЄ СЕСІЇ ПІДТВЕРДЖЕННЯ ОСОБИ. ВИБЕРІТЬ ЗНОВУ 2 ЗНІМКИ ТА НАТИСНІТЬ ВИЯВИТИ + ПЕРЕВІРИТИ. ТИЖНЕВІ ДАНІ НЕ БУДУТЬ ЗМІНЕНІ.",need:"Виберіть рівно 2 знімки: спочатку THP, потім SQUADS.",noName:"Спочатку виберіть своє ім’я.",mismatch:"⚠ ІМ’Я НЕ ЗБІГАЄТЬСЯ. Вибрано: {selected} · Знімок: {detected}. Використайте власний знімок THP або виберіть правильного гравця.",unreadable:"⚠ НЕ ВДАЛОСЯ ПРОЧИТАТИ ІМ’Я. Використайте повний, необрізаний знімок THP з видимим зеленим рядком.",rateLimit:"⚠ ЛІМІТ ШІ ВИЧЕРПАНО. СПРОБУЙТЕ ПІЗНІШЕ.",genericError:"Не вдалося виконати виявлення ШІ. Спробуйте ще раз."}
  };
+ const profileSurveyCopy={"es":{"title":"VERIFICAR PERFIL + SQUADS CON IA","text":"Sube una captura de tu PERFIL donde se vea tu nombre y otra de tus SQUADS. No hace falta capturar el THP.","selected":"✓ PERFIL Y SQUADS SELECCIONADOS","working":"✦ VERIFICANDO TU NOMBRE Y SQUADS…","verified":"✓ NOMBRE VERIFICADO: {name} · 3 SQUADS DETECTADOS","already":"✓ SQUADS SEMANALES CARGADOS. NOMBRE VERIFICADO.","alreadyNo":"✓ SQUADS SEMANALES CARGADOS. FALTA VERIFICAR ESTA SESIÓN: SUBE PERFIL Y SQUADS DE NUEVO.","need":"Selecciona tu PERFIL con nombre visible y tus SQUADS.","mismatch":"⚠ EL NOMBRE NO COINCIDE. Seleccionado: {selected} · Captura: {detected}. Sube tu propio perfil.","unreadable":"⚠ TU NOMBRE NO SE LEE EN EL PERFIL. Sube una captura completa donde aparezca."},"en":{"title":"VERIFY PROFILE + SQUADS WITH AI","text":"Upload a PROFILE screenshot showing your name and a SQUADS screenshot. No THP screenshot is needed.","selected":"✓ PROFILE AND SQUADS SELECTED","working":"✦ VERIFYING NAME AND SQUADS…","verified":"✓ NAME VERIFIED: {name} · 3 SQUADS DETECTED","already":"✓ WEEKLY SQUADS LOADED AND NAME VERIFIED.","alreadyNo":"✓ WEEKLY SQUADS LOADED. THIS SESSION NEEDS VERIFICATION: UPLOAD PROFILE AND SQUADS AGAIN.","need":"Select your PROFILE showing your name and your SQUADS.","mismatch":"⚠ NAME MISMATCH. Selected: {selected} · Screenshot: {detected}. Upload your own profile.","unreadable":"⚠ NAME UNREADABLE IN PROFILE. Upload a complete screenshot showing your name."},"fr":{"title":"VÉRIFIER PROFIL + SQUADS AVEC IA","text":"Ajoute une capture de ton PROFIL avec ton nom et une capture de tes SQUADS. Pas de capture THP.","selected":"✓ PROFIL ET SQUADS SÉLECTIONNÉS","working":"✦ VÉRIFICATION DU NOM ET DES SQUADS…","verified":"✓ NOM VÉRIFIÉ : {name} · 3 SQUADS DÉTECTÉS","already":"✓ SQUADS DE LA SEMAINE CHARGÉS. NOM VÉRIFIÉ.","alreadyNo":"✓ SQUADS CHARGÉS. CETTE SESSION DOIT ÊTRE VÉRIFIÉE : AJOUTE PROFIL ET SQUADS.","need":"Sélectionne ton PROFIL montrant ton nom et tes SQUADS.","mismatch":"⚠ LE NOM NE CORRESPOND PAS. Choisi : {selected} · Capture : {detected}. Utilise ton profil.","unreadable":"⚠ NOM ILLISIBLE SUR LE PROFIL. Ajoute une capture complète."},"de":{"title":"PROFIL + SQUADS MIT KI BESTÄTIGEN","text":"Lade dein PROFIL mit sichtbarem Namen und deine SQUADS hoch. Kein THP-Screenshot nötig.","selected":"✓ PROFIL UND SQUADS GEWÄHLT","working":"✦ NAME UND SQUADS WERDEN GEPRÜFT…","verified":"✓ NAME BESTÄTIGT: {name} · 3 SQUADS ERKANNT","already":"✓ WÖCHENTLICHE SQUADS GELADEN. NAME BESTÄTIGT.","alreadyNo":"✓ SQUADS GELADEN. DIESE SITZUNG MUSS VERIFIZIERT WERDEN: PROFIL UND SQUADS ERNEUT HOCHLADEN.","need":"Wähle dein PROFIL mit Namen und deine SQUADS.","mismatch":"⚠ NAME STIMMT NICHT ÜBEREIN. Gewählt: {selected} · Bild: {detected}. Lade dein eigenes Profil hoch.","unreadable":"⚠ NAME IM PROFIL NICHT LESBAR. Vollständigen Screenshot hochladen."},"ro":{"title":"VERIFICĂ PROFILUL + SQUADS CU AI","text":"Încarcă PROFILUL cu numele vizibil și captura SQUADS. Nu este necesară captura THP.","selected":"✓ PROFIL ȘI SQUADS SELECTATE","working":"✦ SE VERIFICĂ NUMELE ȘI SQUADS…","verified":"✓ NUME VERIFICAT: {name} · 3 SQUADS DETECTATE","already":"✓ SQUADS SĂPTĂMÂNALE ÎNCĂRCATE. NUME VERIFICAT.","alreadyNo":"✓ SQUADS ÎNCĂRCATE. SESIUNEA NECESITĂ VERIFICARE: REÎNCARCĂ PROFIL ȘI SQUADS.","need":"Selectează PROFILUL cu numele tău și SQUADS.","mismatch":"⚠ NUMELE NU CORESPUNDE. Selectat: {selected} · Captură: {detected}. Încarcă propriul profil.","unreadable":"⚠ NUMELE NU SE POATE CITI PE PROFIL. Încarcă o captură completă."},"pt":{"title":"VERIFICAR PERFIL + SQUADS COM IA","text":"Carrega uma captura do teu PERFIL com o nome e outra dos SQUADS. Não precisas de captura THP.","selected":"✓ PERFIL E SQUADS SELECIONADOS","working":"✦ A VERIFICAR NOME E SQUADS…","verified":"✓ NOME VERIFICADO: {name} · 3 SQUADS DETETADOS","already":"✓ SQUADS SEMANAIS CARREGADOS. NOME VERIFICADO.","alreadyNo":"✓ SQUADS CARREGADOS. ESTA SESSÃO EXIGE VERIFICAÇÃO: ENVIA PERFIL E SQUADS NOVAMENTE.","need":"Seleciona o PERFIL com o teu nome e os SQUADS.","mismatch":"⚠ NOME NÃO CORRESPONDE. Selecionado: {selected} · Captura: {detected}. Envia o teu perfil.","unreadable":"⚠ NOME ILEGÍVEL NO PERFIL. Envia uma captura completa."},"uk":{"title":"ПЕРЕВІРКА ПРОФІЛЮ + SQUADS","text":"Завантаж ПРОФІЛЬ, де видно твоє ім’я, і знімок SQUADS. Знімок THP не потрібен.","selected":"✓ ПРОФІЛЬ І SQUADS ВИБРАНІ","working":"✦ ПЕРЕВІРКА ІМЕНІ ТА SQUADS…","verified":"✓ ІМ’Я ПІДТВЕРДЖЕНО: {name} · 3 SQUADS РОЗПІЗНАНО","already":"✓ ЩОТИЖНЕВІ SQUADS ЗАВАНТАЖЕНО. ІМ’Я ПІДТВЕРДЖЕНО.","alreadyNo":"✓ SQUADS ЗАВАНТАЖЕНО. ДЛЯ ЦЬОГО СЕАНСУ ПОВТОРИ ЗНІМКИ ПРОФІЛЮ ТА SQUADS.","need":"Вибери ПРОФІЛЬ з іменем та SQUADS.","mismatch":"⚠ ІМ’Я НЕ ЗБІГАЄТЬСЯ. Вибрано: {selected} · Знімок: {detected}. Завантаж свій профіль.","unreadable":"⚠ ІМ’Я НА ПРОФІЛІ НЕ ЧИТАЄТЬСЯ. Завантаж повний знімок."},"it":{"title":"VERIFICA PROFILO + SQUAD CON IA","text":"Carica il PROFILO con il tuo nome e la schermata SQUAD. Non serve la cattura THP.","selected":"✓ PROFILO E SQUAD SELEZIONATI","working":"✦ VERIFICA NOME E SQUAD…","verified":"✓ NOME VERIFICATO: {name} · 3 SQUAD RILEVATI","already":"✓ SQUAD SETTIMANALI CARICATI. NOME VERIFICATO.","alreadyNo":"✓ SQUAD CARICATI. QUESTA SESSIONE RICHIEDE VERIFICA: RICARICA PROFILO E SQUAD.","need":"Seleziona il PROFILO con il nome e gli SQUAD.","mismatch":"⚠ IL NOME NON CORRISPONDE. Scelto: {selected} · Cattura: {detected}. Carica il tuo profilo.","unreadable":"⚠ NOME ILLEGGIBILE NEL PROFILO. Carica una schermata completa."},"pl":{"title":"WERYFIKUJ PROFIL + SQUADY Z AI","text":"Prześlij PROFIL z widoczną nazwą oraz zrzut SQUADÓW. Zrzut THP nie jest potrzebny.","selected":"✓ PROFIL I SQUADY WYBRANE","working":"✦ WERYFIKACJA NAZWY I SQUADÓW…","verified":"✓ NAZWA POTWIERDZONA: {name} · 3 SQUADY ROZPOZNANE","already":"✓ TYGODNIOWE SQUADY WCZYTANE. NAZWA POTWIERDZONA.","alreadyNo":"✓ SQUADY WCZYTANE. TA SESJA WYMAGA WERYFIKACJI: PRZEŚLIJ PROFIL I SQUADY PONOWNIE.","need":"Wybierz PROFIL z nazwą i SQUADY.","mismatch":"⚠ NAZWA NIE PASUJE. Wybrano: {selected} · Zrzut: {detected}. Prześlij własny profil.","unreadable":"⚠ NIE MOŻNA ODCZYTAĆ NAZWY Z PROFILU. Prześlij pełny zrzut."},"tr":{"title":"PROFİL + BİRLİKLERİ YAPAY ZEKÂ İLE DOĞRULA","text":"Adının göründüğü PROFİL görüntüsünü ve BİRLİK görüntüsünü yükle. THP görüntüsü gerekli değil.","selected":"✓ PROFİL VE BİRLİKLER SEÇİLDİ","working":"✦ AD VE BİRLİKLER DOĞRULANIYOR…","verified":"✓ AD DOĞRULANDI: {name} · 3 BİRLİK OKUNDU","already":"✓ HAFTALIK BİRLİKLER YÜKLENDİ. AD DOĞRULANDI.","alreadyNo":"✓ BİRLİKLER YÜKLENDİ. BU OTURUM İÇİN PROFİL VE BİRLİK GÖRÜNTÜLERİNİ YENİDEN YÜKLE.","need":"Adının göründüğü PROFİL ve BİRLİK ekran görüntülerini seç.","mismatch":"⚠ AD EŞLEŞMİYOR. Seçilen: {selected} · Görüntü: {detected}. Kendi profilini yükle.","unreadable":"⚠ PROFİLDE ADIN OKUNAMIYOR. Tam ekran görüntüsünü yükle."}};
+ for(const [code,copy] of Object.entries(profileSurveyCopy))Object.assign(texts[code],copy);
+ const profileSurveyHeaders={"es":["VERIFICACIÓN DEL JUGADOR","VERIFICAR NOMBRE Y SQUADS"],"en":["PLAYER VERIFICATION","VERIFY NAME AND SQUADS"],"fr":["VÉRIFICATION DU JOUEUR","VÉRIFIER NOM ET SQUADS"],"de":["SPIELERVERIFIZIERUNG","NAME UND SQUADS BESTÄTIGEN"],"ro":["VERIFICAREA JUCĂTORULUI","VERIFICĂ NUMELE ȘI SQUADS"],"pt":["VERIFICAÇÃO DO JOGADOR","VERIFICAR NOME E SQUADS"],"uk":["ПЕРЕВІРКА ГРАВЦЯ","ПІДТВЕРДИТИ ІМ’Я ТА SQUADS"],"it":["VERIFICA GIOCATORE","VERIFICARE NOME E SQUAD"],"pl":["WERYFIKACJA GRACZA","POTWIERDŹ NAZWĘ I SQUADY"],"tr":["OYUNCU DOĞRULAMASI","AD VE BİRLİKLERİ DOĞRULA"]};
  function lang(){return window.__surveyLanguage||"es";}
  function d(){return texts[lang()]||texts.es;}
  function fill(s,map){return String(s||"").replace(/\{(\w+)\}/g,function(_,k){return map&&map[k]!=null?map[k]:"";});}
@@ -4690,21 +4654,21 @@ document.addEventListener("DOMContentLoaded", () => {
   return !!(weeklyLocked&&name&&normalizeName(name)===normalizeName(weeklyLockedName)&&!verification.get(name));
  }
  function refreshSelection(preserveStatus){
-  var btn=$("weeklyAiDetectBtn"),thp=$("weeklyAiThpImage"),squad=$("weeklyAiSquadImage");
+  var btn=$("weeklyAiDetectBtn"),profile=$("weeklyAiProfileImage"),squad=$("weeklyAiSquadImage");
   var count=selectedFiles.filter(Boolean).length,recovery=canRecoverIdentity();
   var locked=weeklyLocked&&!recovery;
-  if(thp)thp.disabled=locked;
+  if(profile)profile.disabled=locked;
   if(squad)squad.disabled=locked;
   if(btn){btn.disabled=locked||weeklyBusy||count!==2;btn.setAttribute("aria-disabled",String(btn.disabled));btn.classList.toggle("is-ready",!btn.disabled);}
-  var tl=$("weeklyAiThpLabel"),sl=$("weeklyAiSquadLabel"),tf=$("weeklyAiThpField"),sf=$("weeklyAiSquadField");
-  if(tl)tl.textContent=selectedFiles[0]?"✓ THP: "+selectedFiles[0].name:"📸 1 · CAPTURA THP";
-  if(sl)sl.textContent=selectedFiles[1]?"✓ SQUADS: "+selectedFiles[1].name:"📸 2 · CAPTURA SQUADS";
+  var tl=$("weeklyAiProfileLabel"),sl=$("weeklyAiSquadLabel"),tf=$("weeklyAiProfileField"),sf=$("weeklyAiSquadField");
+  if(tl)tl.textContent=selectedFiles[0]?"✓ PERFIL: "+selectedFiles[0].name:"📸 1 · CAPTURA DEL PERFIL";
+  if(sl)sl.textContent=selectedFiles[1]?"✓ SQUADS: "+selectedFiles[1].name:"📸 2 · CAPTURA DE SQUADS";
   if(tf)tf.classList.toggle("has-image",!!selectedFiles[0]);
   if(sf)sf.classList.toggle("has-image",!!selectedFiles[1]);
   if(!preserveStatus&&!weeklyBusy){
    if(locked)setStatus("",verification.get(String($("playerName")?.value||""))?"already":"alreadyNo");
    else if(count===2)setStatus("","selected");
-   else if(count===1)setStatus("✓ "+(selectedFiles[0]?"THP":"SQUADS")+" · 1 / 2",null);
+   else if(count===1)setStatus("✓ "+(selectedFiles[0]?"PERFIL":"SQUADS")+" · 1 / 2",null);
    else if(recovery)setStatus("","alreadyNo");
    else setStatus("",null);
   }
@@ -4728,13 +4692,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }catch(err){console.error("HOLa AI file selection error",err);setStatus("⚠ No se ha podido seleccionar esa captura.",null);$("weeklyAiStatus")?.classList.add("ai-error");}
  };
  function prepare(file){return new Promise(function(resolve,reject){if(!file){reject(new Error("Missing screenshot"));return;}var reader=new FileReader();reader.onerror=function(){reject(new Error("Could not read screenshot"));};reader.onload=function(){var original=String(reader.result||"");if(original.indexOf("data:image/")!==0){reject(new Error("Invalid screenshot"));return;}var img=new Image();img.onload=function(){try{var max=2400,scale=Math.min(1,max/Math.max(img.naturalWidth||1,img.naturalHeight||1)),c=document.createElement("canvas");c.width=Math.max(1,Math.round((img.naturalWidth||1)*scale));c.height=Math.max(1,Math.round((img.naturalHeight||1)*scale));var x=c.getContext("2d");if(!x){resolve(original);return;}x.drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL("image/jpeg",.90)||original);}catch(e){resolve(original);}};img.onerror=function(){resolve(original);};img.src=original;};try{reader.readAsDataURL(file);}catch(e){reject(e);}});}
- function applyData(data){if(data.thp){var thp=$("playerThp");if(thp){thp.value=data.thp;thp.dispatchEvent(new Event("input",{bubbles:true}));}}if(Array.isArray(data.squads)){var powers=[];for(var j=0;j<data.squads.length;j++)if(data.squads[j]&&data.squads[j].power)powers.push(data.squads[j].power);for(var i=1;i<=3;i++){var el=$("s"+i+"power");if(el&&powers[i-1]){el.value=powers[i-1];el.dispatchEvent(new Event("input",{bubbles:true}));}}}}
+ function applyData(data){if(Array.isArray(data.squads)){var powers=[];for(var j=0;j<data.squads.length;j++)if(data.squads[j]&&data.squads[j].power)powers.push(data.squads[j].power);for(var i=1;i<=3;i++){var el=$("s"+i+"power");if(el&&powers[i-1]){el.value=powers[i-1];el.dispatchEvent(new Event("input",{bubbles:true}));}}}}
  window.HOLaWeeklyAiLoadSavedState=function(name,row){
   weeklyLocked=!!(row&&row.ai_detection_week&&String(row.ai_detection_week)===isoWeekNow());
   weeklyLockedName=weeklyLocked?String(name||""):"";
   selectedFiles=[];
   if(weeklyLocked){
-    applyData({thp:row.thp||"",squads:[{power:row.squad1_power||""},{power:row.squad2_power||""},{power:row.squad3_power||""}]});
+    applyData({squads:[{power:row.squad1_power||""},{power:row.squad2_power||""},{power:row.squad3_power||""}]});
     var existing=verification.get(name);
     setStatus("",existing?"already":"alreadyNo");
   }else{
@@ -4742,17 +4706,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   refreshSelection();
  };
- async function run(){var name=String($("playerName")?.value||"").trim(),btn=$("weeklyAiDetectBtn");if(weeklyLocked&&normalizeName(name)===normalizeName(weeklyLockedName)){var existing=verification.get(name);if(existing){setStatus("","already");refreshSelection();return;}}if(!name){setStatus("","noName");return;}if(selectedFiles.filter(Boolean).length!==2){setStatus("",weeklyLocked?"alreadyNo":"need");return;}weeklyBusy=true;if(btn){btn.classList.add("ai-scanning");btn.disabled=true;}setStatus("","working");try{var thpImage=await prepare(selectedFiles[0]),squadImage=await prepare(selectedFiles[1]);var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({mode:"combined",name:name,thpImage:thpImage,squadImage:squadImage})});var data={};try{data=await res.json();}catch(e){}if(!res.ok){if(data.code==="NAME_MISMATCH"){verification.clear(name);setStatus("","mismatch",{selected:data.selectedName||name,detected:data.detectedName||"?"});$("weeklyAiStatus")?.classList.add("ai-error");return;}if(data.code==="NAME_UNREADABLE"){verification.clear(name);setStatus("","unreadable");$("weeklyAiStatus")?.classList.add("ai-error");return;}var be=String(data.error||"");if(res.status===429||/rate limit|tokens per min|too many requests/i.test(be)){setStatus("","rateLimit");$("weeklyAiStatus")?.classList.add("ai-error");return;}throw new Error(be||("AI HTTP "+res.status));}
+ async function run(){var name=String($("playerName")?.value||"").trim(),btn=$("weeklyAiDetectBtn");if(weeklyLocked&&normalizeName(name)===normalizeName(weeklyLockedName)){var existing=verification.get(name);if(existing){setStatus("","already");refreshSelection();return;}}if(!name){setStatus("","noName");return;}if(selectedFiles.filter(Boolean).length!==2){setStatus("",weeklyLocked?"alreadyNo":"need");return;}weeklyBusy=true;if(btn){btn.classList.add("ai-scanning");btn.disabled=true;}setStatus("","working");try{var profileImage=await prepare(selectedFiles[0]),squadImage=await prepare(selectedFiles[1]);var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({mode:"profile-squads",name:name,profileImage:profileImage,squadImage:squadImage})});var data={};try{data=await res.json();}catch(e){}if(!res.ok){if(data.code==="NAME_MISMATCH"){verification.clear(name);setStatus("","mismatch",{selected:data.selectedName||name,detected:data.detectedName||"?"});$("weeklyAiStatus")?.classList.add("ai-error");return;}if(data.code==="NAME_UNREADABLE"){verification.clear(name);setStatus("","unreadable");$("weeklyAiStatus")?.classList.add("ai-error");return;}var be=String(data.error||"");if(res.status===429||/rate limit|tokens per min|too many requests/i.test(be)){setStatus("","rateLimit");$("weeklyAiStatus")?.classList.add("ai-error");return;}throw new Error(be||("AI HTTP "+res.status));}
  applyData(data);
  if(data.verificationToken){verification.set(name,data.verificationToken,data.verificationExpiresAt,data.detectedName||name);weeklyLocked=true;weeklyLockedName=name;selectedFiles=[];setStatus("","verified",{name:data.detectedName||name});try{document.dispatchEvent(new CustomEvent("weekly-ai-detected"));}catch(e){}}
  else if(data.alreadyDetected){weeklyLocked=true;weeklyLockedName=name;selectedFiles=[];var existing=verification.get(name);setStatus("",existing?"already":"alreadyNo");}
  else setStatus("","genericError");
  }catch(e){var m=String(e&&e.message?e.message:e).replace(/[<>]/g,"").replace(/\s+/g," ").trim();setStatus(m?"⚠ "+m.slice(0,260):d().genericError,null);$("weeklyAiStatus")?.classList.add("ai-error");}finally{weeklyBusy=false;if(btn){btn.classList.remove("ai-scanning");}refreshSelection(true);}}
  window.holaWeeklyAiRun=run;
- function bind(){if(!$("weeklyAiThpImage")||!$("weeklyAiSquadImage")||!$("weeklyAiDetectBtn"))return;refreshSelection();}
+ function bind(){if(!$("weeklyAiProfileImage")||!$("weeklyAiSquadImage")||!$("weeklyAiDetectBtn"))return;refreshSelection();}
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
  window.__weeklyAiTexts=texts;
- function apply(){var x=d(),nodes=document.querySelectorAll("#weeklyAiCard [data-i18n]"),map={weeklyAiTitle:"title",weeklyAiText:"text",weeklyAiSelect:"select",weeklyAiDetect:"detect"};for(var i=0;i<nodes.length;i++){var k=nodes[i].getAttribute("data-i18n");if(map[k])nodes[i].textContent=x[map[k]];}}
+ function apply(){var x=d(),headers=profileSurveyHeaders[lang()]||profileSurveyHeaders.es;if($("verificationSectionKicker"))$("verificationSectionKicker").textContent=headers[0];if($("verificationSectionTitle"))$("verificationSectionTitle").textContent=headers[1];var nodes=document.querySelectorAll("#weeklyAiCard [data-i18n]"),map={weeklyAiTitle:"title",weeklyAiText:"text",weeklyAiSelect:"select",weeklyAiDetect:"detect"};for(var i=0;i<nodes.length;i++){var k=nodes[i].getAttribute("data-i18n");if(map[k])nodes[i].textContent=x[map[k]];}}
  setTimeout(apply,50);setInterval(apply,700);
 })();
 </script>
