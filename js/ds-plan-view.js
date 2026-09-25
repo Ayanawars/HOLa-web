@@ -73,7 +73,29 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
  const mapImage=typeof plan.baseMapDataUrl==="string"&&plan.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(plan.baseMapDataUrl)?plan.baseMapDataUrl:"assets/ds-battlefield-real.webp";
  H.forEach(k=>(plan.subs?.[k]||[]).forEach(n=>subOf.set(normalize(n),k)));
  const isMission=n=>Object.values(plan.missions||{}).flat().some(x=>normalize(x)===normalize(n));
- if(roster){roster.innerHTML=plan.roster.map((r,i)=>'<div class="player"><span class="player__n">'+String(i+1).padStart(2,"0")+'</span><span class="player__name">'+esc(r.name)+'<span class="ds-roster-extra"><span class="ds-badge '+(r.role==="sub"?"sub":"")+'">'+esc(r.role==="sub"?t[4]:t[3])+'</span>'+(r.power==null?"":" · "+esc(r.power)+"M")+(r.role==="sub"&&subOf.has(normalize(r.name))?" · "+esc(B[subOf.get(normalize(r.name))][0]):"")+'</span></span></div>').join("");if($("summaryPlayers"))$("summaryPlayers").textContent=plan.roster.length;if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");}
+ const avatars=new Map((options.avatarProfiles||[])
+  .map(p=>[normalize(p?.name),String(p?.avatar||"").trim()])
+  .filter(([name,url])=>name&&/^(?:https?:\/\/|data:image\/)/i.test(url)));
+ if(roster){
+  roster.innerHTML=plan.roster.map((r,i)=>{
+   const fallback=String(i+1).padStart(2,"0"),avatar=avatars.get(normalize(r.name));
+   const portrait=avatar
+    ?'<span class="player__n player__avatar"><img class="ds-profile-photo" src="'+esc(avatar)+'" alt="" loading="lazy" decoding="async" data-fallback="'+fallback+'"></span>'
+    :'<span class="player__n">'+fallback+'</span>';
+   return '<div class="player">'+portrait+'<span class="player__name">'+esc(r.name)+
+    '<span class="ds-roster-extra"><span class="ds-badge '+(r.role==="sub"?"sub":"")+'">'+
+    esc(r.role==="sub"?t[4]:t[3])+'</span>'+(r.power==null?"":" · "+esc(r.power)+"M")+
+    (r.role==="sub"&&subOf.has(normalize(r.name))?" · "+esc(B[subOf.get(normalize(r.name))][0]):"")+
+    '</span></span></div>';
+  }).join("");
+  // Keep the roster usable even if a profile photo has been removed.
+  roster.querySelectorAll(".ds-profile-photo").forEach(img=>img.addEventListener("error",()=>{
+   const circle=img.parentElement;if(!circle)return;
+   circle.classList.remove("player__avatar");circle.textContent=img.dataset.fallback||"";
+  },{once:true}));
+  if($("summaryPlayers"))$("summaryPlayers").textContent=plan.roster.length;
+  if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");
+ }
  let phase="phase1",focus="H1";
  const list=(names,sub)=>names?.length?names.map(n=>'<div class="ds-person '+(sub?"sub":isMission(n)?"mission":"")+'">'+(sub?"(":"")+esc(n)+(sub?")":"")+'</div>').join(""):'<div class="ds-person">'+esc(t[8])+'</div>';
  function draw(){
