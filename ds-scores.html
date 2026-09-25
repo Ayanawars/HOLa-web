@@ -659,6 +659,7 @@ $("confirmLoadBtn").addEventListener("click",async()=>{
 function norm(s){
   return String(s||"").normalize("NFKD").toLowerCase()
     .replace(/[\u0300-\u036f\u0640]/g,"")
+    .replace(/[ᓚᘏᗢ]/g,"")
     .replace(/[^\p{L}\p{N}]/gu,"");
 }
 function cleanParticipantName(value){
