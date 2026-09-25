@@ -632,7 +632,7 @@ function renderValidation(){if(!state)return;const {errors,warnings}=validate();
 function groupText(phaseKey,lang){
  const obj=state[phaseKey],targets=phaseKey==="phase1"?TARGET1:TARGET2;
  const trLabels={H1:"Saha Hastanesi 1",H2:"Saha Hastanesi 2",H3:"Saha Hastanesi 3",H4:"Saha Hastanesi 4",HUB:"Bilim Merkezi",INFO:"Bilgi Merkezi",SILO:"Nükleer Silo",ARSENAL:"Cephanelik",MERC:"Paralı Asker Fabrikası"};
- return Object.keys(targets).map(k=>(lang==="tr"?trLabels[k]:BUILDINGS[k].label)+": "+(obj[k].join(", ")||"—")+(HOSP.includes(k)&&state.subs[k]?.length?" ("+state.subs[k].join(", ")+")":"")).join("\n");
+ return Object.keys(targets).map(k=>(lang==="tr"?trLabels[k]:BUILDINGS[k].label)+": "+(obj[k].join(", ")||"—")+(HOSP.includes(k)&&state.subs[k]?.length?" ["+(lang==="tr"?"YEDEK":lang==="en"?"SUB":"SUPLENTES")+": "+state.subs[k].join(", ")+"]":"")).join("\n");
 }
 function buildMail(){if(!state)return "";const en=state.language==="en",t=state.team,head="HOLa · DESERT STORM · TEAM "+t+"\n"+state.templateName+" · "+state.battle_date+" · "+state.serverTime+" SERVER\n";
  if(state.language==="tr")return head+"\nFAZ 1 (00:00–10:00)\n"+groupText("phase1","tr")+"\n\nÖZEL GÖREVLER (hastanelerden)\nInfo Center: "+state.missions.INFO.join(", ")+"\nPetrol Rafinerisi 1: "+state.missions.REF1.join(", ")+"\nPetrol Rafinerisi 2: "+state.missions.REF2.join(", ")+"\nScience Hub oyuncuları merkezden ayrılmaz.\n\nFAZ 2 (10:00'DAN SONRA)\n"+groupText("phase2","tr")+"\n\nKARŞILIKLI DESTEK\nArsenal ↔ Info Center. Mercenary Factory ↔ Science Hub.\n\nYEDEKLER\nSahada en fazla 20 oyuncu bulunabilir. Asil oyuncular savaştan 5 dakika önce girebilir; yedekler ancak savaş başladıktan sonra boş kontenjan varsa girebilir. Birlikleri biten oyuncu çıkarak yer açabilir. Her yedek, kimin çıktığına bakmadan DOĞRUDAN kendi hastanesine gider. Başka bina seçmeyin.\n\nSON HÜCUM (YALNIZCA EMİRLE)\nKod sözcüğü: "+state.keyword+" · Komut veren: "+(state.leader||"Henüz seçilmedi")+(state.alternate?" · Yedek: "+state.alternate:"")+"\nSavaşın sonuna doğru az farkla gerideysek ve kod sözcüğü yazılırsa: hastaneleri terk edin, tüm uygun oyuncular Nuclear Silo'ya; Info Center'ı ele geçirip tutun.\n\nYayımlanan haritayı HOLa Desert Storm sayfasında inceleyin.";
@@ -720,12 +720,12 @@ function posterSubLines(ctx,names,maxWidth){
 }
 function posterCardHeight(ctx,which,k,w){
  const names=state[which][k]||[];
- const subs=which==="phase1"&&HOSP.includes(k)?state.subs[k]||[]:[];
+ const subs=HOSP.includes(k)?state.subs[k]||[]:[];
  const subLines=posterSubLines(ctx,subs,w-40);
  return Math.max(which==="phase1"?166:108,53+Math.max(names.length,1)*23+(subLines.length?13+subLines.length*19:0)+13);
 }
 function posterCard(ctx,which,k,rect,tr,trBuildings,mapTop){
- const b=BUILDINGS[k],names=state[which][k]||[],subs=which==="phase1"&&HOSP.includes(k)?state.subs[k]||[]:[];
+ const b=BUILDINGS[k],names=state[which][k]||[],subs=HOSP.includes(k)?state.subs[k]||[]:[];
  const {x,y,w,h}=rect,Y=mapTop+y;
  const missionFor=which==="phase1"?state.missions:{};
  const blue="#89d4ff",green="#94ffc0",gold="#f4d584";
@@ -805,7 +805,7 @@ async function createPoster(what="phase1"){
    posterType(ctx,tr?"Bilgi merkezi ve rafineriler: hastanelerden görevlendirildi.":"Info Center and refineries: missions assigned from hospitals.",34,offset+1112,1005,19,"#d4e9eb",750);
   }else{
    posterType(ctx,"ARSENAL ↔ INFO CENTER",34,offset+1068,1005,23,"#a1e5ce",900);
-   posterType(ctx,"MERCENARY ↔ SCIENCE HUB",34,offset+1112,1005,23,"#a1e5ce",900);
+   posterType(ctx,tr?"YEDEKLER: KENDİ HASTANELERİNE":"BLUE: SUBSTITUTES · GO TO YOUR ASSIGNED HOSPITAL",34,offset+1112,1005,21,"#89d4ff",900);
   }
   posterType(ctx,(tr?"SON HÜCUM: ":"FINAL: ")+state.keyword+" · "+(state.leader||(tr?"Komutan belirlenmedi":"Caller TBD"))+" · HOLa",34,offset+1162,1005,23,"#f0d17e",900);
   posterType(ctx,"HEROES OF LAST AREA",35,offset+1191,1005,14,"#90b7c6",850);

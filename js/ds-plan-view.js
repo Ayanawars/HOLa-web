@@ -29,15 +29,48 @@ function installStyle(){if($("dsPlanCss"))return;const s=document.createElement(
  ".ds-call{border:2px solid #b75b58;background:#fff0e8;color:#803838;border-radius:12px;padding:13px;margin:12px 0;text-align:center}.ds-call strong{display:block;font:bold 26px/1.15 Georgia,serif;letter-spacing:.1em;margin:8px 0}",
  ".map-wrap.ds-public-map{display:block!important;padding:0;min-height:0!important;background:#d89258}.ds-board{position:relative;aspect-ratio:1200/850;width:100%;overflow:hidden}.ds-board img{display:block;width:100%;height:100%;max-height:none!important;object-fit:fill;cursor:default!important}",
  ".ds-pin{position:absolute;transform:translate(-50%,-50%);padding:3px;border-radius:7px;border:1px solid #e9c86c;background:rgba(5,38,59,.94);color:white;font-size:7px;font-weight:900;line-height:1.1;max-width:77px;min-width:42px;z-index:2}.ds-pin.active{background:#087fb2;border:2px solid white}.ds-pin small{display:block;color:#75e6ff;margin-top:2px}.ds-map-hint{background:#0b3452;color:#ebfaff;padding:7px 9px;font-size:9px;text-align:center}",
+ ".ds-poster-section{margin-top:13px;padding:10px;background:linear-gradient(140deg,#fff6db,#eff8f9);border:1px solid #dabd76;border-radius:13px}",
+ ".ds-poster-title{font-weight:950;font-size:13px;color:#11536d;margin:0 0 9px}",
+ ".ds-poster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.ds-poster-card{background:#fff;border:1px solid #d0b87f;border-radius:12px;overflow:hidden;box-shadow:0 5px 13px rgba(15,45,63,.12)}",
+ ".ds-poster-card h3{font-size:12px;margin:0;padding:11px;color:#174c66}.ds-poster-card img{display:block;width:100%;height:auto;cursor:zoom-in}",
+ ".ds-poster-actions{padding:10px}.ds-poster-actions a{display:inline-block;border-radius:9px;background:#127b92;color:white;text-decoration:none;padding:9px;font-size:11px;font-weight:850}",
+ "@media(max-width:680px){.ds-poster-grid{grid-template-columns:1fr}}",
  ".ds-badge{display:inline-block;padding:2px 5px;border-radius:99px;background:#d9efff;color:#0c75a5;font-size:8px;font-weight:900}.ds-badge.sub{background:#e4eeff;color:#305da7}.ds-roster-extra{display:block;font-size:8px;color:#758d9e;margin-top:3px}",
  "@media(max-width:370px){.ds-grid{grid-template-columns:1fr}.ds-pin{font-size:6px;max-width:68px}}"
  ].join("");document.head.appendChild(s);}
 function normalize(n){return String(n||"").normalize("NFKD").replace(/[\u0300-\u036f\u0640]/g,"").toLowerCase().replace(/[^\p{L}\p{N}]/gu,"");}
+let posterRun=0,posterUrls=[];
+function clearPosterUrls(){for(const url of posterUrls)URL.revokeObjectURL(url);posterUrls=[];}
+window.holaResetDsPublicPosters=function(){posterRun++;clearPosterUrls();const area=$("dsPublishedPosters");if(area){area.hidden=true;area.innerHTML="";}};
+async function showPublishedPosters(plan,locale){
+ const area=$("dsPublishedPosters");if(!area)return;
+ const token=++posterRun;clearPosterUrls();area.hidden=false;
+ const captions=D[locale]||D.es;
+ area.innerHTML='<h3 class="ds-poster-title">⚔️ '+esc(captions[0])+' / '+esc(captions[1])+'</h3><p class="ds-person">Preparando los mapas…</p>';
+ if(typeof window.holaDsPosterBlob!=="function"){area.innerHTML='<p class="ds-person">Recarga la página para ver los mapas nuevos.</p>';return;}
+ try{
+  const items=[];
+  for(const phase of ["phase1","phase2"]){
+   const blob=await window.holaDsPosterBlob(plan,phase);
+   if(token!==posterRun)return;
+   const url=URL.createObjectURL(blob);posterUrls.push(url);
+   items.push({phase,url,caption:phase==="phase1"?captions[0]:captions[1]});
+  }
+  if(token!==posterRun)return;
+  area.innerHTML='<h3 class="ds-poster-title">⚔️ '+esc(captions[0])+' / '+esc(captions[1])+'</h3>'+
+   '<div class="ds-poster-grid">'+items.map(item=>'<article class="ds-poster-card"><h3>'+esc(item.caption)+'</h3><img src="'+esc(item.url)+'" alt="'+esc(item.caption)+'" data-zoom="'+esc(item.phase)+'"><div class="ds-poster-actions"><a href="'+esc(item.url)+'" download="HOLa-DS-'+esc(plan.team)+'-'+esc(plan.battle_date)+'-'+esc(item.phase)+'.png">↓ PNG</a></div></article>').join("")+'</div>';
+  area.querySelectorAll("[data-zoom]").forEach(img=>img.onclick=()=>{
+   const url=items.find(item=>item.phase===img.dataset.zoom)?.url;
+   const lightbox=$("mapLightbox"),image=$("mapLightboxImage");
+   if(url&&lightbox&&image){image.src=url;lightbox.hidden=false;document.body.style.overflow="hidden";}
+  });
+ }catch(error){if(token===posterRun)area.innerHTML='<p class="ds-person">No se pudieron crear los carteles: '+esc(error?.message||String(error))+'</p>';}
+}
 window.holaRenderDsPublishedPlan=function(plan,options={}){
  if(!plan||!Array.isArray(plan.roster))return false;
  const strategy=$("strategyContent"),map=$("mapWrap"),roster=$("players");if(!strategy||!map)return false;installStyle();
  const t=D[options.language]||D.en,team=plan.team||"",subOf=new Map();
- const mapImage=typeof plan.baseMapDataUrl==="string"&&plan.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(plan.baseMapDataUrl)?plan.baseMapDataUrl:"assets/ds-battlefield.svg";
+ const mapImage=typeof plan.baseMapDataUrl==="string"&&plan.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(plan.baseMapDataUrl)?plan.baseMapDataUrl:"assets/ds-battlefield-real.webp";
  H.forEach(k=>(plan.subs?.[k]||[]).forEach(n=>subOf.set(normalize(n),k)));
  const isMission=n=>Object.values(plan.missions||{}).flat().some(x=>normalize(x)===normalize(n));
  if(roster){roster.innerHTML=plan.roster.map((r,i)=>'<div class="player"><span class="player__n">'+String(i+1).padStart(2,"0")+'</span><span class="player__name">'+esc(r.name)+'<span class="ds-roster-extra"><span class="ds-badge '+(r.role==="sub"?"sub":"")+'">'+esc(r.role==="sub"?t[4]:t[3])+'</span>'+(r.power==null?"":" · "+esc(r.power)+"M")+(r.role==="sub"&&subOf.has(normalize(r.name))?" · "+esc(B[subOf.get(normalize(r.name))][0]):"")+'</span></span></div>').join("");if($("summaryPlayers"))$("summaryPlayers").textContent=plan.roster.length;if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");}
@@ -51,7 +84,8 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
    (phase==="final"?'<div class="ds-call">'+esc(t[5])+'<strong>'+esc(plan.keyword||"—")+'</strong>'+esc(t[6])+": "+esc(plan.leader||"—")+(plan.alternate?" · "+esc(t[7])+": "+esc(plan.alternate):"")+'</div>':"")+
    '<div class="ds-grid">'+keys.map(k=>'<article class="ds-card '+(focus===k?"focus":"")+'" id="ds-card-'+k+'"><h3>'+B[k][1]+" "+esc(B[k][0])+'</h3>'+
    (phase==="final"?'<div class="ds-person">'+esc(k==="SILO"?"ALL AVAILABLE PLAYERS":"TAKE AND HOLD")+'</div>':list(data[k],false))+
-   (phase==="phase1"&&H.includes(k)?Object.entries(plan.missions||{}).map(([goal,names])=>{const own=names.filter(n=>(plan.phase1?.[k]||[]).includes(n));return own.length?'<div class="ds-person mission">'+esc(B[goal]?.[0]||goal)+": "+esc(own.join(", "))+'</div>':"";}).join("")+(plan.subs?.[k]?.length?list(plan.subs[k],true):""):"")+
+   (phase==="phase1"&&H.includes(k)?Object.entries(plan.missions||{}).map(([goal,names])=>{const own=names.filter(n=>(plan.phase1?.[k]||[]).includes(n));return own.length?'<div class="ds-person mission">'+esc(B[goal]?.[0]||goal)+": "+esc(own.join(", "))+'</div>':"";}).join(""):"")+
+   (phase!=="final"&&H.includes(k)&&plan.subs?.[k]?.length?'<div class="ds-person sub"><strong>'+esc(t[4])+":</strong></div>"+list(plan.subs[k],true):"")+
    (phase==="phase2"&&["ARSENAL","INFO","MERC","HUB"].includes(k)?'<div class="ds-person mission">↔ '+esc(B[{"ARSENAL":"INFO","INFO":"ARSENAL","MERC":"HUB","HUB":"MERC"}[k]][0])+'</div>':"")+
    '</article>').join("")+'</div>'+(phase==="phase1"?'<div class="ds-brief">'+esc(t[13])+'</div>':"");
   strategy.querySelectorAll(".ds-switch button").forEach(b=>b.onclick=()=>{phase=b.dataset.phase;focus=phase==="final"?"SILO":"H1";draw();});
@@ -60,6 +94,6 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
   map.querySelectorAll("[data-bld]").forEach(b=>b.onclick=()=>{focus=b.dataset.bld;draw();$("ds-card-"+focus)?.scrollIntoView({behavior:"smooth",block:"center"});});
   if($("summaryMap"))$("summaryMap").textContent="✓";
  }
- draw();return true;
+ draw();showPublishedPosters(plan,options.language||"es");return true;
 };
 })();
