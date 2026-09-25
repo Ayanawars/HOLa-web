@@ -656,20 +656,55 @@ function renderSpecials(){
   return '<article class="building" data-special="'+(sub?"SUB":slot)+'" data-slot="'+slot+'"><div class="building-head"><h3>'+esc(title)+'</h3><span class="counter">'+names.length+(count!=null?"/"+count:"")+'</span></div><div class="people">'+listPersons(names,sub?"sub":"mission")+'</div><div class="assign-control"><select class="assign-select" aria-label="Asignar '+esc(title)+'"><option value="">Elegir '+(sub?"suplente":"titular de hospital")+'</option>'+pool.filter(r=>!already.has(r.name)).map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join("")+'</select><button type="button" class="btn small assign-btn">＋</button></div></article>';}).join("");
 }
 function autoAssign(){
- const starters=state.roster.filter(r=>r.role==="starter");if(starters.length!==20||starters.some(r=>r.power==null)){notice("Necesitas 20 titulares y sus poderes confirmados para equilibrar automáticamente.","error");return;}
- const sorted=[...starters].sort((a,b)=>Number(b.power)-Number(a.power)).map(r=>r.name);
- if(phase==="phase1"){for(const k of P1)state.phase1[k]=[];const waves=[...P1,...[...P1].reverse(),...P1,...[...P1].reverse()];sorted.forEach((n,i)=>state.phase1[waves[i]].push(n));
-  state.missions={INFO:[state.phase1.H4[1],state.phase1.H1[1]],REF1:[state.phase1.H1[2]],REF2:[state.phase1.H2[2]]};
-  const hospitalByStrength=[...HOSP].sort((a,b)=>state.phase1[b].reduce((sum,n)=>sum+Number(state.roster.find(p=>p.name===n)?.power||0),0)-state.phase1[a].reduce((sum,n)=>sum+Number(state.roster.find(p=>p.name===n)?.power||0),0));
-  state.subs={H1:[],H2:[],H3:[],H4:[]};state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(a.power||0)-Number(b.power||0)).forEach((r,i)=>state.subs[hospitalByStrength[i%4]].push(r.name));
+ if(!state||phase==="final")return;
+ const starters=state.roster.filter(r=>r.role==="starter");
+ if(!starters.length){
+  notice("No hay titulares inscritos. Añade jugadores en «02 · Equipo» antes de repartir el mapa.","error");
+  return;
+ }
+ const withoutPower=starters.filter(r=>r.power==null||!Number.isFinite(Number(r.power))||Number(r.power)<=0);
+ const sorted=[...starters].sort((a,b)=>{
+  const ap=a.power!=null&&Number.isFinite(Number(a.power))&&Number(a.power)>0;
+  const bp=b.power!=null&&Number.isFinite(Number(b.power))&&Number(b.power)>0;
+  return Number(bp)-Number(ap)||(bp?Number(b.power)-Number(a.power):0);
+ }).map(r=>r.name);
+ if(phase==="phase1"){
+  for(const k of P1)state.phase1[k]=[];
+  const waves=[...P1,...[...P1].reverse(),...P1,...[...P1].reverse()];
+  sorted.forEach((name,i)=>state.phase1[waves[i]].push(name));
+  const used=new Set(),hospitalPool=HOSP.flatMap(k=>state.phase1[k]);
+  const pick=preferred=>{
+   const name=[preferred,...hospitalPool].find(n=>n&&!used.has(n));
+   if(name)used.add(name);
+   return name||null;
+  };
+  state.missions={
+   INFO:[pick(state.phase1.H4[1]),pick(state.phase1.H1[1])].filter(Boolean),
+   REF1:[pick(state.phase1.H1[2])].filter(Boolean),
+   REF2:[pick(state.phase1.H2[2])].filter(Boolean)
+  };
+  const power=new Map(starters.map(r=>[r.name,r.power==null?0:Number(r.power)||0]));
+  const strength=k=>state.phase1[k].reduce((sum,name)=>sum+(power.get(name)||0),0);
+  const hospitalByStrength=[...HOSP].sort((a,b)=>strength(b)-strength(a));
+  state.subs={H1:[],H2:[],H3:[],H4:[]};
+  state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(a.power||0)-Number(b.power||0))
+   .forEach((r,i)=>state.subs[hospitalByStrength[i%4]].push(r.name));
  }else if(phase==="phase2"){
   for(const k of P2)state.phase2[k]=[];
   state.phase2.SILO=sorted.slice(0,4);
-  const centers=["ARSENAL","MERC","HUB","INFO"];
-  centers.forEach((k,i)=>{state.phase2[k]=[sorted[4+i],sorted[8+i]];});
-  HOSP.forEach((k,i)=>{state.phase2[k]=[sorted[12+i],sorted[16+i]];});
+  ["ARSENAL","MERC","HUB","INFO"].forEach((k,i)=>state.phase2[k]=[sorted[4+i],sorted[8+i]].filter(Boolean));
+  HOSP.forEach((k,i)=>state.phase2[k]=[sorted[12+i],sorted[16+i]].filter(Boolean));
  }
- mutate();notice("Propuesta distribuida según el poder. Revísala antes de guardar o publicar.","success");
+ mutate();
+ const remaining=20-starters.length;
+ const partial=remaining>0||withoutPower.length>0;
+ let message=remaining>0?
+  "Repartidos "+starters.length+"/20 titulares inscritos en "+(phase==="phase1"?"Fase 1":"Fase 2")+
+  ". Faltan "+remaining+" por inscribir; sus plazas siguen vacías. ":
+  "✓ Los 20 titulares repartidos en "+(phase==="phase1"?"Fase 1":"Fase 2")+". ";
+ if(withoutPower.length)message+=withoutPower.length+" titular"+(withoutPower.length===1?"":"es")+
+  " sin THP: reparto provisional, no equilibrado por poder. Añade sus THP y revisa el mapa. ";
+ notice(message+"Comprueba el reparto antes de guardar.",partial?"info":"success");
 }
 function validate(){
  const errors=[],warnings=[];const countsNow=counts();
@@ -677,7 +712,7 @@ function validate(){
  if(countsNow.sub>10)errors.push("Convocatoria: hay más de 10 suplentes.");
  if(new Set(state.roster.map(r=>normal(r.name))).size!==state.roster.length)errors.push("Hay jugadores duplicados en la convocatoria.");
  const overlap=state.roster.filter(r=>rosterOther.has(normal(r.name))).map(r=>r.name);if(overlap.length)errors.push("Inscritos también en el otro equipo: "+overlap.join(", ")+".");
- if(state.roster.some(r=>r.power==null))warnings.push("Hay poderes sin confirmar; revisa el equilibrio manualmente.");
+ if(state.roster.some(r=>r.power==null))warnings.push("Hay THP sin confirmar. El mapa puede prepararse, pero el equilibrio por poder es provisional hasta completar los datos.");
  for(const [phaseKey,targets] of [["phase1",TARGET1],["phase2",TARGET2]]){
   const assigned=assignedNames(state[phaseKey]);
   for(const [slot,n]of Object.entries(targets))if(state[phaseKey][slot].length!==n)errors.push((phaseKey==="phase1"?"Fase 1 (MAPA): ":"Fase 2 (MAPA): ")+BUILDINGS[slot].label+" tiene "+state[phaseKey][slot].length+"/"+n+" plazas asignadas; no significa que falten inscritos.");
