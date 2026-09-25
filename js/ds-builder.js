@@ -13,7 +13,7 @@ SILO:{label:"Nuclear Silo",icon:"☢️",x:51,y:48},ARSENAL:{label:"Arsenal",ico
 MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
+let savedDrafts=[],members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -94,22 +94,71 @@ async function refreshOther(){
  for(const r of otherRoster)if(r?.name)rosterOther.add(normal(canonical(r.name)||r.name));
  for(const r of legacy||[])if(r?.player_name)rosterOther.add(normal(canonical(r.player_name)||r.player_name));
 }
+function renderSavedDrafts(){
+ const panel=$("savedDraftsPanel"),list=$("savedDraftsList"),title=$("savedDraftsTitle");
+ if(!panel||!list||!title)return;
+ panel.hidden=!savedDrafts.length;
+ if(!savedDrafts.length){list.innerHTML="";return;}
+ title.textContent="☁ Recuperar DS guardado · "+savedDrafts.length+" jornada"+(savedDrafts.length===1?"":"s");
+ list.innerHTML=savedDrafts.map(r=>{
+  const s=r.draft?.roster?.length?r.draft:r.published||r.draft||{};
+  const players=Array.isArray(s.roster)?s.roster.length:0;
+  const count=obj=>Object.values(obj||{}).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0);
+  const current=state?.team===r.team&&state?.battle_date===r.battle_date;
+  const date=String(r.battle_date).split("-").reverse().join("/");
+  return '<div class="saved-draft-card"><div><strong>Team '+esc(r.team)+' · '+esc(date)+'</strong><small>'+
+   players+' jugadores · Fase 1: '+count(s.phase1)+'/20 · Fase 2: '+count(s.phase2)+'/20'+
+   (r.published_at?' · Publicado antes':' · Borrador')+'</small></div>'+
+   '<button type="button" class="btn '+(current?'outline':'gold')+' small" data-restore-date="'+esc(r.battle_date)+
+   '" data-restore-team="'+esc(r.team)+'">'+(current?'↗ Editar mapa':'↻ Recuperar y editar')+'</button></div>';
+ }).join("");
+}
+async function loadSavedDrafts(autoRestore=false){
+ const {data,error}=await sb.from("desert_storm_plans")
+  .select("battle_date,team,updated_at,draft,published,published_at")
+  .order("updated_at",{ascending:false}).limit(12);
+ if(error)throw new Error("No se pudieron consultar tus borradores: "+error.message);
+ savedDrafts=(data||[]).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.battle_date)&&["A","B"].includes(r.team));
+ renderSavedDrafts();
+ if(!autoRestore||!savedDrafts.length)return false;
+ let last=null;try{last=JSON.parse(localStorage.getItem("hola-ds-builder-current")||"null");}catch{}
+ const chosen=savedDrafts.find(r=>r.battle_date===last?.battle_date&&r.team===last?.team)||savedDrafts[0];
+ $("battleDate").value=chosen.battle_date;$("team").value=chosen.team;
+ return await loadDraft(false);
+}
 async function loadDraft(show=true){
- const d=$("battleDate").value,t=$("team").value;if(!d){notice("Selecciona una fecha válida.","error");return;}
- try{await refreshOther();const {data,error}=await sb.from("desert_storm_plans").select("draft,published_at").eq("battle_date",d).eq("team",t).maybeSingle();if(error)throw error;
-  const fallback=localStorage.getItem(localKey());const src=data?.draft&&Object.keys(data.draft).length?data.draft:(fallback?JSON.parse(fallback):null);
-  state=stateReady(src);state.battle_date=d;state.team=t;state.serverTime=src?.serverTime|| (t==="A"?"18:00":"09:00");
-  // Pending OCR belongs to its own team and day. Never carry it to a different roster.
+ const d=$("battleDate").value,t=$("team").value;
+ if(!d){notice("Selecciona una fecha válida.","error");return false;}
+ try{
+  // Read this saved team before validating the opponent; a roster clash cannot
+  // make the user's own saved map inaccessible for editing.
+  const {data,error}=await sb.from("desert_storm_plans")
+   .select("draft,published,published_at").eq("battle_date",d).eq("team",t).maybeSingle();
+  if(error)throw error;
+  const fallback=localStorage.getItem(localKey());
+  const src=data?.draft&&Object.keys(data.draft).length?data.draft:
+   data?.published&&Object.keys(data.published).length?data.published:
+   fallback?JSON.parse(fallback):null;
+  let crossWarning="";
+  try{await refreshOther();}catch(e){rosterOther=new Set();crossWarning=String(e?.message||e);}
+  state=stateReady(src);state.battle_date=d;state.team=t;
+  state.serverTime=src?.serverTime||(t==="A"?"18:00":"09:00");
+  phase="phase1";selectedBuilding="H1";
   proposals=[];rejectedOCR=new Map();ocrHasRead=false;
-  syncSetup();renderRoster();renderProposals();mutate();loadTemplates().catch(error=>console.warn("Plantillas DS:",error));if(show)notice(src?"Borrador cargado · Team "+t:"Jornada nueva · Team "+t,"success");
- }catch(e){notice("No se pudo cargar la jornada: "+(e.message||e),"error");}
+  syncSetup();renderRoster();renderProposals();mutate();renderSavedDrafts();
+  localStorage.setItem("hola-ds-builder-current",JSON.stringify({battle_date:d,team:t}));
+  loadTemplates().catch(e=>console.warn("Plantillas DS:",e));
+  if(crossWarning)notice("Jornada recuperada, pero comprueba las inscripciones antes de publicar: "+crossWarning,"error");
+  else if(show){const c=counts();notice(src?"✓ Recuperado Team "+t+" del "+d+" · "+c.starter+" titulares, "+c.sub+" suplentes y sus mapas. Ya puedes modificarlos.":"Jornada nueva · Team "+t,"success");}
+  return true;
+ }catch(e){notice("No se pudo recuperar la jornada: "+(e.message||e),"error");return false;}
 }
 function syncSetup(){for(const key of ["serverTime","templateName","keyword","language"])$(key).value=state[key];updateLeaders();}
 function counts(){return {starter:state.roster.filter(x=>x.role==="starter").length,sub:state.roster.filter(x=>x.role==="sub").length};}
 function removeAssignments(name){for(const field of ["phase1","phase2","missions","subs"])for(const key of Object.keys(state[field]))state[field][key]=state[field][key].filter(n=>n!==name);}
 function addRoster(name,role,power){
  name=canonical(name);if(!name)throw new Error("Selecciona un miembro actual de HOLa.");
- if(rosterOther.has(normal(name)))throw new Error(name+" ya figura en el otro equipo para esta jornada.");
+ if(rosterOther.has(normal(name)))throw new Error(name+" ya está guardado en Team "+(state.team==="A"?"B":"A")+" para esta fecha. Abre «☁ Recuperar DS guardado» y selecciona el equipo correcto.");
  const existing=state.roster.find(r=>normal(r.name)===normal(name));
  if(existing){if(existing.role!==role)throw new Error(name+" ya figura como "+(existing.role==="starter"?"titular":"suplente")+". Revisa su B.");if(power!=null&&Number.isFinite(Number(power)))existing.power=Number(power);return false;}
  const count=counts();if(role==="starter"&&count.starter>=20)throw new Error("Ya hay 20 titulares; no puedes añadir más.");if(role==="sub"&&count.sub>=10)throw new Error("Ya hay 10 suplentes; no puedes añadir más.");
@@ -269,7 +318,7 @@ function canAcceptAutomatically(p){
 function ocrCandidateReason(p){
  if(p.note)return String(p.note);
  if(!p.name||!canonical(p.name))return "Selecciona el nombre oficial de HOLa.";
- if(rosterOther.has(normal(canonical(p.name))))return "Este jugador ya figura en el otro equipo de esta jornada.";
+ if(rosterOther.has(normal(canonical(p.name))))return "Ya está guardado en Team "+(state?.team==="A"?"B":"A")+" para esta jornada. Abre «☁ Recuperar DS guardado» para editar su equipo sin repetir el OCR.";
  const existing=state?.roster?.find(r=>normal(r.name)===normal(canonical(p.name)));
  if(existing&&existing.role!==p.role)return "Ya está inscrito como "+(existing.role==="starter"?"titular":"suplente")+". Revisa la B.";
  if(!["starter","sub"].includes(p.role))return "No se distingue la B. Indica titular o suplente.";
@@ -603,7 +652,7 @@ async function saveDraft(published=false){
   state.battle_date=$("battleDate").value;state.team=$("team").value;state.serverTime=$("serverTime").value;state.templateName=$("templateName").value.trim()||"Operación Faraón";state.keyword=$("keyword").value.trim();state.leader=$("leader").value;state.alternate=$("alternate").value;state.language=$("language").value;
   const payload={battle_date:state.battle_date,team:state.team,draft:JSON.parse(JSON.stringify(state)),updated_at:new Date().toISOString()};
   if(published){payload.published=JSON.parse(JSON.stringify(state));payload.published_at=new Date().toISOString();}
-  const {error}=await sb.from("desert_storm_plans").upsert(payload,{onConflict:"battle_date,team"});if(error)throw error;storeLocal();
+  const {error}=await sb.from("desert_storm_plans").upsert(payload,{onConflict:"battle_date,team"});if(error)throw error;storeLocal();await loadSavedDrafts(false).catch(e=>console.warn('Listado de borradores DS:',e));
   notice(published?"✓ Estrategia publicada para Team "+state.team+". La web DS mostrará esta versión.":"✓ Borrador guardado en Supabase (todavía no publicado).","success");return true;
  }catch(e){notice("No se pudo "+(published?"publicar":"guardar")+": "+e.message,"error");return false;}finally{busy=false;for(const b of ["saveDraftTop","saveDraftPlan","saveDraftBottom"])$(b).disabled=false;renderValidation();}
 }
@@ -771,6 +820,16 @@ function events(){
  document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
  $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());$("customMap").addEventListener("change",e=>useOriginalMap(e.target.files?.[0]));
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
+ $("savedDraftsList").addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-restore-date][data-restore-team]");
+  if(!btn||btn.disabled)return;
+  const d=btn.dataset.restoreDate,t=btn.dataset.restoreTeam;
+  if(!savedDrafts.some(r=>r.battle_date===d&&r.team===t))return;
+  if(state?.battle_date===d&&state?.team===t){switchTab("plan");$("savedDraftsPanel").open=false;return;}
+  btn.disabled=true;$("battleDate").value=d;$("team").value=t;
+  if(await loadDraft(true)){switchTab("plan");$("savedDraftsPanel").open=false;}
+  else btn.disabled=false;
+ });
  $("loadDraft").onclick=()=>loadDraft();$("saveTemplate").onclick=saveTemplate;$("loadTemplate").onclick=loadTemplate;$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
@@ -786,4 +845,4 @@ function events(){
  $("announcement").addEventListener("input",updateAnnounceCount);$("refreshAnnouncement").onclick=()=>{$("announcement").value=buildAnnouncement();updateAnnounceCount();};$("refreshMail").onclick=()=>{$("mailOutput").value=buildMail();};
  for(const [id,kind] of [["poster1","phase1"],["poster2","phase2"],["posterCombined","combined"]])$(id).onclick=()=>createPoster(kind).catch(e=>notice(e.message,"error"));
 }
-(async()=>{try{const today=new Date();const yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,"0"),dd=String(today.getDate()).padStart(2,"0");$("battleDate").value=yyyy+"-"+mm+"-"+dd;$("team").value="A";if(!await verifyAccess())return;events();await loadDraft(false);notice("DS Builder preparado. Importa la convocatoria de Team A o Team B y guarda tu borrador.","success");}catch(e){$("gate").textContent="No se pudo iniciar el DS Builder: "+e.message;$("gate").className="notice error";$("app").hidden=true;console.error(e);}})();
+(async()=>{try{const today=new Date();const yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,"0"),dd=String(today.getDate()).padStart(2,"0");$("battleDate").value=yyyy+"-"+mm+"-"+dd;$("team").value="A";if(!await verifyAccess())return;events();let restored=false;try{restored=await loadSavedDrafts(true);}catch(e){console.warn("Recuperación de DS:",e);notice("No se pudo consultar tus borradores: "+e.message,"error");}if(restored){const c=counts();notice("✓ Recuperado tu último DS: Team "+state.team+" · "+state.battle_date+" · "+c.starter+" titulares, "+c.sub+" suplentes y mapas de ambas fases. Puedes editarlo.","success");}else if(!state){await loadDraft(false);if(state)notice("DS Builder preparado. Elige Team A o Team B, o abre «☁ Recuperar DS guardado».","info");}}catch(e){$("gate").textContent="No se pudo iniciar el DS Builder: "+e.message;$("gate").className="notice error";$("app").hidden=true;console.error(e);}})();

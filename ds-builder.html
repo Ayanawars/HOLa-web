@@ -46,6 +46,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .ocr-missing-grid button{grid-column:1/-1;min-height:45px}
 @media(max-width:680px){.ocr-missing-grid{grid-template-columns:1fr}.ocr-missing-grid button{grid-column:1}}
 .ocr-needed{margin-top:12px;padding:12px;border:2px solid #dda24f;background:#fff1d1;border-radius:12px;font-size:14px;line-height:1.55;color:#724813}.ocr-needed strong{display:block;font-size:16px;margin-bottom:4px}.ocr-complete{margin-top:12px;padding:10px;background:#e0f8e9;border-radius:10px;color:#21704d;font-weight:800}.ocr-missing[hidden]{display:none!important}
+.recovery-panel{border:2px solid #c5a756;border-radius:15px;background:linear-gradient(130deg,#fff9e4,#effbf9);padding:13px;margin:9px 0 14px;box-shadow:0 5px 15px rgba(30,65,62,.09)}.recovery-panel summary{cursor:pointer;font-weight:950;color:#17526a;font-size:14px;line-height:1.4}.recovery-panel .muted{margin:10px 0}.saved-draft-list{display:grid;gap:9px}.saved-draft-card{border:1px solid #d8bf83;border-radius:12px;background:#fffefa;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.saved-draft-card strong{display:block;color:#174964}.saved-draft-card small{display:block;color:#577181;line-height:1.5;margin-top:3px}.saved-draft-card button{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -54,6 +55,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div id="gate" class="notice info">Comprobando tu acceso al centro de administración…</div>
 <div id="app" hidden>
 <div id="message" class="notice info" role="status" aria-live="polite">Elige equipo y jornada para preparar una estrategia.</div>
+<details id="savedDraftsPanel" class="recovery-panel" hidden><summary id="savedDraftsTitle">☁ Recuperar DS guardado</summary><p class="muted">Tus convocatorias y mapas guardados en Supabase. Abre la jornada correcta para editarla sin volver a pasar las capturas.</p><div id="savedDraftsList" class="saved-draft-list"></div></details>
 <nav class="steps" aria-label="Pasos del editor">
 <button type="button" class="active" data-tab="setup">01 · JORNADA</button><button type="button" data-tab="roster">02 · EQUIPO</button><button type="button" data-tab="plan">03 · MAPA</button><button type="button" data-tab="publish">04 · PUBLICAR</button>
 </nav>
@@ -135,6 +137,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
-<script type="module" src="js/ds-builder.js?v=20260925-real-map-v1"></script>
+<script type="module" src="js/ds-builder.js?v=20260925-draft-recovery-v1"></script>
 <script src="js/hola-tr-ui.js"></script>
 </body></html>
