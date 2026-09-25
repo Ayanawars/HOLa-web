@@ -933,79 +933,62 @@ async function cropForOCR(file){
 
 function parseSimpleNamePoints(text){
   const registered=participants();
-  if(!registered.length) return [];
-
-  const lines=(text||'').split(/\r?\n/)
-    .map(x=>x.replace(/\s+/g,' ').trim())
-    .filter(Boolean);
-
-  // OCR.Space puede separar nombre y puntos en líneas distintas,
-  // unirlos en una sola línea o introducir pequeños errores de OCR.
-  // Buscamos cada fila localmente y damos prioridad a la coincidencia
-  // exacta, después a una coincidencia aproximada.
-  const used=new Set();
-  const out=[];
-
-  function loose(s){
-    return norm(cleanOCRName(String(s||''))
-      .replace(/\[?HOLa\]?/ig,'')
-      .replace(/[|]/g,'I'));
-  }
-
-  function nameScore(a,wanted){
-    const aa=loose(a).replace(/\d+/g,'');
-    const bb=norm(wanted).replace(/\d+/g,'');
-    if(!aa||!bb) return 0;
-    if(aa===bb) return 1;
-    if(aa.includes(bb)||bb.includes(aa)) return .98;
-    return similarity(aa,bb);
-  }
-
-  function numericCandidates(line){
-    const raw=String(line||'');
-    const matches=raw.match(/\b\d[\d\s.,]{2,}\b/g)||[];
-    return matches.map(x=>pointValue(x)).filter(v=>Number.isFinite(v)&&v>=1000&&v<=10000000);
-  }
-
-  for(let i=0;i<lines.length;i++){
-    let best=null;
-    for(const wanted of registered){
-      const key=norm(wanted);
-      if(used.has(key)) continue;
-      const score=nameScore(lines[i],wanted);
-      if(score>=.68 && (!best || score>best.score)) best={wanted,score};
-    }
-    if(!best) continue;
-
-    let points=null;
-    let sourceLine=i;
-    const same=numericCandidates(lines[i]);
-    if(same.length) points=same[same.length-1];
-
-    // Puntos normalmente están justo debajo del nombre.
-    if(points===null){
-      for(let j=i+1;j<=Math.min(i+3,lines.length-1);j++){
-        const pts=numericCandidates(lines[j]);
-        if(pts.length){ points=pts[0]; sourceLine=j; break; }
-        // Si encontramos otro nombre conocido, no saltamos a su puntuación.
-        const another=registered.some(w=>w!==best.wanted && nameScore(lines[j],w)>=.88);
-        if(another) break;
-      }
-    }
-
-    if(points===null) continue;
+  if(!registered.length)return [];
+  const lines=String(text||"").split(/\r?\n/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
+  const out=[],used=new Set();
+  const nameKey=x=>norm(String(x||"").replace(/\[?HOLa\]?/ig,"").replace(/^[^\p{L}\p{N}]+/gu,""));
+  const scoreLine=x=>{
+    const value=String(x||"").replace(/[Oo]/g,"0").replace(/[Il|]/g,"1").replace(/[Ss]/g,"5").replace(/[.,\s]/g,"");
+    // Scores are on their own line. Never use ranking, avatar text or a number from a name.
+    return /^\d{2,9}$/.test(value)?Number(value):null;
+  };
+  for(let i=0;i<lines.length-1;i++){
+    const raw=lines[i];
+    if(!/\[?HOLa\]?/i.test(raw))continue;
+    const actual=nameKey(raw);
+    if(actual.length<3)continue;
+    const candidates=registered.map(wanted=>{
+      const key=nameKey(wanted);
+      const score=actual===key?1:
+        actual.includes(key)&&key.length>=5?.96:
+        key.includes(actual)&&actual.length>=5?.91:similarity(actual,key);
+      return {wanted,score};
+    }).sort((a,b)=>b.score-a.score);
+    const best=candidates[0],runner=candidates[1];
+    if(!best||best.score<.88||(runner&&best.score-runner.score<.09)||used.has(norm(best.wanted)))continue;
+    // Points must be the immediately following OCR line, not a later player's score.
+    const points=scoreLine(lines[i+1]);
+    if(points===null)continue;
     used.add(norm(best.wanted));
-    out.push({
-      name:best.wanted,
-      ocrName:cleanOCRName(lines[i]),
-      points,
-      sourceLine
-    });
+    out.push({name:best.wanted,ocrName:cleanOCRName(raw),points,sourceLine:i+1});
+    i++;
   }
-
   return out.sort((a,b)=>b.points-a.points);
 }
 
+async function prepareDSScoreCrop(file){
+  // Last War mail: position and avatar are on the left; names/scores are on the right.
+  // Exclude mail header and footer to prevent rank, date and UI text becoming scores.
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((resolve,reject)=>{
+      const im=new Image();im.onload=()=>resolve(im);
+      im.onerror=()=>reject(new Error("No se pudo leer la captura."));
+      im.src=url;
+    });
+    const x=Math.round(img.naturalWidth*.385),y=Math.round(img.naturalHeight*.25);
+    const w=img.naturalWidth-x,h=Math.round(img.naturalHeight*.695);
+    const canvas=document.createElement("canvas");
+    canvas.width=w*2;canvas.height=h*2;
+    const ctx=canvas.getContext("2d");
+    ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
+    ctx.drawImage(img,x,y,w,h,0,0,canvas.width,canvas.height);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
+    if(!blob)throw new Error("No se pudo preparar el recorte OCR.");
+    return new File([blob],"ds-scores-crop.png",{type:"image/png"});
+  }finally{URL.revokeObjectURL(url);}
+}
 async function prepareOCRImage(file){
   // Convertimos cualquier captura a JPEG en el navegador. Esto evita problemas
   // con formatos móviles como WEBP/HEIC y mantiene el recorte manual del usuario.
@@ -1042,24 +1025,28 @@ async function fileAsDataUrl(file){
 }
 
 async function ocrImage(file){
-  let local=null,localError=null;
-  try{
-    local=await dsLocalOCR(file);
-  }catch(err){localError=err;}
+  const cropped=await prepareDSScoreCrop(file);
+  let local=null,localError=null,azure=null,azureError=null;
+  try{local=await dsLocalOCR(cropped);}catch(err){localError=err;}
   const localRows=local?.text?parseSimpleNamePoints(local.text):[];
-  // Only call Azure when local OCR produced no usable rows or missed registered participants.
-  if(localRows.length>=participants().length)return local;
-  try{
-    const azure=await dsAzureOCR(file);
-    const azureRows=parseSimpleNamePoints(azure.text);
-    if(azureRows.length>localRows.length)return azure;
-    if(localRows.length)return local;
-    return azure;
-  }catch(err){
-    if(localRows.length)return {...local,warning:"Azure no disponible: "+err.message};
-    throw new Error("OCR local: "+(localError?.message||"sin filas reconocidas")+
-      " · Azure: "+(err?.message||"no disponible"));
+  // Azure runs on the same cropped image so both engines see the same score column.
+  try{azure=await dsAzureOCR(cropped);}catch(err){azureError=err;}
+  const azureRows=azure?.text?parseSimpleNamePoints(azure.text):[];
+  const byName=new Map();
+  for(const r of localRows)byName.set(norm(r.name),{...r,provider:"Local"});
+  const conflicts=[];
+  for(const r of azureRows){
+    const key=norm(r.name),existing=byName.get(key);
+    if(existing&&existing.points!==r.points){
+      byName.delete(key);conflicts.push(r.name);continue;
+    }
+    if(!existing)byName.set(key,{...r,provider:"Azure"});
   }
+  if(!byName.size&&localError&&azureError)throw new Error("OCR local: "+localError.message+" · Azure: "+azureError.message);
+  const rows=[...byName.values()];
+  return {text:local?.text||azure?.text||"",rows,
+    warning:[conflicts.length?"Puntuaciones distintas entre motores (revisar manualmente): "+conflicts.join(", "):"",
+      azureError?"Azure no disponible: "+azureError.message:""].filter(Boolean).join(" · ")};
 }
 
 function renderResults(){
@@ -1129,7 +1116,7 @@ async function runOCR(){
       const text=ocr.text;
       const captureTime=parseTime(text);
       if(captureTime) allTimes.push(captureTime);
-      const rows=parseSimpleNamePoints(text);
+      const rows=ocr.rows||[];
       rows.forEach(r=>detected.push({position:0,ocrName:r.ocrName,playerName:r.name,points:r.points,captureTime}));
     }
 
