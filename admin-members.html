@@ -25,13 +25,13 @@
 <body>
   <div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
   <main class="shell" id="app" hidden>
-    <div class="topbar"><a class="round" href="admin-center-hola_login.html" aria-label="Volver al centro de administración">‹</a><button class="round" id="logoutTop" type="button" aria-label="Cerrar sesión">⇥</button></div>
+    <div class="topbar"><a class="round" href="admin-center-hola_login.html" aria-label="Volver al centro de administración">‹</a><select id="memberLanguage" aria-label="Idioma" style="margin-left:auto;max-width:145px;min-height:43px;border:1px solid #d5a832;border-radius:14px;background:#fffaf0;color:#103f69;font-weight:800"><option value="es">🇪🇸 Español</option><option value="en">🇬🇧 English</option><option value="fr">🇫🇷 Français</option><option value="de">🇩🇪 Deutsch</option><option value="ro">🇷🇴 Română</option><option value="pt">🇵🇹 Português</option><option value="uk">🇺🇦 Українська</option><option value="it">🇮🇹 Italiano</option><option value="pl">🇵🇱 Polski</option><option value="tr">🇹🇷 Türkçe</option></select><button class="round" id="logoutTop" type="button" aria-label="Cerrar sesión">⇥</button></div>
     <div class="brand"><img src="hola-s3-logo.png" alt="HOLa — Heroes of Last Area"></div>
     <section class="panel">
       <div class="kicker">ADMINISTRACIÓN · S3</div>
       <h1 class="title">Editar miembros</h1>
       <p class="sub">Busca un jugador y modifica manualmente sus datos guardados en Supabase. Los cambios de nombre actualizan también los registros VS, Desert Storm y encuestas.</p>
-      <div class="searchbox">
+      <button class="save" id="newMember" type="button" style="width:100%;margin:0 0 13px">＋ NUEVO MIEMBRO</button><div class="searchbox">
         <input id="memberSearch" type="search" autocomplete="off" placeholder="Buscar jugador…">
         <div class="results" id="searchResults" hidden></div>
       </div>
@@ -103,7 +103,7 @@
     const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id);
     const fields=['name','rank','hq_level','profession','thp','squad1_type','squad1_power','squad2_type','squad2_power','squad3_type','squad3_power','city','community','country','flag','about_me','epic_quote','survey_completed_at','ai_detection_week'];
-    let players=[], selected=null, avatarValue='';
+    let players=[], selected=null, avatarValue='', creatingMember=false;
     const fallbackAvatar='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" rx="80" fill="#eaf8fd"/><circle cx="80" cy="59" r="28" fill="#8ccce5"/><path d="M30 145c5-35 25-52 50-52s45 17 50 52" fill="#8ccce5"/></svg>`);
     function normalizeName(v){return String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
     function setStatus(text,type=''){const el=$('memberStatus');el.textContent=text;el.className='status'+(type?' '+type:'');}
@@ -129,7 +129,7 @@
       const {data,error}=await sb.from('players').select('*').order('name',{ascending:true}); if(error)throw error; players=Array.isArray(data)?data:[];
     }
     function fill(row){
-      selected=row; avatarValue=row.avatar||'';
+      selected=row; creatingMember=false; avatarValue=row.avatar||'';
       $('memberSearch').value=row.name||'';$('searchResults').hidden=true;$('editor').hidden=false;
       for(const id of fields){const el=$(id);if(!el)continue;el.value=id==='survey_completed_at'?formatDate(row[id]):(row[id]??'')}
       $('t10').checked=row.t10===true;$('supreme_lord_unlocked').checked=row.supreme_lord_unlocked===true;$('survey_completed').checked=row.survey_completed===true;
@@ -141,19 +141,20 @@
     function cleanText(id){const v=$(id).value.trim();return v||null}
     function cleanPower(id){const raw=$(id).value.trim().replace(',','.');if(!raw)return null;const m=raw.match(/^([0-9]+(?:\.[0-9]+)?)\s*M?$/i);if(!m)return raw;return Number(m[1]).toFixed(2)+'M';}
     async function saveMember(){
-      if(!selected)return; const b=$('saveMember');b.disabled=true;$('reloadMember').disabled=true;setStatus('Guardando…');
+      if(!selected&&!creatingMember)return; const b=$('saveMember');b.disabled=true;$('reloadMember').disabled=true;setStatus('Guardando…');
       try{
-        const wasCompleted=selected.survey_completed===true, nowCompleted=$('survey_completed').checked;
+        const wasCompleted=selected?.survey_completed===true, nowCompleted=$('survey_completed').checked;
         const payload={
           rank:cleanText('rank'),hq_level:$('hq_level').value?Number($('hq_level').value):null,profession:cleanText('profession'),t10:$('t10').checked,supreme_lord_unlocked:$('supreme_lord_unlocked').checked,
           thp:cleanPower('thp'),squad1_type:cleanText('squad1_type')||'',squad1_power:cleanPower('squad1_power'),squad2_type:cleanText('squad2_type')||'',squad2_power:cleanPower('squad2_power'),squad3_type:cleanText('squad3_type')||'',squad3_power:cleanPower('squad3_power'),
           city:cleanText('city'),community:cleanText('community'),country:cleanText('country'),flag:cleanText('flag'),avatar:avatarValue||null,about_me:cleanText('about_me'),epic_quote:cleanText('epic_quote'),survey_completed:nowCompleted,
-          survey_completed_at:nowCompleted?(selected.survey_completed_at||(wasCompleted?selected.survey_completed_at:new Date().toISOString())):null,updated_at:new Date().toISOString()
+          survey_completed_at:nowCompleted?(selected?.survey_completed_at||(wasCompleted?selected?.survey_completed_at:new Date().toISOString())):null,updated_at:new Date().toISOString()
         };
-        const originalName=selected.name;
+        const originalName=selected?.name||'';
         const newName=$('name').value.trim();
         if(newName.length<2||newName.length>80)throw new Error('El nombre debe tener entre 2 y 80 caracteres.');
-        if(newName!==originalName){
+        if(creatingMember&&players.some(p=>normalizeName(p.name)===normalizeName(newName)))throw new Error('Ya existe un miembro con ese nombre.');
+        if(!creatingMember&&newName!==originalName){
           const duplicate=players.find(p=>p.name!==originalName&&normalizeName(p.name)===normalizeName(newName));
           if(duplicate)throw new Error('Ya existe otro miembro con ese nombre.');
           if(!confirm('¿Cambiar el nombre de '+originalName+' a '+newName+'? Se actualizarán también sus estadísticas VS, Desert Storm y encuestas.'))return;
@@ -161,9 +162,11 @@
           if(renameError)throw renameError;
           selected={...selected,name:newName};
         }
-        const {data,error}=await sb.from('players').update(payload).eq('name',selected.name).select('*').single();
+        const {data,error}=creatingMember
+          ?await sb.from('players').insert({...payload,name:newName}).select('*').single()
+          :await sb.from('players').update(payload).eq('name',selected.name).select('*').single();
         if(error){
-          if(newName!==originalName){
+          if(!creatingMember&&newName!==originalName){
             await loadPlayers();const renamed=players.find(p=>p.name===newName);
             if(renamed)fill(renamed);
             throw new Error('El nombre se cambió correctamente, pero no se pudieron guardar los demás campos: '+error.message);
@@ -173,16 +176,17 @@
         const i=players.findIndex(p=>p.name===originalName||p.name===data.name);
         if(i>=0)players[i]=data;else players.push(data);
         players=players.filter((p,index)=>players.findIndex(x=>x.name===p.name)===index);
-        fill(data);setStatus(newName!==originalName?'✓ Nombre e historial actualizados; datos guardados.':'✓ Datos del miembro actualizados.','ok');
+        const wasNew=creatingMember;fill(data);setStatus(wasNew?'✓ Nuevo miembro creado correctamente.':newName!==originalName?'✓ Nombre e historial actualizados; datos guardados.':'✓ Datos del miembro actualizados.','ok');
       }catch(e){setStatus('No se pudieron guardar los cambios: '+(e?.message||e),'error')}finally{b.disabled=false;$('reloadMember').disabled=false}
     }
     async function resizeAvatar(file){
       const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});const size=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-size)/2,sy=(img.naturalHeight-size)/2,canvas=document.createElement('canvas');canvas.width=480;canvas.height=480;const ctx=canvas.getContext('2d');ctx.drawImage(img,sx,sy,size,size,0,0,480,480);return canvas.toDataURL('image/jpeg',.84)}finally{URL.revokeObjectURL(url)}
     }
+    $('newMember').addEventListener('click',()=>{creatingMember=true;selected=null;avatarValue='';$('editor').hidden=false;$('memberSearch').value='';$('searchResults').hidden=true;for(const id of fields){const el=$(id);if(el)el.value='';}for(const id of ['t10','supreme_lord_unlocked','survey_completed'])$(id).checked=false;$('avatarPreview').src=fallbackAvatar;$('selectedName').textContent='Nuevo miembro';$('selectedSummary').textContent='Completa los datos y guarda';$('selectedRank').textContent='—';setStatus('');$('name').focus();});
     $('memberSearch').addEventListener('focus',()=>renderResults($('memberSearch').value));$('memberSearch').addEventListener('input',()=>renderResults($('memberSearch').value));document.addEventListener('click',e=>{if(!e.target.closest('.searchbox'))$('searchResults').hidden=true});
     $('avatarFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{avatarValue=await resizeAvatar(f);$('avatarPreview').src=avatarValue;setStatus('Avatar preparado. Pulsa Guardar cambios para aplicarlo.')}catch{setStatus('No se pudo procesar la imagen.','error')}});
     $('clearAvatar').addEventListener('click',()=>{avatarValue='';$('avatarPreview').src=fallbackAvatar;setStatus('Avatar marcado para eliminar. Pulsa Guardar cambios.')});
-    $('saveMember').addEventListener('click',saveMember);$('reloadMember').addEventListener('click',()=>selected&&selectPlayer(selected.name));
+    $('saveMember').addEventListener('click',saveMember);$('reloadMember').addEventListener('click',()=>creatingMember?$('newMember').click():selected&&selectPlayer(selected.name));
     async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html')}$('logoutTop').addEventListener('click',logout);
     const ok=await verify();if(!ok){await deny()}else{try{await loadPlayers();$('guard').hidden=true;$('app').hidden=false;renderResults('');$('searchResults').hidden=true}catch(e){await deny()}}
   </script>
