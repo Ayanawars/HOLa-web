@@ -30,7 +30,7 @@
     <section class="panel">
       <div class="kicker">ADMINISTRACIÓN · S3</div>
       <h1 class="title">Editar miembros</h1>
-      <p class="sub">Busca un jugador y modifica manualmente sus datos guardados en Supabase. El nombre queda bloqueado para evitar romper referencias internas.</p>
+      <p class="sub">Busca un jugador y modifica manualmente sus datos guardados en Supabase. Los cambios de nombre actualizan también los registros VS, Desert Storm y encuestas.</p>
       <div class="searchbox">
         <input id="memberSearch" type="search" autocomplete="off" placeholder="Buscar jugador…">
         <div class="results" id="searchResults" hidden></div>
@@ -46,7 +46,7 @@
         <section class="section">
           <h2>Identidad y progreso</h2>
           <div class="grid">
-            <label>Nombre<input id="name" readonly></label>
+            <label>Nombre<input id="name" maxlength="80" autocomplete="off" spellcheck="false"></label>
             <label>Rango<select id="rank"><option value="">—</option><option>R1</option><option>R2</option><option>R3</option><option>R4</option><option>R5</option></select></label>
             <label>Nivel HQ<input id="hq_level" type="number" min="1" max="40" inputmode="numeric"></label>
             <label>Profesión<select id="profession"><option value="">—</option><option value="Engineer">Engineer</option><option value="Warlord">Warlord</option></select></label>
@@ -150,8 +150,30 @@
           city:cleanText('city'),community:cleanText('community'),country:cleanText('country'),flag:cleanText('flag'),avatar:avatarValue||null,about_me:cleanText('about_me'),epic_quote:cleanText('epic_quote'),survey_completed:nowCompleted,
           survey_completed_at:nowCompleted?(selected.survey_completed_at||(wasCompleted?selected.survey_completed_at:new Date().toISOString())):null,updated_at:new Date().toISOString()
         };
-        const {data,error}=await sb.from('players').update(payload).eq('name',selected.name).select('*').single(); if(error)throw error;
-        const i=players.findIndex(p=>p.name===data.name);if(i>=0)players[i]=data;fill(data);setStatus('✓ Datos del miembro actualizados.','ok');
+        const originalName=selected.name;
+        const newName=$('name').value.trim();
+        if(newName.length<2||newName.length>80)throw new Error('El nombre debe tener entre 2 y 80 caracteres.');
+        if(newName!==originalName){
+          const duplicate=players.find(p=>p.name!==originalName&&normalizeName(p.name)===normalizeName(newName));
+          if(duplicate)throw new Error('Ya existe otro miembro con ese nombre.');
+          if(!confirm('¿Cambiar el nombre de '+originalName+' a '+newName+'? Se actualizarán también sus estadísticas VS, Desert Storm y encuestas.'))return;
+          const {error:renameError}=await sb.rpc('hola_rename_member',{p_old_name:originalName,p_new_name:newName});
+          if(renameError)throw renameError;
+          selected={...selected,name:newName};
+        }
+        const {data,error}=await sb.from('players').update(payload).eq('name',selected.name).select('*').single();
+        if(error){
+          if(newName!==originalName){
+            await loadPlayers();const renamed=players.find(p=>p.name===newName);
+            if(renamed)fill(renamed);
+            throw new Error('El nombre se cambió correctamente, pero no se pudieron guardar los demás campos: '+error.message);
+          }
+          throw error;
+        }
+        const i=players.findIndex(p=>p.name===originalName||p.name===data.name);
+        if(i>=0)players[i]=data;else players.push(data);
+        players=players.filter((p,index)=>players.findIndex(x=>x.name===p.name)===index);
+        fill(data);setStatus(newName!==originalName?'✓ Nombre e historial actualizados; datos guardados.':'✓ Datos del miembro actualizados.','ok');
       }catch(e){setStatus('No se pudieron guardar los cambios: '+(e?.message||e),'error')}finally{b.disabled=false;$('reloadMember').disabled=false}
     }
     async function resizeAvatar(file){
