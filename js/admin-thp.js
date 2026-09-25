@@ -102,51 +102,106 @@ async function readAzure(prep){
  if(!response.ok)throw new Error(data?.error||"Azure HTTP "+response.status);
  return azureLines(data,prep.ox,prep.oy,prep.scale);
 }
+// In DS "Seleccionar participantes", each name is directly ABOVE
+// "Poder Total del Héroe: 105.8M" inside the SAME white player card.
+function heroPowerLabel(text){
+ const norm=String(text||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+  .replace(/0/g,"o").replace(/3/g,"e");
+ return /poder\s*total\s*(?:d[e]l?\s*)?heroe/.test(norm)
+  || /total\s*hero\s*power/.test(norm);
+}
+function possiblePlayerLine(text){
+ const raw=String(text||"").trim();
+ if(raw.length<3||raw.length>75||heroPowerLabel(raw))return false;
+ if((raw.match(/\p{L}/gu)||[]).length<2)return false; // Names such as N3v3r89 and N6C6R6
+ if(/^(?:r[1-5]\s*[\d/]|[\d/]+$)/i.test(raw))return false;
+ if(/\b(?:estratega|strategy|campo|seleccionar|participantes|fuerza\s*especial|b[uú]squeda|poder\s*total|power|squad|miembros|batalla|hospital|ranking|alliance|total|rally)\b/i.test(raw))return false;
+ return true;
+}
 function parseCandidates(lines,prep,engine){
- // Names and THP can arrive on separate OCR lines, far apart horizontally.
- const all=(lines||[]).filter(line=>{
-  const text=String(line.text||"").trim();
-  return text&&line.y>=prep.h*.08&&line.y<=prep.h*.97&&line.x>=0&&line.x<=prep.w*.99;
- }).sort((a,b)=>a.y-b.y||a.x-b.x);
- const generic=/\b(?:poder|power|estrateg|seleccion|fuerza especial|batalla|hero|participantes|suplentes|titulares|total|reservas|buscar|battle|squad|alliance|refiner|hospital|info center|cargar|ranking|search|member list|miembros)\b/i;
- const people=[],powerRows=[];
- for(const line of all){
-  const powers=tokens(line.text);
-  if(powers.length&&!/\b(?:total|overall|toplam|thp\s*total)\b/i.test(line.text))
-   powerRows.push({...line,powers});
-  const raw=String(line.text||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").trim();
-  if(raw.length<3||raw.length>85)continue;
-  const match=matchName(raw);
-  if(match.name&&(!generic.test(raw)||match.exact))
-   people.push({...line,raw,name:match.name,exact:match.exact});
- }
- const gap=Math.max(15,prep.h*.023);
- // A name that OCR cannot match stays in the manual-review queue, never
- // silently enrolled as a different member.
- for(const line of all){
-  const raw=String(line.text||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").trim();
-  if(raw.length<4||raw.length>60||generic.test(raw)||!/\p{L}{3}/u.test(raw))continue;
-  if(people.some(p=>Math.abs(p.y-line.y)<3&&p.x===line.x))continue;
-  if(tokens(raw).length===1&&/^\s*(?:\d{1,3}(?:[.,]\d{3}){2,3}|\d{7,9}|\d{1,4}(?:[.,]\d{1,3})?\s*[mМᴍ])\s*$/iu.test(raw))continue;
-  if(people.some(p=>Math.abs(p.y-line.y)<gap&&Math.abs(p.x-line.x)<prep.w*.13))continue;
-  const likely=powerRows.some(p=>p!==line&&Math.abs(p.y-line.y)<gap&&p.x>line.x+prep.w*.07)||tokens(raw).length>0;
-  if(likely&&people.length<85)people.push({...line,raw,name:"",exact:false});
- }
- const out=[];
- for(const row of people){
-  const same=tokens(row.raw);
-  const nearby=powerRows.filter(p=>{
-   if(Math.abs(p.y-row.y)>gap||p.x<row.x+prep.w*.07)return false;
-   return !people.some(other=>other!==row&&other.name&&
-    Math.abs(p.y-other.y)+4<Math.abs(p.y-row.y)&&Math.abs(other.y-row.y)>gap*.4);
-  });
-  const unique=[...new Set([...same,...nearby.flatMap(p=>p.powers)].map(n=>n.toFixed(3)))].map(Number);
+ const all=(lines||[]).map(line=>({
+  text:String(line.text||"").trim(),x:Number(line.x||0),y:Number(line.y||0)
+ })).filter(line=>line.text&&line.y>=prep.h*.09&&line.y<=prep.h*.965
+  &&line.x>=0&&line.x<=prep.w*.99).sort((a,b)=>a.y-b.y||a.x-b.x);
+ const labelRows=all.filter(line=>heroPowerLabel(line.text));
+ const rowGap=Math.max(34,prep.h*.073),valueGap=Math.max(18,prep.h*.020);
+ const found=[];
+ for(const label of labelRows){
+  // OCR sometimes merges a name and the following "Poder Total..." into one line.
+  const matchLabel=String(label.text).normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+   .match(/p[o0]d[e3]r\s*t[o0]tal(?:\s*d[e3]l?)?\s*h[eé3]r[o0]e|total\s*hero\s*power/i);
+  const prefix=matchLabel?label.text.slice(0,matchLabel.index).trim():"";
+  let rawName="",person=null;
+  if(possiblePlayerLine(prefix)){
+   const match=matchName(prefix);rawName=prefix;person=match;
+  }else{
+   // Locate the name immediately ABOVE the power label, not to its right.
+   // The next player's name is always in the next white card further down.
+   const previous=all.filter(line=>line!==label&&line.y<=label.y
+    &&label.y-line.y<=rowGap&&Math.abs(line.x-label.x)<=prep.w*.23
+    &&possiblePlayerLine(line.text)).sort((a,b)=>{
+     const aMatch=matchName(a.text),bMatch=matchName(b.text);
+     return (aMatch.name?0:1)-(bMatch.name?0:1)
+      || (label.y-a.y)-(label.y-b.y)
+      || Math.abs(a.x-label.x)-Math.abs(b.x-label.x);
+    });
+   if(previous.length){
+    rawName=previous[0].text;
+    person=matchName(rawName);
+   }
+  }
+  // The number normally occurs ON the "Poder Total del Héroe" line.
+  // If OCR splits it into a separate line, it may be beside that label,
+  // not beside the player's name.
+  const around=all.filter(line=>line!==label
+   &&Math.abs(line.y-label.y)<=valueGap
+   &&line.x>=label.x-prep.w*.035&&line.x<=prep.w*.93
+   &&tokens(line.text).length
+   &&(!heroPowerLabel(line.text)||line.text!==label.text));
+  const numbers=[...tokens(label.text),...around.flatMap(line=>tokens(line.text))];
+  const unique=[...new Set(numbers.map(power=>power.toFixed(3)))].map(Number);
   const conflict=unique.length>1,power=unique.length===1?unique[0]:null;
-  if(!row.name&&power==null)continue;
-  const name=row.name||"",key=name?"player:"+normal(name):"raw:"+normal(row.raw);
-  out.push({key,name,raw:row.raw,power,conflict,exact:row.exact,engine,file:prep.name});
+  const name=person?.name||"",key=name?"player:"+normal(name):
+   "unknown:"+prep.name+":"+Math.round(label.y/14);
+  found.push({key,name,raw:rawName||"Nombre no leído en la fila del THP",
+   power,conflict,exact:!!person?.exact,manual:!person?.name,
+   engine,file:prep.name,labelFound:true});
  }
- return out;
+ // When OCR fails to recognize the exact label, still list known names and
+ // candidate THP beneath them for review. Never treat these unlabelled
+ // guesses as automatically approved changes.
+ const names=all.filter(line=>possiblePlayerLine(line.text)).map(line=>({
+  ...line,match:matchName(line.text)
+ })).filter(line=>line.match.name);
+ for(const line of names){
+  if(found.some(row=>row.name&&normal(row.name)===normal(line.match.name)))continue;
+  const candidatePower=all.filter(power=>power!==line
+   &&power.y>=line.y&&power.y-line.y<=rowGap
+   &&Math.abs(power.x-line.x)<=prep.w*.55
+   &&tokens(power.text).length
+   &&!names.some(other=>other!==line&&other.y>line.y
+    &&other.y<power.y&&Math.abs(other.x-line.x)<=prep.w*.25))
+   .sort((a,b)=>a.y-b.y);
+  const values=[...tokens(line.text),...candidatePower.flatMap(power=>tokens(power.text))];
+  const unique=[...new Set(values.map(power=>power.toFixed(3)))].map(Number);
+  const conflict=unique.length>1,power=unique.length===1?unique[0]:null;
+  const name=line.match.name;
+  found.push({key:"player:"+normal(name),name,raw:line.text,power,conflict,
+   exact:line.match.exact,manual:true,engine,file:prep.name,labelFound:false});
+ }
+ // Within one image a name can occasionally be repeated by Azure. Keep the
+ // explicit game-label row over a fallback row, but retain any conflicts.
+ const deduped=new Map();
+ for(const row of found){
+  const previous=deduped.get(row.key);
+  if(!previous||(!previous.labelFound&&row.labelFound)
+   ||(previous.power==null&&row.power!=null))deduped.set(row.key,row);
+  else if(previous.power!=null&&row.power!=null
+    &&Math.abs(previous.power-row.power)>.001){
+   previous.conflict=true;previous.power=null;
+  }
+ }
+ return [...deduped.values()];
 }
 function mergeCandidates(found){
  for(const item of found){
@@ -237,16 +292,18 @@ async function scan(){
    const file=files[i];message("Preparando imagen COMPLETA "+(i+1)+"/"+files.length+" · "+file.name);
    try{
     const prep=await prepare(file);
-    let azureRows=[],azureLineCount=0,tessRows=[],tessLineCount=0;
+    let azureRows=[],azureText=[],azureLineCount=0,tessRows=[],tessLineCount=0;
     // Azure first: no large Tesseract download before contacting Azure.
     try{
      message("Azure · leyendo "+(i+1)+"/"+files.length+" · "+file.name);
-     const azureText=await readAzure(prep);
+     azureText=await readAzure(prep);
      azureLineCount=azureText.length;azureRows=parseCandidates(azureText,prep,"Azure");
      mergeCandidates(azureRows);azureOK++;
     }catch(error){warnings.push("Azure "+file.name+": "+String(error?.message||error));}
     const missingValues=azureRows.filter(row=>row.name&&row.power==null).length;
-    if(azureRows.filter(row=>row.name&&row.power!=null).length<5||missingValues){
+    const labelsSeen=azureText.filter(line=>heroPowerLabel(line.text)).length;
+    const complete=azureRows.filter(row=>row.name&&row.power!=null&&!row.conflict).length;
+    if(complete<1||missingValues||labelsSeen>complete){
      try{
       if(!engineAttempted){engineAttempted=true;engine=await ocrWorker();}
       if(engine){

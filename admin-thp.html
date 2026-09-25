@@ -19,7 +19,7 @@ a{color:inherit}.shell{max-width:1040px;margin:auto;padding:16px 13px 88px}.back
 <header class="hero"><div class="eyebrow">HOLa · Heroes of Last Area · S3</div><h1>Actualizador THP</h1><p class="sub">Un lunes, todas las capturas. Solo nombres y THP: sin equipos, plazas ni suplentes. Compara el poder con Supabase, revisa las lecturas y guarda únicamente las subidas confirmadas.</p><div id="officer" class="eyebrow">ACCESO R4/R5</div></header>
 <section class="panel" aria-labelledby="scanTitle">
 <h2 id="scanTitle">01 · Capturas del listado de miembros</h2>
-<p class="tip">Usa el listado que ves como R4/R5 en Desert Storm. Sube capturas completas con nombres y poderes visibles; se admiten capturas solapadas. La lectura emplea Azure y, cuando hace falta, Tesseract. Las imágenes no se guardan en Supabase.</p>
+<p class="tip">Usa el listado de «Seleccionar participantes» de Desert Storm. El detector buscará cada nombre y el valor «Poder Total del Héroe» justo debajo de él. Sube capturas completas; las imágenes no se guardan en Supabase.</p>
 <input id="screenshots" class="file" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-label="Capturas del listado de miembros">
 <div class="row" style="margin-top:12px"><button class="btn" id="scan" type="button">⌕ Leer nombres y THP</button><button class="btn outline" type="button" id="reload">↻ Recargar fichas de Supabase</button></div>
 <div class="tip" id="selected">Ninguna captura seleccionada.</div>
@@ -39,6 +39,6 @@ a{color:inherit}.shell{max-width:1040px;margin:auto;padding:16px 13px 88px}.back
 <p class="footer">El THP se guarda en players.thp. Los valores inferiores, repetidos o que no se hayan confirmado nunca reducen el poder registrado. Solo una cuenta R4/R5 autorizada puede guardar cambios.</p>
 </main>
 </div>
-<script type="module" src="js/admin-thp.js?v=20260925-full-image-ocr-v2"></script>
+<script type="module" src="js/admin-thp.js?v=20260925-hero-card-layout-v3"></script>
 </body>
 </html>
