@@ -38,12 +38,15 @@ function distance(a,b){
  return previous[b.length];
 }
 function matchName(raw){
- const cleaned=String(raw||"").replace(/^\s*\d{1,3}\s*[.)-]\s*/,"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").replace(/\s+\d{1,4}(?:[.,]\d{1,3})?\s*[mМᴍ]\b.*$/i,"").trim();
- const found=official(cleaned);
- if(found)return {name:found.name,exact:true};
+ const cleaned=String(raw||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"")
+  .replace(/^\s*\d{1,3}(?:\s*[.)#:-]\s*|\s+(?=[\p{L}]))/u,"")
+  .replace(/\s+(?:\d{1,3}(?:[.,]\d{3}){2,3}|\d{7,9}|\d{1,4}(?:[.,]\d{1,3})?\s*[mМᴍ])(?:\s|$).*$/iu,"")
+  .replace(/\s{2,}/g," ").trim();
+ const found=official(cleaned);if(found)return {name:found.name,exact:true};
  const input=normal(cleaned);if(input.length<4)return {name:"",exact:false};
  let best=null,lowest=99,runner=99;
- for(const player of profiles){const d=distance(normal(player.name),input);if(d<lowest){runner=lowest;lowest=d;best=player;}else if(d<runner)runner=d;}
+ for(const player of profiles){const d=distance(normal(player.name),input);
+  if(d<lowest){runner=lowest;lowest=d;best=player;}else if(d<runner)runner=d;}
  return lowest<=2&&lowest<runner&&lowest/Math.max(5,input.length)<.24?{name:best.name,exact:false}:{name:"",exact:false};
 }
 function tokens(text){
@@ -66,15 +69,26 @@ function azureLines(data,ox,oy,scale){
  return lines.filter(line=>line.text).sort((a,b)=>a.y-b.y||a.x-b.x);
 }
 async function prepare(file){
- if(!/^image\/(?:png|jpeg|webp)$/i.test(file.type||"")&&!/\.(?:png|jpe?g|webp)$/i.test(file.name||""))throw new Error("Usa capturas JPG, PNG o WebP.");
+ if(!/^image\/(?:png|jpeg|webp)$/i.test(file.type||"")&&!/\.(?:png|jpe?g|webp)$/i.test(file.name||""))
+  throw new Error("Usa capturas JPG, PNG o WebP.");
  if(file.size>12000000)throw new Error("Imagen de más de 12 MB: "+file.name);
- const image=await new Promise((resolve,reject)=>{const im=new Image(),url=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(url);resolve(im);};im.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("No se pudo abrir "+file.name));};im.src=url;});
- const w=image.naturalWidth,h=image.naturalHeight,x=Math.round(w*.19),y=Math.round(h*.33),cw=Math.round(w*.65),ch=Math.round(h*.52),scale=2.0;
- const canvas=document.createElement("canvas");canvas.width=Math.round(cw*scale);canvas.height=Math.round(ch*scale);
- canvas.getContext("2d").drawImage(image,x,y,cw,ch,0,0,canvas.width,canvas.height);
- const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.92));
+ const image=await new Promise((resolve,reject)=>{
+  const im=new Image(),url=URL.createObjectURL(file);
+  im.onload=()=>{URL.revokeObjectURL(url);resolve(im);};
+  im.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("No se pudo abrir "+file.name));};im.src=url;
+ });
+ const w=image.naturalWidth,h=image.naturalHeight;
+ // Names and powers move with screen size and the list's scroll position.
+ // The old fixed crop discarded rows on many Android screenshots.
+ const scale=Math.min(2,2800/Math.max(w,h));
+ const canvas=document.createElement("canvas");
+ canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));
+ const context=canvas.getContext("2d");if(!context)throw new Error("No se pudo preparar la captura.");
+ context.imageSmoothingEnabled=true;context.imageSmoothingQuality="high";
+ context.drawImage(image,0,0,canvas.width,canvas.height);
+ const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.94));
  if(!blob)throw new Error("No se pudo procesar "+file.name);
- return {blob,ox:x,oy:y,scale,w,h,name:file.name};
+ return {blob,ox:0,oy:0,scale,w,h,name:file.name};
 }
 async function ocrWorker(){
  if(worker)return worker;
@@ -89,27 +103,50 @@ async function readAzure(prep){
  return azureLines(data,prep.ox,prep.oy,prep.scale);
 }
 function parseCandidates(lines,prep,engine){
- const generic=/\b(?:poder|power|estrateg|seleccion|fuerza especial|batalla|hero|participantes|suplentes|titulares|total|reservas|buscar|battle|squad|alliance|refiner|hospital|info center|cargar)\b/i;
- const items=[],minY=prep.h*.34,maxY=prep.h*.84;
- for(let i=0;i<lines.length;i++){
-  const line=lines[i];if(line.y<minY||line.y>maxY||line.x<prep.w*.17||line.x>prep.w*.66)continue;
-  const raw=line.text.replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").trim();
-  if(raw.length<3||raw.length>74||generic.test(raw))continue;
-  const found=matchName(raw);
-  const inline=tokens(raw);
-  let candidate=inline.length===1?inline[0]:null,conflict=inline.length>1;
-  if(candidate==null&&!conflict){
-   const nearby=lines.filter(other=>other!==line&&Math.abs(other.y-line.y)<prep.h*.026&&other.x>line.x+prep.w*.10&&other.x<prep.w*.86&&!matchName(other.text).name);
-   const powers=nearby.flatMap(other=>tokens(other.text));
-   if(new Set(powers.map(x=>x.toFixed(3))).size===1&&powers.length)candidate=powers[0];
-   else if(powers.length>1)conflict=true;
-  }
-  if(!found.name&&!candidate)continue; // ignore ordinary UI labels without a visible THP
-  if(!found.name&&!/[\p{L}]{3}/u.test(raw))continue;
-  const name=found.name||"",key=name?"player:"+normal(name):"raw:"+normal(raw);
-  items.push({key,name,raw,power:candidate,conflict,exact:found.exact,engine,file:prep.name});
+ // Names and THP can arrive on separate OCR lines, far apart horizontally.
+ const all=(lines||[]).filter(line=>{
+  const text=String(line.text||"").trim();
+  return text&&line.y>=prep.h*.08&&line.y<=prep.h*.97&&line.x>=0&&line.x<=prep.w*.99;
+ }).sort((a,b)=>a.y-b.y||a.x-b.x);
+ const generic=/\b(?:poder|power|estrateg|seleccion|fuerza especial|batalla|hero|participantes|suplentes|titulares|total|reservas|buscar|battle|squad|alliance|refiner|hospital|info center|cargar|ranking|search|member list|miembros)\b/i;
+ const people=[],powerRows=[];
+ for(const line of all){
+  const powers=tokens(line.text);
+  if(powers.length&&!/\b(?:total|overall|toplam|thp\s*total)\b/i.test(line.text))
+   powerRows.push({...line,powers});
+  const raw=String(line.text||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").trim();
+  if(raw.length<3||raw.length>85)continue;
+  const match=matchName(raw);
+  if(match.name&&(!generic.test(raw)||match.exact))
+   people.push({...line,raw,name:match.name,exact:match.exact});
  }
- return items;
+ const gap=Math.max(15,prep.h*.023);
+ // A name that OCR cannot match stays in the manual-review queue, never
+ // silently enrolled as a different member.
+ for(const line of all){
+  const raw=String(line.text||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").trim();
+  if(raw.length<4||raw.length>60||generic.test(raw)||!/\p{L}{3}/u.test(raw))continue;
+  if(people.some(p=>Math.abs(p.y-line.y)<3&&p.x===line.x))continue;
+  if(tokens(raw).length===1&&/^\s*(?:\d{1,3}(?:[.,]\d{3}){2,3}|\d{7,9}|\d{1,4}(?:[.,]\d{1,3})?\s*[mМᴍ])\s*$/iu.test(raw))continue;
+  if(people.some(p=>Math.abs(p.y-line.y)<gap&&Math.abs(p.x-line.x)<prep.w*.13))continue;
+  const likely=powerRows.some(p=>p!==line&&Math.abs(p.y-line.y)<gap&&p.x>line.x+prep.w*.07)||tokens(raw).length>0;
+  if(likely&&people.length<85)people.push({...line,raw,name:"",exact:false});
+ }
+ const out=[];
+ for(const row of people){
+  const same=tokens(row.raw);
+  const nearby=powerRows.filter(p=>{
+   if(Math.abs(p.y-row.y)>gap||p.x<row.x+prep.w*.07)return false;
+   return !people.some(other=>other!==row&&other.name&&
+    Math.abs(p.y-other.y)+4<Math.abs(p.y-row.y)&&Math.abs(other.y-row.y)>gap*.4);
+  });
+  const unique=[...new Set([...same,...nearby.flatMap(p=>p.powers)].map(n=>n.toFixed(3)))].map(Number);
+  const conflict=unique.length>1,power=unique.length===1?unique[0]:null;
+  if(!row.name&&power==null)continue;
+  const name=row.name||"",key=name?"player:"+normal(name):"raw:"+normal(row.raw);
+  out.push({key,name,raw:row.raw,power,conflict,exact:row.exact,engine,file:prep.name});
+ }
+ return out;
 }
 function mergeCandidates(found){
  for(const item of found){
@@ -146,6 +183,7 @@ function jump(row){const current=currentTHP(row);return row.power!=null&&(curren
 function statusOf(row){
  if(!row.name||!official(row.name))return {text:"Nombre sin identificar",kind:"warn"};
  if(!row.exact)return {text:"Confirmar miembro",kind:"warn"};
+ if(row.manual&&!row.approved)return {text:"Confirmar THP manual",kind:"warn"};
  if(row.conflict)return {text:"THP contradictorio",kind:"warn"};
  if(row.power==null)return {text:"Sin THP leído",kind:"muted"};
  const current=currentTHP(row);
@@ -153,7 +191,7 @@ function statusOf(row){
  if(jump(row)&&!row.approved)return {text:"Revisar aumento",kind:"warn"};
  return {text:"Puede actualizar",kind:"good"};
 }
-function eligible(row){return !!(row.name&&official(row.name)&&row.exact&&!row.conflict&&row.power!=null&&row.power>0&&!row.saved&&(!jump(row)||row.approved)&&(!row.readings.length||row.readings.length===1||row.edited));}
+function eligible(row){return !!(row.name&&official(row.name)&&row.exact&&!row.conflict&&row.power!=null&&row.power>0&&!row.saved&&(!row.manual||row.approved)&&(!jump(row)||row.approved)&&(!row.readings.length||row.readings.length===1||row.edited));}
 function proposed(row){const db=currentTHP(row);return eligible(row)&&(db==null||row.power>db+.00001);}
 function memberOptions(selected){
  return '<option value="">Seleccionar miembro HOLa</option>'+profiles.map(p=>'<option value="'+esc(p.name)+'"'+(p.name===selected?' selected':'')+'>'+esc(p.name)+'</option>').join("");
@@ -172,10 +210,10 @@ function render(){
    '<div class="fields"><div class="member-field"><label>Miembro oficial de HOLa</label><select data-field="name"'+disabled+'>'+memberOptions(row.name)+'</select></div>'+
    '<div><label>Supabase</label><div class="current">'+(db==null?"—":format(db))+'</div></div>'+
    '<div><label>THP leído (M)</label><input type="number" data-field="power" inputmode="decimal" step="0.01" min="0.01" max="9999" value="'+(row.power??"")+'"'+disabled+'></div></div>'+
-   ((row.conflict||jump(row)||!row.exact)?'<label class="confirm"><input type="checkbox" data-field="approve" '+(row.approved?'checked ':'')+disabled+'><span>He revisado esta lectura y confirmo el nombre y THP.</span></label>':'')+
+   ((row.manual||row.conflict||jump(row)||!row.exact)?'<label class="confirm"><input type="checkbox" data-field="approve" '+(row.approved?'checked ':'')+disabled+'><span>He revisado esta lectura y confirmo el nombre y THP.</span></label>':'')+
    '<label class="confirm"><input type="checkbox" data-field="selected" '+(row.selected?'checked ':'')+(proposed(row)?disabled:' disabled')+'><span>Incluir este aumento al guardar'+(row.saved?" · guardado":"")+'</span></label>'+
    '</article>';
- }).join(""):'<div class="results-empty">No se reconocieron nombres con THP. Comprueba las capturas o usa otras más nítidas.</div>';
+ }).join(""):'<div class="results-empty">No se reconocieron nombres con THP. Prueba capturas más nítidas o pulsa «Añadir jugador no reconocido» para introducir una fila y revisarla antes de guardar.</div>';
  const found=new Set(results.filter(r=>r.name&&official(r.name)).map(r=>normal(r.name)));
  const missing=profiles.filter(p=>!found.has(normal(p.name))).map(p=>p.name);
  $("missingSummary").textContent="Miembros no reconocidos en estas capturas: "+missing.length+"/"+profiles.length;
@@ -190,39 +228,67 @@ async function scan(){
  if(!files.length){message("Selecciona las capturas del listado de miembros.","error");return;}
  if(files.length>20){message("Máximo 20 capturas por lectura. Divide el listado en dos tandas.","error");return;}
  if(scanned&&results.some(r=>r.selected)&&!window.confirm("Hay cambios seleccionados sin guardar. ¿Leer otras capturas y reemplazar la revisión?"))return;
- busy=true;scanned=false;results=[];report=null;$("scan").disabled=true;$("reload").disabled=true;$("confirmChanges").checked=false;render();
- const warnings=[];let azureOK=0,tesseractOK=0;
+ busy=true;scanned=false;results=[];report=null;
+ $("scan").disabled=true;$("reload").disabled=true;$("confirmChanges").checked=false;render();
+ const warnings=[],summary=[];let azureOK=0,tesseractOK=0,engine=null,engineAttempted=false;
  try{
   await loadProfiles();
-  let engine=null;
-  try{engine=await ocrWorker();}catch(e){warnings.push("Tesseract: "+String(e?.message||e));}
   for(let i=0;i<files.length;i++){
-   message("Leyendo captura "+(i+1)+"/"+files.length+" · "+files[i].name);
+   const file=files[i];message("Preparando imagen COMPLETA "+(i+1)+"/"+files.length+" · "+file.name);
    try{
-    const prep=await prepare(files[i]);
-    if(engine){try{const {data}=await engine.recognize(prep.blob,{}, {text:true,blocks:true});mergeCandidates(parseCandidates(normalizeLines(data,prep.ox,prep.oy,prep.scale),prep,"Tesseract"));tesseractOK++;}
-     catch(e){warnings.push("Tesseract "+files[i].name+": "+String(e?.message||e));}}
-    try{message("Cotejando "+files[i].name+" con Azure…");mergeCandidates(parseCandidates(await readAzure(prep),prep,"Azure"));azureOK++;}
-    catch(e){warnings.push("Azure "+files[i].name+": "+String(e?.message||e));}
-   }catch(e){warnings.push(files[i].name+": "+String(e?.message||e));}
+    const prep=await prepare(file);
+    let azureRows=[],azureLineCount=0,tessRows=[],tessLineCount=0;
+    // Azure first: no large Tesseract download before contacting Azure.
+    try{
+     message("Azure · leyendo "+(i+1)+"/"+files.length+" · "+file.name);
+     const azureText=await readAzure(prep);
+     azureLineCount=azureText.length;azureRows=parseCandidates(azureText,prep,"Azure");
+     mergeCandidates(azureRows);azureOK++;
+    }catch(error){warnings.push("Azure "+file.name+": "+String(error?.message||error));}
+    const missingValues=azureRows.filter(row=>row.name&&row.power==null).length;
+    if(azureRows.filter(row=>row.name&&row.power!=null).length<5||missingValues){
+     try{
+      if(!engineAttempted){engineAttempted=true;engine=await ocrWorker();}
+      if(engine){
+       message("Tesseract · segunda lectura de "+file.name);
+       const {data}=await engine.recognize(prep.blob,{}, {text:true,blocks:true});
+       const tesseractText=normalizeLines(data,prep.ox,prep.oy,prep.scale);
+       tessLineCount=tesseractText.length;tessRows=parseCandidates(tesseractText,prep,"Tesseract");
+       mergeCandidates(tessRows);tesseractOK++;
+      }
+     }catch(error){warnings.push("Tesseract "+file.name+": "+String(error?.message||error));}
+    }
+    summary.push(file.name+": Azure "+azureLineCount+" líneas / "+azureRows.length+
+     " posibles jugadores · Tesseract "+tessLineCount+" líneas / "+tessRows.length+" posibles jugadores");
+    message("Imagen "+(i+1)+"/"+files.length+" · "+(azureRows.length+tessRows.length)+" posibles lecturas.");
+   }catch(error){warnings.push(file.name+": "+String(error?.message||error));}
   }
   results.sort((a,b)=>{const va=a.power??-1,vb=b.power??-1;return vb-va||String(a.name||a.raw).localeCompare(String(b.name||b.raw));});
   results.forEach((row,i)=>row.id=i);
-  scanned=true;message("Lectura terminada: "+results.length+" entradas · Azure "+azureOK+"/"+files.length+" · Tesseract "+tesseractOK+"/"+files.length+". No se ha modificado Supabase."+(warnings.length?" Avisos: "+warnings.join(" · "):""),warnings.length?"warn":"success");
- }catch(e){message("No se pudo leer el listado: "+String(e?.message||e),"error");}
- finally{if(worker){try{await worker.terminate();}catch{}worker=null;}busy=false;$("scan").disabled=false;$("reload").disabled=false;render();}
+  scanned=true;
+  const recognized=results.filter(row=>row.name).length;
+  message("Lectura finalizada: "+recognized+" miembros cotejados y "+(results.length-recognized)+
+   " nombres por revisar. "+summary.join(" · ")+". No se ha modificado Supabase."+
+   (warnings.length?" Avisos: "+warnings.join(" · "):"")+
+   (!results.length?" Ningún candidato: comprueba que la captura muestra nombres y poderes. Puedes añadir manualmente las filas visibles.":""),
+   warnings.length||!results.length?"warn":"success");
+ }catch(error){message("No se pudo leer el listado: "+String(error?.message||error),"error");}
+ finally{
+  if(engine){try{await engine.terminate();}catch{}worker=null;}
+  busy=false;$("scan").disabled=false;$("reload").disabled=false;render();
+ }
 }
 function editRow(event){
  const card=event.target.closest("[data-index]");if(!card)return;
  const row=results.find(r=>r.id===Number(card.dataset.index));if(!row||row.saved)return;
  const field=event.target.dataset.field;
  if(field==="name"){
-  row.name=event.target.value;row.exact=!!official(row.name);row.approved=false;row.selected=false;
+  row.name=event.target.value;row.exact=!!official(row.name);row.manual=true;row.approved=false;row.selected=false;
  }else if(field==="power"){
   const value=String(event.target.value||"").trim().replace(",",".");
   row.power=value?Number(value):null;
   if(row.power!=null&&(!Number.isFinite(row.power)||row.power<=0||row.power>9999))row.power=null;
-  row.edited=true;row.conflict=false;row.approved=false;row.selected=false;
+  row.edited=true;row.manual=true;row.conflict=false;row.approved=false;row.selected=false;
  }else if(field==="approve"){row.approved=event.target.checked;if(!row.approved)row.selected=false;}
  else if(field==="selected"){row.selected=event.target.checked;}
  else return;
@@ -270,6 +336,14 @@ function bind(){
  $("screenshots").addEventListener("change",()=>{$("selected").textContent=$("screenshots").files.length+" capturas seleccionadas.";});
  $("scan").addEventListener("click",scan);$("reload").addEventListener("click",refresh);
  $("results").addEventListener("change",editRow);
+ $("addMissing").addEventListener("click",()=>{
+  if(busy||!scanned)return;
+  const id=Math.max(-1,...results.map(row=>row.id))+1;
+  results.unshift({id,key:"manual:"+id,name:"",raw:"Fila añadida manualmente",power:null,conflict:false,exact:false,
+   engine:"Manual",file:"Revisión de captura",readings:[],files:new Set(["Revisión de captura"]),
+   selected:false,approved:false,edited:true,manual:true,saved:false});
+  $("confirmChanges").checked=false;render();
+ });
  $("selectSafe").addEventListener("click",selectSafe);$("unselectAll").addEventListener("click",()=>{results.forEach(r=>r.selected=false);$("confirmChanges").checked=false;render();});
  $("confirmChanges").addEventListener("change",render);
  $("save").addEventListener("click",save);
