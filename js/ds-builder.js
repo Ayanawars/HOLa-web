@@ -52,7 +52,7 @@ function localKey(){return "hola-ds-builder-v1:"+$("battleDate").value+":"+$("te
 function storeLocal(){if(state)try{localStorage.setItem(localKey(),JSON.stringify(state));}catch{}}
 function mapSource(){return state?.baseMapDataUrl||"assets/ds-battlefield-real.webp";}
 async function useOriginalMap(file){if(!file)return;try{const picture=await new Promise((res,rej)=>{const im=new Image(),url=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(url);res(im);};im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("No se pudo abrir la imagen."));};im.src=url;});const canvas=document.createElement("canvas");canvas.width=1200;canvas.height=850;canvas.getContext("2d").drawImage(picture,0,0,1200,850);let data=canvas.toDataURL("image/webp",.83);if(data.length>530000)data=canvas.toDataURL("image/webp",.62);if(data.length>530000)throw new Error("El mapa es demasiado grande. Prueba con un JPG o WebP más ligero.");state.baseMapDataUrl=data;mutate();notice("Mapa original incorporado a esta estrategia. Guarda el borrador para conservarlo y publícalo cuando esté listo.","success");}catch(e){notice("No se pudo usar el mapa: "+e.message,"error");}}
-function mutate(){storeLocal();renderStats();renderMap();renderValidation();renderOutputs();}
+function mutate(){storeLocal();renderStats();if(ocrHasRead)renderProposals();renderMap();renderValidation();renderOutputs();}
 function switchTab(next){currentTab=next;document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===next));for(const t of ["setup","roster","plan","publish"])$("tab-"+t).hidden=t!==next;window.scrollTo({top:0,behavior:"smooth"});if(next==="plan"){renderMap();}if(next==="publish"){renderValidation();renderOutputs();}}
 function updateSetup(){
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).value=state[key]||"";
@@ -164,7 +164,26 @@ function addRoster(name,role,power){
  const count=counts();if(role==="starter"&&count.starter>=20)throw new Error("Ya hay 20 titulares; no puedes añadir más.");if(role==="sub"&&count.sub>=10)throw new Error("Ya hay 10 suplentes; no puedes añadir más.");
  state.roster.push({name,role,power:power!==""&&power!=null&&Number.isFinite(Number(power))?Number(power):null});return true;
 }
-function renderStats(){if(!state)return;const {starter,sub}=counts();$("starterCount").textContent="Titulares "+starter+"/20";$("subCount").textContent="Suplentes "+sub+"/10";$("starterCount").classList.toggle("warn",starter!==20);$("subCount").classList.toggle("warn",sub>10);$("totalPower").textContent="THP titulares "+number(state.roster.filter(r=>r.role==="starter").reduce((s,r)=>s+Number(r.power||0),0))+"M";updateLeaders();}
+function renderStats(){
+ if(!state)return;
+ const {starter,sub}=counts();
+ $("starterCount").textContent="Titulares inscritos "+starter+"/20";
+ $("subCount").textContent="Suplentes "+sub+"/10";
+ $("starterCount").classList.toggle("warn",starter!==20);
+ $("subCount").classList.toggle("warn",sub>10);
+ $("totalPower").textContent="THP titulares "+number(state.roster.filter(r=>r.role==="starter").reduce((s,r)=>s+Number(r.power||0),0))+"M";
+ const p1=assignedNames(state.phase1).filter(n=>state.roster.some(r=>r.name===n&&r.role==="starter")).length;
+ const p2=assignedNames(state.phase2).filter(n=>state.roster.some(r=>r.name===n&&r.role==="starter")).length;
+ const status=$("rosterAssignmentStatus");
+ if(status){
+  const registered=starter===20;
+  status.className="notice "+(registered?"success":"info");
+  status.textContent=(registered?"✓ Los 20 titulares ya están inscritos. ":"Convocatoria: "+starter+"/20 titulares inscritos. ")+
+   "Mapa Fase 1: "+p1+"/20 asignados · Mapa Fase 2: "+p2+"/20 asignados."+
+   (registered&&(p1<20||p2<20)?" Las plazas pendientes del mapa no son jugadores que falten en la convocatoria. Puedes usar «Rellenar plazas vacías» en cada fase.":"");
+ }
+ updateLeaders();
+}
 
 // Screenshot reference: verified from the nine Team A screenshots for 2026-09-25.
 // This compares against the LOCAL roster; it never auto-enrolls anyone.
@@ -593,6 +612,18 @@ async function acceptProposals(){
  }catch(e){notice("No se pudo cotejar el otro equipo: "+String(e?.message||e),"error");}
  finally{acceptBusy=false;renderProposals();}
 }
+function fillUnassignedSlots(){
+ if(!state||phase==="final")return;
+ const current=phaseSlots(),targets=phaseTargets();
+ const taken=new Set(assignedNames(current));
+ const waiting=state.roster.filter(r=>r.role==="starter"&&!taken.has(r.name)).sort((a,b)=>Number(b.power||0)-Number(a.power||0));
+ let filled=0;
+ for(const [slot,target] of Object.entries(targets)){
+  while(current[slot].length<target&&waiting.length){const p=waiting.shift();current[slot].push(p.name);filled++;}
+ }
+ mutate();
+ notice(filled?"✓ Colocados "+filled+" titulares en plazas vacías de "+(phase==="phase1"?"Fase 1":"Fase 2")+". Las asignaciones anteriores no se han cambiado; revisa el reparto antes de publicar.":"No quedan titulares libres o plazas vacías en esta fase.","success");
+}
 function phaseTargets(){return phase==="phase1"?TARGET1:TARGET2;}
 function phaseSlots(){return phase==="phase1"?state.phase1:state.phase2;}
 function assignedNames(obj){return Object.values(obj).flat();}
@@ -642,14 +673,14 @@ function autoAssign(){
 }
 function validate(){
  const errors=[],warnings=[];const countsNow=counts();
- if(countsNow.starter!==20)errors.push("Convocatoria: hay "+countsNow.starter+"/20 titulares.");
+ if(countsNow.starter!==20)errors.push("Convocatoria: hay "+countsNow.starter+"/20 titulares inscritos; faltan "+(20-countsNow.starter)+" personas en el roster.");
  if(countsNow.sub>10)errors.push("Convocatoria: hay más de 10 suplentes.");
  if(new Set(state.roster.map(r=>normal(r.name))).size!==state.roster.length)errors.push("Hay jugadores duplicados en la convocatoria.");
  const overlap=state.roster.filter(r=>rosterOther.has(normal(r.name))).map(r=>r.name);if(overlap.length)errors.push("Inscritos también en el otro equipo: "+overlap.join(", ")+".");
  if(state.roster.some(r=>r.power==null))warnings.push("Hay poderes sin confirmar; revisa el equilibrio manualmente.");
  for(const [phaseKey,targets] of [["phase1",TARGET1],["phase2",TARGET2]]){
   const assigned=assignedNames(state[phaseKey]);
-  for(const [slot,n]of Object.entries(targets))if(state[phaseKey][slot].length!==n)errors.push((phaseKey==="phase1"?"Fase 1: ":"Fase 2: ")+BUILDINGS[slot].label+" tiene "+state[phaseKey][slot].length+"/"+n+" titulares.");
+  for(const [slot,n]of Object.entries(targets))if(state[phaseKey][slot].length!==n)errors.push((phaseKey==="phase1"?"Fase 1 (MAPA): ":"Fase 2 (MAPA): ")+BUILDINGS[slot].label+" tiene "+state[phaseKey][slot].length+"/"+n+" plazas asignadas; no significa que falten inscritos.");
   if(new Set(assigned).size!==assigned.length)errors.push("Un jugador figura dos veces en "+phaseKey+".");
   if(assigned.some(n=>!state.roster.some(r=>r.name===n&&r.role==="starter")))errors.push("Una fase contiene alguien que no es titular.");
  }
@@ -883,7 +914,7 @@ function events(){
 
  $("toPlan").onclick=()=>switchTab("plan");$("toPublish").onclick=()=>switchTab("publish");
  document.querySelectorAll("[data-phase]").forEach(b=>b.addEventListener("click",()=>{phase=b.dataset.phase;renderMap();}));
- $("autoAssign").onclick=autoAssign;$("clearPhase").onclick=()=>{if(phase==="final")return;for(const k of Object.keys(phaseSlots()))phaseSlots()[k]=[];mutate();};
+ $("autoAssign").onclick=autoAssign;$("fillUnassigned").onclick=fillUnassignedSlots;$("clearPhase").onclick=()=>{if(phase==="final")return;for(const k of Object.keys(phaseSlots()))phaseSlots()[k]=[];mutate();};
  $("pins").addEventListener("click",e=>{const k=e.target.closest("[data-building]")?.dataset.building;if(!k)return;selectedBuilding=k;renderMap();$("building-"+k)?.scrollIntoView({behavior:"smooth",block:"center"});});
  $("buildingList").addEventListener("click",e=>{const card=e.target.closest("[data-slot]");if(!card)return;const k=card.dataset.slot;if(e.target.matches("[data-remove]")){removePerson(k,e.target.dataset.remove);return;}if(e.target.closest(".assign-btn")){const select=card.querySelector(".assign-select");assignPerson(k,select?.value);}});
  $("specialList").addEventListener("click",e=>{const card=e.target.closest("[data-special]");if(!card)return;const type=card.dataset.special,slot=card.dataset.slot;if(e.target.matches("[data-remove]"))removeSpecial(type,slot,e.target.dataset.remove);else if(e.target.closest(".assign-btn")){selectedBuilding=slot;addSpecial(type,card.querySelector(".assign-select")?.value);}});

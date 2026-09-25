@@ -111,7 +111,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
   </details>
   <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
 </div>
-<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div>
+<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div><div id="rosterAssignmentStatus" class="notice info" role="status" aria-live="polite">La convocatoria y las asignaciones del mapa se cuentan por separado.</div>
 <section class="team-a-audit" id="teamAAudit" hidden>
 <strong>🧾 Comprobar capturas · Team A · 25/09</strong>
 <p class="muted">Compara los 20 titulares y 10 suplentes de tus capturas con la convocatoria actual del Builder. No hace falta repetir el OCR.</p>
@@ -125,7 +125,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <section id="tab-plan" class="section" hidden>
 <div class="eyebrow">03 · DISTRIBUCIÓN TÁCTICA</div><h2>Mapa interactivo</h2><p class="muted">Los edificios mantienen su posición. Toca uno para asignar jugadores. Cada fase tiene su propia distribución.</p>
 <div class="phase-switch" role="group" aria-label="Fase de la estrategia"><button type="button" class="active" data-phase="phase1">FASE 1 · 0–10</button><button type="button" data-phase="phase2">FASE 2 · 10+</button><button type="button" class="final" data-phase="final">ÚLTIMO ASALTO</button></div>
-<div class="row actions"><button type="button" class="btn gold" id="autoAssign">⚖ Repartir según poder</button><button type="button" class="btn outline" id="clearPhase">Vaciar esta fase</button><span class="counter" id="phaseCount">0/20 asignados</span></div>
+<div class="row actions"><button type="button" class="btn gold" id="autoAssign">⚖ Repartir según poder</button><button type="button" class="btn outline" id="fillUnassigned">＋ Rellenar plazas vacías</button><button type="button" class="btn outline" id="clearPhase">Vaciar esta fase</button><span class="counter" id="phaseCount">0/20 asignados</span></div>
 <div class="board" id="board"><img src="assets/ds-battlefield-real.webp" alt="Mapa real de Desert Storm con edificios en sus posiciones fijas"><div class="pins" id="pins"></div></div>
 <div id="phaseHelp" class="info-panel"></div>
 <div id="buildingList" class="assignment-grid"></div>
@@ -144,6 +144,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
-<script type="module" src="js/ds-builder.js?v=20260925-team-a-audit-v1"></script>
+<script type="module" src="js/ds-builder.js?v=20260925-roster-counts-v2"></script>
 <script src="js/hola-tr-ui.js"></script>
 </body></html>
