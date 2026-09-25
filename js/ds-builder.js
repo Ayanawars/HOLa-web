@@ -14,14 +14,14 @@ MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
 let savedDrafts=[],members=[],memberByKey=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
-const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
+const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[ᓚᘏᗢ]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
 function notice(msg,type="info"){$("message").textContent=msg;$("message").className="notice "+type;}
 function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]}};}
 function canonical(raw){
  const key=normal(raw);
- const aliases={"lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW"};
+ const aliases={"lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW","jebraw":"JEBRAWW"};
  const alias=aliases[key];if(alias&&memberByKey.has(normal(alias)))return memberByKey.get(normal(alias));
  return memberByKey.get(key)||"";
 }
@@ -165,12 +165,47 @@ function addRoster(name,role,power){
  state.roster.push({name,role,power:power!==""&&power!=null&&Number.isFinite(Number(power))?Number(power):null});return true;
 }
 function renderStats(){if(!state)return;const {starter,sub}=counts();$("starterCount").textContent="Titulares "+starter+"/20";$("subCount").textContent="Suplentes "+sub+"/10";$("starterCount").classList.toggle("warn",starter!==20);$("subCount").classList.toggle("warn",sub>10);$("totalPower").textContent="THP titulares "+number(state.roster.filter(r=>r.role==="starter").reduce((s,r)=>s+Number(r.power||0),0))+"M";updateLeaders();}
+
+// Screenshot reference: verified from the nine Team A screenshots for 2026-09-25.
+// This compares against the LOCAL roster; it never auto-enrolls anyone.
+const GAME_A_20260925={"starters":["Judéx ᓚᘏᗢ","SilentBG","CaptainNeb","Laz Ziyaaa ᓚᘏᗢ","Ophicat ᓚᘏᗢ","Sabie tárás","Mirrliva","Alfonzo04","JEBRAWW","Aspackad","Fiexter","naVia","N3v3r89","Lil Niño","Moltó17","Cristina1106","Ayana wars","atEr","dAndrei20","Rey Excalibur"],"subs":["Fenix 04","IDK What Am I Doing","Loïc1791","Txipi","Bassline187","silviu maya","Bola7ad","jack daniels g","Xarnyx","N6C6R6"]};
+function renderTeamAAudit(){
+ const panel=$("teamAAudit"),out=$("teamAAuditResult");if(!panel||!out)return;
+ panel.hidden=!state||state.team!=="A";
+ if(panel.hidden){out.hidden=true;return;}
+ if(out.hidden)return;
+ const dateOK=state.battle_date==="2026-09-25";
+ const actual=new Map(state.roster.map(r=>[normal(r.name),r]));
+ const expected=new Map(),groups=[];
+ for(const [role,label,names] of [["starter","Titulares",GAME_A_20260925.starters],["sub","Suplentes",GAME_A_20260925.subs]]){
+  let found=0;const missing=[];
+  for(const name of names){
+   const key=normal(name),row=actual.get(key);expected.set(key,role);
+   if(row?.role===role){found++;continue;}
+   const note=row?"Ya inscrito como "+(row.role==="starter"?"titular":"suplente")+". Corrige su tipo en la tarjeta.":
+    name==="JEBRAWW"?"En el juego aparece JEBRAW con un símbolo; en HOLa figura como JEBRAWW.":
+    /[ᓚᘏᗢ]/.test(name)?"Nombre con símbolo del gato: el OCR puede leer solo parte de los caracteres.":
+    "Sin coincidencia en este equipo. La causa concreta requiere conservar la lectura OCR.";
+   const action=row?'<span class="audit-warning">REVISAR TIPO</span>':
+    '<button type="button" class="btn outline audit-add" data-audit-name="'+esc(name)+'" data-audit-role="'+role+'"'+
+    (dateOK?"":" disabled")+'>＋ Añadir '+(role==="starter"?"titular":"suplente")+'</button>';
+   missing.push('<div class="audit-person"><div><strong>'+esc(name)+'</strong><small>'+esc(note)+'</small></div>'+action+'</div>');
+  }
+  groups.push('<div class="audit-group"><h3>'+esc(label)+' · '+found+'/'+names.length+'</h3>'+
+   (missing.join("")||'<p class="muted">✓ Todos coinciden con las capturas.</p>')+'</div>');
+ }
+ const extras=state.roster.filter(r=>expected.get(normal(r.name))!==r.role);
+ out.innerHTML=(dateOK?"":'<p class="audit-warning">Estas capturas son del 25/09/2026. Selecciona esa jornada para añadir jugadores.</p>')+
+  groups.join("")+(extras.length?'<p class="audit-warning">Revisa también estos registros distintos a la captura: '+
+   esc(extras.map(r=>r.name+" ("+(r.role==="starter"?"titular":"suplente")+")").join(" · "))+'</p>':"")+
+  '<p class="muted">La comparación no modifica nada. Cada alta requiere pulsar su botón.</p>';
+}
 function renderRoster(){if(!state)return;const list=$("rosterList");const roster=[...state.roster].sort((a,b)=>a.role.localeCompare(b.role)||Number(b.power||0)-Number(a.power||0));list.innerHTML=roster.length?roster.map(r=>
  '<article class="roster-card" data-name="'+esc(r.name)+'"><div class="person-name"><strong>'+esc(r.name)+'</strong><small>'+esc(r.role==="starter"?"Titular":"Suplente")+' · '+(r.power==null?"Poder por verificar":number(r.power)+"M")+'</small></div>'+
  '<div class="field"><label>Poder M</label><input class="roster-power" inputmode="decimal" type="number" min="0" max="9999" step=".1" value="'+(r.power??"")+'"></div>'+
  '<div class="field role-field"><label>Tipo</label><select class="roster-role"><option value="starter"'+(r.role==="starter"?" selected":"")+'>Titular</option><option value="sub"'+(r.role==="sub"?" selected":"")+'>Suplente</option></select></div>'+
  '<button type="button" class="remove" title="Quitar participante" aria-label="Quitar '+esc(r.name)+'">×</button></article>').join(""):'<p class="muted">Todavía no hay participantes. Sube capturas o añádelos manualmente.</p>';
- renderStats();
+ renderStats();renderTeamAAudit();
 }
 function rosterChange(e){const card=e.target.closest(".roster-card");if(!card)return;const r=state.roster.find(x=>x.name===card.dataset.name);if(!r)return;
  if(e.target.classList.contains("remove")){removeAssignments(r.name);state.roster=state.roster.filter(x=>x!==r);renderRoster();mutate();return;}
@@ -835,6 +870,17 @@ function events(){
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=()=>{try{if(addRoster($("manualPlayer").value,"starter",null)){renderRoster();mutate();notice("Participante añadido. Revisa su poder y si es titular o suplente.","success");$("manualPlayer").value="";}}catch(e){notice(e.message,"error");}};
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
+ $("teamAAuditOpen").onclick=()=>{$("teamAAuditResult").hidden=!$("teamAAuditResult").hidden;renderTeamAAudit();};
+ $("teamAAuditResult").addEventListener("click",event=>{
+  const button=event.target.closest("[data-audit-name][data-audit-role]");
+  if(!button||button.disabled||state?.team!=="A"||state.battle_date!=="2026-09-25")return;
+  const name=button.dataset.auditName,role=button.dataset.auditRole;
+  if(!GAME_A_20260925[role==="starter"?"starters":"subs"].some(n=>normal(n)===normal(name)))return;
+  try{const added=addRoster(name,role,null);renderRoster();mutate();
+   notice((added?"✓ Añadido: ":"✓ Ya inscrito: ")+name+" · "+(role==="starter"?"Titular":"Suplente")+". Comprueba el THP.","success");
+  }catch(error){notice("No se ha añadido "+name+": "+String(error?.message||error),"error");}
+ });
+
  $("toPlan").onclick=()=>switchTab("plan");$("toPublish").onclick=()=>switchTab("publish");
  document.querySelectorAll("[data-phase]").forEach(b=>b.addEventListener("click",()=>{phase=b.dataset.phase;renderMap();}));
  $("autoAssign").onclick=autoAssign;$("clearPhase").onclick=()=>{if(phase==="final")return;for(const k of Object.keys(phaseSlots()))phaseSlots()[k]=[];mutate();};

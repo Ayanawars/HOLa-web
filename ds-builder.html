@@ -47,6 +47,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 @media(max-width:680px){.ocr-missing-grid{grid-template-columns:1fr}.ocr-missing-grid button{grid-column:1}}
 .ocr-needed{margin-top:12px;padding:12px;border:2px solid #dda24f;background:#fff1d1;border-radius:12px;font-size:14px;line-height:1.55;color:#724813}.ocr-needed strong{display:block;font-size:16px;margin-bottom:4px}.ocr-complete{margin-top:12px;padding:10px;background:#e0f8e9;border-radius:10px;color:#21704d;font-weight:800}.ocr-missing[hidden]{display:none!important}
 .recovery-panel{border:2px solid #c5a756;border-radius:15px;background:linear-gradient(130deg,#fff9e4,#effbf9);padding:13px;margin:9px 0 14px;box-shadow:0 5px 15px rgba(30,65,62,.09)}.recovery-panel summary{cursor:pointer;font-weight:950;color:#17526a;font-size:14px;line-height:1.4}.recovery-panel .muted{margin:10px 0}.saved-draft-list{display:grid;gap:9px}.saved-draft-card{border:1px solid #d8bf83;border-radius:12px;background:#fffefa;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.saved-draft-card strong{display:block;color:#174964}.saved-draft-card small{display:block;color:#577181;line-height:1.5;margin-top:3px}.saved-draft-card button{flex:0 0 auto}
+.team-a-audit{padding:14px;margin:13px 0;border:2px solid #d7af60;border-radius:13px;background:linear-gradient(135deg,#fff8e4,#ebf8f9)}.team-a-audit>strong{color:#1c5874}.team-a-audit>.muted{line-height:1.5;margin:8px 0 12px}.team-a-audit #teamAAuditResult{margin-top:14px}.audit-group{padding:12px;margin:11px 0;background:#fffdf8;border:1px solid #dbc18c;border-radius:11px}.audit-group h3{font-size:15px;margin:0 0 8px;color:#175672}.audit-person{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:9px;padding:10px 0;border-top:1px solid #e9d6ad}.audit-person strong{display:block;font-size:14px;color:#25465b;overflow-wrap:anywhere}.audit-person small{display:block;margin-top:4px;max-width:320px;color:#637c8a;line-height:1.45}.audit-warning{font-weight:850;color:#a25524}
 </style>
 </head>
 <body>
@@ -111,6 +112,12 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
   <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
 </div>
 <div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div>
+<section class="team-a-audit" id="teamAAudit" hidden>
+<strong>🧾 Comprobar capturas · Team A · 25/09</strong>
+<p class="muted">Compara los 20 titulares y 10 suplentes de tus capturas con la convocatoria actual del Builder. No hace falta repetir el OCR.</p>
+<button type="button" class="btn gold" id="teamAAuditOpen">🔎 Ver los jugadores que faltan</button>
+<div id="teamAAuditResult" role="status" aria-live="polite" hidden></div>
+</section>
 <div class="row"><select class="member-entry" id="manualPlayer" aria-label="Miembro para añadir"><option value="">Elegir miembro de HOLa</option></select><button type="button" class="btn outline" id="addPlayer">＋ Añadir jugador</button></div>
 <div id="rosterList" class="roster-list"></div>
 <div class="row actions"><button type="button" class="btn gold" id="toPlan">Continuar al mapa →</button></div>
@@ -137,6 +144,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
-<script type="module" src="js/ds-builder.js?v=20260925-phase2-subs-v1"></script>
+<script type="module" src="js/ds-builder.js?v=20260925-team-a-audit-v1"></script>
 <script src="js/hola-tr-ui.js"></script>
 </body></html>
