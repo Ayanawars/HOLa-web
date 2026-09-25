@@ -72,7 +72,7 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
  const t=D[options.language]||D.en,team=plan.team||"",subOf=new Map();
  const mapImage=typeof plan.baseMapDataUrl==="string"&&plan.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(plan.baseMapDataUrl)?plan.baseMapDataUrl:"assets/ds-battlefield-real.webp";
  H.forEach(k=>(plan.subs?.[k]||[]).forEach(n=>subOf.set(normalize(n),k)));
- const isMission=n=>Object.values(plan.missions||{}).flat().some(x=>normalize(x)===normalize(n));
+ const isMission=(name,currentPhase)=>currentPhase==="phase1"&&Object.values(plan.missions||{}).flat().some(x=>normalize(x)===normalize(name));
  const avatars=new Map((options.avatarProfiles||[])
   .map(p=>[normalize(p?.name),String(p?.avatar||"").trim()])
   .filter(([name,url])=>name&&/^(?:https?:\/\/|data:image\/)/i.test(url)));
@@ -97,7 +97,7 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
   if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");
  }
  let phase="phase1",focus="H1";
- const list=(names,sub)=>names?.length?names.map(n=>'<div class="ds-person '+(sub?"sub":isMission(n)?"mission":"")+'">'+(sub?"(":"")+esc(n)+(sub?")":"")+'</div>').join(""):'<div class="ds-person">'+esc(t[8])+'</div>';
+ const list=(names,sub,currentPhase)=>names?.length?names.map(n=>'<div class="ds-person '+(sub?"sub":isMission(n,currentPhase)?"mission":"")+'">'+(sub?"(":"")+esc(n)+(sub?")":"")+'</div>').join(""):'<div class="ds-person">'+esc(t[8])+'</div>';
  function draw(){
   const keys=phase==="phase1"?P1:phase==="phase2"?P2:["SILO","INFO"],data=plan[phase]||{};
   const help=phase==="phase1"?t[10]:phase==="phase2"?t[11]:t[12];
@@ -105,9 +105,9 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
    '<div class="ds-switch"><button data-phase="phase1" class="'+(phase==="phase1"?"active":"")+'">'+esc(t[0])+'</button><button data-phase="phase2" class="'+(phase==="phase2"?"active":"")+'">'+esc(t[1])+'</button><button data-phase="final" class="'+(phase==="final"?"active":"")+'">'+esc(t[2])+'</button></div><div class="ds-help">'+esc(help)+'</div>'+
    (phase==="final"?'<div class="ds-call">'+esc(t[5])+'<strong>'+esc(plan.keyword||"—")+'</strong>'+esc(t[6])+": "+esc(plan.leader||"—")+(plan.alternate?" · "+esc(t[7])+": "+esc(plan.alternate):"")+'</div>':"")+
    '<div class="ds-grid">'+keys.map(k=>'<article class="ds-card '+(focus===k?"focus":"")+'" id="ds-card-'+k+'"><h3>'+B[k][1]+" "+esc(B[k][0])+'</h3>'+
-   (phase==="final"?'<div class="ds-person">'+esc(k==="SILO"?"ALL AVAILABLE PLAYERS":"TAKE AND HOLD")+'</div>':list(data[k],false))+
+   (phase==="final"?'<div class="ds-person">'+esc(k==="SILO"?"ALL AVAILABLE PLAYERS":"TAKE AND HOLD")+'</div>':list(data[k],false,phase))+
    (phase==="phase1"&&H.includes(k)?Object.entries(plan.missions||{}).map(([goal,names])=>{const own=names.filter(n=>(plan.phase1?.[k]||[]).includes(n));return own.length?'<div class="ds-person mission">'+esc(B[goal]?.[0]||goal)+": "+esc(own.join(", "))+'</div>':"";}).join(""):"")+
-   (phase!=="final"&&H.includes(k)&&plan.subs?.[k]?.length?'<div class="ds-person sub"><strong>'+esc(t[4])+":</strong></div>"+list(plan.subs[k],true):"")+
+   (phase!=="final"&&H.includes(k)&&plan.subs?.[k]?.length?'<div class="ds-person sub"><strong>'+esc(t[4])+":</strong></div>"+list(plan.subs[k],true,phase):"")+
    (phase==="phase2"&&["ARSENAL","INFO","MERC","HUB"].includes(k)?'<div class="ds-person mission">↔ '+esc(B[{"ARSENAL":"INFO","INFO":"ARSENAL","MERC":"HUB","HUB":"MERC"}[k]][0])+'</div>':"")+
    '</article>').join("")+'</div>'+(phase==="phase1"?'<div class="ds-brief">'+esc(t[13])+'</div>':"");
   strategy.querySelectorAll(".ds-switch button").forEach(b=>b.onclick=()=>{phase=b.dataset.phase;focus=phase==="final"?"SILO":"H1";draw();});
