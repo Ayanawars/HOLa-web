@@ -188,8 +188,32 @@
     $('clearAvatar').addEventListener('click',()=>{avatarValue='';$('avatarPreview').src=fallbackAvatar;setStatus('Avatar marcado para eliminar. Pulsa Guardar cambios.')});
     $('saveMember').addEventListener('click',saveMember);$('reloadMember').addEventListener('click',()=>creatingMember?$('newMember').click():selected&&selectPlayer(selected.name));
     async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html')}$('logoutTop').addEventListener('click',logout);
+
+    const memberI18n={
+      es:['Editar miembros','NUEVO MIEMBRO','Buscar jugador…','Nombre','Rango','Nivel HQ','Profesión','Identidad y progreso','THP y squads','Ubicación','Ciudad','Comunidad','País','Perfil público','Sobre mí','Mi frase','Estado de encuesta','Encuesta','GUARDAR CAMBIOS','RECARGAR','QUITAR AVATAR','Desbloqueado','Poder','Tipo','Marcada como completada','Fecha completada','Sin resultados','Nuevo miembro','Completa los datos y guarda'],
+      en:['Edit members','NEW MEMBER','Search player…','Name','Rank','HQ level','Profession','Identity and progress','THP and squads','Location','City','Region','Country','Public profile','About me','My quote','Survey status','Survey','SAVE CHANGES','RELOAD','REMOVE AVATAR','Unlocked','Power','Type','Marked as completed','Completion date','No results','New member','Complete the details and save'],
+      fr:['Modifier les membres','NOUVEAU MEMBRE','Rechercher un joueur…','Nom','Rang','Niveau QG','Profession','Identité et progression','THP et escouades','Localisation','Ville','Région','Pays','Profil public','À propos de moi','Ma citation','Statut du sondage','Sondage','ENREGISTRER','RECHARGER','RETIRER L’AVATAR','Débloqué','Puissance','Type','Marqué comme terminé','Date de fin','Aucun résultat','Nouveau membre','Complétez les informations et enregistrez'],
+      de:['Mitglieder bearbeiten','NEUES MITGLIED','Spieler suchen…','Name','Rang','HQ-Stufe','Beruf','Identität und Fortschritt','THP und Trupps','Standort','Stadt','Region','Land','Öffentliches Profil','Über mich','Mein Spruch','Umfragestatus','Umfrage','ÄNDERUNGEN SPEICHERN','NEU LADEN','AVATAR ENTFERNEN','Freigeschaltet','Stärke','Typ','Als abgeschlossen markiert','Abschlussdatum','Keine Ergebnisse','Neues Mitglied','Daten eingeben und speichern'],
+      ro:['Editează membrii','MEMBRU NOU','Caută jucător…','Nume','Rang','Nivel HQ','Profesie','Identitate și progres','THP și echipe','Locație','Oraș','Regiune','Țară','Profil public','Despre mine','Citatul meu','Starea sondajului','Sondaj','SALVEAZĂ','REÎNCARCĂ','ELIMINĂ AVATARUL','Deblocat','Putere','Tip','Marcat ca finalizat','Data finalizării','Niciun rezultat','Membru nou','Completează datele și salvează'],
+      pt:['Editar membros','NOVO MEMBRO','Procurar jogador…','Nome','Patente','Nível HQ','Profissão','Identidade e progresso','THP e esquadrões','Localização','Cidade','Região','País','Perfil público','Sobre mim','A minha frase','Estado do inquérito','Inquérito','GUARDAR ALTERAÇÕES','RECARREGAR','REMOVER AVATAR','Desbloqueado','Poder','Tipo','Marcado como concluído','Data de conclusão','Sem resultados','Novo membro','Preenche os dados e guarda'],
+      uk:['Редагувати учасників','НОВИЙ УЧАСНИК','Пошук гравця…','Ім’я','Ранг','Рівень штабу','Професія','Особисті дані та прогрес','THP та загони','Місцезнаходження','Місто','Регіон','Країна','Публічний профіль','Про мене','Моя цитата','Статус опитування','Опитування','ЗБЕРЕГТИ ЗМІНИ','ОНОВИТИ','ВИДАЛИТИ АВАТАР','Розблоковано','Сила','Тип','Позначено як завершене','Дата завершення','Немає результатів','Новий учасник','Заповніть дані та збережіть'],
+      it:['Modifica membri','NUOVO MEMBRO','Cerca giocatore…','Nome','Grado','Livello HQ','Professione','Identità e progressi','THP e squadre','Posizione','Città','Regione','Paese','Profilo pubblico','Su di me','La mia frase','Stato sondaggio','Sondaggio','SALVA MODIFICHE','RICARICA','RIMUOVI AVATAR','Sbloccato','Potenza','Tipo','Segnato come completato','Data completamento','Nessun risultato','Nuovo membro','Compila i dati e salva'],
+      pl:['Edytuj członków','NOWY CZŁONEK','Szukaj gracza…','Nazwa','Ranga','Poziom HQ','Profesja','Tożsamość i postępy','THP i oddziały','Lokalizacja','Miasto','Region','Kraj','Profil publiczny','O mnie','Mój cytat','Status ankiety','Ankieta','ZAPISZ ZMIANY','ODŚWIEŻ','USUŃ AWATAR','Odblokowano','Moc','Typ','Oznaczono jako ukończone','Data ukończenia','Brak wyników','Nowy członek','Uzupełnij dane i zapisz'],
+      tr:['Üyeleri düzenle','YENİ ÜYE','Oyuncu ara…','Ad','Rütbe','Karargâh seviyesi','Meslek','Kimlik ve ilerleme','THP ve birlikler','Konum','Şehir','Bölge','Ülke','Herkese açık profil','Hakkımda','Sözüm','Anket durumu','Anket','DEĞİŞİKLİKLERİ KAYDET','YENİDEN YÜKLE','AVATARI KALDIR','Kilidi açık','Güç','Tür','Tamamlandı olarak işaretlendi','Tamamlanma tarihi','Sonuç yok','Yeni üye','Bilgileri doldur ve kaydet']
+    };
+    const originalMemberLabels=memberI18n.es;
+    const memberTranslatable=[...document.querySelectorAll('h1,h2,label,button,.check span')].map(el=>({el,txt:el.childNodes[0]?.nodeType===Node.TEXT_NODE?el.childNodes[0]:null})).filter(x=>x.txt&&originalMemberLabels.includes(x.txt.textContent.trim()));
+    function applyMemberLanguage(lang){
+      const words=memberI18n[lang]||memberI18n.es;
+      for(const {txt} of memberTranslatable){const idx=originalMemberLabels.indexOf(txt.__originalMemberText||txt.textContent.trim());if(idx>=0){txt.__originalMemberText=originalMemberLabels[idx];txt.textContent=words[idx];}}
+      $('memberSearch').placeholder=words[2];$('newMember').textContent='＋ '+words[1];
+      document.documentElement.lang=lang;localStorage.setItem('hola-language',lang);
+    }
+    $('memberLanguage').value=memberI18n[localStorage.getItem('hola-language')]?localStorage.getItem('hola-language'):'es';
+    $('memberLanguage').addEventListener('change',e=>applyMemberLanguage(e.target.value));
+    applyMemberLanguage($('memberLanguage').value);
     const ok=await verify();if(!ok){await deny()}else{try{await loadPlayers();$('guard').hidden=true;$('app').hidden=false;renderResults('');$('searchResults').hidden=true}catch(e){await deny()}}
   </script>
-<script src="js/hola-tr-ui.js"></script>
+
 </body>
 </html>
