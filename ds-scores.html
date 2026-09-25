@@ -274,7 +274,7 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
       </div></div>
     </div>
     <div class="actions"><button type="button" class="btn primary" id="scoresLoadBtn">↻ Cargar convocatoria y scores</button>
-      <a class="btn secondary scores-builder-link" href="ds-builder.html">↗ DS Strategy Builder</a></div>
+      <a class="btn secondary scores-builder-link" href="ds-builder.html" id="scoresBuilderLink">↗ DS Strategy Builder</a></div>
     <div class="status" id="scoresRosterStatus" role="status" aria-live="polite">Esperando la convocatoria…</div>
     <details class="scores-roster" id="scoresRosterDetails" hidden><summary id="scoresRosterSummary">Ver jugadores</summary><div class="scores-chip-list" id="scoresRosterList"></div></details>
     <div id="scoresFallback" class="scores-fallback" hidden><p id="scoresFallbackHelp" class="help">Sin convocatoria guardada. Puedes usar una lista temporal para el OCR sin modificar el DS.</p>
@@ -384,7 +384,7 @@ label{color:#315d7c}input,select,textarea{background:#fffdf6;border-color:rgba(1
     </p>
         <section class="scores-manual" aria-labelledby="scoresManualTitle">
       <h3 id="scoresManualTitle">Introducir o corregir un score</h3>
-      <p class="help">Corrige el OCR o introduce los puntos manualmente. Pulsa Guardar en Supabase para publicarlos.</p>
+      <p class="help" id="scoresManualHelp">Corrige el OCR o introduce los puntos manualmente. Pulsa Guardar en Supabase para publicarlos.</p>
       <div class="scores-manual-grid">
         <div><label id="scoresPlayerLabel" for="scoresManualPlayer">Jugador</label><select id="scoresManualPlayer"><option value="">—</option></select></div>
         <div><label id="scoresPointsLabel" for="scoresManualPoints">Puntos</label><input id="scoresManualPoints" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 12450000"></div>
@@ -1317,13 +1317,14 @@ uk:{
   empty:"Результатів ще немає.",save:"💾 ЗБЕРЕГТИ В SUPABASE",nothing:"Немає даних для збереження.",
   modalTitle:"Який день і яка команда?",modalHelp:"Виберіть бій, до якого належить цей список учасників.",date:"ДЕНЬ",team:"КОМАНДА",confirm:"💾 ПІДТВЕРДИТИ Й ЗБЕРЕГТИ",cancel:"СКАСУВАТИ"
 }};
-const keys=Object.keys(T);
+T.pl={kicker:"⚡ DOWÓDZTWO SOJUSZU",title:"🏆 DS SCORES",subtitle:"Zarządzanie punktami i wynikami · dane w Supabase",badge:"ADMIN",participants:"UCZESTNICY",participantsHelp:"Wklej uczestników, po jednym w wierszu.",saveParticipants:"💾 ZAPISZ UCZESTNIKÓW",load:"↻ WCZYTAJ LISTĘ",pending:"Lista oczekuje na zapis.",selected:"BITWA",notSelected:"Nie wybrano",ocr:"OCR.SPACE",ocrHelp:"Prześlij zrzuty z nazwami i punktami. OCR połączy i posortuje wyniki.",shots:"Zrzuty wyników",configured:"OCR.Space jest skonfigurowany automatycznie.",auto:"⚡ Analiza rozpoczyna się po wybraniu zrzutów.",waiting:"Oczekiwanie na zrzuty…",results:"WYKRYTE WYNIKI",resultsHelp:"Sprawdź nazwy i punkty, posortowane malejąco.",empty:"Brak wyników.",save:"💾 ZAPISZ W SUPABASE",nothing:"Brak zmian do zapisania.",modalTitle:"Który dzień i drużyna?",modalHelp:"Wybierz bitwę i drużynę.",date:"DATA",team:"DRUŻYNA",confirm:"💾 POTWIERDŹ I ZAPISZ",cancel:"ANULUJ"};
+ const keys=Object.keys(T);
 const saved=localStorage.getItem("hola-language");
 const detectedLang=(navigator.language||"es").slice(0,2).toLowerCase();
 let lang=keys.includes(saved)?saved:(keys.includes(detectedLang)?detectedLang:"es");
 
-const labels={es:"🇪🇸 Español",en:"🇬🇧 English",pt:"🇵🇹 Português",ro:"🇷🇴 Română",fr:"🇫🇷 Français",it:"🇮🇹 Italiano",de:"🇩🇪 Deutsch",uk:"🇺🇦 Українська",tr:"🇹🇷 Türkçe"};
-const flags={es:"es",en:"gb",pt:"pt",ro:"ro",fr:"fr",it:"it",de:"de",uk:"ua",tr:"tr"};
+const labels={es:"🇪🇸 Español",en:"🇬🇧 English",pt:"🇵🇹 Português",ro:"🇷🇴 Română",fr:"🇫🇷 Français",it:"🇮🇹 Italiano",de:"🇩🇪 Deutsch",uk:"🇺🇦 Українська",tr:"🇹🇷 Türkçe",pl:"🇵🇱 Polski"};
+const flags={es:"es",en:"gb",pt:"pt",ro:"ro",fr:"fr",it:"it",de:"de",uk:"ua",tr:"tr",pl:"pl"};
 const box=document.createElement("div");box.id="hola-language-selector";
 box.innerHTML=`<button type="button" id="languageSelect" class="language__toggle" aria-label="Language" aria-expanded="false"><img class="language__current" alt=""></button><div class="language__list" hidden></div>`;
 const toggle=box.querySelector(".language__toggle"),currentFlag=box.querySelector(".language__current"),list=box.querySelector(".language__list");
@@ -1335,9 +1336,9 @@ function apply(){
   const x=T[lang];
   document.documentElement.lang=lang;
   currentFlag.src=`https://flagcdn.com/w80/${flags[lang]}.png`;currentFlag.alt=labels[lang];
-  document.title="HOLa — "+x.title.replace("🌪️ ","");
+  document.title="HOLa — DS Scores";
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
-  set("uiKicker",x.kicker);set("uiTitle",x.title);set("uiSubtitle",x.subtitle);set("uiBadge",x.badge);
+  set("uiKicker",x.kicker);set("uiTitle","🏆 DS SCORES");set("uiSubtitle",x.subtitle);set("uiBadge",x.badge);
   set("participantsTitle",x.participants);set("participantsHelp",x.participantsHelp);
   set("saveParticipantsBtn",x.saveParticipants);set("loadExisting",x.load);
   set("participantSaveMessage",x.pending);set("selectedEventLabel",x.selected);
@@ -1373,6 +1374,7 @@ apply();
  de:{title:"STRATEGIE & KARTE",help:"Bereite hier die Informationen vor, die Spieler auf der öffentlichen Desert-Storm-Seite sehen.",day:"TAG",strategy:"STRATEGIE",map:"KARTE / BILD",upload:"BILD HOCHLADEN",uploadHelp:"Wähle das Kartenbild für dieses Team.",save:"💾 STRATEGIE & KARTE SPEICHERN",load:"↻ GESPEICHERTE DATEN LADEN",empty:"Kein Bild geladen.",resultTitle:"KAMPFERGEBNIS",resultHelp:"Gib an, ob dieses Team diesen Kampf gewonnen oder verloren hat.",noResult:"— KEIN ERGEBNIS —",win:"🟢 SIEG",loss:"🔴 NIEDERLAGE",draw:"🟡 UNENTSCHIEDEN"},
  uk:{title:"СТРАТЕГІЯ ТА КАРТА",help:"Підготуйте тут інформацію, яку гравці бачитимуть на публічній сторінці Desert Storm.",day:"ДЕНЬ",strategy:"СТРАТЕГІЯ",map:"КАРТА / ЗОБРАЖЕННЯ",upload:"ЗАВАНТАЖИТИ ЗОБРАЖЕННЯ",uploadHelp:"Виберіть зображення карти для цієї команди.",save:"💾 ЗБЕРЕГТИ СТРАТЕГІЮ ТА КАРТУ",load:"↻ ЗАВАНТАЖИТИ ЗБЕРЕЖЕНІ ДАНІ",empty:"Зображення не завантажено.",resultTitle:"РЕЗУЛЬТАТ БОЮ",resultHelp:"Вкажіть, чи перемогла або програла ця команда в цьому бою.",noResult:"— БЕЗ РЕЗУЛЬТАТУ —",win:"🟢 ПЕРЕМОГА",loss:"🔴 ПОРАЗКА",draw:"🟡 НІЧИЯ"}
  };
+ labels.pl={resultTitle:"WYNIK BITWY",resultHelp:"Wybierz wynik tej drużyny.",noResult:"— BRAK WYNIKU —",win:"🟢 ZWYCIĘSTWO",loss:"🔴 PORAŻKA",draw:"🟡 REMIS"};
  function apply(){
   const l=labels[localStorage.getItem('hola-language')||'es']||labels.es;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
@@ -1382,7 +1384,7 @@ apply();
  document.addEventListener('hola-language-change',apply);
 })();
 </script>
-<script src="js/ds-scores-ui.js?v=20260925-scores-v1"></script>
+<script src="js/ds-scores-ui.js?v=20260925-admin-i18n-v2"></script>
 <script type="module">
   const normalizeName=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
   async function verifyAdminAccess(){
