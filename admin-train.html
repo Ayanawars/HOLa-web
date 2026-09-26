@@ -12,7 +12,7 @@
     .card{background:rgba(255,250,240,.97);border:1px solid rgba(205,161,53,.72);border-radius:25px;box-shadow:0 16px 40px rgba(105,71,14,.16),inset 0 0 0 4px rgba(255,255,255,.34)}
     .hero{padding:21px}.kicker{color:#a97617;font-size:10px;letter-spacing:.19em;font-weight:900}.hero h1{margin:5px 0 7px;color:var(--navy);font:900 29px Georgia,serif}.hero p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
     .week-row{display:grid;grid-template-columns:1fr auto;gap:9px;margin-top:16px}.week-row select{width:100%;min-height:48px;padding:0 13px;border:1px solid #c9a857;border-radius:14px;background:white;color:var(--navy);font-weight:800;font-size:14px}.cycle{display:grid;place-items:center;min-width:72px;padding:0 11px;border-radius:14px;background:#f3e4b9;border:1px solid #d1ad54;color:#875f12;font-weight:900}
-    .summary{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.pill{padding:6px 9px;border-radius:999px;background:#f1fbff;border:1px solid #8ed3e9;color:#31637d;font-size:10px;font-weight:850}
+    .summary{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.pill{padding:6px 9px;border-radius:999px;background:#f1fbff;border:1px solid #8ed3e9;color:#31637d;font-size:10px;font-weight:850}.mode-box{margin-top:14px;padding:13px;border:1px solid #dfc272;border-radius:16px;background:#fffdf7}.mode-box label{display:block;margin-bottom:7px;color:#87600f;font-size:10px;font-weight:900}.mode-row{display:grid;grid-template-columns:1fr auto;gap:8px}.mode-row select{min-height:45px;padding:0 11px;border:1px solid #b8c9d2;border-radius:12px;background:#fff;color:var(--navy);font-weight:850}.mode-rule{margin:8px 0 0;color:var(--muted);font-size:10px;line-height:1.45}.mode-status{margin-top:6px;color:var(--ok);font-size:10px;font-weight:800}
     .days{display:grid;gap:10px;margin-top:14px}.day{padding:15px;border-radius:20px;background:rgba(255,250,240,.98);border:1px solid rgba(205,161,53,.65);box-shadow:0 9px 22px #60420d18}.day-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.day h2{margin:0;color:var(--navy);font:900 19px Georgia,serif}.source{padding:5px 8px;border-radius:999px;background:#e9f7fb;color:#26728e;font-size:9px;font-weight:900}.planned{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:11px}.slot{min-width:0;padding:10px;border-radius:13px;background:#fffdf8;border:1px solid #e1c986}.slot small{display:block;color:#9a7524;font-size:8px;font-weight:900}.slot strong{display:block;margin-top:4px;color:var(--navy);font-size:11px;overflow-wrap:anywhere}.slot.main{background:#effaff;border-color:#8ed3e9}
     .actual{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:11px}.actual select{min-width:0;width:100%;min-height:45px;padding:0 11px;border:1px solid #b8c9d2;border-radius:12px;background:white;color:var(--ink);font-size:13px}.save{min-width:92px;border:0;border-radius:12px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-weight:900;cursor:pointer}.save:disabled{opacity:.55}.saved{margin-top:7px;color:var(--ok);font-size:10px;font-weight:800}.pending{color:#9a6c12}.guard{position:fixed;inset:0;z-index:60;display:grid;place-items:center;text-align:center;background:linear-gradient(180deg,#9bdbef,#f0d69e);color:var(--navy)}.guard[hidden]{display:none}.spinner{width:48px;height:48px;margin:0 auto 12px;border:5px solid #103f6928;border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.error{padding:12px;border-radius:12px;background:#fff0ee;color:var(--bad);font-size:12px}
     @media(max-width:520px){.hero{padding:18px 14px}.planned{grid-template-columns:1fr}.actual{grid-template-columns:1fr}.save{min-height:45px}.hero h1{font-size:26px}}
@@ -27,6 +27,7 @@
       <p>La planificación se calcula automáticamente. Solo confirma quién condujo realmente cada día; las asignaciones posteriores cambiarán al instante.</p>
       <div class="week-row"><select id="week"></select><div class="cycle" id="cycle">—</div></div>
       <div class="summary"><span class="pill" id="type">—</span><span class="pill" id="sourceWeek">—</span></div>
+      <div class="mode-box"><label for="weekType">TIPO Y NORMA DE LA SEMANA</label><div class="mode-row"><select id="weekType"><option value="push">Push</option><option value="save">Save</option></select><button class="save" id="saveWeekType" type="button">GUARDAR</button></div><p class="mode-rule" id="modeRule"></p><div class="mode-status" id="modeStatus"></div></div>
     </section>
     <div class="days" id="days"></div>
   </main>
@@ -35,7 +36,7 @@
     import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260927-1';
     const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id),dayNames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],sourceNames={VS:'VS semanal',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
-    let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[]},schedule;
+    let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[],settings:[]},schedule;
     const normalize=v=>String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
     const fmt=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
     async function verify(){const {data:{session}}=await sb.auth.getSession();if(!session)return false;const {data:admin}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(!admin)return false;const {data:officers}=await sb.from('players').select('name,rank').in('rank',['R4','R5']);return (officers||[]).some(x=>normalize(x.name)===normalize(admin.display_name))}
@@ -43,8 +44,9 @@
     function fillWeeks(){const base=defaultWeek();for(let i=-8;i<=8;i++){const start=addDays(base,i*7),end=addDays(start,6),cycle=cycleFor(start),o=document.createElement('option');o.value=start;o.textContent='Semana '+cycle.number+'/4 · '+fmt(start)+' – '+fmt(end);$('week').append(o)}$('week').value=base}
     function playerOptions(selected){const frag=document.createDocumentFragment(),empty=document.createElement('option');empty.value='';empty.textContent='— Sin confirmar —';frag.append(empty);for(const p of players){const o=document.createElement('option');o.value=p.name;o.textContent=p.name;if(p.name===selected)o.selected=true;frag.append(o)}return frag}
     function render(){
-      const start=$('week').value;schedule=buildSchedule({scheduleWeek:start,vsScores:data.vs,dsScores:data.ds,donations:data.donations,actualDrivers:data.actuals,cycleExclusions:data.exclusions});
+      const start=$('week').value;schedule=buildSchedule({scheduleWeek:start,vsScores:data.vs,dsScores:data.ds,donations:data.donations,actualDrivers:data.actuals,cycleExclusions:data.exclusions,weekSettings:data.settings});
       $('cycle').textContent=schedule.cycle.number+'/4';$('type').textContent='Semana '+String(schedule.weekType||'push').toUpperCase();$('sourceWeek').textContent='Datos: '+fmt(schedule.sourceWeek)+' – '+fmt(addDays(schedule.sourceWeek,6));
+      $('weekType').value=schedule.weekType;$('modeRule').textContent=schedule.weekType==='save'?'SAVE: máximo 7,2 M cada día de lunes a viernes. Quien supere el límite no cumple. Se ordena de menor a mayor puntuación total.':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='';
       const box=$('days');box.replaceChildren();
       for(const item of schedule.days){
         const card=document.createElement('section');card.className='day';const pending=!item.planned;
@@ -63,16 +65,21 @@
       const existing=data.actuals.find(x=>String(x.service_date).slice(0,10)===item.date);if(existing)Object.assign(existing,payload);else data.actuals.push(payload);
       render();
     }
+    async function saveWeekType(){
+      const button=$('saveWeekType'),status=$('modeStatus'),payload={schedule_week:$('week').value,week_type:$('weekType').value,updated_at:new Date().toISOString()};button.disabled=true;status.textContent='Guardando norma…';
+      const {error}=await sb.from('train_week_settings').upsert(payload,{onConflict:'schedule_week'});button.disabled=false;if(error){status.textContent='No se pudo guardar: '+error.message;return}
+      const existing=data.settings.find(x=>String(x.schedule_week).slice(0,10)===payload.schedule_week);if(existing)Object.assign(existing,payload);else data.settings.push(payload);render();$('modeStatus').textContent='Norma guardada y planificación recalculada.';
+    }
     async function fetchAll(table,fields){const rows=[];for(let from=0;;from+=1000){const {data,error}=await sb.from(table).select(fields).range(from,from+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break}return rows}
     async function load(){
-      const [p,vsRows,d,n,a,e]=await Promise.all([
+      const [p,vsRows,d,n,a,e,s]=await Promise.all([
         sb.from('players').select('name').order('name'),fetchAll('vs_scores','player_name,day,points,week_type,vs_date'),
         sb.from('desert_storm_scores').select('battle_date,team,player_name,position,points'),sb.from('technology_donations').select('week_start,player_name,points,rank'),
-        sb.from('train_actual_drivers').select('*'),sb.from('train_cycle_exclusions').select('*')
+        sb.from('train_actual_drivers').select('*'),sb.from('train_cycle_exclusions').select('*'),sb.from('train_week_settings').select('*')
       ]);
-      const failed=[p,d,n,a,e].find(x=>x.error);if(failed)throw failed.error;players=p.data||[];data={vs:vsRows,ds:d.data||[],donations:n.data||[],actuals:a.data||[],exclusions:e.data||[]};render();
+      const failed=[p,d,n,a,e,s].find(x=>x.error);if(failed)throw failed.error;players=p.data||[];data={vs:vsRows,ds:d.data||[],donations:n.data||[],actuals:a.data||[],exclusions:e.data||[],settings:s.data||[]};render();
     }
-    fillWeeks();$('week').addEventListener('change',render);
+    fillWeeks();$('week').addEventListener('change',render);$('weekType').addEventListener('change',()=>{$('modeRule').textContent=$('weekType').value==='save'?'SAVE: máximo 7,2 M cada día de lunes a viernes. Quien supere el límite no cumple. Se ordena de menor a mayor puntuación total.':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='Cambio sin guardar.'});$('saveWeekType').addEventListener('click',saveWeekType);
     if(!await verify())location.replace('admin-login.html');else{try{await load();$('guard').hidden=true;$('app').hidden=false}catch(error){$('guard').innerHTML='<div class="error">'+error.message+'</div>'}}
   </script>
 </body>
