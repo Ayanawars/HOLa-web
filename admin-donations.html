@@ -15,14 +15,15 @@ function assign(rank,name,points){const row=$('rows').children[rank-1];if(!row)r
 async function init(){try{const {createClient}=await Promise.race([import('https://esm.sh/@supabase/supabase-js@2'),new Promise((_,reject)=>setTimeout(()=>reject(Error('No se pudo cargar Supabase')),12000))]);sb=createClient(SUPABASE_URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data:{session}}=await Promise.race([sb.auth.getSession(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Tiempo de espera agotado al comprobar la sesión')),12000))]);if(!session)throw Error('Sin sesión');const {data:admin,error:ae}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(ae||!admin)throw Error('Sin acceso');const {data:p,error:pe}=await sb.from('players').select('name,rank').order('name');if(pe)throw pe;players=p;const officer=p.find(x=>normalize(x.name)===normalize(admin.display_name)&&['R4','R5'].includes(String(x.rank).toUpperCase()));if(!officer)throw Error('No eres R4/R5');$('guard').hidden=true;$('app').hidden=false;fillSundays();makeRows();await loadWeek()}catch(e){$('guard').textContent='No se pudo comprobar el acceso: '+e.message+'. Abre el centro de administración e inicia sesión de nuevo.';console.error('Donations admin access:',e)}}
 async function loadWeek(){const sunday=$('week').value;if(!sunday)return;const week=monday(sunday);const {data,error}=await sb.from('technology_donations').select('player_name,points,rank').eq('week_start',week).order('rank');if(error){status(error.message,true);return}makeRows();for(const r of data||[])assign(r.rank,r.player_name,Number(r.points));status(data?.length?'Ranking de esta semana cargado. Puedes revisarlo y actualizarlo.':'Semana sin ranking publicado.')}
 $('week').addEventListener('change',loadWeek);
-function rowCanvas(img,index){
+function rowPartCanvas(img,index,kind){
   const c=document.createElement('canvas'),rows=7,rowH=img.naturalHeight/rows;
-  const sx=Math.round(img.naturalWidth*.13),sw=Math.round(img.naturalWidth*.84);
-  const sy=Math.max(0,Math.round(index*rowH+rowH*.12)),sh=Math.round(rowH*.76);
-  const scale=Math.max(2,Math.min(3,1500/sw));
+  const left=kind==='name'?.225:.735,width=kind==='name'?.50:.225;
+  const sx=Math.round(img.naturalWidth*left),sw=Math.round(img.naturalWidth*width);
+  const sy=Math.max(0,Math.round(index*rowH+rowH*.20)),sh=Math.round(rowH*.60);
+  const scale=Math.max(2.5,Math.min(4,1500/sw));
   c.width=Math.round(sw*scale);c.height=Math.round(sh*scale);
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
-  x.filter='contrast(1.45) saturate(0)';
+  x.filter='grayscale(1) contrast(1.75)';
   x.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
   return c
 }
@@ -45,14 +46,17 @@ $('read').addEventListener('click',async()=>{
   try{
     const worker=await Tesseract.createWorker('eng');
     try{
-      await worker.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1'});
       for(let f=0;f<files.length;f++){
         const img=await loadImage(files[f]);
         for(let row=0;row<7;row++){
           status('Captura '+(f+1)+'/'+files.length+': leyendo fila '+(row+1)+'/7…');
-          const data=(await worker.recognize(rowCanvas(img,row))).data;
-          const item=parseRowText(data.text);
-          if(!item){warnings.push('Captura '+(f+1)+', fila '+(row+1)+': no se pudo leer');continue}
+          await worker.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1',tessedit_char_whitelist:''});
+          const nameText=(await worker.recognize(rowPartCanvas(img,row,'name'))).data.text.replace(/\s+/g,' ').trim();
+          await worker.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789'});
+          const pointText=(await worker.recognize(rowPartCanvas(img,row,'points'))).data.text;
+          const digits=pointText.replace(/\D/g,'');
+          if(!nameText||digits.length<4||digits.length>7){warnings.push('Captura '+(f+1)+', fila '+(row+1)+': no se pudo leer');continue}
+          const item={name:nameText,points:Number(digits),raw:nameText+' '+digits};
           item.player=matchPlayer(item.name);detected.push(item);
           if(!item.player)warnings.push('Nombre por revisar: '+item.name)
         }
