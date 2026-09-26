@@ -42,7 +42,8 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const dsWeek=dsScores.filter(x=>String(x.battle_date).slice(0,10)>=sourceWeek&&String(x.battle_date).slice(0,10)<=addDays(sourceWeek,6));
   const teamA=dsWeek.filter(x=>String(x.team).toUpperCase()==='A').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
   const teamB=dsWeek.filter(x=>String(x.team).toUpperCase()==='B').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
-  const donationRanking=donations.filter(x=>String(x.week_start).slice(0,10)===sourceWeek).sort((a,b)=>Number(a.rank)-Number(b.rank)||Number(b.points)-Number(a.points));
+  const vsEligibleNames=new Set(vsRanking.map(x=>normalize(x.player_name)));
+  const donationRanking=donations.filter(x=>String(x.week_start).slice(0,10)===sourceWeek&&vsEligibleNames.has(normalize(x.player_name))).sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.rank)-Number(b.rank));
   const days=[];
   for(let i=0;i<4;i++)days.push(assign({date:addDays(week,i),day:i+1,source:vsRanking,sourceType:'VS',used,actualMap}));
   days.push(assign({date:addDays(week,4),day:5,source:teamB,sourceType:'DS_B',used,actualMap}));
