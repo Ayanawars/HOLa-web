@@ -731,20 +731,7 @@ function norm(s){
     .replace(/[ᓚᘏᗢ]/g,"")
     .replace(/[^\p{L}\p{N}]/gu,"");
 }
-function cleanParticipantName(value){
-  return String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
-}
-function participants(){
-  const seen=new Set();
-  return $("participants").value.split(/\n|,/)
-    .map(cleanParticipantName)
-    .filter(name=>{
-      const key=norm(name);
-      if(!key||seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-}
+// Participant normalization is defined once above; do not override it.
 function matchPlayer(ocrName){
   const list=participants();
   const n=norm(ocrName);
@@ -1124,7 +1111,7 @@ function dsV2Read(engine,registered){
       provider:engine.provider});
   }
   if(!lines.length)warnings.push(engine.provider+": no devolvió coordenadas de texto");
-  return {rows,warnings};
+  return {rows,warnings,debug:lines.map(l=>({engine:engine.provider,text:l.text,y:Math.round(l.y),match:dsV2Match(l.text,registered)||"",score:dsV2Points(l.text)}))};
 }
 async function ocrImage(file){
   const cropped=await prepareDSScoreCrop(file);
@@ -1136,6 +1123,7 @@ async function ocrImage(file){
   try{azure=await dsAzureOCR(cropped);}catch(e){azureError=e;}
   const azureRead=azure?dsV2Read(azure,registered):{rows:[],warnings:[]};
   dsV2Debug.push(...(localRead.debug||[]),...(azureRead.debug||[]));
+  for(const engine of [local,azure])if(engine&&!engine.lines?.length)dsV2Debug.push(...engine.text.split(/\r?\n/).filter(Boolean).map(text=>({engine:engine.provider,text,y:"—",match:dsV2Match(text,registered)||"",score:dsV2Points(text)})));
   const localByName=new Map(localRead.rows.map(r=>[norm(r.name),r]));
   const azureByName=new Map(azureRead.rows.map(r=>[norm(r.name),r]));
   const rows=[],warnings=[],conflicts=[];
@@ -1202,8 +1190,7 @@ function dsV2ShowDiagnostics(){
     el.style.cssText="margin:16px 0;padding:12px;border:2px solid #00d2ed;border-radius:12px;overflow:auto;background:#f1fcff;color:#18343e";
     $("resultsBox").insertAdjacentElement("beforebegin",el);}
   el.open=true;
-  const relevant=dsV2Debug.filter(x=>/jeb|raw|1723|1.?723/i.test(x.text)||x.score===1723156);
-  const lines=relevant.length?relevant:dsV2Debug;
+  const lines=dsV2Debug;
   const noLines=dsV2Debug.length===0?"<p><strong>No llegaron líneas con coordenadas del OCR local ni de Azure.</strong> Revisa el estado OCR de arriba y el recorte.</p>":"";
   el.innerHTML="<summary>DIAGNÓSTICO OCR V2 · "+dsV2Debug.length+" líneas (local y Azure)</summary>"+
     "<p>Lectura literal de cada motor. No se guarda en Supabase.</p>"+noLines+
