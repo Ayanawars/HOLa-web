@@ -20,7 +20,7 @@ function assign({date,day,source,sourceType,used,actualMap}){
   const available=sourceCandidates(source,used),planned=available[0]?.player_name||'',substitutes=available.slice(1,3).map(x=>x.player_name);
   const saved=actualMap.get(date),actual=saved?.actual_driver||'',effective=actual||planned;
   if(effective)used.add(normalize(effective));
-  return{date,day,source:sourceType,planned,substitutes,actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available};
+  return{date,day,source:sourceType,planned,substitutes,actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available,rankedSource:source,excludedBefore:source.filter(row=>used.has(normalize(row.player_name)))};
 }
 export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[]}){
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
@@ -50,4 +50,40 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   days.push(assign({date:addDays(week,5),day:6,source:teamA,sourceType:'DS_A',used,actualMap}));
   days.push(assign({date:addDays(week,6),day:7,source:donationRanking,sourceType:'DONATIONS',used,actualMap}));
   return{week,weekEnd,sourceWeek,cycle,weekType,days,vsRanking,teamA,teamB,donationRanking};
+}
+
+/** Explain the exact input data and selection for any player on any service day. */
+export function auditPlayer({schedule,playerName,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[]}){
+  const name=normalize(playerName),sourceWeek=schedule.sourceWeek,week=schedule.week,weekType=schedule.weekType;
+  const vs=vsScores.filter(x=>String(x.vs_date).slice(0,10)===sourceWeek&&normalize(x.player_name)===name&&Number(x.day)>=1&&Number(x.day)<=5);
+  const daily=new Map(vs.map(x=>[Number(x.day),Number(x.points)||0]));
+  const missing=[1,2,3,4,5].filter(d=>!daily.has(d));
+  const failed=[...daily].filter(([d,p])=>weekType==='save'?p>VS_LIMIT:p<VS_LIMIT).map(([day,points])=>({day,points}));
+  const vsPass=!missing.length&&!failed.length;
+  const history=actualDrivers.filter(x=>normalize(x.actual_driver)===name&&String(x.service_date).slice(0,10)>=schedule.cycle.start&&String(x.service_date).slice(0,10)<=schedule.cycle.end);
+  const exclusions=cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===schedule.cycle.start&&normalize(x.player_name)===name);
+  const donation=donations.find(x=>String(x.week_start).slice(0,10)===sourceWeek&&normalize(x.player_name)===name);
+  return schedule.days.map(item=>{
+    const reasons=[],rank=item.rankedSource.findIndex(x=>normalize(x.player_name)===name)+1;
+    const availableRank=item.available.findIndex(x=>normalize(x.player_name)===name)+1;
+    const selected=normalize(item.planned)===name?'titular':item.substitutes.findIndex(x=>normalize(x)===name)>=0?'suplente '+(item.substitutes.findIndex(x=>normalize(x)===name)+1):'';
+    const actual=normalize(item.actual)===name;
+    const prior=history.filter(x=>String(x.service_date).slice(0,10)<item.date);
+    if(prior.length)reasons.push('Ya condujo en este ciclo: '+prior.map(x=>String(x.service_date).slice(0,10)).join(', '));
+    if(exclusions.length)reasons.push('Exclusión del ciclo: '+exclusions.map(x=>x.reason||'registrada').join('; '));
+    if(item.source==='DONATIONS'){
+      if(missing.length)reasons.push('Faltan datos VS: '+missing.map(x=>['','lunes','martes','miércoles','jueves','viernes'][x]).join(', '));
+      if(failed.length)reasons.push('VS fuera del límite: '+failed.map(x=>['','lunes','martes','miércoles','jueves','viernes'][x.day]+' '+x.points.toLocaleString('es-ES')).join(', '));
+      if(!donation)reasons.push('Sin donaciones registradas en la clasificación disponible');
+    }
+    if(item.source==='VS'&&!vsPass){
+      if(missing.length)reasons.push('Faltan días VS: '+missing.join(', '));
+      if(failed.length)reasons.push('VS fuera del límite: '+failed.map(x=>'día '+x.day+' '+x.points.toLocaleString('es-ES')).join(', '));
+    }
+    if(item.source.startsWith('DS')&&!rank)reasons.push('Sin puntuación registrada en '+item.source.replace('_',' '));
+    if(!rank&&!reasons.length)reasons.push('No figura entre los candidatos registrados para este día');
+    if(rank&&!availableRank&&!reasons.length)reasons.push('Excluido por el historial o las restricciones del ciclo');
+    if(availableRank>3&&!reasons.length)reasons.push('Elegible, pero quedó por detrás de los tres primeros candidatos disponibles');
+    return{date:item.date,day:item.day,source:item.source,selected,actual,rank,availableRank,reasons,vsDaily:[1,2,3,4,5].map(day=>({day,points:daily.get(day)??null})),donation:donation?{points:donation.points,rank:donation.rank}:null,driver:item.planned,substitutes:item.substitutes};
+  });
 }
