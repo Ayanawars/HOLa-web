@@ -1292,25 +1292,23 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
 .head .translator-menu[hidden]{display:none!important}
 @media(max-width:600px){.head .desert-back{top:10px!important;left:11px!important;width:44px!important;height:44px!important}.head .logo-area{top:10px!important;right:11px!important;max-width:calc(100% - 77px)!important}.head .translator-btn{box-sizing:border-box!important;width:53px!important;min-width:53px!important;max-width:53px!important;height:44px!important;min-height:44px!important;padding:7px 9px!important;overflow:hidden!important;white-space:nowrap!important;font-size:22px!important;letter-spacing:15px!important;line-height:1!important}.head .translator-menu{min-width:185px!important;max-width:calc(100vw - 22px)!important}}
 </style>
-</head>
+<style id="vs-round-flags-fix">.head .translator-btn{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;max-width:50px!important;max-height:50px!important;border-radius:50%!important;padding:0!important;overflow:hidden!important;letter-spacing:normal!important}.head .translator-btn img{width:32px!important;height:22px!important;object-fit:cover!important;border-radius:3px!important}.head #translatorMenu{background:#091d31!important;color:#fff1ce!important;border:1px solid #e7bb67!important;border-radius:13px!important;padding:7px!important;min-width:205px!important;box-shadow:0 14px 35px #000c!important}.head #translatorMenu button{display:flex!important;align-items:center!important;gap:11px!important;background:transparent!important;color:#fff1ce!important;font-size:15px!important;font-weight:700!important;opacity:1!important;text-shadow:none!important;min-height:43px!important}.head #translatorMenu button span{color:#fff1ce!important;opacity:1!important}.head #translatorMenu button img{width:27px!important;height:18px!important;object-fit:cover!important;border-radius:2px!important}.head #translatorMenu button:hover{background:#19415a!important}@media(max-width:600px){.head .translator-btn{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;max-width:48px!important;max-height:48px!important}}</style></head>
   <body>
     <header class="head">
       <div class="headin">
         <a class="desert-back" href="index.html" aria-label="Volver al inicio">‹</a>
         <div class="logo-area">
           <div class="translator-wrap">
-            <button class="translator-btn" id="translatorBtn" type="button">
-              🇪🇸 Español ▾
-            </button>
+            <button class="translator-btn" id="translatorBtn" type="button"><img src="https://flagcdn.com/w40/es.png" width="32" height="22" alt="" /></button>
             <div class="translator-menu" id="translatorMenu" hidden>
-              <button type="button" data-lang="es">🇪🇸 Español</button>
-              <button type="button" data-lang="en">🇬🇧 English</button>
-              <button type="button" data-lang="de">🇩🇪 Deutsch</button>
-              <button type="button" data-lang="fr">🇫🇷 Français</button>
-              <button type="button" data-lang="ro">🇷🇴 Română</button>
-              <button type="button" data-lang="pt">🇵🇹 Português</button>
-              <button type="button" data-lang="uk">🇺🇦 Українська</button>
-              <button type="button" data-lang="tr">🇹🇷 Türkçe</button>
+              <button type="button" data-lang="es"><img src="https://flagcdn.com/w40/es.png" width="27" height="18" alt="" /> <span>Español</span></button>
+              <button type="button" data-lang="en"><img src="https://flagcdn.com/w40/gb.png" width="27" height="18" alt="" /> <span>English</span></button>
+              <button type="button" data-lang="de"><img src="https://flagcdn.com/w40/de.png" width="27" height="18" alt="" /> <span>Deutsch</span></button>
+              <button type="button" data-lang="fr"><img src="https://flagcdn.com/w40/fr.png" width="27" height="18" alt="" /> <span>Français</span></button>
+              <button type="button" data-lang="ro"><img src="https://flagcdn.com/w40/ro.png" width="27" height="18" alt="" /> <span>Română</span></button>
+              <button type="button" data-lang="pt"><img src="https://flagcdn.com/w40/pt.png" width="27" height="18" alt="" /> <span>Português</span></button>
+              <button type="button" data-lang="uk"><img src="https://flagcdn.com/w40/ua.png" width="27" height="18" alt="" /> <span>Українська</span></button>
+              <button type="button" data-lang="tr"><img src="https://flagcdn.com/w40/tr.png" width="27" height="18" alt="" /> <span>Türkçe</span></button>
             </div>
           </div>
         </div>
@@ -2107,7 +2105,7 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
           visit(document.body);
           document.documentElement.lang = l;
           const b = document.getElementById("translatorBtn");
-          if (b) b.textContent = (labels[l] || labels.es) + " ▾";
+          if (b) { const codes={es:'es',en:'gb',de:'de',fr:'fr',ro:'ro',pt:'pt',uk:'ua',tr:'tr'}; b.innerHTML = '<img src="https://flagcdn.com/w40/' + (codes[l] || 'es') + '.png" width="32" height="22" alt="" />'; b.setAttribute('aria-label',labels[l]||labels.es); }
         }
         window.setLanguage = setLanguage;
         window.changeLanguage = setLanguage;
