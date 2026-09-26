@@ -1046,6 +1046,20 @@
 .participation-panel details{margin-top:10px}
 @media(min-width:760px){.participation-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
+<style id="participation-compact-overrides">
+.participation-card{padding:13px!important}.participation-card strong{font-size:27px!important;margin:5px 0!important}
+.participation-tabs{display:flex;gap:7px;overflow-x:auto;padding:3px 0 12px;scrollbar-width:thin}
+.participation-tabs button{flex:0 0 auto;background:#fff8e7;border:1px solid #d8bd80;border-radius:10px;color:#38516a;padding:9px 12px;font-weight:800;cursor:pointer}
+.participation-tabs button.active{background:#245b77;color:white;border-color:#245b77}
+.participation-tabs button span{opacity:.7;margin-left:4px}
+.participation-names-list{max-height:340px;overflow:auto;border-top:1px solid #dec998}
+.participation-person{display:flex;justify-content:space-between;gap:10px;padding:11px 5px;border-bottom:1px solid #e7d7b4;font-size:13px}
+.participation-person span{overflow-wrap:anywhere}.participation-person b{white-space:nowrap;color:#1c6787}
+.participation-empty{padding:20px 5px;color:#697783;font-size:13px}
+.participation-compliance-counts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
+.participation-compliance-counts span{padding:8px 10px;background:#fff9e9;border:1px solid #e3d2ab;border-radius:9px;font-weight:800;font-size:12px}
+.participation-panel details{border-top:1px solid #e3d2ab;padding:10px 0;margin:0}
+</style>
 </head>
   <body>
     <header class="head">
@@ -1125,12 +1139,17 @@
       </section>
       <h2>▌ PARTICIPACIÓN VS</h2>
       <section class="participation-dashboard">
-        <div class="participation-intro">Estadísticas de lunes a viernes · Semana seleccionada</div>
+        <div class="participation-intro">Resumen de lunes a viernes · Semana seleccionada</div>
         <div class="participation-grid" id="participationCards"></div>
         <div class="participation-panel">
-          <h3>📊 Participación por día</h3>
-          <p>Miembros con puntos registrados en cada jornada.</p>
+          <h3>📊 Participación diaria</h3>
+          <p>Jugadores con puntos en cada jornada.</p>
           <div id="participationChart"></div>
+        </div>
+        <div class="participation-panel">
+          <h3>👥 Consultar jugadores</h3>
+          <div class="participation-tabs" id="participationTabs"></div>
+          <div id="participationNames" class="participation-names-list"></div>
         </div>
         <div class="participation-panel">
           <h3>🎯 Cumplimiento VS</h3>
@@ -1312,42 +1331,62 @@
         const recorded = new Set(scores.filter(x => days.includes(Number(x.day))).map(x => key(x.player_name) + "|" + Number(x.day)));
         const hasRecord = (x, d) => recorded.has(key(x.name) + "|" + d);
         const categories = [
-          { label: "Miembros activos", icon: "👥", items: rows.filter(x => days.some(d => x.daily[d] > 0)) },
-          { label: "Participación completa", icon: "📅", items: rows.filter(x => days.every(d => x.daily[d] > 0)) },
-          { label: "Participación parcial", icon: "📈", items: rows.filter(x => { const n = days.filter(d => x.daily[d] > 0).length; return n >= 1 && n <= 4; }) },
-          { label: "Sin puntos registrados", icon: "👤", items: rows.filter(x => days.every(d => hasRecord(x,d) && x.daily[d] === 0)) }
+          { id: "active", label: "Activos", icon: "👥", items: rows.filter(x => days.some(d => x.daily[d] > 0)) },
+          { id: "complete", label: "5 días", icon: "📅", items: rows.filter(x => days.every(d => x.daily[d] > 0)) },
+          { id: "partial", label: "Parcial", icon: "📈", items: rows.filter(x => { const n = days.filter(d => x.daily[d] > 0).length; return n >= 1 && n <= 4; }) },
+          { id: "none", label: "Sin puntos", icon: "👤", items: rows.filter(x => days.every(d => hasRecord(x,d) && x.daily[d] === 0)) },
+          { id: "pending", label: "Pendientes", icon: "⏳", items: rows.filter(x => days.some(d => !hasRecord(x,d))) }
         ];
-        const names = items => items.length ? items.map(x => "<span>" + esc(x.name) + "</span>").join("") : "<span>Ninguno</span>";
-        document.getElementById("participationCards").innerHTML = categories.map(c =>
+        document.getElementById("participationCards").innerHTML = categories.slice(0,4).map(c =>
           '<article class="participation-card"><div class="pc-label">' + c.icon + ' ' + c.label +
-          '</div><strong>' + c.items.length + (c.label === "Miembros activos" ? " / " + rows.length : "") +
-          '</strong><details><summary>Ver jugadores (' + c.items.length + ')</summary><div class="participation-names">' +
-          names(c.items) + '</div></details></article>'
+          '</div><strong>' + c.items.length + (c.id === "active" ? " / " + rows.length : "") +
+          '</strong></article>'
         ).join("");
-        const chart = document.getElementById("participationChart");
-        chart.innerHTML = days.map(d => {
-          const items = rows.filter(x => x.daily[d] > 0);
-          const pct = rows.length ? 100 * items.length / rows.length : 0;
+        document.getElementById("participationChart").innerHTML = days.map(d => {
+          const count = rows.filter(x => x.daily[d] > 0).length;
+          const pct = rows.length ? 100 * count / rows.length : 0;
           return '<div class="participation-day"><div class="participation-day-head"><span>' + dayNames[d] +
-            '</span><span>' + items.length + ' / ' + rows.length + ' (' + Math.round(pct) +
-            '%)</span></div><div class="participation-track"><div class="participation-fill" style="width:' +
-            pct + '%"></div></div><details><summary>Ver jugadores</summary><div class="participation-names">' +
-            names(items) + '</div></details></div>';
+            '</span><span>' + count + ' / ' + rows.length + '</span></div><div class="participation-track"><div class="participation-fill" style="width:' +
+            pct + '%"></div></div></div>';
         }).join("");
+        const tabs = document.getElementById("participationTabs");
+        const namesPanel = document.getElementById("participationNames");
+        const showCategory = id => {
+          const category = categories.find(c => c.id === id) || categories[0];
+          tabs.querySelectorAll("button").forEach(btn => {
+            const active = btn.dataset.category === category.id;
+            btn.classList.toggle("active", active);
+            btn.setAttribute("aria-selected", String(active));
+          });
+          namesPanel.innerHTML = category.items.length
+            ? category.items.map(x => '<div class="participation-person"><span>' + esc(x.name) +
+                '</span><b>' + f(days.reduce((sum,d) => sum + x.daily[d],0)) + '</b></div>').join("")
+            : '<div class="participation-empty">No hay jugadores en esta categoría.</div>';
+        };
+        tabs.innerHTML = categories.map(c => '<button type="button" role="tab" data-category="' + c.id + '">' +
+          c.label + ' <span>' + c.items.length + '</span></button>').join("");
+        tabs.querySelectorAll("button").forEach(btn => btn.onclick = () => showCategory(btn.dataset.category));
+        showCategory("active");
         const eligible = rows.filter(x => days.every(d => hasRecord(x,d)));
-        const pending = rows.filter(x => days.some(d => !hasRecord(x,d)));
+        const pending = categories.find(c => c.id === "pending").items;
         const isPush = weekType === "push";
-        const fulfills = x => isPush
-          ? days.every(d => x.daily[d] >= 7200000)
+        const fulfills = x => isPush ? days.every(d => x.daily[d] >= 7200000)
           : days.reduce((sum,d) => sum + x.daily[d],0) === 7200000;
         const passed = eligible.filter(fulfills);
         const failed = eligible.filter(x => !fulfills(x));
-        const box = (label, items) => '<details><summary>' + label + ' (' + items.length +
-          ')</summary><div class="participation-names">' + names(items) + '</div></details>';
+        const complianceBox = (label,items) => '<details><summary>' + label + ' (' + items.length +
+          ')</summary><div class="participation-names">' + (items.length
+            ? items.map(x => '<span>' + esc(x.name) + '</span>').join("")
+            : '<span>Ninguno</span>') + '</div></details>';
         document.getElementById("participationCompliance").innerHTML =
-          '<p>' + (isPush ? 'Push: objetivo diario de 7,2M.' : 'Save: objetivo semanal de 7,2M.') +
-          ' Solo se evalúan jugadores con resultados guardados de lunes a viernes.</p>' +
-          box("Cumplen", passed) + box("No cumplen", failed) + box("Pendientes de datos", pending);
+          '<p>' + (isPush ? 'Push: 7,2M diarios.' : 'Save: 7,2M semanales.') +
+          ' Se evalúan únicamente los resultados guardados de lunes a viernes.</p>' +
+          '<div class="participation-compliance-counts"><span>✓ ' + passed.length +
+          ' cumplen</span><span>✕ ' + failed.length + ' no cumplen</span><span>⏳ ' +
+          pending.length + ' pendientes</span></div>' +
+          complianceBox("Ver quienes cumplen",passed) +
+          complianceBox("Ver quienes no cumplen",failed) +
+          complianceBox("Ver pendientes",pending);
       }
       function compliance(rows) {
         return rows.map((x) => {
