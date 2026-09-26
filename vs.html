@@ -1240,6 +1240,25 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
 @media(max-width:700px){.head{min-height:clamp(290px,34vh,400px)!important}.headin{grid-template-columns:43px minmax(0,1fr) 43px!important}.wrap{padding:17px 10px 65px!important}.days{grid-template-columns:repeat(4,minmax(0,1fr))!important}.day:last-child{grid-column:auto!important}.stats .card{min-height:115px!important;padding:15px 10px!important}.week-current b{font-size:clamp(12px,3.3vw,16px)!important}.week-current{padding:11px 6px!important}.rh,.rr{grid-template-columns:37px minmax(0,1fr) 78px!important}.participation-panel{padding:12px!important}#participationCompliance .compliance-group>summary{min-height:142px!important}}
 @media(max-width:370px){#participationCompliance .compliance-group>summary{padding:12px 3px!important}#participationCompliance .compliance-group-label{font-size:9px!important}}
 </style>
+<style id="vs-compliance-fullscreen-modal">
+#participationCompliance .compliance-group{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:150px!important;padding:13px 5px!important;width:100%!important;cursor:pointer!important;color:#f4e8d2!important;font:inherit!important}
+#participationCompliance .compliance-group-label{font-weight:900!important}
+#participationCompliance .compliance-group-chevron{font-size:18px!important;color:#f6ce7b!important}
+#participationCompliance .compliance-group:focus-visible{outline:3px solid #78e2ff!important;outline-offset:3px!important}
+.compliance-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:#020914dc;padding:12px;backdrop-filter:blur(7px)}
+.compliance-modal.show{display:flex}.compliance-modal-open{overflow:hidden}
+.compliance-modal-panel{width:min(760px,100%);max-height:min(92dvh,950px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #c6a05d;border-radius:18px;background:linear-gradient(155deg,#102d46,#071725);box-shadow:0 28px 90px #000e,inset 0 0 0 2px #e5c37c19}
+.compliance-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:21px 19px 15px;border-bottom:1px solid #b38b4b;background:linear-gradient(120deg,#16445e,#0a243a)}
+.compliance-modal-kicker{font-size:10px;font-weight:900;letter-spacing:.16em;color:#8fe3fa}
+.compliance-modal-head h2{margin:7px 0 4px;font-family:Georgia,serif;font-size:clamp(23px,5vw,35px);color:#f5ce70;letter-spacing:.045em}
+.compliance-modal-head p{margin:0;color:#c5dce5;font-size:13px}
+.compliance-modal-close{flex:0 0 43px;width:43px;height:43px;border:1px solid #d6b16b;border-radius:11px;background:#0a253b;color:#ffe1a1;font-size:22px;cursor:pointer}
+.compliance-modal-content{overflow:auto;overscroll-behavior:contain;padding:13px;display:grid;gap:11px}
+.compliance-modal-content .compliance-player{margin:0!important;padding:14px!important;border-radius:12px!important;background:#102d43!important}
+.compliance-modal-content .compliance-player-head{font-size:15px!important;margin-bottom:10px}
+.compliance-modal-content .compliance-days{gap:7px!important}.compliance-modal-content .compliance-day{padding:10px 3px!important}
+@media(max-width:600px){.compliance-modal{padding:0;align-items:stretch}.compliance-modal-panel{width:100%;height:100dvh;max-height:100dvh;border-radius:0;border-left:0;border-right:0}.compliance-modal-head{padding:19px 15px 13px}.compliance-modal-content{padding:12px 10px 28px}.compliance-modal-content .compliance-player{padding:11px!important}}
+</style>
 </head>
   <body>
     <header class="head">
@@ -1337,6 +1356,15 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
         </div>
       </section>
     </main>
+    <div class="compliance-modal" id="complianceModal" role="dialog" aria-modal="true" aria-labelledby="complianceModalTitle">
+      <div class="compliance-modal-panel">
+        <div class="compliance-modal-head">
+          <div><span class="compliance-modal-kicker">HOLa · VS COMMAND</span><h2 id="complianceModalTitle">CUMPLIMIENTO</h2><p id="complianceModalCount"></p></div>
+          <button type="button" class="compliance-modal-close" id="complianceClose" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="compliance-modal-content" id="complianceModalContent"></div>
+      </div>
+    </div>
     <div class="modal" id="statsModal">
       <div class="modal-box">
         <div class="modal-head">
@@ -1564,21 +1592,35 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
             '"><span>' + dayNames[d].slice(0,3) + '</span><b>' + symbol + '</b><small>' +
             (saved ? f(points) : "—") + '</small></div>';
         };
-        const complianceBox = (label,items,tone) => '<details class="compliance-group ' + tone +
-          '"><summary><span class="compliance-group-icon">' + (tone === "success" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h9a2 2 0 0 0 1.95-1.55l1.8-8A2 2 0 0 0 18.8 9H14V4.5A2.5 2.5 0 0 0 11.5 2L7 10v11h1Z"/><path d="M3 10h4v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"/></svg>' : tone === "failure" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h9a2 2 0 0 1 1.95 1.55l1.8 8A2 2 0 0 1 18.8 15H14v4.5A2.5 2.5 0 0 1 11.5 22L7 14V3h1Z"/><path d="M3 3h4v11H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8M8 21h8M9 3v4l3 5-3 5v4M15 3v4l-3 5 3 5v4"/><path d="m9 7 6 0M9 17h6"/></svg>') +
+        const complianceBox = (label,items,tone) => '<button type="button" class="compliance-group ' + tone +
+          '" data-compliance="' + tone + '" aria-label="' + label + ': ' + items.length + ' jugadores">' +
+          '<span class="compliance-group-icon">' + (tone === "success" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h9a2 2 0 0 0 1.95-1.55l1.8-8A2 2 0 0 0 18.8 9H14V4.5A2.5 2.5 0 0 0 11.5 2L7 10v11h1Z"/><path d="M3 10h4v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"/></svg>' : tone === "failure" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h9a2 2 0 0 1 1.95 1.55l1.8 8A2 2 0 0 1 18.8 15H14v4.5A2.5 2.5 0 0 1 11.5 22L7 14V3h1Z"/><path d="M3 3h4v11H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8M8 21h8M9 3v4l3 5-3 5v4M15 3v4l-3 5 3 5v4"/><path d="m9 7 6 0M9 17h6"/></svg>') +
           '</span><span class="compliance-group-label">' + label +
           '</span><span class="compliance-group-count">' + items.length +
-          '</span><span class="compliance-group-chevron">⌄</span></summary><div class="compliance-player-list">' +
-          (items.length ? items.map(x => {
-            const total5 = days.reduce((sum,d) => sum + x.daily[d],0);
-            const result = !days.every(d => hasRecord(x,d)) ? "Pendiente de datos"
-              : fulfills(x) ? "Cumple" : "No cumple";
-            return '<article class="compliance-player"><div class="compliance-player-head"><b>' +
-              esc(x.name) + '</b><span>' + result + '</span></div><div class="compliance-days">' +
-              days.map(d => dayIndicator(x,d)).join("") + '</div>' +
-              (!isPush ? '<div class="compliance-week-total">Total lunes-viernes: <b>' + f(total5) +
-                '</b> / 7,2M</div>' : '') + '</article>';
-          }).join("") : '<div class="participation-empty">Ninguno</div>') + '</div></details>';
+          '</span><span class="compliance-group-chevron">↗</span></button>';
+        const modal = document.getElementById("complianceModal");
+        const closeModal = () => { modal.classList.remove("show"); document.body.classList.remove("compliance-modal-open"); };
+        document.getElementById("complianceClose").onclick = closeModal;
+        modal.onclick = event => { if (event.target === modal) closeModal(); };
+        const openCompliance = (label,items,tone) => {
+          document.getElementById("complianceModalTitle").textContent = label;
+          document.getElementById("complianceModalCount").textContent = items.length + " jugadores";
+          document.getElementById("complianceModalContent").innerHTML =
+            (items.length ? items.map(x => {
+              const total5 = days.reduce((sum,d) => sum + x.daily[d],0);
+              const result = !days.every(d => hasRecord(x,d)) ? "Pendiente de datos"
+                : fulfills(x) ? "Cumple" : "No cumple";
+              return '<article class="compliance-player"><div class="compliance-player-head"><b>' +
+                esc(x.name) + '</b><span>' + result + '</span></div><div class="compliance-days">' +
+                days.map(d => dayIndicator(x,d)).join("") + '</div>' +
+                (!isPush ? '<div class="compliance-week-total">Total lunes-viernes: <b>' + f(total5) +
+                  '</b> / 7,2M</div>' : '') + '</article>';
+            }).join("") : '<div class="participation-empty">Ninguno</div>');
+          modal.dataset.tone = tone;
+          modal.classList.add("show");
+          document.body.classList.add("compliance-modal-open");
+          document.getElementById("complianceClose").focus();
+        };
         document.getElementById("participationCompliance").innerHTML =
           '<p>' + (isPush ? 'Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.'
             : 'Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.') +
@@ -1586,6 +1628,14 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
           complianceBox("CUMPLIERON",passed,"success") +
           complianceBox("NO CUMPLIERON",failed,"failure") +
           complianceBox("PENDIENTES",pending,"waiting") + '</div>';
+        document.querySelectorAll("#participationCompliance [data-compliance]").forEach(button => {
+          button.onclick = () => {
+            const tone = button.dataset.compliance;
+            const entry = tone === "success" ? ["CUMPLIERON",passed] :
+              tone === "failure" ? ["NO CUMPLIERON",failed] : ["PENDIENTES",pending];
+            openCompliance(entry[0],entry[1],tone);
+          };
+        });
 
       }
       function compliance(rows) {
