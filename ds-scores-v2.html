@@ -1199,12 +1199,14 @@ $("scoresAddBtn").addEventListener("click",()=>{
 function dsV2ShowDiagnostics(){
   let el=$("dsV2Diagnostics");
   if(!el){el=document.createElement("details");el.id="dsV2Diagnostics";
-    el.style.cssText="margin:16px 0;padding:12px;border:1px solid #00d2ed;border-radius:12px;overflow:auto";
-    $("resultsBox").insertAdjacentElement("afterend",el);}
+    el.style.cssText="margin:16px 0;padding:12px;border:2px solid #00d2ed;border-radius:12px;overflow:auto;background:#f1fcff;color:#18343e";
+    $("resultsBox").insertAdjacentElement("beforebegin",el);}
+  el.open=true;
   const relevant=dsV2Debug.filter(x=>/jeb|raw|1723|1.?723/i.test(x.text)||x.score===1723156);
   const lines=relevant.length?relevant:dsV2Debug;
+  const noLines=dsV2Debug.length===0?"<p><strong>No llegaron líneas con coordenadas del OCR local ni de Azure.</strong> Revisa el estado OCR de arriba y el recorte.</p>":"";
   el.innerHTML="<summary>DIAGNÓSTICO OCR V2 · "+dsV2Debug.length+" líneas (local y Azure)</summary>"+
-    "<p>Lectura literal de cada motor. No se guarda en Supabase.</p>"+
+    "<p>Lectura literal de cada motor. No se guarda en Supabase.</p>"+noLines+
     '<div style="max-height:330px;overflow:auto"><table><thead><tr><th>Motor</th><th>Y</th><th>Texto leído</th><th>Asignación</th><th>Puntos</th></tr></thead><tbody>'+
     lines.map(x=>"<tr><td>"+escapeHtml(x.engine)+"</td><td>"+x.y+"</td><td>"+escapeHtml(x.text)+
       "</td><td>"+escapeHtml(x.match)+"</td><td>"+(x.score===null?"—":x.score)+"</td></tr>").join("")+
