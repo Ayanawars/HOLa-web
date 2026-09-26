@@ -1079,6 +1079,23 @@
 .participation-compliance-counts span{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:5px;min-height:65px;padding:8px 4px!important;font-size:clamp(9px,2.3vw,12px)!important;line-height:1.25}
 .participation-compliance-counts span b{font-size:20px;color:#24445b}
 #participationCompliance>details>summary{display:flex;align-items:center;min-height:44px;padding:10px 4px;font-size:13px;letter-spacing:.3px}
+</style><style id="compliance-group-cards">
+#participationCompliance .compliance-groups{display:grid;gap:10px;margin-top:16px}
+#participationCompliance .compliance-group{margin:0!important;padding:0!important;border:1px solid #dcc99f!important;border-radius:14px;overflow:hidden;background:#fffaf0;box-shadow:0 4px 12px #5d3d0a12}
+#participationCompliance .compliance-group>summary{display:grid!important;grid-template-columns:34px minmax(0,1fr) auto 20px;align-items:center;gap:9px;min-height:68px!important;padding:12px 14px!important;cursor:pointer;list-style:none;font-size:15px!important;letter-spacing:0!important;color:#24445b}
+#participationCompliance .compliance-group>summary::-webkit-details-marker{display:none}
+#participationCompliance .compliance-group-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;font-weight:900;font-size:18px}
+#participationCompliance .compliance-group-label{font-weight:900;overflow-wrap:anywhere}
+#participationCompliance .compliance-group-count{display:grid;place-items:center;min-width:34px;height:34px;padding:0 8px;border-radius:10px;font-size:17px;font-weight:900;background:#ffffffb8}
+#participationCompliance .compliance-group-chevron{font-size:24px;line-height:1;transition:transform .2s}
+#participationCompliance .compliance-group[open] .compliance-group-chevron{transform:rotate(180deg)}
+#participationCompliance .compliance-group.success>summary{background:linear-gradient(100deg,#e8f6e9,#fffaf0)}
+#participationCompliance .compliance-group.success .compliance-group-icon{background:#d0ebd5;color:#278347}
+#participationCompliance .compliance-group.failure>summary{background:linear-gradient(100deg,#fbe7e5,#fffaf0)}
+#participationCompliance .compliance-group.failure .compliance-group-icon{background:#f5d0cb;color:#b53f3b}
+#participationCompliance .compliance-group.waiting>summary{background:linear-gradient(100deg,#fff2d2,#fffaf0)}
+#participationCompliance .compliance-group.waiting .compliance-group-icon{background:#f5e2ad;color:#987025}
+#participationCompliance .compliance-group>.compliance-player-list{padding:12px!important}
 </style></head>
   <body>
     <header class="head">
@@ -1403,8 +1420,11 @@
             '"><span>' + dayNames[d].slice(0,3) + '</span><b>' + symbol + '</b><small>' +
             (saved ? f(points) : "—") + '</small></div>';
         };
-        const complianceBox = (label,items,open) => '<details' + (open ? ' open' : '') +
-          '><summary>' + label + ' (' + items.length + ')</summary><div class="compliance-player-list">' +
+        const complianceBox = (label,items,tone) => '<details class="compliance-group ' + tone +
+          '"><summary><span class="compliance-group-icon">' + (tone === "success" ? "✓" : tone === "failure" ? "✕" : "⌛") +
+          '</span><span class="compliance-group-label">' + label +
+          '</span><span class="compliance-group-count">' + items.length +
+          '</span><span class="compliance-group-chevron">⌄</span></summary><div class="compliance-player-list">' +
           (items.length ? items.map(x => {
             const total5 = days.reduce((sum,d) => sum + x.daily[d],0);
             const result = !days.every(d => hasRecord(x,d)) ? "Pendiente de datos"
@@ -1418,12 +1438,10 @@
         document.getElementById("participationCompliance").innerHTML =
           '<p>' + (isPush ? 'Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.'
             : 'Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.') +
-          '</p><div class="participation-compliance-counts"><span>✓ ' + passed.length +
-          ' cumplen</span><span>✕ ' + failed.length + ' no cumplen</span><span>⏳ ' +
-          pending.length + ' pendientes</span></div>' +
-          complianceBox("CUMPLEN",passed,false) +
-          complianceBox("NO CUMPLIERON",failed,true) +
-          complianceBox("PENDIENTES",pending,false);
+          '</p><div class="compliance-groups">' +
+          complianceBox("Cumplieron",passed,"success") +
+          complianceBox("NO CUMPLIERON",failed,"failure") +
+          complianceBox("Pendientes",pending,"waiting") + '</div>';
 
       }
       function compliance(rows) {
