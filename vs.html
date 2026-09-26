@@ -1268,6 +1268,18 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
 .compliance-modal-content .compliance-day.bad span,
 .compliance-modal-content .compliance-day.bad small{color:#ffe1dd!important;font-weight:800!important}
 </style>
+<style id="vs-top-corner-controls-only">
+/* Solo posición de controles; no modificar JS ni estructura del traductor. */
+.head{overflow:visible!important}
+.headin{position:relative!important}
+.head .desert-back{position:absolute!important;top:0!important;left:0!important;z-index:120!important;display:flex!important;align-items:center!important;justify-content:center!important;width:46px!important;height:46px!important;margin:0!important}
+.head .logo-area{position:absolute!important;top:0!important;right:0!important;left:auto!important;z-index:120!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;display:block!important}
+.head .translator-wrap{position:relative!important;z-index:121!important}
+.head .translator-btn{display:flex!important;align-items:center!important;justify-content:center!important;min-height:46px!important;padding:8px 11px!important}
+.head .translator-menu{position:absolute!important;top:calc(100% + 7px)!important;right:0!important;left:auto!important;transform:none!important;z-index:9999!important;max-height:min(65vh,460px)!important;overflow-y:auto!important}
+.head .translator-menu[hidden]{display:none!important}
+@media(max-width:600px){.head .desert-back{width:43px!important;height:43px!important}.head .translator-btn{min-height:43px!important;font-size:11px!important;padding:7px 9px!important}.head .translator-menu{min-width:170px!important}}
+</style>
 </head>
   <body>
     <header class="head">
