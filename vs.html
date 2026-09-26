@@ -1228,7 +1228,7 @@
       function buttons() {
         const n = document.getElementById("nextWeek");
         if (n) n.disabled = selectedWeek >= monday();
-        document.getElementById("days").innerHTML = ["TOTAL", 1, 2, 3, 4, 5, 6]
+        document.getElementById("days").innerHTML = ["TOTAL", 1, 2, 3, 4, 5]
           .map(
             (d) =>
               `<button class="day ${sel === d ? "active" : ""}" data-day="${d}">${d === "TOTAL" ? "TOTAL" : dayNames[d]}</button>`,
@@ -1279,7 +1279,8 @@
             ? rows
             : rows
                 .map((x) => ({ ...x, total: x.daily[sel] || 0 }))
-                .filter((x) => x.total > 0);
+                .filter((x) => x.total > 0)
+                .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
         const sum = active.reduce((a, x) => a + x.total, 0);
         total.textContent = f(sum);
         participants.textContent = active.filter((x) => x.total > 0).length;
