@@ -1046,7 +1046,8 @@
       .survey-promo__card:hover { transform:translateY(-1px); box-shadow:0 13px 28px rgba(94,62,12,.20),inset 0 1px 0 rgba(255,255,255,.95); }
     }
 
-  </style>
+  .donations-board{margin:18px 0;padding:16px;border:1px solid #d6aa4b;border-radius:22px;background:#fff6df;box-shadow:0 8px 20px #50340d20}.donations-board h2{margin:0 0 9px;font:900 20px Georgia,serif;color:#174773}.donations-board p{font-size:12px;color:#846124}.donation-row{display:grid;grid-template-columns:36px 1fr auto;gap:8px;align-items:center;padding:11px 8px;margin:6px 0;border:1px solid #ddca9e;border-radius:12px;background:#fffdf8;font-size:13px}.donation-row:nth-child(1){background:#ffe8a6}.donation-row:nth-child(2){background:#e7edf7}.donation-row:nth-child(3){background:#f5d6bd}.donation-row strong{overflow-wrap:anywhere}.donation-row b{color:#14537e}
+</style>
 </head>
 <body>
   <div class="app">
@@ -1194,6 +1195,7 @@
         </div>
       </section>
 
+      <section class="donations-board" aria-labelledby="donationsTitle"><h2 id="donationsTitle">🏆 Donaciones a tecnología · Top 7 semanal</h2><p id="donationsWeek"></p><div id="donationsList">Todavía no hay un ranking semanal publicado.</div></section>
       <section class="quick-access" aria-labelledby="quickAccessTitle">
         <h2 class="quick-access__heading" id="quickAccessTitle" data-i18n="quickAccess">Acceso rápido</h2>
         <a class="quick-access__card" href="members.html" aria-label="Abrir miembros" data-i18n-aria="openMembers">
@@ -1512,5 +1514,8 @@
     loadUpcomingEvents();
   </script>
   <script src="js/hola-language-portal.js"></script>
+<script id="hola-donations-home">
+(async()=>{const base='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/technology_donations?select=week_start,player_name,points,rank&order=week_start.desc,rank.asc&limit=7';try{const r=await fetch(base,{headers:{apikey:'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV'}});if(!r.ok)return;const rows=await r.json();if(!rows.length)return;const week=rows[0].week_start;document.getElementById('donationsWeek').textContent='Semana del '+week;const box=document.getElementById('donationsList');box.replaceChildren();for(const x of rows.filter(x=>x.week_start===week)){const row=document.createElement('div');row.className='donation-row';const rank=document.createElement('span');rank.textContent=x.rank<=3?['🥇','🥈','🥉'][x.rank-1]:'#'+x.rank;const name=document.createElement('strong');name.textContent=x.player_name;const points=document.createElement('b');points.textContent=Number(x.points).toLocaleString('es-ES');row.append(rank,name,points);box.append(row)}}catch(e){console.warn('Donations unavailable',e)}})();
+</script>
 </body>
 </html>
