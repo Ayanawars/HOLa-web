@@ -939,7 +939,20 @@ function parseSimpleNamePoints(text){
   const nameKey=x=>norm(String(x||"").replace(/\[?HOLa\]?/ig,"").replace(/ᓚᘏᗢ/g,"").replace(/^[^\p{L}\p{N}]+/gu,""));
   // The cat symbol is decorative; JEBRAW and JEBRAWww are OCR aliases for
   // the registered member JEBRAW ᓚᘏᗢ, never separate players.
-  const jebrawAlias=x=>/^jebraw{1,3}$/.test(x);
+  const jebrawAlias=x=>/^jebraw{1,4}$/.test(x);
+  const jebrawInLine=x=>/(?:^|[^a-z0-9])jebraw{1,4}(?=$|[^a-z0-9])/i.test(String(x||"").replace(/ᓚᘏᗢ/g," "));
+  const scoreAfter=(index)=>{
+    // OCR may put the decorative cat on a separate line. Never cross another
+    // player name or a ranking row when looking for the score.
+    for(let offset=1;offset<=2&&index+offset<lines.length;offset++){
+      const candidate=lines[index+offset];
+      const score=scoreLine(candidate);
+      if(score!==null)return score;
+      if(offset===1&&/^[^\\p{L}\\p{N}]*[ᓚᘏᗢ][^\\p{L}\\p{N}]*$/u.test(candidate))continue;
+      break;
+    }
+    return null;
+  };
   const scoreLine=x=>{
     const value=String(x||"").replace(/[Oo]/g,"0").replace(/[Il|]/g,"1").replace(/[Ss]/g,"5").replace(/[.,\s]/g,"");
     // Scores are on their own line. Never use ranking, avatar text or a number from a name.
@@ -948,11 +961,11 @@ function parseSimpleNamePoints(text){
   for(let i=0;i<lines.length-1;i++){
     const raw=lines[i];
     const actual=nameKey(raw);
-    if(!/\[?HOLa\]?/i.test(raw)&&!jebrawAlias(actual))continue;
+    if(!/\[?HOLa\]?/i.test(raw)&&!jebrawAlias(actual)&&!jebrawInLine(raw))continue;
     if(actual.length<3)continue;
     const candidates=registered.map(wanted=>{
       const key=nameKey(wanted);
-      const score=jebrawAlias(actual)&&jebrawAlias(key)?1:actual===key?1:
+      const score=(jebrawAlias(actual)||jebrawInLine(raw))&&jebrawAlias(key)?1:actual===key?1:
         actual.includes(key)&&key.length>=5?.96:
         key.includes(actual)&&actual.length>=5?.91:similarity(actual,key);
       return {wanted,score};
@@ -960,7 +973,7 @@ function parseSimpleNamePoints(text){
     const best=candidates[0],runner=candidates[1];
     if(!best||best.score<.88||(runner&&best.score-runner.score<.09)||used.has(norm(best.wanted)))continue;
     // Points must be the immediately following OCR line, not a later player's score.
-    const points=scoreLine(lines[i+1]);
+    const points=scoreAfter(i);
     if(points===null)continue;
     used.add(norm(best.wanted));
     out.push({name:best.wanted,ocrName:cleanOCRName(raw),points,sourceLine:i+1});
