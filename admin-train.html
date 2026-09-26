@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d9b35f">
+  <title>HOLa — Train Admin</title>
+  <style>
+    :root{--cream:#fffaf0;--navy:#103f69;--blue:#159dcc;--gold:#d5a832;--ink:#183b5c;--muted:#6b7886;--ok:#177961;--bad:#a64046}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}
+    body{padding:max(14px,env(safe-area-inset-top)) 12px max(25px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#83d8ec,#f6e3b5 38%,#edcf8d)}
+    body:before{content:"";position:fixed;inset:0;z-index:-2;background:url('hola-s3-background-square.png') center top/cover no-repeat;opacity:.66;filter:saturate(.8)}body:after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(50,170,207,.16),rgba(255,249,232,.82) 38%,rgba(238,206,141,.94))}
+    .shell{width:min(100%,780px);margin:auto}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.round{width:44px;height:44px;border:1px solid rgba(208,163,56,.68);border-radius:50%;background:#fffaf0;display:grid;place-items:center;color:var(--navy);text-decoration:none;font-size:23px;box-shadow:0 7px 20px #56370a22}
+    .card{background:rgba(255,250,240,.97);border:1px solid rgba(205,161,53,.72);border-radius:25px;box-shadow:0 16px 40px rgba(105,71,14,.16),inset 0 0 0 4px rgba(255,255,255,.34)}
+    .hero{padding:21px}.kicker{color:#a97617;font-size:10px;letter-spacing:.19em;font-weight:900}.hero h1{margin:5px 0 7px;color:var(--navy);font:900 29px Georgia,serif}.hero p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+    .week-row{display:grid;grid-template-columns:1fr auto;gap:9px;margin-top:16px}.week-row select{width:100%;min-height:48px;padding:0 13px;border:1px solid #c9a857;border-radius:14px;background:white;color:var(--navy);font-weight:800;font-size:14px}.cycle{display:grid;place-items:center;min-width:72px;padding:0 11px;border-radius:14px;background:#f3e4b9;border:1px solid #d1ad54;color:#875f12;font-weight:900}
+    .summary{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.pill{padding:6px 9px;border-radius:999px;background:#f1fbff;border:1px solid #8ed3e9;color:#31637d;font-size:10px;font-weight:850}
+    .days{display:grid;gap:10px;margin-top:14px}.day{padding:15px;border-radius:20px;background:rgba(255,250,240,.98);border:1px solid rgba(205,161,53,.65);box-shadow:0 9px 22px #60420d18}.day-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.day h2{margin:0;color:var(--navy);font:900 19px Georgia,serif}.source{padding:5px 8px;border-radius:999px;background:#e9f7fb;color:#26728e;font-size:9px;font-weight:900}.planned{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:11px}.slot{min-width:0;padding:10px;border-radius:13px;background:#fffdf8;border:1px solid #e1c986}.slot small{display:block;color:#9a7524;font-size:8px;font-weight:900}.slot strong{display:block;margin-top:4px;color:var(--navy);font-size:11px;overflow-wrap:anywhere}.slot.main{background:#effaff;border-color:#8ed3e9}
+    .actual{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:11px}.actual select{min-width:0;width:100%;min-height:45px;padding:0 11px;border:1px solid #b8c9d2;border-radius:12px;background:white;color:var(--ink);font-size:13px}.save{min-width:92px;border:0;border-radius:12px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-weight:900;cursor:pointer}.save:disabled{opacity:.55}.saved{margin-top:7px;color:var(--ok);font-size:10px;font-weight:800}.pending{color:#9a6c12}.guard{position:fixed;inset:0;z-index:60;display:grid;place-items:center;text-align:center;background:linear-gradient(180deg,#9bdbef,#f0d69e);color:var(--navy)}.guard[hidden]{display:none}.spinner{width:48px;height:48px;margin:0 auto 12px;border:5px solid #103f6928;border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.error{padding:12px;border-radius:12px;background:#fff0ee;color:var(--bad);font-size:12px}
+    @media(max-width:520px){.hero{padding:18px 14px}.planned{grid-template-columns:1fr}.actual{grid-template-columns:1fr}.save{min-height:45px}.hero h1{font-size:26px}}
+  </style>
+</head>
+<body>
+  <div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
+  <main class="shell" id="app" hidden>
+    <div class="topbar"><a class="round" href="admin-center-hola_login.html" aria-label="Volver">‹</a><a class="round" href="train.html" aria-label="Ver página pública">🚂</a></div>
+    <section class="card hero">
+      <div class="kicker">TREN · ADMINISTRACIÓN</div><h1>Conductores reales</h1>
+      <p>La planificación se calcula automáticamente. Solo confirma quién condujo realmente cada día; las asignaciones posteriores cambiarán al instante.</p>
+      <div class="week-row"><select id="week"></select><div class="cycle" id="cycle">—</div></div>
+      <div class="summary"><span class="pill" id="type">—</span><span class="pill" id="sourceWeek">—</span></div>
+    </section>
+    <div class="days" id="days"></div>
+  </main>
+  <script type="module">
+    import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260927-1';
+    const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const $=id=>document.getElementById(id),dayNames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],sourceNames={VS:'VS semanal',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
+    let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[]},schedule;
+    const normalize=v=>String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+    const fmt=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
+    async function verify(){const {data:{session}}=await sb.auth.getSession();if(!session)return false;const {data:admin}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(!admin)return false;const {data:officers}=await sb.from('players').select('name,rank').in('rank',['R4','R5']);return (officers||[]).some(x=>normalize(x.name)===normalize(admin.display_name))}
+    function defaultWeek(){const now=new Date(),today=now.toISOString().slice(0,10);return now.getDay()===0?addDays(today,1):monday(today)}
+    function fillWeeks(){const base=defaultWeek();for(let i=-8;i<=8;i++){const start=addDays(base,i*7),end=addDays(start,6),cycle=cycleFor(start),o=document.createElement('option');o.value=start;o.textContent='Semana '+cycle.number+'/4 · '+fmt(start)+' – '+fmt(end);$('week').append(o)}$('week').value=base}
+    function playerOptions(selected){const frag=document.createDocumentFragment(),empty=document.createElement('option');empty.value='';empty.textContent='— Sin confirmar —';frag.append(empty);for(const p of players){const o=document.createElement('option');o.value=p.name;o.textContent=p.name;if(p.name===selected)o.selected=true;frag.append(o)}return frag}
+    function render(){
+      const start=$('week').value;schedule=buildSchedule({scheduleWeek:start,vsScores:data.vs,dsScores:data.ds,donations:data.donations,actualDrivers:data.actuals,cycleExclusions:data.exclusions});
+      $('cycle').textContent=schedule.cycle.number+'/4';$('type').textContent='Semana '+String(schedule.weekType||'push').toUpperCase();$('sourceWeek').textContent='Datos: '+fmt(schedule.sourceWeek)+' – '+fmt(addDays(schedule.sourceWeek,6));
+      const box=$('days');box.replaceChildren();
+      for(const item of schedule.days){
+        const card=document.createElement('section');card.className='day';const pending=!item.planned;
+        card.innerHTML='<div class="day-head"><h2>'+dayNames[item.day]+' · '+fmt(item.date)+'</h2><span class="source">'+sourceNames[item.source]+'</span></div><div class="planned"><div class="slot main"><small>CONDUCTOR CALCULADO</small><strong></strong></div><div class="slot"><small>SUPLENTE 1</small><strong></strong></div><div class="slot"><small>SUPLENTE 2</small><strong></strong></div></div><div class="actual"><select aria-label="Conductor real"></select><button class="save" type="button">GUARDAR</button></div><div class="saved"></div>';
+        const names=card.querySelectorAll('.slot strong');names[0].textContent=item.planned||'Pendiente de datos';names[1].textContent=item.substitutes[0]||'—';names[2].textContent=item.substitutes[1]||'—';
+        const select=card.querySelector('select');select.append(playerOptions(item.actual));const status=card.querySelector('.saved');status.textContent=item.actual?'Registrado: '+item.actual:(pending?'Esperando '+sourceNames[item.source].toLowerCase():'Sin confirmar');if(!item.actual)status.classList.add('pending');
+        card.querySelector('.save').addEventListener('click',()=>save(item,select,card.querySelector('.save'),status));box.append(card)
+      }
+    }
+    async function save(item,select,button,status){
+      if(!select.value){status.textContent='Selecciona quién condujo realmente.';status.className='saved pending';return}
+      button.disabled=true;status.textContent='Guardando…';
+      const payload={service_date:item.date,actual_driver:select.value,updated_at:new Date().toISOString()};
+      const {error}=await sb.from('train_actual_drivers').upsert(payload,{onConflict:'service_date'});
+      if(error){status.textContent='No se pudo guardar: '+error.message;status.className='saved pending';button.disabled=false;return}
+      const existing=data.actuals.find(x=>String(x.service_date).slice(0,10)===item.date);if(existing)Object.assign(existing,payload);else data.actuals.push(payload);
+      render();
+    }
+    async function load(){
+      const [p,v,d,n,a,e]=await Promise.all([
+        sb.from('players').select('name').order('name'),sb.from('vs_scores').select('player_name,day,points,week_type,vs_date'),
+        sb.from('desert_storm_scores').select('battle_date,team,player_name,position,points'),sb.from('technology_donations').select('week_start,player_name,points,rank'),
+        sb.from('train_actual_drivers').select('*'),sb.from('train_cycle_exclusions').select('*')
+      ]);
+      const failed=[p,v,d,n,a,e].find(x=>x.error);if(failed)throw failed.error;players=p.data||[];data={vs:v.data||[],ds:d.data||[],donations:n.data||[],actuals:a.data||[],exclusions:e.data||[]};render();
+    }
+    fillWeeks();$('week').addEventListener('change',render);
+    if(!await verify())location.replace('admin-login.html');else{try{await load();$('guard').hidden=true;$('app').hidden=false}catch(error){$('guard').innerHTML='<div class="error">'+error.message+'</div>'}}
+  </script>
+</body>
+</html>
