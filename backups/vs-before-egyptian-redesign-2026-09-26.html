@@ -1,0 +1,2079 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>VS - HOLa</title>
+    <style>
+      :root {
+        --bg: #07111e;
+        --p: #101d2c;
+        --p2: #0c1724;
+        --l: #31465d;
+        --t: #eef5ff;
+        --m: #9fb0c4;
+        --b: #25b9ff;
+        --g: #18b978;
+        --r: #e05263;
+        --o: #e4b548;
+        --v: #8c68ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #06111d, #0a1420);
+        color: var(--t);
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+      }
+      .head {
+        padding: 28px 5% 34px;
+        border-bottom: 1px solid #263b51;
+        background: #0b1725;
+      }
+      .headin,
+      .wrap {
+        max-width: 1200px;
+        margin: auto;
+      }
+      .headin {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      .logo {
+        font-size: 36px;
+        font-weight: 900;
+        line-height: 1;
+        text-align: center;
+      }
+      .title {
+        border-left: 1px solid #31465d;
+        padding-left: 20px;
+        flex: 1;
+        align-self: flex-start;
+      }
+      .title h1 {
+        margin: 0;
+        line-height: 1;
+      }
+      .title p {
+        margin: 7px 0 0;
+        color: var(--m);
+        font-size: 13px;
+      }
+      .btn {
+        background: #102033;
+        color: white;
+        border: 1px solid #3a526a;
+        border-radius: 11px;
+        padding: 11px 14px;
+        text-decoration: none;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .wrap {
+        padding: 20px 20px 95px;
+      }
+      .week {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 12px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      .week b {
+        color: var(--t);
+      }
+      .days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .day,
+      .card,
+      .box,
+      .stats-launch {
+        background: var(--p);
+        border: 1px solid var(--l);
+        border-radius: 15px;
+      }
+      .day {
+        padding: 12px 6px;
+        color: var(--m);
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .day.active {
+        background: #168dca;
+        color: white;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .card {
+        padding: 17px;
+        border-left: 5px solid var(--b);
+      }
+      .card:nth-child(2) {
+        border-left-color: var(--g);
+      }
+      .card:nth-child(3) {
+        border-left-color: var(--o);
+      }
+      .card:nth-child(4) {
+        border-left-color: var(--v);
+      }
+      .card span {
+        font-size: 10px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      .card b {
+        display: block;
+        font-size: 30px;
+        margin-top: 7px;
+      }
+      .card small {
+        color: var(--m);
+      }
+      h2 {
+        font-size: 21px;
+        margin: 24px 0 10px;
+      }
+      .box {
+        overflow: hidden;
+      }
+      .rh,
+      .rr {
+        display: grid;
+        grid-template-columns: 65px 1fr 140px;
+        gap: 10px;
+        padding: 13px 16px;
+        align-items: center;
+      }
+      .rh {
+        background: #14263a;
+        color: var(--m);
+        font-size: 10px;
+        font-weight: 900;
+      }
+      .rr {
+        border-top: 1px solid #263b51;
+      }
+      .rr b:last-child {
+        text-align: right;
+        color: #66d4ff;
+      }
+      .empty {
+        padding: 40px;
+        text-align: center;
+        color: var(--m);
+      }
+      .parts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .part {
+        padding: 16px;
+      }
+      .part b {
+        font-size: 28px;
+        display: block;
+      }
+      .part span {
+        font-size: 10px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      summary {
+        margin-top: 8px;
+        color: var(--b);
+        cursor: pointer;
+      }
+      .names {
+        font-size: 12px;
+        color: #c9d6e4;
+        line-height: 1.6;
+      }
+      .stats-launch {
+        margin-top: 22px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        background: linear-gradient(135deg, #12283a, #101d2c);
+        cursor: pointer;
+      }
+      .stats-launch h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .stats-launch p {
+        margin: 6px 0 0;
+        color: var(--m);
+        font-size: 12px;
+      }
+      .stats-launch .open {
+        white-space: nowrap;
+        background: #168dca;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: #fff;
+        font-weight: 900;
+      }
+      .stats-admin-row {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #263b51;
+      }
+      .stats-admin-gear {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #102033;
+        border: 1px solid #3a526a;
+        color: #fff;
+        text-decoration: none;
+        font-size: 25px;
+        box-shadow: 0 8px 24px #0008;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: #000b;
+        display: none;
+        z-index: 30;
+        padding: 18px;
+        overflow: auto;
+      }
+      .modal.show {
+        display: block;
+      }
+      .modal-box {
+        width: min(1100px, 96vw);
+        margin: 24px auto;
+        background: linear-gradient(180deg, #0c1523, #070d17);
+        border: 1px solid #31465d;
+        border-radius: 24px;
+        padding: 18px;
+      }
+      .modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+      }
+      .modal h3 {
+        margin: 0;
+        font-size: 23px;
+      }
+      .modal p {
+        color: var(--m);
+      }
+      .close {
+        background: #415165;
+        border: 0;
+        color: #fff;
+        border-radius: 11px;
+        padding: 11px 18px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 14px 0;
+      }
+      .tab {
+        border: 1px solid #2b3d5c;
+        background: #111c2d;
+        color: #cbd8ed;
+        border-radius: 12px;
+        padding: 10px 13px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .tab.active {
+        background: linear-gradient(135deg, #6f4cff, #3486ff);
+        border-color: #7b8fff;
+        color: #fff;
+      }
+      .stats-content {
+        overflow: auto;
+        max-height: 70vh;
+      }
+      .hero {
+        padding: 22px;
+        border: 1px solid #2b3d5c;
+        border-radius: 18px;
+        background: #111b2a;
+        margin-bottom: 14px;
+      }
+      .kicker {
+        color: #25b9ff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .big-number {
+        font-size: 36px;
+        font-weight: 900;
+        margin: 10px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .s-card {
+        background: #111c2d;
+        border: 1px solid #2b3d5c;
+        border-radius: 16px;
+        padding: 15px;
+      }
+      .s-card .label {
+        color: var(--m);
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .s-card .value {
+        font-size: 26px;
+        font-weight: 900;
+        margin-top: 7px;
+      }
+      .small {
+        color: var(--m);
+        font-size: 11px;
+      }
+      .section {
+        margin-top: 14px;
+        background: #0d1724;
+        border: 1px solid #263b51;
+        border-radius: 18px;
+        padding: 15px;
+      }
+      .section h4 {
+        margin: 0 0 12px;
+      }
+      .rank {
+        display: grid;
+        grid-template-columns: 60px 1fr 120px;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+        border-top: 1px solid #263b51;
+      }
+      .rank:first-child {
+        border-top: 0;
+      }
+      .rank .points {
+        text-align: right;
+        color: #e4c675;
+        font-weight: 900;
+      }
+      .badge {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 6px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .ok {
+        background: #133c34;
+        color: #91e9be;
+      }
+      .bad {
+        background: #3b2027;
+        color: #ffb1b8;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: 110px 1fr 95px;
+        gap: 10px;
+        align-items: center;
+        margin: 10px 0;
+      }
+      .bar {
+        height: 10px;
+        background: #1b2b3d;
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2bc3ff, #8b7cff);
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .table th,
+      .table td {
+        padding: 9px;
+        border-bottom: 1px solid #263b51;
+        text-align: right;
+      }
+      .table th:nth-child(2),
+      .table td:nth-child(2) {
+        text-align: left;
+      }
+      .status {
+        color: var(--m);
+        padding: 25px;
+        text-align: center;
+      }
+      @media (max-width: 750px) {
+        .stats,
+        .parts,
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .days {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .logo {
+          font-size: 27px;
+        }
+        .title h1 {
+          font-size: 20px;
+        }
+        .headin {
+          gap: 12px;
+          align-items: flex-start;
+        }
+        .rr,
+        .rh {
+          grid-template-columns: 48px 1fr 90px;
+          padding: 11px 9px;
+        }
+        .wrap {
+          padding: 14px 9px 95px;
+        }
+        .stats-launch {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .stats-launch .open {
+          width: 100%;
+        }
+        .rank {
+          grid-template-columns: 50px 1fr 90px;
+        }
+        .bar-row {
+          grid-template-columns: 80px 1fr 75px;
+        }
+        .modal {
+          padding: 8px;
+        }
+        .modal-box {
+          width: 100%;
+          margin: 0;
+          min-height: 100%;
+        }
+      }
+      @media (max-width: 500px) {
+        .parts,
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .card b {
+          font-size: 24px;
+        }
+        .table {
+          font-size: 11px;
+        }
+      }
+    </style>
+    <style id="translator-style">
+      .logo-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        min-width: 150px;
+      }
+      .translator-wrap {
+        position: relative;
+      }
+      .translator-btn {
+        background: #102033;
+        color: #fff;
+        border: 1px solid #3a526a;
+        border-radius: 11px;
+        padding: 9px 14px;
+        font-weight: 900;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .translator-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 170px;
+        padding: 6px;
+        background: #0c1724;
+        border: 1px solid #31465d;
+        border-radius: 12px;
+        z-index: 50;
+        box-shadow: 0 10px 25px #0008;
+      }
+      .translator-menu button {
+        display: block;
+        width: 100%;
+        background: transparent;
+        color: #eef5ff;
+        border: 0;
+        text-align: left;
+        padding: 9px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .translator-menu button:hover {
+        background: #14263a;
+      }
+      @media (max-width: 750px) {
+        .head {
+          padding: 22px 4% 28px;
+        }
+        .logo-area {
+          min-width: 110px;
+          gap: 13px;
+        }
+        .translator-btn {
+          font-size: 11px;
+          padding: 8px 10px;
+        }
+        .translator-menu {
+          min-width: 145px;
+        }
+      }
+    </style>
+    <style id="vs-admin-gear-style">
+      #vs-admin-gear {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: #102033;
+        border: 1px solid #3a526a;
+        color: #fff;
+        text-decoration: none;
+        font-size: 21px;
+        box-shadow: 0 7px 20px #0008;
+        z-index: 20;
+        opacity: 0.9;
+      }
+      #vs-admin-gear:hover {
+        opacity: 1;
+      }
+      @media (max-width: 500px) {
+        #vs-admin-gear {
+          right: 10px;
+          bottom: 10px;
+          width: 38px;
+          height: 38px;
+          font-size: 19px;
+        }
+      }
+    </style>
+    <style id="hola-language-style">
+      #hola-language-box {
+        position: absolute;
+        left: 0;
+        bottom: 8px;
+        z-index: 40;
+      }
+      #hola-language-toggle {
+        background: #102033;
+        color: #fff;
+        border: 1px solid #3a526a;
+        border-radius: 11px;
+        padding: 9px 14px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      #hola-language-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        background: #0c1724;
+        border: 1px solid #31465d;
+        border-radius: 12px;
+        padding: 5px;
+        min-width: 160px;
+        box-shadow: 0 10px 25px #0008;
+      }
+      #hola-language-menu button {
+        display: block;
+        width: 100%;
+        background: transparent;
+        color: #eef5ff;
+        border: 0;
+        text-align: left;
+        padding: 8px;
+        border-radius: 7px;
+      }
+    </style>
+    <style id="vs-header-responsive-final">
+      .headin {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        min-width: 0;
+      }
+      .logo-area {
+        flex: 0 0 170px;
+        min-width: 0;
+      }
+      .title {
+        min-width: 0;
+        flex: 1;
+      }
+      .title h1 {
+        white-space: nowrap;
+      }
+      @media (max-width: 750px) {
+        .head {
+          padding: 22px 4% 28px;
+        }
+        .headin {
+          gap: 12px;
+          align-items: flex-start;
+        }
+        .logo-area {
+          flex: 0 0 145px;
+        }
+        .logo {
+          font-size: 27px;
+        }
+        .translator-btn {
+          font-size: 11px;
+          padding: 8px 10px;
+        }
+        .title {
+          padding-left: 12px;
+        }
+        .title h1 {
+          font-size: 24px;
+          white-space: normal;
+          line-height: 1.05;
+        }
+        .title p {
+          font-size: 12px;
+          line-height: 1.2;
+        }
+      }
+      @media (max-width: 520px) {
+        .logo-area {
+          flex-basis: 125px;
+        }
+        .logo {
+          font-size: 24px;
+        }
+        .title h1 {
+          font-size: 20px;
+        }
+        .title p {
+          font-size: 11px;
+        }
+      }
+    </style>
+    <style id="supabase-week-selector-style">
+      .week {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 12px;
+        color: var(--m);
+        font-weight: 900;
+      }
+      .week-current {
+        min-width: 280px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+      }
+      .week-current b {
+        color: var(--t);
+      }
+      .week-current {
+        flex-wrap: wrap;
+      }
+      .week-type-public {
+        flex-basis: 100%;
+        display: block;
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        color: #ffd166;
+        text-transform: uppercase;
+      }
+      .week-arrow {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        border: 1px solid #3a526a;
+        background: #102033;
+        color: #eaf5ff;
+        font-size: 32px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .week-arrow:hover {
+        background: #15324a;
+      }
+      .week-arrow:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      @media (max-width: 600px) {
+        .week-current {
+          min-width: 235px;
+        }
+        .week-arrow {
+          width: 42px;
+          height: 42px;
+        }
+      }
+    </style>
+    <style id="ranking-collapse-style">
+      .ranking-more {
+        border-top: 1px solid #263b50;
+      }
+      .ranking-more summary {
+        cursor: pointer;
+        list-style: none;
+        text-align: center;
+        padding: 14px 10px;
+        color: #8fd7ff;
+        font-weight: 900;
+      }
+      .ranking-more summary::-webkit-details-marker {
+        display: none;
+      }
+      .ranking-more summary:after {
+        content: " ▾";
+        font-size: 18px;
+      }
+      .ranking-more[open] summary:after {
+        content: " ▴";
+      }
+    </style>
+    <style id="vs-color-font-polish">
+      /* Visual polish based on the supplied reference: same clean Arial family,
+   stronger weight, and more distinct accent colors. */
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .title,
+      .day,
+      .card,
+      .stats-launch,
+      .rh,
+      .rr,
+      .btn,
+      .week,
+      .week-arrow,
+      .translator-btn,
+      .translator-menu button {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .title h1,
+      .card b,
+      .stats-launch h3 {
+        font-weight: 900;
+        letter-spacing: -0.25px;
+      }
+
+      /* More colorful statistic cards while preserving the existing layout. */
+      .card {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(145deg, #12263a, #0e1c2b);
+      }
+      .card:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        background: linear-gradient(
+          120deg,
+          rgba(37, 185, 255, 0.07),
+          transparent 55%
+        );
+      }
+      .card:nth-child(2) {
+        background: linear-gradient(145deg, #102b28, #0e1c2b);
+      }
+      .card:nth-child(3) {
+        background: linear-gradient(145deg, #302719, #0e1c2b);
+      }
+      .card:nth-child(4) {
+        background: linear-gradient(145deg, #241c39, #0e1c2b);
+      }
+      .card:nth-child(1) b {
+        color: #59cfff;
+      }
+      .card:nth-child(2) b {
+        color: #48e09c;
+      }
+      .card:nth-child(3) b {
+        color: #ffd166;
+      }
+      .card:nth-child(4) b {
+        color: #a987ff;
+      }
+
+      /* Week/day selector gets the brighter reference-style blue. */
+      .day {
+        transition:
+          transform 0.12s ease,
+          background 0.12s ease,
+          border-color 0.12s ease;
+      }
+      .day.active {
+        background: linear-gradient(135deg, #18a7e8, #168dca);
+        border-color: #39c2ff;
+        box-shadow: 0 4px 14px rgba(24, 167, 232, 0.22);
+      }
+      .day:hover {
+        border-color: #3d9ac6;
+      }
+
+      /* Section titles and ranking have clearer visual hierarchy. */
+      h2 {
+        color: #eef5ff;
+        text-shadow: 0 1px 8px rgba(37, 185, 255, 0.08);
+      }
+      .rh {
+        background: linear-gradient(90deg, #16324b, #14263a);
+        color: #b7c9dd;
+      }
+      .rr:nth-child(-n + 3) {
+        background: linear-gradient(
+          90deg,
+          rgba(37, 185, 255, 0.08),
+          transparent
+        );
+      }
+      .rr b:first-child {
+        color: #d8e8f8;
+      }
+      .rr b:last-child {
+        color: #66d4ff;
+      }
+
+      /* Main weekly-statistics panel gets the richer reference treatment. */
+      .stats-launch {
+        border-color: #2d5873;
+        background: linear-gradient(135deg, #12334a, #101d2c);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+      }
+      .stats-launch h3 {
+        color: #f1f7ff;
+      }
+      .stats-launch .open {
+        background: linear-gradient(135deg, #19a8e8, #138fce);
+        box-shadow: 0 5px 16px rgba(19, 143, 206, 0.18);
+      }
+
+      /* Keep the language control consistent with the reference palette. */
+      .translator-btn {
+        background: linear-gradient(135deg, #112a3e, #102033);
+        border-color: #416078;
+      }
+    </style>
+    <style id="vs-less-bold">
+      /* Reduce the heavy bold appearance while keeping hierarchy. */
+      body {
+        font-weight: 400;
+      }
+      .title h1,
+      h1,
+      h2,
+      h3,
+      .stats-launch h3 {
+        font-weight: 700;
+      }
+      .title p,
+      .card span,
+      .card small,
+      .stats-launch p {
+        font-weight: 400;
+      }
+      .day,
+      .btn,
+      .week,
+      .week-arrow,
+      .translator-btn,
+      .translator-menu button {
+        font-weight: 600;
+      }
+      .rh {
+        font-weight: 600;
+      }
+      .rr b {
+        font-weight: 600;
+      }
+      .card b {
+        font-weight: 700;
+      }
+      .stats-launch .open {
+        font-weight: 700;
+      }
+    </style>
+    <style id="vs-desert-theme">
+      :root{--sand:#f8efda;--paper:#fffaf0;--ink:#173f5c;--muted:#657888;--nile:#08a8c7;--nile-dark:#08779f;--gold:#dca926;--line:#e4c979;--danger:#b64c4f;--shadow:0 16px 38px rgba(72,51,17,.18)}
+      body{min-height:100vh;background:linear-gradient(180deg,rgba(246,225,171,.2),rgba(255,246,219,.94)),url('hola-s3-background-square.webp') center/cover fixed;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      .head{position:relative;overflow:visible;padding:0;border:0;background:linear-gradient(90deg,rgba(10,69,103,.96),rgba(16,135,165,.82)),url('hola-s3-header.png') center/cover}
+      .head:after{content:"";position:absolute;inset:auto 0 0;height:5px;background:linear-gradient(90deg,var(--nile),#f4d372,var(--nile));z-index:1}
+      .headin{min-height:116px;display:grid;grid-template-columns:58px 1fr 58px;gap:10px;align-items:center;max-width:1080px;padding:12px 18px;margin:auto}
+      .desert-back{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;text-decoration:none;color:#fff;background:rgba(4,41,66,.8);border:2px solid rgba(244,211,114,.85);font-size:28px;line-height:1;box-shadow:0 7px 20px rgba(0,0,0,.24)}
+      .logo-area{display:contents}.logo{display:none}.brand-logo{display:block;width:min(116px,34vw);max-height:44px;object-fit:contain;margin:0 auto 1px;filter:drop-shadow(0 4px 5px rgba(0,0,0,.42))}
+      .title{grid-column:2;grid-row:1;border:0;padding:0;text-align:center;align-self:center;color:#fff}.title h1{margin:0;color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(24px,5vw,38px);letter-spacing:.06em;text-shadow:0 2px 0 #31566c,0 5px 13px rgba(0,0,0,.38)}.title p{margin:4px 0 0;color:#fff4d3;font-size:12px;font-weight:700;letter-spacing:.035em}
+      .translator-wrap{grid-column:3;grid-row:1;position:relative;z-index:30;justify-self:end}.translator-btn{width:48px;height:48px;padding:0;border-radius:50%;border:2px solid #f5d777;background:#0a5878;color:transparent;font-size:0;box-shadow:0 6px 16px rgba(0,0,0,.23)}.translator-btn:after{content:"🌐";color:#fff;font-size:23px}.translator-menu{right:0;top:56px;min-width:178px;border:1px solid var(--line);border-radius:16px;background:#fffdf5;box-shadow:var(--shadow);padding:7px}.translator-menu button{color:var(--ink);border-radius:10px}.translator-menu button:hover{background:#eaf8fb}
+      .wrap{max-width:1080px;padding:25px 18px 82px}.week{margin:0 0 16px;gap:12px;color:var(--ink)}.week-current{background:rgba(255,253,245,.93);border:1px solid var(--line);border-radius:999px;padding:12px 18px;box-shadow:0 6px 16px rgba(101,71,16,.11)}.week-arrow{background:var(--nile-dark);border:2px solid #f2d47b;color:#fff;box-shadow:0 5px 12px rgba(4,73,98,.24)}
+      .days{gap:8px}.day{background:rgba(255,253,245,.9);border:1px solid var(--line);color:#496271;box-shadow:0 4px 10px rgba(101,71,16,.08)}.day.active{background:linear-gradient(135deg,#0faec5,#08779f);color:#fff;border-color:#e9bf50;box-shadow:0 7px 15px rgba(4,115,145,.26)}
+      .stats{gap:12px;margin-top:18px}.card,.box,.stats-launch{background:rgba(255,251,239,.95);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}.card{border-left:6px solid var(--nile);padding:17px}.card:nth-child(2){border-left-color:#3da76a}.card:nth-child(3){border-left-color:var(--gold)}.card:nth-child(4){border-left-color:#9b7bd1}.card span,.card small,.rh,.names{color:var(--muted)}.card b{color:var(--ink)}
+      h2{margin:30px 0 12px;color:var(--ink);font-family:Georgia,"Times New Roman",serif;letter-spacing:.055em;font-size:clamp(20px,4vw,27px)}.stats-launch{background:linear-gradient(120deg,#e8fbfb,#fff7df);padding:19px;border-left:6px solid var(--gold)}.stats-launch h3{color:var(--ink);font-family:Georgia,"Times New Roman",serif}.stats-launch p{color:var(--muted)}.stats-launch .open{background:linear-gradient(135deg,#e8bd42,#c88b16);box-shadow:0 6px 14px rgba(159,105,7,.24);border:1px solid #f7df88}
+      .box{overflow:hidden}.rh{background:linear-gradient(90deg,#0a7897,#0a5276);color:#fff8dc;padding:13px 16px}.rr{border-top:1px solid #ebddba}.rr:nth-child(odd){background:#fffaf0}.rr b:last-child{color:var(--nile-dark)}.empty{color:var(--muted)}.part{background:rgba(255,251,239,.96)}.part b{color:var(--nile-dark)}summary{color:var(--nile-dark)}
+      .modal{background:rgba(10,47,60,.56);padding:16px}.modal-box{background:#fffaf0;border:1px solid var(--line);box-shadow:0 20px 60px rgba(24,42,41,.35);color:var(--ink)}.modal-head{background:linear-gradient(110deg,#0d6d8d,#09a8c0);color:#fffaf0}.modal-head p{color:#fff3ca}.close,.tab{border-color:var(--line);color:var(--ink);background:#fffdf6}.tab.active{background:var(--nile-dark);color:#fff}.stats-content .stat-card,.stats-content .compliance-card,.stats-content .daily-card{background:#fffdf6!important;border-color:var(--line)!important;color:var(--ink)!important}.stats-content h3,.stats-content h4{color:var(--ink)!important}.stats-admin-row{border-top-color:var(--line)}.stats-admin-gear{background:var(--gold);color:#fff}
+      @media(max-width:700px){.headin{min-height:105px;padding:10px 14px;grid-template-columns:50px 1fr 50px}.desert-back,.translator-btn{width:43px;height:43px}.brand-logo{width:105px;max-height:59px}.title h1{font-size:24px}.title p{font-size:10px}.stats{grid-template-columns:repeat(2,1fr)}.parts{grid-template-columns:repeat(2,1fr)}.card b{font-size:23px}.days{grid-template-columns:repeat(4,1fr)}.day:last-child{grid-column:2 / span 2}.rh,.rr{grid-template-columns:45px 1fr 92px;padding:12px}.stats-launch{align-items:flex-start;flex-direction:column}.stats-launch .open{width:100%}}
+    </style>
+    <style id="vs-egypt-card-final">
+      /* Sustituye los paneles heredados del tema oscuro por papiro egipcio. */
+      .card,.box,.part,.rr,.ranking-more,.modal-box,.stats-content .stat-card,.stats-content .compliance-card,.stats-content .daily-card{
+        color:#173f5c!important;
+        border-color:#e4c979!important;
+        background:linear-gradient(135deg,rgba(255,253,246,.98),rgba(255,243,210,.94))!important;
+        box-shadow:0 10px 25px rgba(93,61,10,.13)!important;
+      }
+      .card:nth-child(2){border-left-color:#3da76a!important}
+      .card:nth-child(3){border-left-color:#dca926!important}
+      .card:nth-child(4){border-left-color:#8e71bf!important}
+      .card span,.card small,.names,.member-label{color:#657888!important}
+      .card b,.part b,.rr b:last-child{color:#08779f!important}
+      .rh{background:linear-gradient(90deg,#08789a,#0aaec0)!important;color:#fff8dc!important;border-color:#dca926!important}
+      .rr:nth-child(odd){background:linear-gradient(135deg,#fffdf6,#fff1cf)!important}
+      .day:not(.active){background:linear-gradient(135deg,#fffdf6,#fff0ca)!important;color:#496271!important}
+      .week-current,.week-current b,.week-current span{color:#173f5c!important;text-shadow:none!important}
+      @media(max-width:700px){
+        .headin{min-height:82px!important;padding:7px 11px!important;grid-template-columns:40px 1fr 40px!important}
+        .desert-back,.translator-btn{width:38px!important;height:38px!important;font-size:23px!important}
+        .brand-logo{width:74px!important;max-height:30px!important;margin-bottom:0!important}
+        .title h1{font-size:19px!important;line-height:1!important;letter-spacing:.05em!important}
+        .title p{margin-top:3px!important;font-size:9px!important;line-height:1.15!important}
+        .wrap{padding:13px 10px 48px!important}
+        .week{gap:7px!important;margin-bottom:10px!important}
+        .week-current{min-width:0!important;flex:1!important;padding:9px 7px!important;gap:5px!important}
+        .week-current b{font-size:13px!important;line-height:1.15!important}
+        .week-current span{font-size:17px!important}
+        .week-arrow{width:38px!important;height:38px!important;min-width:38px!important;border-radius:11px!important;font-size:27px!important}
+        .days{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+        .day{min-width:0!important;overflow:hidden!important;padding:9px 3px!important;font-size:11px!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+        .day:last-child{grid-column:auto!important}
+        .stats{gap:8px!important;margin-top:12px!important}
+        .card{min-height:0!important;padding:12px!important;border-radius:16px!important;border-left-width:5px!important}
+        .card span{font-size:9px!important;line-height:1.1!important}
+        .card b{margin-top:5px!important;font-size:20px!important;line-height:1.05!important}
+        .card small{font-size:11px!important;line-height:1.15!important}
+        h2{margin:21px 0 9px!important;font-size:21px!important}
+        .rh,.rr{grid-template-columns:37px minmax(0,1fr) 76px!important;gap:6px!important;padding:10px!important;font-size:11px!important}
+        .part{padding:12px!important}
+      }
+      @media(max-width:700px){
+        html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
+        .head,.headin,.wrap,.week,.days,.stats,.parts,.box{width:100%!important;max-width:100%!important;min-width:0!important}
+        .headin{margin:0!important}
+        .week{display:grid!important;grid-template-columns:38px minmax(0,1fr) 38px!important}
+        .week-current{width:100%!important;min-width:0!important;overflow:hidden!important}
+        .week-current b{display:block!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+        .days{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+        .stats,.parts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        .card,.part,.rr,.rh{min-width:0!important}
+        .card b,.card small,.rr span,.rr b{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      }
+    </style>
+  <style id="participation-dashboard-style">
+.participation-dashboard{display:grid;gap:15px;margin:14px 0 28px;color:#24445b}
+.participation-intro{font-weight:700;color:#ead09b}
+.participation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.participation-card,.participation-panel{background:linear-gradient(135deg,#fffdf6,#f7e8c3);border:1px solid #d8b971;border-radius:15px;padding:16px;box-shadow:0 8px 22px #2e230c20;min-width:0}
+.participation-card strong{display:block;font-size:clamp(23px,5vw,34px);color:#183e5a;margin:7px 0}
+.participation-card .pc-label{font-size:13px;font-weight:900;color:#775b27}
+.participation-card details{margin-top:12px;border-top:1px solid #dbc99c;padding-top:10px}
+.participation-card summary,.participation-panel summary{cursor:pointer;font-weight:800;color:#17618a}
+.participation-names{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.participation-names span{padding:6px 9px;background:#ffffffb8;border:1px solid #e4d2a6;border-radius:8px;font-size:12px;overflow-wrap:anywhere}
+.participation-panel h3{margin:0 0 8px;color:#24445b}
+.participation-panel p{font-size:13px;color:#66717a;margin:0 0 15px}
+.participation-day{margin:13px 0}.participation-day-head{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800}
+.participation-track{height:13px;border-radius:20px;background:#e6d9b8;overflow:hidden;margin:7px 0}
+.participation-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#249eaa,#37b67c)}
+.participation-panel details{margin-top:10px}
+@media(min-width:760px){.participation-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+<style id="participation-compact-overrides">
+.participation-card{padding:13px!important}.participation-card strong{font-size:27px!important;margin:5px 0!important}
+.participation-tabs{display:flex;gap:7px;overflow-x:auto;padding:3px 0 12px;scrollbar-width:thin}
+.participation-tabs button{flex:0 0 auto;background:#fff8e7;border:1px solid #d8bd80;border-radius:10px;color:#38516a;padding:9px 12px;font-weight:800;cursor:pointer}
+.participation-tabs button.active{background:#245b77;color:white;border-color:#245b77}
+.participation-tabs button span{opacity:.7;margin-left:4px}
+.participation-names-list{max-height:340px;overflow:auto;border-top:1px solid #dec998}
+.participation-person{display:flex;justify-content:space-between;gap:10px;padding:11px 5px;border-bottom:1px solid #e7d7b4;font-size:13px}
+.participation-person span{overflow-wrap:anywhere}.participation-person b{white-space:nowrap;color:#1c6787}
+.participation-empty{padding:20px 5px;color:#697783;font-size:13px}
+.participation-compliance-counts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
+.participation-compliance-counts span{padding:8px 10px;background:#fff9e9;border:1px solid #e3d2ab;border-radius:9px;font-weight:800;font-size:12px}
+.participation-panel details{border-top:1px solid #e3d2ab;padding:10px 0;margin:0}
+</style>
+<style id="participation-compliance-days">
+.compliance-player-list{display:grid;gap:10px;padding:10px 0}
+.compliance-player{background:#fffaf0;border:1px solid #e1cc9b;border-radius:11px;padding:11px;min-width:0}
+.compliance-player-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:#24445b}
+.compliance-player-head b{overflow-wrap:anywhere}.compliance-player-head span{font-size:11px;color:#697783;white-space:nowrap}
+.compliance-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:10px}
+.compliance-day{text-align:center;border:1px solid #ded3bc;background:#f1eee7;border-radius:8px;padding:7px 2px;min-width:0}
+.compliance-day span,.compliance-day small{display:block;font-size:10px;color:#52677a}
+.compliance-day b{display:block;font-size:23px;line-height:1.15}
+.compliance-day.ok b{color:#269d63}.compliance-day.bad b{color:#d64c51}
+.compliance-day.saved b{color:#2985b5}.compliance-day.pending b{color:#9a9a9a}
+.compliance-day small{font-size:clamp(8px,2vw,11px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.compliance-week-total{margin-top:9px;font-size:12px;color:#36516b}
+</style>
+<style id="participation-compliance-alignment">
+.participation-compliance-counts{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px!important}
+.participation-compliance-counts span{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:5px;min-height:65px;padding:8px 4px!important;font-size:clamp(9px,2.3vw,12px)!important;line-height:1.25}
+.participation-compliance-counts span b{font-size:20px;color:#24445b}
+#participationCompliance>details>summary{display:flex;align-items:center;min-height:44px;padding:10px 4px;font-size:13px;letter-spacing:.3px}
+</style><style id="compliance-group-cards">
+#participationCompliance .compliance-groups{display:grid;gap:10px;margin-top:16px}
+#participationCompliance .compliance-group{margin:0!important;padding:0!important;border:1px solid #dcc99f!important;border-radius:14px;overflow:hidden;background:#fffaf0;box-shadow:0 4px 12px #5d3d0a12}
+#participationCompliance .compliance-group>summary{display:grid!important;grid-template-columns:34px minmax(0,1fr) auto 20px;align-items:center;gap:9px;min-height:68px!important;padding:12px 14px!important;cursor:pointer;list-style:none;font-size:15px!important;letter-spacing:0!important;color:#24445b}
+#participationCompliance .compliance-group>summary::-webkit-details-marker{display:none}
+#participationCompliance .compliance-group-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;font-weight:900;font-size:18px}
+#participationCompliance .compliance-group-label{font-weight:900;overflow-wrap:anywhere}
+#participationCompliance .compliance-group-count{display:grid;place-items:center;min-width:34px;height:34px;padding:0 8px;border-radius:10px;font-size:17px;font-weight:900;background:#ffffffb8}
+#participationCompliance .compliance-group-chevron{font-size:24px;line-height:1;transition:transform .2s}
+#participationCompliance .compliance-group[open] .compliance-group-chevron{transform:rotate(180deg)}
+#participationCompliance .compliance-group.success>summary{background:linear-gradient(100deg,#e8f6e9,#fffaf0)}
+#participationCompliance .compliance-group.success .compliance-group-icon{background:#d0ebd5;color:#278347}
+#participationCompliance .compliance-group.failure>summary{background:linear-gradient(100deg,#fbe7e5,#fffaf0)}
+#participationCompliance .compliance-group.failure .compliance-group-icon{background:#f5d0cb;color:#b53f3b}
+#participationCompliance .compliance-group.waiting>summary{background:linear-gradient(100deg,#fff2d2,#fffaf0)}
+#participationCompliance .compliance-group.waiting .compliance-group-icon{background:#f5e2ad;color:#987025}
+#participationCompliance .compliance-group>.compliance-player-list{padding:12px!important}
+</style><style id="vs-night-desert-theme">
+:root{--bg:#081522;--p:#102639;--p2:#0c1e30;--l:#34546b;--t:#eaf8ff;--m:#a7c3d1;--b:#72d9f5;--g:#67d7b2;--r:#ff8987;--o:#f5ce70;--v:#9ed5e8;--sand:#102639;--paper:#11283b;--ink:#eaf8ff;--muted:#a7c3d1;--nile:#72d9f5;--nile-dark:#42b6da;--gold:#f5ce70;--line:#42627a;--shadow:0 14px 35px #030b1680}
+body{background:linear-gradient(180deg,#071421e8,#0b1c2de8 40%,#122235ed),url('hola-s3-background-square.webp') center/cover fixed!important;color:#eaf8ff!important}
+.head{background:linear-gradient(90deg,#061521ee,#12324bdc),url('hola-s3-header.png') center/cover!important;border-bottom:2px solid #e9bd62!important}
+.head:after{background:linear-gradient(90deg,#65d7f4,#f5ce70,#65d7f4)!important}
+h2,.week,.week b{color:#f5ce70!important;text-shadow:0 2px 12px #06131e}
+.week-current{background:#10283eea!important;border-color:#b89651!important;box-shadow:0 6px 18px #030b1670!important}
+.week-current,.week-current b,.week-current span{color:#f5e2ad!important}
+.week-arrow,.desert-back,.translator-btn{background:#12344c!important;border-color:#e6bc65!important;color:#a9edff!important}
+.day:not(.active){background:#10283eea!important;color:#b6d6e5!important;border-color:#3d637b!important}
+.day.active{background:linear-gradient(135deg,#3ba9d2,#1b6b99)!important;color:#fff!important;border-color:#f5ce70!important}
+.card,.box,.part,.rr,.ranking-more,.modal-box,.stats-content .stat-card,.stats-content .compliance-card,.stats-content .daily-card{background:linear-gradient(135deg,#10283ef7,#142f46f7)!important;color:#eaf8ff!important;border-color:#3b6078!important;box-shadow:0 10px 25px #030c1980!important}
+.card span,.card small,.names,.member-label{color:#b0cbd8!important}
+.card b,.part b,.rr b:last-child{color:#79def7!important}
+.card:nth-child(2){border-left-color:#f5ce70!important}.card:nth-child(3){border-left-color:#64cde9!important}.card:nth-child(4){border-left-color:#e9bb62!important}
+.rh{background:linear-gradient(90deg,#164b6d,#0d314c)!important;color:#f5ce70!important;border-color:#c49b4d!important}
+.rr:nth-child(odd){background:linear-gradient(135deg,#10283e,#19364d)!important}
+.rr{border-top-color:#34566d!important}
+.stats-launch{background:linear-gradient(120deg,#102c44,#183950)!important;border-color:#d2a959!important}
+.stats-launch h3,.stats-launch p{color:#eaf8ff!important}.stats-launch .open{background:linear-gradient(135deg,#f5ce70,#d4a443)!important;color:#102438!important}
+.modal{background:#030b16cf!important}.modal-box{background:#0f263a!important;color:#eaf8ff!important}
+.modal-head{background:linear-gradient(90deg,#103a56,#195a76)!important}.tab,.close{background:#17364e!important;color:#eaf8ff!important;border-color:#52728a!important}.tab.active{background:#277eaa!important}
+.stats-content h3,.stats-content h4{color:#f5ce70!important}
+.participation-intro{color:#e9ca87!important}
+.participation-card,.participation-panel{background:linear-gradient(140deg,#112a40,#18374d)!important;border-color:#54718a!important;color:#eaf8ff!important;box-shadow:0 10px 25px #030c196b!important}
+.participation-card .pc-label,.participation-panel h3{color:#f5ce70!important}
+.participation-card strong{color:#8fe3fa!important}.participation-panel p{color:#b2cbd9!important}
+.participation-track{background:#29455b!important}.participation-fill{background:linear-gradient(90deg,#47b4d8,#f0cc72)!important}
+.participation-day-head{color:#eaf8ff!important}
+.participation-tabs button{background:#112e45!important;border-color:#466b82!important;color:#c5e3ed!important}
+.participation-tabs button.active{background:#256f98!important;color:#fff!important;border-color:#f5ce70!important}
+.participation-names-list,.participation-person,.participation-panel details{border-color:#416079!important}
+.participation-person,.participation-person b{color:#eaf8ff!important}
+.participation-empty{color:#a7c3d1!important}
+#participationCompliance .compliance-group{background:#10283e!important;border-color:#496981!important;box-shadow:0 7px 18px #030c1970!important}
+#participationCompliance .compliance-group>summary{color:#eaf8ff!important}
+#participationCompliance .compliance-group.success>summary{background:linear-gradient(100deg,#123e4b,#122b40)!important}
+#participationCompliance .compliance-group.failure>summary{background:linear-gradient(100deg,#493039,#142b40)!important}
+#participationCompliance .compliance-group.waiting>summary{background:linear-gradient(100deg,#493e2c,#142b40)!important}
+#participationCompliance .compliance-group-icon{width:36px!important;height:36px!important;border-radius:11px!important}
+#participationCompliance .compliance-group-icon svg{width:21px;height:21px}
+#participationCompliance .compliance-group.success .compliance-group-icon{background:#1e5c62!important;color:#8ae4e5!important}
+#participationCompliance .compliance-group.failure .compliance-group-icon{background:#633c48!important;color:#ffaba6!important}
+#participationCompliance .compliance-group.waiting .compliance-group-icon{background:#65512e!important;color:#f9d780!important}
+#participationCompliance .compliance-group-count{background:#203e53!important;color:#f5ce70!important}
+#participationCompliance .compliance-group-chevron{color:#8fdef3!important}
+.compliance-player{background:#112c42!important;border-color:#496981!important;color:#eaf8ff!important}
+.compliance-player-head,.compliance-player-head span,.compliance-week-total{color:#d7e9f0!important}
+.compliance-day{background:#18374c!important;border-color:#44647a!important}.compliance-day span,.compliance-day small{color:#d0e6ee!important}
+.compliance-day.ok b{color:#67d7b2!important}.compliance-day.bad b{color:#ff8987!important}.compliance-day.saved b{color:#79def7!important}.compliance-day.pending b{color:#9fb0bd!important}
+.participation-compliance-counts span,.participation-names span{background:#17374d!important;border-color:#496981!important;color:#eaf8ff!important}
+.participation-compliance-counts span b{color:#f5ce70!important}
+</style>
+<style id="vs-participants-night-fix">
+/* Participantes y tarjetas de participación: azul petróleo, nunca blanco. */
+.stats .card:nth-child(2),.participation-grid .participation-card{
+background:linear-gradient(145deg,#15384f,#0c2539)!important;
+border:1px solid #3b7088!important;
+box-shadow:inset 0 1px 0 #7dddf41c,0 10px 22px #030b1666!important;
+color:#c4e4ee!important;
+}
+.stats .card:nth-child(2){border-left:5px solid #69d5ee!important}
+.stats .card:nth-child(2) span,.stats .card:nth-child(2) small,.participation-grid .participation-card .pc-label{color:#f2cc78!important}
+.stats .card:nth-child(2) b,.participation-grid .participation-card strong{color:#80dcf3!important}
+.participation-grid .participation-card:nth-child(2){background:linear-gradient(145deg,#153e50,#0d283b)!important}
+.participation-grid .participation-card:nth-child(3){background:linear-gradient(145deg,#25394a,#10283c)!important}
+.participation-grid .participation-card:nth-child(4){background:linear-gradient(145deg,#263547,#10283c)!important}
+#participationCompliance .compliance-group-label{text-transform:uppercase!important}
+</style>
+<style id="vs-unified-ranking-headings">
+/* Unifica las cabeceras de las secciones con el estilo del título RANKING. */
+.wrap>h2,.participation-panel>h3,.stats-launch h3{
+font-family:Georgia,"Times New Roman",serif!important;
+font-size:clamp(20px,4vw,27px)!important;
+font-weight:800!important;
+letter-spacing:.055em!important;
+text-transform:uppercase!important;
+color:#f5ce70!important;
+text-shadow:0 2px 12px #06131e!important;
+line-height:1.2!important;
+}
+.participation-panel>h3{margin:0 0 14px!important;font-size:clamp(18px,3.7vw,24px)!important}
+.stats-launch h3{font-size:clamp(19px,3.8vw,25px)!important}
+</style>
+<style id="vs-compliance-egyptian-heading">
+.participation-panel>h3.compliance-heading{display:flex!important;align-items:center;gap:13px;margin:0 0 15px!important;padding:0 0 14px;border-bottom:1px solid #bd9b5366}
+.compliance-heading-emblem{flex:0 0 49px;width:49px;height:49px;display:grid;place-items:center;border:1px solid #d5ad5c;border-radius:13px;color:#f5ce70;background:linear-gradient(145deg,#1d4960,#0b263b);box-shadow:inset 0 0 0 3px #f5ce7012,0 5px 14px #030c1960}
+.compliance-heading-emblem svg{width:39px;height:39px;display:block;filter:drop-shadow(0 0 4px #5ed9f333)}
+@media(max-width:480px){.participation-panel>h3.compliance-heading{gap:10px;font-size:clamp(18px,5vw,23px)!important}.compliance-heading-emblem{flex-basis:43px;width:43px;height:43px}.compliance-heading-emblem svg{width:35px;height:35px}}
+</style>
+</head>
+  <body>
+    <header class="head">
+      <div class="headin">
+        <a class="desert-back" href="index.html" aria-label="Volver al inicio">‹</a>
+        <div class="logo-area">
+          <div class="translator-wrap">
+            <button class="translator-btn" id="translatorBtn" type="button">
+              🇪🇸 Español ▾
+            </button>
+            <div class="translator-menu" id="translatorMenu" hidden>
+              <button type="button" data-lang="es">🇪🇸 Español</button>
+              <button type="button" data-lang="en">🇬🇧 English</button>
+              <button type="button" data-lang="de">🇩🇪 Deutsch</button>
+              <button type="button" data-lang="fr">🇫🇷 Français</button>
+              <button type="button" data-lang="ro">🇷🇴 Română</button>
+              <button type="button" data-lang="pt">🇵🇹 Português</button>
+              <button type="button" data-lang="uk">🇺🇦 Українська</button>
+              <button type="button" data-lang="tr">🇹🇷 Türkçe</button>
+            </div>
+          </div>
+        </div>
+        <div class="title">
+          <img class="brand-logo" src="hola-s3-logo.webp" alt="HOLa" />
+          <h1>VS COMMAND</h1>
+          <p>Rendimiento y participación de la alianza</p>
+        </div>
+      </div>
+    </header>
+    <main class="wrap">
+      <div class="week" id="weekSelector">
+        <button
+          type="button"
+          class="week-arrow"
+          id="prevWeek"
+          aria-label="Semana anterior"
+        >
+          ‹
+        </button>
+        <div class="week-current">
+          <span>📅</span><b id="weekRange">Semana actual</b>
+          <small id="weekTypePublic" class="week-type-public">SEMANA PUSH</small>
+        </div>
+        <button
+          type="button"
+          class="week-arrow"
+          id="nextWeek"
+          aria-label="Semana siguiente"
+        >
+          ›
+        </button>
+      </div>
+      <div class="days" id="days"></div>
+      <section class="stats">
+        <article class="card">
+          <span>PUNTOS TOTALES</span><b id="total">—</b
+          ><small>selección actual</small>
+        </article>
+        <article class="card">
+          <span>PARTICIPANTES</span><b id="participants">—</b
+          ><small>con puntos</small>
+        </article>
+        <article class="card">
+          <span>MEJOR JUGADOR</span><b id="best">—</b
+          ><small id="bestp">sin datos</small>
+        </article>
+        <article class="card">
+          <span>MEDIA</span><b id="avg">—</b><small>por participante</small>
+        </article>
+      </section>
+      <h2>▌ RANKING</h2>
+      <section class="box">
+        <div class="rh">
+          <span>RANK</span><span>JUGADOR</span><span>PUNTOS</span>
+        </div>
+        <div id="ranking"><div class="empty">Cargando...</div></div>
+      </section>
+      <h2>▌ PARTICIPACIÓN VS</h2>
+      <section class="participation-dashboard">
+        <div class="participation-intro">Resumen de lunes a viernes · Semana seleccionada</div>
+        <div class="participation-grid" id="participationCards"></div>
+        <div class="participation-panel">
+          <h3>📊 Participación diaria</h3>
+          <p>Jugadores con puntos en cada jornada.</p>
+          <div id="participationChart"></div>
+        </div>
+        <div class="participation-panel">
+          <h3 class="compliance-heading"><span class="compliance-heading-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 3 42 13v22L24 45 6 35V13L24 3Z" stroke="currentColor" stroke-width="1.5"/><path d="M24 9 36 16v16l-12 7-12-7V16l12-7Z" stroke="currentColor" stroke-opacity=".55"/><circle cx="24" cy="19" r="5" stroke="currentColor" stroke-width="1.8"/><path d="M14 33c1-6 5-9 10-9s9 3 10 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M13 20c-2 1-3 3-3 5m28-5c2 1 3 3 3 5" stroke="#6ddcf3" stroke-width="1.6" stroke-linecap="round"/></svg></span><span>Consultar jugadores</span></h3>
+          <div class="participation-tabs" id="participationTabs"></div>
+          <div id="participationNames" class="participation-names-list"></div>
+        </div>
+        <div class="participation-panel">
+          <h3 class="compliance-heading"><span class="compliance-heading-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 3 42 13v22L24 45 6 35V13L24 3Z" stroke="currentColor" stroke-width="1.5"/><path d="M24 9 36 16v16l-12 7-12-7V16l12-7Z" stroke="currentColor" stroke-opacity=".55"/><path d="M14 24c3.5-5 6.8-7.5 10-7.5S30.5 19 34 24c-3.5 5-6.8 7.5-10 7.5S17.5 29 14 24Z" stroke="currentColor" stroke-width="1.8"/><circle cx="24" cy="24" r="4" fill="#6ddcf3"/><circle cx="24" cy="24" r="1.5" fill="#0d293c"/></svg></span><span>Cumplimiento VS</span></h3>
+          <div id="participationCompliance"></div>
+        </div>
+      </section>
+    </main>
+    <div class="modal" id="statsModal">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <h3>📈 ESTADÍSTICAS DE LA SEMANA</h3>
+            <p id="statsWeekTitle">Cargando...</p>
+          </div>
+          <button class="close" id="closeStats">Cerrar</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="summary">📊 Resumen</button
+          ><button class="tab" data-tab="ranking">🏆 Ranking</button
+          ><button class="tab" data-tab="compliance">🎯 Cumplimiento</button
+          ><button class="tab" data-tab="noncompliance">
+            ⚠️ Incumplimientos</button
+          ><button class="tab" data-tab="daily">📅 Por día</button
+          ><button class="tab" data-tab="alliance">🔥 Alianza</button>
+        </div>
+        <div class="stats-content" id="statsContent"></div>
+        <div class="stats-admin-row">
+          <a
+            class="stats-admin-gear"
+            href="admin-vs.html"
+            aria-label="Administración VS"
+            >⚙</a
+          >
+        </div>
+      </div>
+    </div>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+      const sb = createClient(
+        "https://ovybstpiomphrouvqxmf.supabase.co",
+        "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV",
+      );
+      let scores = [],
+        players = [],
+        sel = "TOTAL",
+        weekType = "push",
+        currentTab = "summary",
+        selectedWeek = monday(),
+        hasSelectedInitialWeek = false;
+      const dayNames = [
+        "",
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+      ];
+      const f = (n) => {
+        n = Number(n) || 0;
+        return n >= 1e9
+          ? (n / 1e9).toFixed(2) + "B"
+          : n >= 1e6
+            ? (n / 1e6).toFixed(2).replace(/\.00$/, "") + "M"
+            : n.toLocaleString("es-ES");
+      };
+      const esc = (s) =>
+        String(s || "").replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      const key = (s) =>
+        String(s || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, "");
+      function monday(d = new Date()) {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        const off = (x.getDay() + 6) % 7;
+        x.setDate(x.getDate() - off);
+        return x;
+      }
+      selectedWeek = monday();
+      function iso(d) {
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 10);
+      }
+      function rangeText() {
+        const m = selectedWeek,
+          s = new Date(m);
+        s.setDate(m.getDate() + 6);
+        return `${m.toLocaleDateString((localStorage.getItem('hola-language')==='tr'?'tr-TR':'es-ES'), { day: "2-digit", month: "short" })} - ${s.toLocaleDateString((localStorage.getItem('hola-language')==='tr'?'tr-TR':'es-ES'), { day: "2-digit", month: "short", year: "numeric" })}`;
+      }
+      function buttons() {
+        const n = document.getElementById("nextWeek");
+        if (n) n.disabled = selectedWeek >= monday();
+        document.getElementById("days").innerHTML = ["TOTAL", 1, 2, 3, 4, 5]
+          .map(
+            (d) =>
+              `<button class="day ${sel === d ? "active" : ""}" data-day="${d}">${d === "TOTAL" ? "TOTAL" : dayNames[d]}</button>`,
+          )
+          .join("");
+        document.querySelectorAll(".day").forEach(
+          (b) =>
+            (b.onclick = () => {
+              sel = b.dataset.day === "TOTAL" ? "TOTAL" : +b.dataset.day;
+              buttons();
+              render();
+            }),
+        );
+      }
+      function buildRows() {
+        const map = new Map();
+        players.forEach((p) => {
+          const n = typeof p === "string" ? p : p.name || p.player_name || "";
+          if (n)
+            map.set(key(n), {
+              name: n,
+              daily: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+            });
+        });
+        scores
+          .filter((x) => +x.day >= 1 && +x.day <= 6)
+          .forEach((x) => {
+            const k = key(x.player_name);
+            if (!map.has(k))
+              map.set(k, {
+                name: x.player_name,
+                daily: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+              });
+            map.get(k).daily[+x.day] = Number(x.points) || 0;
+          });
+        return [...map.values()]
+          .map((x) => ({
+            ...x,
+            total: Object.values(x.daily).reduce((a, b) => a + b, 0),
+            days: Object.values(x.daily).filter((v) => v > 0).length,
+          }))
+          .sort((a, b) => b.total - a.total);
+      }
+      function render() {
+        const rows = buildRows();
+        const active =
+          sel === "TOTAL"
+            ? rows
+            : rows
+                .map((x) => ({ ...x, total: x.daily[sel] || 0 }))
+                .filter((x) => x.total > 0)
+                .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
+        const sum = active.reduce((a, x) => a + x.total, 0);
+        total.textContent = f(sum);
+        participants.textContent = active.filter((x) => x.total > 0).length;
+        best.textContent = active[0]?.name || "—";
+        bestp.textContent = active[0] ? f(active[0].total) : "sin datos";
+        avg.textContent = active.length ? f(sum / active.length) : "—";
+        ranking.innerHTML = active.length
+          ? (() => {
+              const row = (x, i) =>
+                `<div class="rr"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><b>${esc(x.name)}</b><b>${f(x.total)}</b></div>`;
+              const top = active.slice(0, 10).map(row).join("");
+              const rest =
+                active.length > 10
+                  ? `<details class="ranking-more"><summary>Ver más...</summary><div>${active
+                      .slice(10)
+                      .map((x, i) => row(x, i + 10))
+                      .join("")}</div></details>`
+                  : "";
+              return top + rest;
+            })()
+          : '<div class="empty">Todavía no hay puntuaciones.</div>';
+        renderParticipation(rows);
+
+      }
+      function renderParticipation(rows) {
+        const days = [1, 2, 3, 4, 5];
+        const recorded = new Set(scores.filter(x => days.includes(Number(x.day))).map(x => key(x.player_name) + "|" + Number(x.day)));
+        const hasRecord = (x, d) => recorded.has(key(x.name) + "|" + d);
+        const categories = [
+          { id: "active", label: "Activos", icon: "👥", items: rows.filter(x => days.some(d => x.daily[d] > 0)) },
+          { id: "complete", label: "5 días", icon: "📅", items: rows.filter(x => days.every(d => x.daily[d] > 0)) },
+          { id: "partial", label: "Parcial", icon: "📈", items: rows.filter(x => { const n = days.filter(d => x.daily[d] > 0).length; return n >= 1 && n <= 4; }) },
+          { id: "none", label: "Sin puntos", icon: "👤", items: rows.filter(x => days.every(d => hasRecord(x,d) && x.daily[d] === 0)) },
+          { id: "pending", label: "Pendientes", icon: "⏳", items: rows.filter(x => days.some(d => !hasRecord(x,d))) }
+        ];
+        document.getElementById("participationCards").innerHTML = categories.slice(0,4).map(c =>
+          '<article class="participation-card"><div class="pc-label">' + c.icon + ' ' + c.label +
+          '</div><strong>' + c.items.length + (c.id === "active" ? " / " + rows.length : "") +
+          '</strong></article>'
+        ).join("");
+        document.getElementById("participationChart").innerHTML = days.map(d => {
+          const count = rows.filter(x => x.daily[d] > 0).length;
+          const pct = rows.length ? 100 * count / rows.length : 0;
+          return '<div class="participation-day"><div class="participation-day-head"><span>' + dayNames[d] +
+            '</span><span>' + count + ' / ' + rows.length + '</span></div><div class="participation-track"><div class="participation-fill" style="width:' +
+            pct + '%"></div></div></div>';
+        }).join("");
+        const tabs = document.getElementById("participationTabs");
+        const namesPanel = document.getElementById("participationNames");
+        const showCategory = id => {
+          const category = categories.find(c => c.id === id) || categories[0];
+          tabs.querySelectorAll("button").forEach(btn => {
+            const active = btn.dataset.category === category.id;
+            btn.classList.toggle("active", active);
+            btn.setAttribute("aria-selected", String(active));
+          });
+          namesPanel.innerHTML = category.items.length
+            ? category.items.map(x => '<div class="participation-person"><span>' + esc(x.name) +
+                '</span><b>' + f(days.reduce((sum,d) => sum + x.daily[d],0)) + '</b></div>').join("")
+            : '<div class="participation-empty">No hay jugadores en esta categoría.</div>';
+        };
+        tabs.innerHTML = categories.map(c => '<button type="button" role="tab" data-category="' + c.id + '">' +
+          c.label + ' <span>' + c.items.length + '</span></button>').join("");
+        tabs.querySelectorAll("button").forEach(btn => btn.onclick = () => showCategory(btn.dataset.category));
+        showCategory("active");
+        const eligible = rows.filter(x => days.every(d => hasRecord(x,d)));
+        const pending = categories.find(c => c.id === "pending").items;
+        const isPush = weekType === "push";
+        const fulfills = x => isPush ? days.every(d => x.daily[d] >= 7200000)
+          : days.reduce((sum,d) => sum + x.daily[d],0) === 7200000;
+        const passed = eligible.filter(fulfills);
+        const failed = eligible.filter(x => !fulfills(x));
+        const dayIndicator = (x,d) => {
+          const saved = hasRecord(x,d);
+          const points = x.daily[d];
+          const status = !saved ? "pending" : isPush ? (points >= 7200000 ? "ok" : "bad") : "saved";
+          const text = !saved ? "Sin datos" : f(points) + " puntos";
+          const symbol = status === "ok" ? "●" : status === "bad" ? "●" : status === "saved" ? "●" : "○";
+          return '<div class="compliance-day ' + status + '" title="' + esc(dayNames[d] + ": " + text) +
+            '"><span>' + dayNames[d].slice(0,3) + '</span><b>' + symbol + '</b><small>' +
+            (saved ? f(points) : "—") + '</small></div>';
+        };
+        const complianceBox = (label,items,tone) => '<details class="compliance-group ' + tone +
+          '"><summary><span class="compliance-group-icon">' + (tone === "success" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h9a2 2 0 0 0 1.95-1.55l1.8-8A2 2 0 0 0 18.8 9H14V4.5A2.5 2.5 0 0 0 11.5 2L7 10v11h1Z"/><path d="M3 10h4v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"/></svg>' : tone === "failure" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h9a2 2 0 0 1 1.95 1.55l1.8 8A2 2 0 0 1 18.8 15H14v4.5A2.5 2.5 0 0 1 11.5 22L7 14V3h1Z"/><path d="M3 3h4v11H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8M8 21h8M9 3v4l3 5-3 5v4M15 3v4l-3 5 3 5v4"/><path d="m9 7 6 0M9 17h6"/></svg>') +
+          '</span><span class="compliance-group-label">' + label +
+          '</span><span class="compliance-group-count">' + items.length +
+          '</span><span class="compliance-group-chevron">⌄</span></summary><div class="compliance-player-list">' +
+          (items.length ? items.map(x => {
+            const total5 = days.reduce((sum,d) => sum + x.daily[d],0);
+            const result = !days.every(d => hasRecord(x,d)) ? "Pendiente de datos"
+              : fulfills(x) ? "Cumple" : "No cumple";
+            return '<article class="compliance-player"><div class="compliance-player-head"><b>' +
+              esc(x.name) + '</b><span>' + result + '</span></div><div class="compliance-days">' +
+              days.map(d => dayIndicator(x,d)).join("") + '</div>' +
+              (!isPush ? '<div class="compliance-week-total">Total lunes-viernes: <b>' + f(total5) +
+                '</b> / 7,2M</div>' : '') + '</article>';
+          }).join("") : '<div class="participation-empty">Ninguno</div>') + '</div></details>';
+        document.getElementById("participationCompliance").innerHTML =
+          '<p>' + (isPush ? 'Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.'
+            : 'Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.') +
+          '</p><div class="compliance-groups">' +
+          complianceBox("CUMPLIERON",passed,"success") +
+          complianceBox("NO CUMPLIERON",failed,"failure") +
+          complianceBox("PENDIENTES",pending,"waiting") + '</div>';
+
+      }
+      function compliance(rows) {
+        return rows.map((x) => {
+          const failed = [1, 2, 3, 4, 5, 6].filter((d) => x.daily[d] < 7200000);
+          const p = x.total;
+          let ok,
+            delta = 0;
+          if (weekType === "push") {
+            ok = failed.length === 0;
+            delta = failed.length;
+          } else {
+            ok = p === 7200000;
+            delta = Math.abs(p - 7200000);
+          }
+          return { ...x, ok, failed, delta };
+        });
+      }
+      function renderStats() {
+        const rows = buildRows(),
+          c = compliance(rows),
+          ok = c.filter((x) => x.ok).length,
+          fail = c.length - ok,
+          totalAlliance = rows.reduce((a, x) => a + x.total, 0),
+          max = Math.max(1, ...rows.map((x) => x.total)),
+          percent = rows.length ? Math.round((ok / rows.length) * 100) : 0;
+        const push = weekType === "push";
+        let html = "";
+        if (currentTab === "summary") {
+          html = `<div class="hero"><div class="kicker">${push ? "🚀 SEMANA DE PUSH" : "🛡️ SEMANA DE SAVE"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">${push ? "7,2M cada día" : "7,2M total semanal"}</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(rows[0]?.name || "—")}</div><div class="small">${rows[0] ? f(rows[0].total) : ""}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>${push ? "Cumplen los 6 días" : "Cumplen exactamente"}</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia</div></div>`;
+        }
+        if (currentTab === "ranking") {
+          html = `<div class="section"><h4>🏆 Ranking semanal — Total Supabase</h4>${rows.map((x, i) => `<div class="rank"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><div><b>${esc(x.name)}</b><div class="small">${x.days}/6 días con puntos</div></div><div class="points">${f(x.total)}</div></div>`).join("") || '<div class="status">Sin datos.</div>'}</div>`;
+        }
+        if (currentTab === "compliance") {
+          html = `<div class="section"><h4>🟢 Cumplimiento</h4>${
+            c
+              .filter((x) => x.ok)
+              .map(
+                (x, i) =>
+                  `<div class="rank"><b>#${i + 1}</b><div><b>${esc(x.name)}</b><div class="badge ok">${push ? "CUMPLE LOS 6 DÍAS" : "CUMPLE 7,2M"}</div></div><div class="points">${f(x.total)}</div></div>`,
+              )
+              .join("") ||
+            '<div class="status">Todavía no hay jugadores que cumplan.</div>'
+          }</div>`;
+        }
+        if (currentTab === "noncompliance") {
+          html = `<div class="section"><h4>🔴 Incumplimientos</h4>${
+            c
+              .filter((x) => !x.ok)
+              .map((x) => {
+                const msg = push
+                  ? `Faltan: ${x.failed.map((d) => dayNames[d]).join(", ")}`
+                  : x.total < 7200000
+                    ? `Faltan ${f(7200000 - x.total)}`
+                    : `Se pasa ${f(x.total - 7200000)}`;
+                return `<div class="rank"><b>⚠</b><div><b>${esc(x.name)}</b><div class="badge bad">${esc(msg)}</div></div><div class="points">${f(x.total)}</div></div>`;
+              })
+              .join("") || '<div class="status">No hay incumplimientos.</div>'
+          }</div>`;
+        }
+        if (currentTab === "daily") {
+          html = `<div class="section"><h4>📅 Desglose diario</h4><div style="overflow:auto"><table class="table"><thead><tr><th>#</th><th>Jugador</th>${[1, 2, 3, 4, 5, 6].map((d) => `<th>${dayNames[d].slice(0, 3)}</th>`).join("")}<th>Total</th></tr></thead><tbody>${rows.map((x, i) => `<tr><td>${i + 1}</td><td><b>${esc(x.name)}</b></td>${[1, 2, 3, 4, 5, 6].map((d) => `<td>${f(x.daily[d])}</td>`).join("")}<td><b>${f(x.total)}</b></td></tr>`).join("")}</tbody></table></div></div>`;
+        }
+        if (currentTab === "alliance") {
+          const dayTotals = [1, 2, 3, 4, 5, 6].map((d) => ({
+            d,
+            total: rows.reduce((a, x) => a + x.daily[d], 0),
+            participants: rows.filter((x) => x.daily[d] > 0).length,
+          }));
+          const mx = Math.max(1, ...dayTotals.map((x) => x.total));
+          html = `<div class="hero"><div class="kicker">🔥 ALIANZA</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE DE TODOS LOS MIEMBROS</div></div><div class="section"><h4>🔥 Puntos por día</h4>${dayTotals.map((x) => `<div class="bar-row"><b>${dayNames[x.d]}</b><div class="bar"><div class="fill" style="width:${Math.round((x.total / mx) * 100)}%"></div></div><div><b>${f(x.total)}</b><div class="small">${x.participants} 👥</div></div></div>`).join("")}</div><div class="grid"><div class="s-card"><div class="label">TOTAL SUPABASE</div><div class="value">${f(totalAlliance)}</div></div><div class="s-card"><div class="label">MIEMBROS CON DATOS</div><div class="value">${rows.filter((x) => x.total > 0).length}</div></div></div>`;
+        }
+        document.getElementById("statsContent").innerHTML = html;
+      }
+      function openModal() {
+        currentTab = "summary";
+        document.getElementById("statsWeekTitle").textContent =
+          `Semana ${rangeText()} · ${weekType === "push" ? "🚀 Push Week" : "🛡️ Save Week"}`;
+        document.getElementById("statsModal").classList.add("show");
+        document
+          .querySelectorAll(".tab")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.tab === currentTab),
+          );
+        renderStats();
+      }
+      const openStatsButton = document.getElementById("openStats");
+      if (openStatsButton) openStatsButton.onclick = openModal;
+      if (location.hash === "#estadisticas") setTimeout(openModal, 0);
+      document.getElementById("closeStats").onclick = () =>
+        document.getElementById("statsModal").classList.remove("show");
+      document.getElementById("statsModal").onclick = (e) => {
+        if (e.target.id === "statsModal")
+          document.getElementById("statsModal").classList.remove("show");
+      };
+      document.querySelectorAll(".tab").forEach(
+        (b) =>
+          (b.onclick = () => {
+            currentTab = b.dataset.tab;
+            document
+              .querySelectorAll(".tab")
+              .forEach((x) => x.classList.toggle("active", x === b));
+            renderStats();
+          }),
+      );
+      async function changeWeek(delta) {
+        selectedWeek = new Date(selectedWeek);
+        selectedWeek.setDate(selectedWeek.getDate() + delta * 7);
+        document.getElementById("weekRange").textContent =
+          `Semana ${rangeText()}`;
+        const p = document.getElementById("prevWeek"),
+          n = document.getElementById("nextWeek");
+        if (p) p.disabled = false;
+        if (n) n.disabled = selectedWeek > monday();
+        sel = "TOTAL";
+        await load();
+      }
+      document
+        .getElementById("prevWeek")
+        ?.addEventListener("click", () => changeWeek(-1));
+      document
+        .getElementById("nextWeek")
+        ?.addEventListener("click", () => changeWeek(1));
+      async function load() {
+        const vsDate = iso(selectedWeek);
+        document.getElementById("weekRange").textContent =
+          `Semana ${rangeText()}`;
+        let [a, b] = await Promise.all([
+          sb
+            .from("vs_scores")
+            .select("player_name,day,points,week_type,vs_date")
+            .eq("vs_date", vsDate)
+            .gte("day", 1)
+            .lte("day", 6),
+          sb.from("players").select("name"),
+        ]);
+        if (a.error) throw a.error;
+        if (b.error) console.warn(b.error);
+
+        // Al abrir, muestra directamente la última semana que sí tiene datos.
+        // Así no parece que el selector esté vacío cuando aún no hay resultados
+        // guardados para la semana actual.
+        if (!hasSelectedInitialWeek && !(a.data || []).length) {
+          const latest = await sb
+            .from("vs_scores")
+            .select("vs_date")
+            .order("vs_date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!latest.error && latest.data?.vs_date) {
+            selectedWeek = new Date(`${latest.data.vs_date}T12:00:00`);
+            hasSelectedInitialWeek = true;
+            return load();
+          }
+        }
+        hasSelectedInitialWeek = true;
+        scores = a.data || [];
+        players = b.data || [];
+        // Determina el tipo de semana por mayoría de registros, no por la
+        // primera fila devuelta por Supabase. Así la página pública no puede
+        // mostrar SAVE por una fila aislada o por un orden distinto de respuesta.
+        const pushCount = scores.filter((x) => x.week_type === "push").length;
+        const saveCount = scores.filter((x) => x.week_type === "save").length;
+        weekType = pushCount >= saveCount ? "push" : "save";
+
+        const publicWeekType = document.getElementById("weekTypePublic");
+        if (publicWeekType) {
+          publicWeekType.textContent =
+            weekType === "push" ? "🚀 SEMANA PUSH" : "🛡️ SEMANA SAVE";
+        }
+
+        buttons();
+        render();
+      }
+      load().catch((e) => {
+        console.error(e);
+        buttons();
+        render();
+        document.getElementById("ranking").innerHTML =
+          '<div class="empty">No se pudieron cargar los datos de Supabase.</div>';
+      });
+    </script>
+    <a
+      id="vs-admin-gear"
+      href="admin-vs.html"
+      aria-label="Administración VS"
+      title="Administración VS"
+      >⚙</a
+    >
+    <script id="hola-translator-final">
+      (() => {
+        const T = {
+          tr:{"Semana actual":"Geçerli hafta","PUNTOS TOTALES":"TOPLAM PUAN","selección actual":"mevcut seçim","PARTICIPANTES":"KATILIMCILAR","con puntos":"puan alan","MEJOR JUGADOR":"EN İYİ OYUNCU","sin datos":"veri yok","MEDIA":"ORTALAMA","por participante":"katılımcı başına","ESTADÍSTICAS DE LA SEMANA":"HAFTALIK İSTATİSTİKLER","Ranking, cumplimiento diario, participación y desglose completo.":"Sıralama, günlük hedefe uyum, katılım ve tüm ayrıntılar.","ABRIR ESTADÍSTICAS →":"İSTATİSTİKLERİ AÇ →","RANKING":"SIRALAMA","RANK":"SIRA","JUGADOR":"OYUNCU","PUNTOS":"PUAN","TOTAL":"TOPLAM","Lunes":"Pazartesi","Martes":"Salı","Miércoles":"Çarşamba","Jueves":"Perşembe","Viernes":"Cuma","Sábado":"Cumartesi","Resumen":"Özet","Cumplimiento":"Hedefe uyum","Incumplimientos":"Hedef dışı","Por día":"Günlere göre","Alianza":"İttifak","Cerrar":"Kapat","Ver nombres":"İsimleri göster","Todavía no hay puntuaciones.":"Henüz puan yok.","SEMANA PUSH":"PUSH HAFTASI","SEMANA SAVE":"SAVE HAFTASI","Puntos por día":"Günlük puanlar","MIEMBROS CON DATOS":"VERİSİ OLAN ÜYELER","TOTAL SUPABASE":"SUPABASE TOPLAMI","TOTAL SUPABASE DE TODOS LOS MIEMBROS":"TÜM ÜYELERİN SUPABASE TOPLAMI","Estadísticas":"İstatistikler","Estadísticas VS":"VS İstatistikleri","Semana ":"Hafta ","Rendimiento y participación de la alianza":"İttifakın performansı ve katılımı","No se pudieron cargar los datos de Supabase.":"Supabase verileri yüklenemedi.","Cargando...":"Yükleniyor...","PARTICIPACIÓN":"KATILIM","6 DÍAS":"6 GÜN","4-5 DÍAS":"4-5 GÜN","1-3 DÍAS":"1-3 GÜN","SIN PARTICIPACIÓN":"KATILIM YOK","SEMANA DE PUSH":"PUSH HAFTASI","SEMANA DE SAVE":"SAVE HAFTASI","TOTAL SUPABASE · SUMA DE LUNES A SÁBADO":"SUPABASE TOPLAMI · PAZARTESİDEN CUMARTESİYE","Lista completa de Supabase":"Supabase'deki tam liste","CUMPLEN":"HEDEFİ TUTTURAN","7,2M cada día":"Her gün 7,2M","7,2M total semanal":"Haftalık toplam 7,2M","LÍDER":"LİDER","Por miembro":"Üye başına","Estado del objetivo":"Hedef durumu","Cumplen los 6 días":"6 günün tamamında hedefe ulaştı","Cumplen exactamente":"Hedefi tam tutturdu","correctos":"başarılı","con incidencia":"sorunlu","Ranking semanal — Total Supabase":"Haftalık sıralama — Supabase toplamı","días con puntos":"puanlı gün","Sin datos.":"Veri yok.","CUMPLE LOS 6 DÍAS":"6 GÜNÜN TAMAMINDA HEDEF","CUMPLE 7,2M":"7,2M HEDEFİ","Todavía no hay jugadores que cumplan.":"Henüz hedefi tutturan oyuncu yok.","Faltan: ":"Eksik günler: ","Faltan ":"Eksik: ","Se pasa ":"Aştı: ","No hay incumplimientos.":"Hedef dışı oyuncu yok.","Desglose diario":"Günlük döküm","Push Week":"Push Haftası","Save Week":"Save Haftası","Ver más...":"Daha fazlasını gör...","Administración VS":"VS Yönetimi","Semana anterior":"Önceki hafta","Semana siguiente":"Sonraki hafta","Lun":"Pzt","Mar":"Sal","Mié":"Çar","Jue":"Per","Vie":"Cum","Sáb":"Cmt"},
+          en: {
+            "Semana actual": "Current week",
+            "PUNTOS TOTALES": "TOTAL POINTS",
+            "selección actual": "current selection",
+            PARTICIPANTES: "PARTICIPANTS",
+            "con puntos": "with points",
+            "MEJOR JUGADOR": "BEST PLAYER",
+            "sin datos": "no data",
+            MEDIA: "AVERAGE",
+            "por participante": "per participant",
+            "ESTADÍSTICAS DE LA SEMANA": "WEEK STATISTICS",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Ranking, daily compliance, participation and full breakdown.",
+            "ABRIR ESTADÍSTICAS →": "OPEN STATISTICS →",
+            RANKING: "RANKING",
+            RANK: "RANK",
+            JUGADOR: "PLAYER",
+            PUNTOS: "POINTS",
+            TOTAL: "TOTAL",
+            Lunes: "Monday",
+            Martes: "Tuesday",
+            Miércoles: "Wednesday",
+            Jueves: "Thursday",
+            Viernes: "Friday",
+            Sábado: "Saturday",
+            Resumen: "Summary",
+            Cumplimiento: "Compliance",
+            Incumplimientos: "Non-compliance",
+            "Por día": "By day",
+            Alianza: "Alliance",
+            Cerrar: "Close",
+            "Ver nombres": "View names",
+            "Todavía no hay puntuaciones.": "There are no scores yet.",
+          },
+          de: {
+            "Semana actual": "Aktuelle Woche",
+            "PUNTOS TOTALES": "GESAMTPUNKTE",
+            "selección actual": "aktuelle Auswahl",
+            PARTICIPANTES: "TEILNEHMER",
+            "con puntos": "mit Punkten",
+            "MEJOR JUGADOR": "BESTER SPIELER",
+            "sin datos": "keine Daten",
+            MEDIA: "DURCHSCHNITT",
+            "por participante": "pro Teilnehmer",
+            "ESTADÍSTICAS DE LA SEMANA": "WOCHENSTATISTIK",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Rangliste, tägliche Erfüllung, Teilnahme und vollständige Aufschlüsselung.",
+            "ABRIR ESTADÍSTICAS →": "STATISTIK ÖFFNEN →",
+            RANKING: "RANGLISTE",
+            RANK: "RANG",
+            JUGADOR: "SPIELER",
+            PUNTOS: "PUNKTE",
+            TOTAL: "GESAMT",
+            Lunes: "Montag",
+            Martes: "Dienstag",
+            Miércoles: "Mittwoch",
+            Jueves: "Donnerstag",
+            Viernes: "Freitag",
+            Sábado: "Samstag",
+            Resumen: "Übersicht",
+            Cumplimiento: "Erfüllung",
+            Incumplimientos: "Nicht erfüllt",
+            "Por día": "Pro Tag",
+            Alianza: "Allianz",
+            Cerrar: "Schließen",
+            "Ver nombres": "Namen anzeigen",
+            "Todavía no hay puntuaciones.": "Noch keine Punkte.",
+          },
+          fr: {
+            "Semana actual": "Semaine actuelle",
+            "PUNTOS TOTALES": "POINTS TOTAUX",
+            "selección actual": "sélection actuelle",
+            PARTICIPANTES: "PARTICIPANTS",
+            "con puntos": "avec des points",
+            "MEJOR JUGADOR": "MEILLEUR JOUEUR",
+            "sin datos": "aucune donnée",
+            MEDIA: "MOYENNE",
+            "por participante": "par participant",
+            "ESTADÍSTICAS DE LA SEMANA": "STATISTIQUES DE LA SEMAINE",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Classement, respect quotidien, participation et détail complet.",
+            "ABRIR ESTADÍSTICAS →": "OUVRIR LES STATISTIQUES →",
+            RANKING: "CLASSEMENT",
+            RANK: "RANG",
+            JUGADOR: "JOUEUR",
+            PUNTOS: "POINTS",
+            TOTAL: "TOTAL",
+            Lunes: "Lundi",
+            Martes: "Mardi",
+            Miércoles: "Mercredi",
+            Jueves: "Jeudi",
+            Viernes: "Vendredi",
+            Sábado: "Samedi",
+            Resumen: "Résumé",
+            Cumplimiento: "Respect",
+            Incumplimientos: "Non-respect",
+            "Por día": "Par jour",
+            Alianza: "Alliance",
+            Cerrar: "Fermer",
+            "Ver nombres": "Voir les noms",
+            "Todavía no hay puntuaciones.": "Aucune note pour le moment.",
+          },
+          ro: {
+            "Semana actual": "Săptămâna curentă",
+            "PUNTOS TOTALES": "PUNCTE TOTALE",
+            "selección actual": "selecția curentă",
+            PARTICIPANTES: "PARTICIPANȚI",
+            "con puntos": "cu puncte",
+            "MEJOR JUGADOR": "CEL MAI BUN JUCĂTOR",
+            "sin datos": "fără date",
+            MEDIA: "MEDIE",
+            "por participante": "per participant",
+            "ESTADÍSTICAS DE LA SEMANA": "STATISTICI SĂPTĂMÂNALE",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Clasament, îndeplinire zilnică, participare și detaliere completă.",
+            "ABRIR ESTADÍSTICAS →": "DESCHIDE STATISTICILE →",
+            RANKING: "CLASAMENT",
+            RANK: "RANG",
+            JUGADOR: "JUCĂTOR",
+            PUNTOS: "PUNCTE",
+            TOTAL: "TOTAL",
+            Lunes: "Luni",
+            Martes: "Marți",
+            Miércoles: "Miercuri",
+            Jueves: "Joi",
+            Viernes: "Vineri",
+            Sábado: "Sâmbătă",
+            Resumen: "Rezumat",
+            Cumplimiento: "Îndeplinire",
+            Incumplimientos: "Neîndepliniri",
+            "Por día": "Pe zi",
+            Alianza: "Alianță",
+            Cerrar: "Închide",
+            "Ver nombres": "Vezi numele",
+            "Todavía no hay puntuaciones.": "Nu există încă punctaje.",
+          },
+          pt: {
+            "Semana actual": "Semana atual",
+            "PUNTOS TOTALES": "PONTOS TOTAIS",
+            "selección actual": "seleção atual",
+            PARTICIPANTES: "PARTICIPANTES",
+            "con puntos": "com pontos",
+            "MEJOR JUGADOR": "MELHOR JOGADOR",
+            "sin datos": "sem dados",
+            MEDIA: "MÉDIA",
+            "por participante": "por participante",
+            "ESTADÍSTICAS DE LA SEMANA": "ESTATÍSTICAS DA SEMANA",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Classificação, cumprimento diário, participação e detalhamento completo.",
+            "ABRIR ESTADÍSTICAS →": "ABRIR ESTATÍSTICAS →",
+            RANKING: "CLASSIFICAÇÃO",
+            RANK: "RANK",
+            JUGADOR: "JOGADOR",
+            PUNTOS: "PONTOS",
+            TOTAL: "TOTAL",
+            Lunes: "Segunda-feira",
+            Martes: "Terça-feira",
+            Miércoles: "Quarta-feira",
+            Jueves: "Quinta-feira",
+            Viernes: "Sexta-feira",
+            Sábado: "Sábado",
+            Resumen: "Resumo",
+            Cumplimiento: "Cumprimento",
+            Incumplimientos: "Não cumprimento",
+            "Por día": "Por dia",
+            Alianza: "Aliança",
+            Cerrar: "Fechar",
+            "Ver nombres": "Ver nomes",
+            "Todavía no hay puntuaciones.": "Ainda não há pontuações.",
+          },
+          uk: {
+            "Semana actual": "Поточний тиждень",
+            "PUNTOS TOTALES": "ЗАГАЛЬНІ БАЛИ",
+            "selección actual": "поточний вибір",
+            PARTICIPANTES: "УЧАСНИКИ",
+            "con puntos": "з балами",
+            "MEJOR JUGADOR": "НАЙКРАЩИЙ ГРАВЕЦЬ",
+            "sin datos": "немає даних",
+            MEDIA: "СЕРЕДНЄ",
+            "por participante": "на учасника",
+            "ESTADÍSTICAS DE LA SEMANA": "СТАТИСТИКА ТИЖНЯ",
+            "Ranking, cumplimiento diario, participación y desglose completo.":
+              "Рейтинг, щоденне виконання, участь і повна деталізація.",
+            "ABRIR ESTADÍSTICAS →": "ВІДКРИТИ СТАТИСТИКУ →",
+            RANKING: "РЕЙТИНГ",
+            RANK: "МІСЦЕ",
+            JUGADOR: "ГРАВЕЦЬ",
+            PUNTOS: "БАЛИ",
+            TOTAL: "РАЗОМ",
+            Lunes: "Понеділок",
+            Martes: "Вівторок",
+            Miércoles: "Середа",
+            Jueves: "Четвер",
+            Viernes: "П’ятниця",
+            Sábado: "Субота",
+            Resumen: "Підсумок",
+            Cumplimiento: "Виконання",
+            Incumplimientos: "Невиконання",
+            "Por día": "За день",
+            Alianza: "Альянс",
+            Cerrar: "Закрити",
+            "Ver nombres": "Показати імена",
+            "Todavía no hay puntuaciones.": "Поки що немає балів.",
+          },
+        };
+        const labels = {
+          es: "🇪🇸 Español",
+          en: "🇬🇧 English",
+          de: "🇩🇪 Deutsch",
+          fr: "🇫🇷 Français",
+          ro: "🇷🇴 Română",
+          pt: "🇵🇹 Português",
+          uk: "🇺🇦 Українська",
+          tr: "🇹🇷 Türkçe",
+        };
+        let lang = "es";
+        const original = new WeakMap();
+        function visit(root) {
+          const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let n;
+          while ((n = w.nextNode())) {
+            const p = n.parentElement;
+            if (
+              !p ||
+              p.closest(".translator-wrap") ||
+              p.id === "vs-admin-gear" ||
+              ["SCRIPT", "STYLE"].includes(p.tagName)
+            )
+              continue;
+            if (!original.has(n)) original.set(n, n.nodeValue);
+            let s = original.get(n),
+              d = T[lang] || {};
+            Object.keys(d)
+              .sort((a, b) => b.length - a.length)
+              .forEach((k) => (s = s.split(k).join(d[k])));
+            n.nodeValue = s;
+          }
+        }
+        function setLanguage(l) {
+          lang = l;
+          localStorage.setItem("hola-language",l);
+          visit(document.body);
+          document.documentElement.lang = l;
+          const b = document.getElementById("translatorBtn");
+          if (b) b.textContent = (labels[l] || labels.es) + " ▾";
+        }
+        window.setLanguage = setLanguage;
+        window.changeLanguage = setLanguage;
+        const b = document.getElementById("translatorBtn"),
+          m = document.getElementById("translatorMenu");
+        b?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          m.hidden = !m.hidden;
+        });
+        m?.querySelectorAll("[data-lang]").forEach((x) =>
+          x.addEventListener("click", () => {
+            setLanguage(x.dataset.lang);
+            m.hidden = true;
+          }),
+        );
+        document.addEventListener("click", (e) => {
+          if (m && !e.target.closest(".translator-wrap")) m.hidden = true;
+        });
+        new MutationObserver((ms) =>
+          ms.forEach((x) =>
+            x.addedNodes.forEach((n) => {
+              if (n.nodeType === 1) visit(n);
+            }),
+          ),
+        ).observe(document.body, { childList: true, subtree: true });
+        visit(document.body);
+      })();
+    </script>
+    <script id="hola-header-translation-fix">
+      (() => {
+        const extra = {
+          tr: {"Rendimiento y participación de la alianza":"İttifakın performansı ve katılımı","Semana ":"Hafta "},
+          en: {
+            "Rendimiento y participación de la alianza":
+              "Alliance performance and participation",
+            "Semana ": "Week ",
+          },
+          de: {
+            "Rendimiento y participación de la alianza":
+              "Leistung und Teilnahme der Allianz",
+            "Semana ": "Woche ",
+          },
+          fr: {
+            "Rendimiento y participación de la alianza":
+              "Performance et participation de l’alliance",
+            "Semana ": "Semaine ",
+          },
+          ro: {
+            "Rendimiento y participación de la alianza":
+              "Performanța și participarea alianței",
+            "Semana ": "Săptămâna ",
+          },
+          pt: {
+            "Rendimiento y participación de la alianza":
+              "Desempenho e participação da aliança",
+            "Semana ": "Semana ",
+          },
+          uk: {
+            "Rendimiento y participación de la alianza":
+              "Результативність та участь альянсу",
+            "Semana ": "Тиждень ",
+          },
+        };
+        let lang = "es";
+        const originals = new WeakMap();
+        function scan() {
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+          );
+          let n;
+          while ((n = w.nextNode())) {
+            const p = n.parentElement;
+            if (
+              !p ||
+              p.closest(".translator-wrap") ||
+              p.id === "vs-admin-gear" ||
+              ["SCRIPT", "STYLE"].includes(p.tagName)
+            )
+              continue;
+            if (!originals.has(n)) originals.set(n, n.nodeValue);
+            let s = originals.get(n),
+              d = extra[lang] || {};
+            Object.keys(d)
+              .sort((a, b) => b.length - a.length)
+              .forEach((k) => (s = s.split(k).join(d[k])));
+            n.nodeValue = s;
+          }
+        }
+        document.addEventListener("hola:languagechange", (e) => {
+          lang = e.detail.lang;
+          scan();
+        });
+        const old = window.setLanguage;
+        window.setLanguage = function (l) {
+          lang = l;
+          if (old) old(l);
+          scan();
+        };
+        window.changeLanguage = window.setLanguage;
+        scan();
+      })();
+    </script>
+    <script>window.setLanguage?.(localStorage.getItem("hola-language")||((navigator.language||"").slice(0,2)==="tr"?"tr":"es"));</script>
+  </body>
+</html>
