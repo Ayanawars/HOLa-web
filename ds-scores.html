@@ -516,7 +516,7 @@ function canonicalDSPlayerName(value){
   const key=norm(raw);
   // Keep the registered Supabase identity, regardless of OCR spelling or
   // old roster aliases. The decorative cat must never become "ww".
-  if(/^jebraw{1,4}$/.test(key))return "JEBRAW ᓚᘏᗢ";
+  if(/^jebraw{1,6}$/.test(key))return "JEBRAW ᓚᘏᗢ";
   return raw;
 }
 function cleanParticipantName(value){
@@ -947,8 +947,8 @@ function parseSimpleNamePoints(text){
   const nameKey=x=>norm(String(x||"").replace(/\[?HOLa\]?/ig,"").replace(/ᓚᘏᗢ/g,"").replace(/^[^\p{L}\p{N}]+/gu,""));
   // The cat symbol is decorative; JEBRAW and JEBRAWww are OCR aliases for
   // the registered member JEBRAW ᓚᘏᗢ, never separate players.
-  const jebrawAlias=x=>/^jebraw{1,4}$/.test(x);
-  const jebrawInLine=x=>/(?:^|[^a-z0-9])jebraw{1,4}(?=$|[^a-z0-9])/i.test(String(x||"").replace(/ᓚᘏᗢ/g," "));
+  const jebrawAlias=x=>/^jebraw{1,6}$/.test(x);
+  const jebrawInLine=x=>/(?:^|[^a-z0-9])jebraw{1,6}(?=$|[^a-z0-9])/i.test(String(x||"").replace(/ᓚᘏᗢ/g," "));
   const scoreAfter=(index)=>{
     // OCR may put the decorative cat on a separate line. Never cross another
     // player name or a ranking row when looking for the score.
@@ -1101,7 +1101,7 @@ $("scoresAddBtn").addEventListener("click",()=>{
   if(!Number.isSafeInteger(points)){
     $("scoresManualInfo").textContent="La puntuación es demasiado grande.";return;
   }
-  const existing=detected.find(row=>norm(row.playerName)===norm(name));
+  const existing=detected.find(row=>norm(canonicalDSPlayerName(row.playerName))===norm(name));
   if(existing){
     if(!confirm("¿Sustituir los puntos de "+name+" por "+points.toLocaleString("es-ES")+"?"))return;
     existing.points=points;existing.ocrName=name+" (manual)";
@@ -1183,7 +1183,7 @@ async function runOCR(){
       const captureTime=parseTime(text);
       if(captureTime) allTimes.push(captureTime);
       const rows=ocr.rows||[];
-      rows.forEach(r=>detected.push({position:0,ocrName:r.ocrName,playerName:r.name,points:r.points,captureTime}));
+      rows.forEach(r=>detected.push({position:0,ocrName:r.ocrName,playerName:canonicalDSPlayerName(r.name),points:r.points,captureTime}));
     }
 
     const unique=new Map();
@@ -1232,7 +1232,7 @@ $("saveBtn").addEventListener("click",async()=>{
       battle_date:battleDate,
       team,
       screenshot_time:x.captureTime||null,
-      player_name:x.playerName,
+      player_name:canonicalDSPlayerName(x.playerName),
       position:x.position,
       points:x.points
     }));
