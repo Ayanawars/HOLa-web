@@ -19,13 +19,13 @@ pl:{name:"Polski",back:"← Administracja",guard:"Sprawdzanie dostępu R4/R5…"
 const EXAMPLE_LABELS={
 es:{example:"Ejemplo",close:"Cerrar",alt:"Ejemplo de captura recortada del ranking"},en:{example:"Example",close:"Close",alt:"Example of a cropped ranking screenshot"},fr:{example:"Exemple",close:"Fermer",alt:"Exemple de capture recadrée du classement"},de:{example:"Beispiel",close:"Schließen",alt:"Beispiel eines zugeschnittenen Ranglisten-Screenshots"},ro:{example:"Exemplu",close:"Închide",alt:"Exemplu de captură decupată a clasamentului"},pt:{example:"Exemplo",close:"Fechar",alt:"Exemplo de captura recortada do ranking"},uk:{example:"Приклад",close:"Закрити",alt:"Приклад обрізаного знімка рейтингу"},it:{example:"Esempio",close:"Chiudi",alt:"Esempio di schermata ritagliata della classifica"},pl:{example:"Przykład",close:"Zamknij",alt:"Przykład przyciętego zrzutu rankingu"}};
 const FLAGS={es:"🇪🇸",en:"🇬🇧",fr:"🇫🇷",de:"🇩🇪",ro:"🇷🇴",pt:"🇵🇹",uk:"🇺🇦",it:"🇮🇹",pl:"🇵🇱"};
-let lang=I18N[localStorage.getItem("hola-language")]?localStorage.getItem("hola-language"):(I18N[(navigator.language||"es").slice(0,2)]?(navigator.language||"es").slice(0,2):"es");
-function tr(key,vars={}){let s=(I18N[lang]||I18N.es)[key]||I18N.es[key]||key;for(const [k,v] of Object.entries(vars))s=s.replaceAll("{"+k+"}",v);return s}
+let lang=I18N[localStorage.getItem("hola-language")]?localStorage.getItem("hola-language"):(I18N[(navigator.language||"en").slice(0,2)]?(navigator.language||"en").slice(0,2):"en");
+function tr(key,vars={}){let s=(I18N[lang]||I18N.en)[key]||I18N.en[key]||key;for(const [k,v] of Object.entries(vars))s=s.replaceAll("{"+k+"}",v);return s}
 function applyLanguage(){
  document.documentElement.lang=lang;document.title="HOLa · "+tr("title");
  const map={guardText:"guard",guardHint:"guardHint",titleText:"title",introText:"intro",weekLabel:"week",shotsLabel:"shot",read:"read",reviewTitle:"review",reviewHint:"reviewHint",save:"publish"};
  for(const [id,key] of Object.entries(map)){const el=document.getElementById(id);if(el)el.textContent=tr(key)}
- const ex=EXAMPLE_LABELS[lang]||EXAMPLE_LABELS.es;document.getElementById("exampleBtn").textContent=ex.example;document.getElementById("exampleClose").textContent=ex.close;document.querySelector("#exampleModal img").alt=ex.alt;
+ const ex=EXAMPLE_LABELS[lang]||EXAMPLE_LABELS.en;document.getElementById("exampleBtn").textContent=ex.example;document.getElementById("exampleClose").textContent=ex.close;document.querySelector("#exampleModal img").alt=ex.alt;
  makeRows();fillSundays();status(tr("manual"));
 }
 function setupLanguage(){
