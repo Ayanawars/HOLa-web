@@ -527,7 +527,8 @@ const $ = id => document.getElementById(id);
 
 let team = "B";
 let battleDate = new Date().toISOString().slice(0,10);
-let detected = [];\nlet dsV2Debug=[];
+let detected = [];
+let dsV2Debug=[];
 
 $("participantDate").value = battleDate;
 
@@ -1134,7 +1135,8 @@ async function ocrImage(file){
   // Azure checks the same image independently and recovers rows missed locally.
   try{azure=await dsAzureOCR(cropped);}catch(e){azureError=e;}
   const azureRead=azure?dsV2Read(azure,registered):{rows:[],warnings:[]};
-  dsV2Debug.push(...(localRead.debug||[]),...(azureRead.debug||[]));\n  const localByName=new Map(localRead.rows.map(r=>[norm(r.name),r]));
+  dsV2Debug.push(...(localRead.debug||[]),...(azureRead.debug||[]));
+  const localByName=new Map(localRead.rows.map(r=>[norm(r.name),r]));
   const azureByName=new Map(azureRead.rows.map(r=>[norm(r.name),r]));
   const rows=[],warnings=[],conflicts=[];
   for(const name of registered){
@@ -1210,6 +1212,7 @@ function dsV2ShowDiagnostics(){
 }
 function renderResults(){
   refreshManualScorePlayers();
+  dsV2ShowDiagnostics();
   const registered=participants();
   const present=new Set(detected.filter(r=>r.playerName).map(r=>norm(r.playerName)));
   const absent=registered.filter(name=>!present.has(norm(name)));
@@ -1264,6 +1267,7 @@ async function runOCR(){
 
   $("ocrStatus").className="status";
   detected=[];
+  dsV2Debug=[];
   let allTimes=[];
   const ocrErrors=[];
   try{
