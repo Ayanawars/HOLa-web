@@ -527,7 +527,7 @@ const $ = id => document.getElementById(id);
 
 let team = "B";
 let battleDate = new Date().toISOString().slice(0,10);
-let detected = [];
+let detected = [];\nlet dsV2Debug=[];
 
 $("participantDate").value = battleDate;
 
@@ -1134,7 +1134,7 @@ async function ocrImage(file){
   // Azure checks the same image independently and recovers rows missed locally.
   try{azure=await dsAzureOCR(cropped);}catch(e){azureError=e;}
   const azureRead=azure?dsV2Read(azure,registered):{rows:[],warnings:[]};
-  const localByName=new Map(localRead.rows.map(r=>[norm(r.name),r]));
+  dsV2Debug.push(...(localRead.debug||[]),...(azureRead.debug||[]));\n  const localByName=new Map(localRead.rows.map(r=>[norm(r.name),r]));
   const azureByName=new Map(azureRead.rows.map(r=>[norm(r.name),r]));
   const rows=[],warnings=[],conflicts=[];
   for(const name of registered){
@@ -1194,6 +1194,20 @@ $("scoresAddBtn").addEventListener("click",()=>{
   $("scoresManualInfo").textContent="✓ "+name+": "+points.toLocaleString("es-ES")+" puntos preparados. Pulsa GUARDAR EN SUPABASE para guardarlos.";
   $("saveStatus").textContent="Hay cambios manuales pendientes de guardar.";
 });
+function dsV2ShowDiagnostics(){
+  let el=$("dsV2Diagnostics");
+  if(!el){el=document.createElement("details");el.id="dsV2Diagnostics";
+    el.style.cssText="margin:16px 0;padding:12px;border:1px solid #00d2ed;border-radius:12px;overflow:auto";
+    $("resultsBox").insertAdjacentElement("afterend",el);}
+  const relevant=dsV2Debug.filter(x=>/jeb|raw|1723|1.?723/i.test(x.text)||x.score===1723156);
+  const lines=relevant.length?relevant:dsV2Debug;
+  el.innerHTML="<summary>DIAGNÓSTICO OCR V2 · "+dsV2Debug.length+" líneas (local y Azure)</summary>"+
+    "<p>Lectura literal de cada motor. No se guarda en Supabase.</p>"+
+    '<div style="max-height:330px;overflow:auto"><table><thead><tr><th>Motor</th><th>Y</th><th>Texto leído</th><th>Asignación</th><th>Puntos</th></tr></thead><tbody>'+
+    lines.map(x=>"<tr><td>"+escapeHtml(x.engine)+"</td><td>"+x.y+"</td><td>"+escapeHtml(x.text)+
+      "</td><td>"+escapeHtml(x.match)+"</td><td>"+(x.score===null?"—":x.score)+"</td></tr>").join("")+
+    "</tbody></table></div>";
+}
 function renderResults(){
   refreshManualScorePlayers();
   const registered=participants();
