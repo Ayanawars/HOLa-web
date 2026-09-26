@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#d9b35f">
+  <title>HOLa — Exportar encuesta</title>
+  <style>
+    :root{--cream:#fffaf0;--navy:#103f69;--blue:#19a8db;--gold:#d5a832;--ink:#183b5c;--muted:#65788c;--danger:#a83e43;--ok:#167e6d}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+    body{background:linear-gradient(180deg,#81d9ef 0,#f7e1ad 39%,#f1d9a3 100%);padding:max(14px,env(safe-area-inset-top)) 12px max(22px,env(safe-area-inset-bottom))}
+    body:before{content:"";position:fixed;inset:0;z-index:-2;background:linear-gradient(rgba(255,255,255,.08),rgba(255,247,226,.45)),url('hola-s3-background-square.png') center top/cover no-repeat;filter:saturate(.82);opacity:.7}
+    body:after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(25,126,177,.17),rgba(252,239,203,.7) 42%,rgba(241,217,163,.95))}
+    .shell{width:min(100%,780px);margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .round{width:44px;height:44px;border:1px solid rgba(208,163,56,.65);border-radius:50%;background:rgba(255,250,240,.92);display:grid;place-items:center;color:var(--navy);box-shadow:0 7px 20px rgba(86,55,10,.13);text-decoration:none;font-size:23px}
+    .panel{background:rgba(255,250,240,.97);border:1px solid rgba(205,161,53,.72);border-radius:26px;box-shadow:0 17px 42px rgba(105,71,14,.16),inset 0 0 0 5px rgba(255,255,255,.35);padding:22px}
+    .kicker{color:#a97617;font-size:10px;letter-spacing:.2em;font-weight:900;text-transform:uppercase}.title{font-family:Georgia,"Times New Roman",serif;color:var(--navy);font-size:29px;margin:5px 0 8px}.sub{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.stat{padding:14px 8px;text-align:center;border-radius:16px;background:#fffdf7;border:1px solid rgba(213,168,50,.34)}.stat b{display:block;color:var(--navy);font-size:22px}.stat span{display:block;margin-top:3px;color:#748291;font-size:9px;font-weight:900;text-transform:uppercase}
+    .columns{padding:14px;border-radius:16px;background:#f1fbff;border:1px solid rgba(25,168,219,.28);font-size:12px;line-height:1.65;color:var(--muted)}.columns strong{color:var(--navy)}
+    .download{width:100%;min-height:54px;margin-top:16px;border:0;border-radius:16px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:white;font-weight:900;font-size:15px;box-shadow:0 9px 22px rgba(10,143,199,.24);cursor:pointer}.download:disabled{opacity:.55;cursor:wait}
+    .status{min-height:20px;margin:12px 2px 0;text-align:center;color:var(--muted);font-size:12px}.status.error{color:var(--danger)}.status.ok{color:var(--ok)}
+    .guard{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:linear-gradient(180deg,#9bdbef,#f0d69e);color:var(--navy);text-align:center;padding:25px}.guard[hidden]{display:none}.spinner{width:48px;height:48px;margin:0 auto 12px;border:5px solid rgba(16,63,105,.16);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:520px){.panel{padding:19px 15px}.title{font-size:26px}.summary{gap:6px}.stat b{font-size:19px}}
+  </style>
+</head>
+<body>
+  <div class="guard" id="guard"><div><div class="spinner"></div><strong id="checking">Comprobando acceso R4/R5…</strong></div></div>
+  <main class="shell" id="app" hidden>
+    <div class="topbar"><a class="round" href="admin-center-hola_login.html" id="back" aria-label="Volver">‹</a></div>
+    <section class="panel">
+      <div class="kicker" id="kicker">DATOS DE LA ENCUESTA</div>
+      <h1 class="title" id="title">Exportar a Excel</h1>
+      <p class="sub" id="intro">Genera un archivo con todos los miembros, ordenado de mayor a menor THP.</p>
+      <div class="summary">
+        <div class="stat"><b id="memberCount">—</b><span id="membersLabel">Miembros</span></div>
+        <div class="stat"><b id="surveyCount">—</b><span id="surveysLabel">Encuestas</span></div>
+        <div class="stat"><b>THP ↓</b><span id="orderLabel">Orden</span></div>
+      </div>
+      <div class="columns"><strong id="columnsTitle">Columnas incluidas:</strong> <span id="columnsText">Nombre, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Profesión, Activo y Fecha.</span></div>
+      <button class="download" id="downloadBtn" type="button" disabled>DESCARGAR EXCEL</button>
+      <div class="status" id="status"></div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
+    const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+    const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const $=id=>document.getElementById(id);
+    const translations={
+      es:{checking:'Comprobando acceso R4/R5…',kicker:'DATOS DE LA ENCUESTA',title:'Exportar a Excel',intro:'Genera un archivo con todos los miembros, ordenado de mayor a menor THP.',members:'Miembros',surveys:'Encuestas',order:'Orden',columnsTitle:'Columnas incluidas:',columns:'Nombre, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Profesión, Activo y Fecha.',download:'DESCARGAR EXCEL',loading:'Cargando datos…',ready:n=>n+' miembros preparados.',working:'Creando archivo Excel…',done:'Excel descargado correctamente.',error:'No se pudieron cargar los datos.',library:'No se pudo cargar el generador de Excel.',yes:'Sí',no:'No',active:'Activo',date:'Fecha'},
+      en:{checking:'Checking R4/R5 access…',kicker:'SURVEY DATA',title:'Export to Excel',intro:'Generate a file with all members, sorted from highest to lowest THP.',members:'Members',surveys:'Surveys',order:'Order',columnsTitle:'Included columns:',columns:'Name, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Profession, Active and Date.',download:'DOWNLOAD EXCEL',loading:'Loading data…',ready:n=>n+' members ready.',working:'Creating Excel file…',done:'Excel downloaded successfully.',error:'Could not load the data.',library:'The Excel generator could not be loaded.',yes:'Yes',no:'No',active:'Active',date:'Date'},
+      fr:{checking:'Vérification de l’accès R4/R5…',kicker:'DONNÉES DU SONDAGE',title:'Exporter vers Excel',intro:'Générez un fichier avec tous les membres, classés par THP décroissant.',members:'Membres',surveys:'Enquêtes',order:'Ordre',columnsTitle:'Colonnes incluses :',columns:'Nom, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, QG, Profession, Actif et Date.',download:'TÉLÉCHARGER EXCEL',loading:'Chargement des données…',ready:n=>n+' membres prêts.',working:'Création du fichier Excel…',done:'Excel téléchargé.',error:'Impossible de charger les données.',library:'Le générateur Excel n’a pas pu être chargé.',yes:'Oui',no:'Non',active:'Actif',date:'Date'},
+      de:{checking:'R4/R5-Zugriff wird geprüft…',kicker:'UMFRAGEDATEN',title:'Nach Excel exportieren',intro:'Erstellt eine nach THP absteigend sortierte Datei aller Mitglieder.',members:'Mitglieder',surveys:'Umfragen',order:'Sortierung',columnsTitle:'Enthaltene Spalten:',columns:'Name, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Beruf, Aktiv und Datum.',download:'EXCEL HERUNTERLADEN',loading:'Daten werden geladen…',ready:n=>n+' Mitglieder bereit.',working:'Excel-Datei wird erstellt…',done:'Excel wurde heruntergeladen.',error:'Daten konnten nicht geladen werden.',library:'Der Excel-Generator konnte nicht geladen werden.',yes:'Ja',no:'Nein',active:'Aktiv',date:'Datum'},
+      ro:{checking:'Se verifică accesul R4/R5…',kicker:'DATELE SONDAJULUI',title:'Exportă în Excel',intro:'Generează un fișier cu toți membrii, ordonați descrescător după THP.',members:'Membri',surveys:'Sondaje',order:'Ordine',columnsTitle:'Coloane incluse:',columns:'Nume, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Profesie, Activ și Dată.',download:'DESCARCĂ EXCEL',loading:'Se încarcă datele…',ready:n=>n+' membri pregătiți.',working:'Se creează fișierul Excel…',done:'Fișier Excel descărcat.',error:'Datele nu au putut fi încărcate.',library:'Generatorul Excel nu a putut fi încărcat.',yes:'Da',no:'Nu',active:'Activ',date:'Dată'},
+      pt:{checking:'A verificar acesso R4/R5…',kicker:'DADOS DO INQUÉRITO',title:'Exportar para Excel',intro:'Gera um ficheiro com todos os membros, ordenado por THP decrescente.',members:'Membros',surveys:'Inquéritos',order:'Ordem',columnsTitle:'Colunas incluídas:',columns:'Nome, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Profissão, Ativo e Data.',download:'DESCARREGAR EXCEL',loading:'A carregar dados…',ready:n=>n+' membros preparados.',working:'A criar o ficheiro Excel…',done:'Excel descarregado.',error:'Não foi possível carregar os dados.',library:'Não foi possível carregar o gerador de Excel.',yes:'Sim',no:'Não',active:'Ativo',date:'Data'},
+      uk:{checking:'Перевірка доступу R4/R5…',kicker:'ДАНІ ОПИТУВАННЯ',title:'Експорт в Excel',intro:'Створює файл з усіма учасниками, відсортований за спаданням THP.',members:'Учасники',surveys:'Опитування',order:'Порядок',columnsTitle:'Включені стовпці:',columns:'Ім’я, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Професія, Активний і Дата.',download:'ЗАВАНТАЖИТИ EXCEL',loading:'Завантаження даних…',ready:n=>n+' учасників готово.',working:'Створення Excel…',done:'Excel завантажено.',error:'Не вдалося завантажити дані.',library:'Не вдалося завантажити генератор Excel.',yes:'Так',no:'Ні',active:'Активний',date:'Дата'},
+      it:{checking:'Verifica accesso R4/R5…',kicker:'DATI DEL SONDAGGIO',title:'Esporta in Excel',intro:'Genera un file con tutti i membri, ordinato per THP decrescente.',members:'Membri',surveys:'Sondaggi',order:'Ordine',columnsTitle:'Colonne incluse:',columns:'Nome, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Professione, Attivo e Data.',download:'SCARICA EXCEL',loading:'Caricamento dati…',ready:n=>n+' membri pronti.',working:'Creazione del file Excel…',done:'Excel scaricato.',error:'Impossibile caricare i dati.',library:'Impossibile caricare il generatore Excel.',yes:'Sì',no:'No',active:'Attivo',date:'Data'},
+      pl:{checking:'Sprawdzanie dostępu R4/R5…',kicker:'DANE ANKIETY',title:'Eksportuj do Excela',intro:'Tworzy plik ze wszystkimi członkami, posortowany malejąco według THP.',members:'Członkowie',surveys:'Ankiety',order:'Kolejność',columnsTitle:'Zawarte kolumny:',columns:'Nazwa, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Profesja, Aktywny i Data.',download:'POBIERZ EXCEL',loading:'Ładowanie danych…',ready:n=>n+' członków gotowych.',working:'Tworzenie pliku Excel…',done:'Excel został pobrany.',error:'Nie udało się wczytać danych.',library:'Nie udało się załadować generatora Excel.',yes:'Tak',no:'Nie',active:'Aktywny',date:'Data'},
+      tr:{checking:'R4/R5 erişimi kontrol ediliyor…',kicker:'ANKET VERİLERİ',title:'Excel’e aktar',intro:'Tüm üyeleri THP’ye göre azalan sırada içeren bir dosya oluşturur.',members:'Üyeler',surveys:'Anketler',order:'Sıralama',columnsTitle:'Dahil edilen sütunlar:',columns:'Ad, THP, Squad 1, Squad 2, Squad 3, T10, Overlord, HQ, Meslek, Aktif ve Tarih.',download:'EXCEL İNDİR',loading:'Veriler yükleniyor…',ready:n=>n+' üye hazır.',working:'Excel dosyası oluşturuluyor…',done:'Excel indirildi.',error:'Veriler yüklenemedi.',library:'Excel oluşturucu yüklenemedi.',yes:'Evet',no:'Hayır',active:'Aktif',date:'Tarih'}
+    };
+    const supported=Object.keys(translations);
+    const detected=(navigator.language||'en').slice(0,2).toLowerCase();
+    const lang=supported.includes(localStorage.getItem('hola-language'))?localStorage.getItem('hola-language'):(supported.includes(detected)?detected:'en');
+    const t=translations[lang]||translations.en;
+    document.documentElement.lang=lang;
+    for(const [id,key] of [['checking','checking'],['kicker','kicker'],['title','title'],['intro','intro'],['membersLabel','members'],['surveysLabel','surveys'],['orderLabel','order'],['columnsTitle','columnsTitle'],['columnsText','columns'],['downloadBtn','download']])$(id).textContent=t[key];
+    let players=[];
+    const normalizeName=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+    const numeric=value=>{const raw=String(value??'').trim().toUpperCase().replace(/\s/g,'').replace(',','.');const match=raw.match(/-?\d+(?:\.\d+)?/);if(!match)return 0;const n=Number(match[0]);return Number.isFinite(n)?n*(raw.includes('B')?1e9:raw.includes('M')?1e6:raw.includes('K')?1e3:1):0;};
+    const formatPower=value=>{const n=numeric(value);return n?Math.round(n):'';};
+    const squad=(type,power)=>[type||'',power?formatPower(power):''].filter(Boolean).join(' · ');
+    const date=value=>value?new Intl.DateTimeFormat(lang,{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value)):'';
+    async function deny(){await sb.auth.signOut().catch(()=>{});location.replace('admin-login.html');}
+    async function verify(){
+      const {data:{session},error}=await sb.auth.getSession();if(error||!session?.user)return false;
+      const {data:admin,error:adminErr}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(adminErr||!admin)return false;
+      const {data:officer,error:officerErr}=await sb.from('players').select('name,rank').in('rank',['R4','R5']);if(officerErr)return false;
+      return officer.some(p=>normalizeName(p.name)===normalizeName(admin.display_name));
+    }
+    async function load(){
+      $('status').textContent=t.loading;
+      const fields='name,thp,squad1_type,squad1_power,squad2_type,squad2_power,squad3_type,squad3_power,t10,supreme_lord_unlocked,hq_level,profession,survey_completed,survey_completed_at,updated_at,created_at';
+      const {data,error}=await sb.from('players').select(fields);
+      if(error)throw error;
+      players=(data||[]).sort((a,b)=>numeric(b.thp)-numeric(a.thp)||String(a.name).localeCompare(String(b.name),lang));
+      $('memberCount').textContent=players.length;
+      $('surveyCount').textContent=players.filter(p=>p.survey_completed===true).length;
+      $('downloadBtn').disabled=false;$('status').className='status ok';$('status').textContent=t.ready(players.length);
+    }
+    function download(){
+      if(!window.XLSX){$('status').className='status error';$('status').textContent=t.library;return;}
+      $('downloadBtn').disabled=true;$('status').className='status';$('status').textContent=t.working;
+      const rows=players.map(p=>({
+        'Nombre':p.name||'','THP':formatPower(p.thp),
+        'Squad 1':squad(p.squad1_type,p.squad1_power),'Squad 2':squad(p.squad2_type,p.squad2_power),'Squad 3':squad(p.squad3_type,p.squad3_power),
+        'T10':p.t10?t.yes:t.no,'Overlord':p.supreme_lord_unlocked?t.yes:t.no,'HQ':p.hq_level??'','Profesión':p.profession||'',
+        [t.active]:t.yes,[t.date]:date(p.updated_at||p.survey_completed_at||p.created_at)
+      }));
+      const ws=XLSX.utils.json_to_sheet(rows);
+      ws['!cols']=[{wch:25},{wch:15},{wch:25},{wch:25},{wch:25},{wch:10},{wch:12},{wch:8},{wch:20},{wch:10},{wch:14}];
+      ws['!autofilter']={ref:ws['!ref']};
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Miembros');
+      const stamp=new Date().toISOString().slice(0,10);XLSX.writeFile(wb,'HOLa_encuesta_'+stamp+'.xlsx',{compression:true});
+      $('downloadBtn').disabled=false;$('status').className='status ok';$('status').textContent=t.done;
+    }
+    $('downloadBtn').addEventListener('click',download);
+    if(await verify()){try{await load();$('guard').hidden=true;$('app').hidden=false;}catch(err){console.error(err);$('guard').hidden=true;$('app').hidden=false;$('status').className='status error';$('status').textContent=t.error;}}else await deny();
+  </script>
+</body>
+</html>
