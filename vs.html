@@ -1259,6 +1259,15 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
 .compliance-modal-content .compliance-days{gap:7px!important}.compliance-modal-content .compliance-day{padding:10px 3px!important}
 @media(max-width:600px){.compliance-modal{padding:0;align-items:stretch}.compliance-modal-panel{width:100%;height:100dvh;max-height:100dvh;border-radius:0;border-left:0;border-right:0}.compliance-modal-head{padding:19px 15px 13px}.compliance-modal-content{padding:12px 10px 28px}.compliance-modal-content .compliance-player{padding:11px!important}}
 </style>
+<style id="vs-compliance-red-contrast">
+/* Rojo de incumplimiento visible sobre los paneles azul noche. */
+.compliance-modal-content .compliance-day.bad,
+#participationCompliance .compliance-day.bad{background:linear-gradient(160deg,#5d202d,#3a1927)!important;border:1px solid #ff817e!important;box-shadow:inset 0 0 0 1px #ffaaa433,0 0 13px #ff565b24!important}
+.compliance-modal-content .compliance-day.bad b,
+#participationCompliance .compliance-day.bad b{color:#ff555e!important;font-size:28px!important;text-shadow:0 0 2px #fff2e7,0 0 10px #ff555e88!important}
+.compliance-modal-content .compliance-day.bad span,
+.compliance-modal-content .compliance-day.bad small{color:#ffe1dd!important;font-weight:800!important}
+</style>
 </head>
   <body>
     <header class="head">
