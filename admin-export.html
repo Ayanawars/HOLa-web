@@ -68,7 +68,7 @@
     for(const [id,key] of [['checking','checking'],['kicker','kicker'],['title','title'],['intro','intro'],['membersLabel','members'],['surveysLabel','surveys'],['orderLabel','order'],['columnsTitle','columnsTitle'],['columnsText','columns'],['downloadBtn','download']])$(id).textContent=t[key];
     let players=[];
     const normalizeName=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-    const numeric=value=>{const raw=String(value??'').trim().toUpperCase().replace(/\s/g,'').replace(',','.');const match=raw.match(/-?\d+(?:\.\d+)?/);if(!match)return 0;const n=Number(match[0]);return Number.isFinite(n)?n*(raw.includes('B')?1e9:raw.includes('M')?1e6:raw.includes('K')?1e3:1):0;};
+    const numeric=value=>{let raw=String(value??'').trim().toUpperCase().replace(/\s/g,'');const suffix=raw.includes('B')?'B':raw.includes('M')?'M':raw.includes('K')?'K':'';raw=raw.replace(/[^0-9.,-]/g,'');const separators=(raw.match(/[.,]/g)||[]).length;if(separators>1)raw=raw.replace(/[.,]/g,'');else raw=raw.replace(',','.');const n=Number(raw);if(!Number.isFinite(n))return 0;const factor=suffix==='B'?1e9:suffix==='M'?1e6:suffix==='K'?1e3:(Math.abs(n)>0&&Math.abs(n)<1000?1e6:1);return n*factor;};
     const formatPower=value=>{const n=numeric(value);return n?Math.round(n):'';};
     const squad=(type,power)=>[type||'',power?formatPower(power):''].filter(Boolean).join(' · ');
     const date=value=>value?new Intl.DateTimeFormat(lang,{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value)):'';
