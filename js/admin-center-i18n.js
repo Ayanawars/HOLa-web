@@ -26,7 +26,7 @@ const targets={
  scores:'.module[href="ds-scores.html"] strong',scoresInfo:'.module[href="ds-scores.html"] small',
  exportData:'.module[href="admin-export.html"] strong',exportDataInfo:'.module[href="admin-export.html"] small',
  audit:'.module[href="admin-audit.html"] strong',auditInfo:'.module[href="admin-audit.html"] small',
- train:".module.disabled strong",trainInfo:".module.disabled small",
+ train:'.module[href="train.html"] strong',trainInfo:'.module[href="train.html"] small',
  signout:"#logoutBtn"
 };
 function apply(){
@@ -34,7 +34,7 @@ function apply(){
  document.documentElement.lang=lang;document.title="HOLa — "+l.title;
  for(const [key,sel] of Object.entries(targets)){const el=$(sel);if(el)el.textContent=l[key];}
  const modules=[...document.querySelectorAll(".module:not(.disabled)")];
- for(const item of modules){const tag=item.querySelector(".tag");if(tag)tag.textContent=item.matches('[href="ds-builder.html"],[href="admin-thp.html"],[href="admin-export.html"],[href="admin-audit.html"]')?l.new:l.active;}
+ for(const item of modules){const tag=item.querySelector(".tag");if(tag)tag.textContent=item.matches('[href="ds-builder.html"],[href="admin-thp.html"],[href="admin-export.html"],[href="admin-audit.html"],[href="train.html"]')?l.new:l.active;}
  const pending=$(".module.disabled .tag");if(pending)pending.textContent=l.coming;
  const back=$(".topbar a.round");if(back)back.setAttribute("aria-label",l.back);
  const exit=$("#logoutTop");if(exit)exit.setAttribute("aria-label",l.logout);
