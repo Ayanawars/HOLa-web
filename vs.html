@@ -1074,7 +1074,12 @@
 .compliance-day small{font-size:clamp(8px,2vw,11px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .compliance-week-total{margin-top:9px;font-size:12px;color:#36516b}
 </style>
-</head>
+<style id="participation-compliance-alignment">
+.participation-compliance-counts{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px!important}
+.participation-compliance-counts span{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:5px;min-height:65px;padding:8px 4px!important;font-size:clamp(9px,2.3vw,12px)!important;line-height:1.25}
+.participation-compliance-counts span b{font-size:20px;color:#24445b}
+#participationCompliance>details>summary{display:flex;align-items:center;min-height:44px;padding:10px 4px;font-size:13px;letter-spacing:.3px}
+</style></head>
   <body>
     <header class="head">
       <div class="headin">
@@ -1416,9 +1421,9 @@
           '</p><div class="participation-compliance-counts"><span>✓ ' + passed.length +
           ' cumplen</span><span>✕ ' + failed.length + ' no cumplen</span><span>⏳ ' +
           pending.length + ' pendientes</span></div>' +
-          complianceBox("Ver quienes cumplen",passed,false) +
-          complianceBox("Ver quienes no cumplen",failed,true) +
-          complianceBox("Ver pendientes",pending,false);
+          complianceBox("CUMPLEN",passed,false) +
+          complianceBox("NO CUMPLIERON",failed,true) +
+          complianceBox("PENDIENTES",pending,false);
 
       }
       function compliance(rows) {
