@@ -1060,6 +1060,20 @@
 .participation-compliance-counts span{padding:8px 10px;background:#fff9e9;border:1px solid #e3d2ab;border-radius:9px;font-weight:800;font-size:12px}
 .participation-panel details{border-top:1px solid #e3d2ab;padding:10px 0;margin:0}
 </style>
+<style id="participation-compliance-days">
+.compliance-player-list{display:grid;gap:10px;padding:10px 0}
+.compliance-player{background:#fffaf0;border:1px solid #e1cc9b;border-radius:11px;padding:11px;min-width:0}
+.compliance-player-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:#24445b}
+.compliance-player-head b{overflow-wrap:anywhere}.compliance-player-head span{font-size:11px;color:#697783;white-space:nowrap}
+.compliance-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:10px}
+.compliance-day{text-align:center;border:1px solid #ded3bc;background:#f1eee7;border-radius:8px;padding:7px 2px;min-width:0}
+.compliance-day span,.compliance-day small{display:block;font-size:10px;color:#52677a}
+.compliance-day b{display:block;font-size:23px;line-height:1.15}
+.compliance-day.ok b{color:#269d63}.compliance-day.bad b{color:#d64c51}
+.compliance-day.saved b{color:#2985b5}.compliance-day.pending b{color:#9a9a9a}
+.compliance-day small{font-size:clamp(8px,2vw,11px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.compliance-week-total{margin-top:9px;font-size:12px;color:#36516b}
+</style>
 </head>
   <body>
     <header class="head">
@@ -1374,19 +1388,38 @@
           : days.reduce((sum,d) => sum + x.daily[d],0) === 7200000;
         const passed = eligible.filter(fulfills);
         const failed = eligible.filter(x => !fulfills(x));
-        const complianceBox = (label,items) => '<details><summary>' + label + ' (' + items.length +
-          ')</summary><div class="participation-names">' + (items.length
-            ? items.map(x => '<span>' + esc(x.name) + '</span>').join("")
-            : '<span>Ninguno</span>') + '</div></details>';
+        const dayIndicator = (x,d) => {
+          const saved = hasRecord(x,d);
+          const points = x.daily[d];
+          const status = !saved ? "pending" : isPush ? (points >= 7200000 ? "ok" : "bad") : "saved";
+          const text = !saved ? "Sin datos" : f(points) + " puntos";
+          const symbol = status === "ok" ? "●" : status === "bad" ? "●" : status === "saved" ? "●" : "○";
+          return '<div class="compliance-day ' + status + '" title="' + esc(dayNames[d] + ": " + text) +
+            '"><span>' + dayNames[d].slice(0,3) + '</span><b>' + symbol + '</b><small>' +
+            (saved ? f(points) : "—") + '</small></div>';
+        };
+        const complianceBox = (label,items,open) => '<details' + (open ? ' open' : '') +
+          '><summary>' + label + ' (' + items.length + ')</summary><div class="compliance-player-list">' +
+          (items.length ? items.map(x => {
+            const total5 = days.reduce((sum,d) => sum + x.daily[d],0);
+            const result = !days.every(d => hasRecord(x,d)) ? "Pendiente de datos"
+              : fulfills(x) ? "Cumple" : "No cumple";
+            return '<article class="compliance-player"><div class="compliance-player-head"><b>' +
+              esc(x.name) + '</b><span>' + result + '</span></div><div class="compliance-days">' +
+              days.map(d => dayIndicator(x,d)).join("") + '</div>' +
+              (!isPush ? '<div class="compliance-week-total">Total lunes-viernes: <b>' + f(total5) +
+                '</b> / 7,2M</div>' : '') + '</article>';
+          }).join("") : '<div class="participation-empty">Ninguno</div>') + '</div></details>';
         document.getElementById("participationCompliance").innerHTML =
-          '<p>' + (isPush ? 'Push: 7,2M diarios.' : 'Save: 7,2M semanales.') +
-          ' Se evalúan únicamente los resultados guardados de lunes a viernes.</p>' +
-          '<div class="participation-compliance-counts"><span>✓ ' + passed.length +
+          '<p>' + (isPush ? 'Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.'
+            : 'Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.') +
+          '</p><div class="participation-compliance-counts"><span>✓ ' + passed.length +
           ' cumplen</span><span>✕ ' + failed.length + ' no cumplen</span><span>⏳ ' +
           pending.length + ' pendientes</span></div>' +
-          complianceBox("Ver quienes cumplen",passed) +
-          complianceBox("Ver quienes no cumplen",failed) +
-          complianceBox("Ver pendientes",pending);
+          complianceBox("Ver quienes cumplen",passed,false) +
+          complianceBox("Ver quienes no cumplen",failed,true) +
+          complianceBox("Ver pendientes",pending,false);
+
       }
       function compliance(rows) {
         return rows.map((x) => {
