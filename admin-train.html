@@ -33,7 +33,7 @@
   </main>
   <script type="module">
     import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260927-1';
+    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260927-2';
     const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id),dayNames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],sourceNames={VS:'VS semanal',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
     let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[],settings:[]},schedule;
