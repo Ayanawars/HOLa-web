@@ -929,6 +929,7 @@
           [normName("Sinsiflex"), "sinsifeX ᓚᘏᗢ"],
           [normName("sinsifeX"), "sinsifeX ᓚᘏᗢ"],
           [normName("JEBRAWUU"), "JEBRAWW"],
+          [normName("JEBRAW"), "JEBRAW ᓚᘏᗢ"],
           [normName("Apocalipto"), "Apocallipto"],
         ]);
 
@@ -3285,6 +3286,15 @@
           const missing = memberNames.filter(
             (name) => !accepted.has(normName(name)),
           );
+          missing.forEach((name) => {
+            add(name, "");
+            const row = rows.lastElementChild;
+            row.style.cssText += ";border:2px solid #e4b548;border-radius:12px;padding:10px;margin:8px 0";
+            const note = document.createElement("div");
+            note.style.cssText = "color:#ffd986;font-size:12px;font-weight:700;margin:7px 0";
+            note.textContent = "⚠ Pendiente: introduce los puntos (escribe 0 si tiene cero).";
+            row.appendChild(note);
+          });
 
           ocrStatus.textContent =
             `✓ OCR completado: ${allFound.length}/${memberNames.length} miembros. ` +
@@ -3442,6 +3452,15 @@
             Number.isNaN(day)
           ) {
             throw new Error("Selecciona una fecha válida antes de guardar.");
+          }
+
+          const incomplete = [...rows.querySelectorAll(".score")].filter(
+            (r) => r.querySelector(".member-select")?.value && !r.querySelector(".p")?.value.trim(),
+          );
+          if (incomplete.length) {
+            incomplete[0].scrollIntoView({ behavior: "smooth", block: "center" });
+            incomplete[0].querySelector(".p")?.focus({ preventScroll: true });
+            throw new Error("Faltan " + incomplete.length + " puntuaciones. Escribe 0 expresamente si corresponde.");
           }
 
           const data = [...rows.children]
