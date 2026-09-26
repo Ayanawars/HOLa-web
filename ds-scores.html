@@ -1065,7 +1065,49 @@ async function ocrImage(file){
       azureError?"Azure no disponible: "+azureError.message:""].filter(Boolean).join(" · ")};
 }
 
+function refreshManualScorePlayers(){
+  const select=$("scoresManualPlayer");
+  const previous=select.value;
+  const names=participants();
+  select.innerHTML='<option value="">Selecciona un jugador</option>';
+  for(const name of names){
+    const option=document.createElement("option");
+    option.value=name;option.textContent=name;select.appendChild(option);
+  }
+  if(names.includes(previous))select.value=previous;
+  $("scoresAddBtn").disabled=!names.length;
+  $("scoresManualInfo").textContent=names.length
+    ?"Selecciona un jugador, introduce los puntos que aparecen en el juego y pulsa Añadir / actualizar."
+    :"Recupera una convocatoria para introducir scores.";
+}
+$("scoresAddBtn").addEventListener("click",()=>{
+  const name=$("scoresManualPlayer").value;
+  const raw=$("scoresManualPoints").value.trim().replace(/[.,\\s]/g,"");
+  if(!participants().includes(name)){
+    $("scoresManualInfo").textContent="Selecciona un jugador de la convocatoria.";return;
+  }
+  if(!/^\\d{1,12}$/.test(raw)){
+    $("scoresManualInfo").textContent="Introduce una puntuación válida, solo números.";return;
+  }
+  const points=Number(raw);
+  if(!Number.isSafeInteger(points)){
+    $("scoresManualInfo").textContent="La puntuación es demasiado grande.";return;
+  }
+  const existing=detected.find(row=>norm(row.playerName)===norm(name));
+  if(existing){
+    if(!confirm("¿Sustituir los puntos de "+name+" por "+points.toLocaleString("es-ES")+"?"))return;
+    existing.points=points;existing.ocrName=name+" (manual)";
+  }else{
+    detected.push({position:0,ocrName:name+" (manual)",playerName:name,points,captureTime:null});
+  }
+  detected.sort((a,b)=>b.points-a.points);
+  detected.forEach((row,index)=>row.position=index+1);
+  renderResults();
+  $("scoresManualInfo").textContent="✓ "+name+": "+points.toLocaleString("es-ES")+" puntos preparados. Pulsa GUARDAR EN SUPABASE para guardarlos.";
+  $("saveStatus").textContent="Hay cambios manuales pendientes de guardar.";
+});
 function renderResults(){
+  refreshManualScorePlayers();
   const registered=participants();
   const present=new Set(detected.filter(r=>r.playerName).map(r=>norm(r.playerName)));
   const absent=registered.filter(name=>!present.has(norm(name)));
