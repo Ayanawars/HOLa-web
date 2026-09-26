@@ -1242,7 +1242,14 @@
           </span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
-      </section>
+              <a class="quick-access__card" href="train.html" aria-label="Abrir tren" data-i18n-aria="openTrain">
+          <span class="quick-access__icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" focusable="false"><path d="M12 8h24v25H12z"></path><path d="M17 13h14v9H17z"></path><circle cx="18" cy="34" r="4"></circle><circle cx="30" cy="34" r="4"></circle><path d="M8 40h32M15 38l-4 5M33 38l4 5M8 28h4M36 28h4"></path></svg>
+          </span>
+          <span class="quick-access__copy"><strong class="quick-access__title" data-i18n="quickTrain">Tren</strong><span class="quick-access__subtitle" data-i18n="quickTrainSub">Conductor semanal</span></span>
+          <span class="quick-access__arrow" aria-hidden="true">›</span>
+        </a>
+</section>
     </main>
   </div>
 
@@ -1265,6 +1272,7 @@
     };
 
     for(const [code,words] of Object.entries({"es":{"donationsTitle":"Donaciones a tecnología","donationsTop":"TOP 7 SEMANAL","donationsEmpty":"Todavía no hay un ranking semanal publicado."},"en":{"donationsTitle":"Technology donations","donationsTop":"WEEKLY TOP 7","donationsEmpty":"No weekly ranking has been published yet."},"de":{"donationsTitle":"Technologiespenden","donationsTop":"WÖCHENTLICHE TOP 7","donationsEmpty":"Noch keine Wochenrangliste veröffentlicht."},"fr":{"donationsTitle":"Dons de technologie","donationsTop":"TOP 7 HEBDOMADAIRE","donationsEmpty":"Aucun classement hebdomadaire publié."},"ro":{"donationsTitle":"Donații pentru tehnologie","donationsTop":"TOP 7 SĂPTĂMÂNAL","donationsEmpty":"Nu există încă un clasament săptămânal."},"pt":{"donationsTitle":"Doações de tecnologia","donationsTop":"TOP 7 SEMANAL","donationsEmpty":"Ainda não foi publicada uma classificação semanal."},"uk":{"donationsTitle":"Пожертви на технології","donationsTop":"ТИЖНЕВИЙ ТОП 7","donationsEmpty":"Тижневий рейтинг ще не опубліковано."},"tr":{"donationsTitle":"Teknoloji bağışları","donationsTop":"HAFTALIK İLK 7","donationsEmpty":"Henüz haftalık sıralama yayımlanmadı."},"it":{"donationsTitle":"Donazioni tecnologiche","donationsTop":"TOP 7 SETTIMANALE","donationsEmpty":"Nessuna classifica settimanale pubblicata."},"pl":{"donationsTitle":"Darowizny na technologię","donationsTop":"TYGODNIOWE TOP 7","donationsEmpty":"Nie opublikowano jeszcze rankingu tygodniowego."}}))Object.assign(translations[code],words);
+    for(const [code,words] of Object.entries({"es":{"quickTrain":"Tren","quickTrainSub":"Conductor semanal","openTrain":"Abrir tren"},"en":{"quickTrain":"Train","quickTrainSub":"Weekly driver","openTrain":"Open train"},"fr":{"quickTrain":"Train","quickTrainSub":"Conducteur hebdomadaire","openTrain":"Ouvrir le train"},"de":{"quickTrain":"Zug","quickTrainSub":"Wöchentlicher Fahrer","openTrain":"Zug öffnen"},"ro":{"quickTrain":"Tren","quickTrainSub":"Conductor săptămânal","openTrain":"Deschide trenul"},"pt":{"quickTrain":"Comboio","quickTrainSub":"Condutor semanal","openTrain":"Abrir comboio"},"uk":{"quickTrain":"Потяг","quickTrainSub":"Щотижневий водій","openTrain":"Відкрити потяг"},"it":{"quickTrain":"Treno","quickTrainSub":"Conducente settimanale","openTrain":"Apri treno"},"pl":{"quickTrain":"Pociąg","quickTrainSub":"Cotygodniowy kierowca","openTrain":"Otwórz pociąg"},"tr":{"quickTrain":"Tren","quickTrainSub":"Haftalık sürücü","openTrain":"Treni aç"}}))Object.assign(translations[code],words);
     const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
 
