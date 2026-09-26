@@ -1027,7 +1027,26 @@
         .card b,.card small,.rr span,.rr b{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
       }
     </style>
-  </head>
+  <style id="participation-dashboard-style">
+.participation-dashboard{display:grid;gap:15px;margin:14px 0 28px;color:#24445b}
+.participation-intro{font-weight:700;color:#ead09b}
+.participation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.participation-card,.participation-panel{background:linear-gradient(135deg,#fffdf6,#f7e8c3);border:1px solid #d8b971;border-radius:15px;padding:16px;box-shadow:0 8px 22px #2e230c20;min-width:0}
+.participation-card strong{display:block;font-size:clamp(23px,5vw,34px);color:#183e5a;margin:7px 0}
+.participation-card .pc-label{font-size:13px;font-weight:900;color:#775b27}
+.participation-card details{margin-top:12px;border-top:1px solid #dbc99c;padding-top:10px}
+.participation-card summary,.participation-panel summary{cursor:pointer;font-weight:800;color:#17618a}
+.participation-names{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.participation-names span{padding:6px 9px;background:#ffffffb8;border:1px solid #e4d2a6;border-radius:8px;font-size:12px;overflow-wrap:anywhere}
+.participation-panel h3{margin:0 0 8px;color:#24445b}
+.participation-panel p{font-size:13px;color:#66717a;margin:0 0 15px}
+.participation-day{margin:13px 0}.participation-day-head{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800}
+.participation-track{height:13px;border-radius:20px;background:#e6d9b8;overflow:hidden;margin:7px 0}
+.participation-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#249eaa,#37b67c)}
+.participation-panel details{margin-top:10px}
+@media(min-width:760px){.participation-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
   <body>
     <header class="head">
       <div class="headin">
@@ -1104,36 +1123,19 @@
         </div>
         <div id="ranking"><div class="empty">Cargando...</div></div>
       </section>
-      <h2>▌ PARTICIPACIÓN</h2>
-      <section class="parts">
-        <article class="box part">
-          <b id="six">—</b><span>6 DÍAS</span>
-          <details>
-            <summary>Ver nombres</summary>
-            <div class="names" id="sixN"></div>
-          </details>
-        </article>
-        <article class="box part">
-          <b id="five">—</b><span>4-5 DÍAS</span>
-          <details>
-            <summary>Ver nombres</summary>
-            <div class="names" id="fiveN"></div>
-          </details>
-        </article>
-        <article class="box part">
-          <b id="few">—</b><span>1-3 DÍAS</span>
-          <details>
-            <summary>Ver nombres</summary>
-            <div class="names" id="fewN"></div>
-          </details>
-        </article>
-        <article class="box part">
-          <b id="none">—</b><span>SIN PARTICIPACIÓN</span>
-          <details>
-            <summary>Ver nombres</summary>
-            <div class="names" id="noneN"></div>
-          </details>
-        </article>
+      <h2>▌ PARTICIPACIÓN VS</h2>
+      <section class="participation-dashboard">
+        <div class="participation-intro">Estadísticas de lunes a viernes · Semana seleccionada</div>
+        <div class="participation-grid" id="participationCards"></div>
+        <div class="participation-panel">
+          <h3>📊 Participación por día</h3>
+          <p>Miembros con puntos registrados en cada jornada.</p>
+          <div id="participationChart"></div>
+        </div>
+        <div class="participation-panel">
+          <h3>🎯 Cumplimiento VS</h3>
+          <div id="participationCompliance"></div>
+        </div>
       </section>
     </main>
     <div class="modal" id="statsModal">
@@ -1302,23 +1304,50 @@
               return top + rest;
             })()
           : '<div class="empty">Todavía no hay puntuaciones.</div>';
-        const c = { six: [], five: [], few: [], none: [] };
-        rows.forEach((x) =>
-          c[
-            x.days === 6
-              ? "six"
-              : x.days >= 4
-                ? "five"
-                : x.days
-                  ? "few"
-                  : "none"
-          ].push(x.name),
-        );
-        for (const k of Object.keys(c)) {
-          document.getElementById(k).textContent = c[k].length;
-          document.getElementById(k + "N").textContent =
-            c[k].join(" · ") || "—";
-        }
+        renderParticipation(rows);
+
+      }
+      function renderParticipation(rows) {
+        const days = [1, 2, 3, 4, 5];
+        const recorded = new Set(scores.filter(x => days.includes(Number(x.day))).map(x => key(x.player_name) + "|" + Number(x.day)));
+        const hasRecord = (x, d) => recorded.has(key(x.name) + "|" + d);
+        const categories = [
+          { label: "Miembros activos", icon: "👥", items: rows.filter(x => days.some(d => x.daily[d] > 0)) },
+          { label: "Participación completa", icon: "📅", items: rows.filter(x => days.every(d => x.daily[d] > 0)) },
+          { label: "Participación parcial", icon: "📈", items: rows.filter(x => { const n = days.filter(d => x.daily[d] > 0).length; return n >= 1 && n <= 4; }) },
+          { label: "Sin puntos registrados", icon: "👤", items: rows.filter(x => days.every(d => hasRecord(x,d) && x.daily[d] === 0)) }
+        ];
+        const names = items => items.length ? items.map(x => "<span>" + esc(x.name) + "</span>").join("") : "<span>Ninguno</span>";
+        document.getElementById("participationCards").innerHTML = categories.map(c =>
+          '<article class="participation-card"><div class="pc-label">' + c.icon + ' ' + c.label +
+          '</div><strong>' + c.items.length + (c.label === "Miembros activos" ? " / " + rows.length : "") +
+          '</strong><details><summary>Ver jugadores (' + c.items.length + ')</summary><div class="participation-names">' +
+          names(c.items) + '</div></details></article>'
+        ).join("");
+        const chart = document.getElementById("participationChart");
+        chart.innerHTML = days.map(d => {
+          const items = rows.filter(x => x.daily[d] > 0);
+          const pct = rows.length ? 100 * items.length / rows.length : 0;
+          return '<div class="participation-day"><div class="participation-day-head"><span>' + dayNames[d] +
+            '</span><span>' + items.length + ' / ' + rows.length + ' (' + Math.round(pct) +
+            '%)</span></div><div class="participation-track"><div class="participation-fill" style="width:' +
+            pct + '%"></div></div><details><summary>Ver jugadores</summary><div class="participation-names">' +
+            names(items) + '</div></details></div>';
+        }).join("");
+        const eligible = rows.filter(x => days.every(d => hasRecord(x,d)));
+        const pending = rows.filter(x => days.some(d => !hasRecord(x,d)));
+        const isPush = weekType === "push";
+        const fulfills = x => isPush
+          ? days.every(d => x.daily[d] >= 7200000)
+          : days.reduce((sum,d) => sum + x.daily[d],0) === 7200000;
+        const passed = eligible.filter(fulfills);
+        const failed = eligible.filter(x => !fulfills(x));
+        const box = (label, items) => '<details><summary>' + label + ' (' + items.length +
+          ')</summary><div class="participation-names">' + names(items) + '</div></details>';
+        document.getElementById("participationCompliance").innerHTML =
+          '<p>' + (isPush ? 'Push: objetivo diario de 7,2M.' : 'Save: objetivo semanal de 7,2M.') +
+          ' Solo se evalúan jugadores con resultados guardados de lunes a viernes.</p>' +
+          box("Cumplen", passed) + box("No cumplen", failed) + box("Pendientes de datos", pending);
       }
       function compliance(rows) {
         return rows.map((x) => {
