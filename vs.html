@@ -1268,16 +1268,7 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
 .compliance-modal-content .compliance-day.bad span,
 .compliance-modal-content .compliance-day.bad small{color:#ffe1dd!important;font-weight:800!important}
 </style>
-<style id="vs-header-language-top-fix">
-.head{overflow:visible!important;isolation:isolate!important}.head:before{z-index:-1!important}.headin{position:relative!important;align-self:stretch!important;display:block!important;width:100%!important;max-width:1080px!important;min-height:clamp(285px,32vh,470px)!important;margin:auto!important;padding:0!important}
-.head .desert-back{position:absolute!important;top:0!important;left:0!important;z-index:100!important;display:grid!important;place-items:center!important;width:46px!important;height:46px!important;margin:0!important;padding:0!important}
-.head .logo-area{position:absolute!important;top:0!important;right:0!important;z-index:110!important;min-width:0!important;width:auto!important;margin:0!important;padding:0!important}
-.head .translator-wrap{position:relative!important;z-index:111!important}.head .translator-btn{display:flex!important;align-items:center!important;justify-content:center!important;min-width:46px!important;height:46px!important;padding:7px 10px!important;border-radius:12px!important;font-size:13px!important}
-.head .translator-menu{position:absolute!important;top:calc(100% + 8px)!important;right:0!important;left:auto!important;transform:none!important;z-index:1000!important;min-width:184px!important;max-height:min(60vh,440px)!important;overflow-y:auto!important;background:#081d30!important;border:1px solid #d5a95c!important;box-shadow:0 15px 45px #000d!important}
-.head .translator-menu[hidden]{display:none!important}.head .translator-menu button{width:100%!important;padding:12px 13px!important;text-align:left!important;color:#f8e7bd!important;font-size:14px!important}.head .translator-menu button:hover,.head .translator-menu button[aria-current="true"]{background:#16445e!important;color:#fff!important}
-.head .title{position:absolute!important;left:50%!important;bottom:3px!important;transform:translateX(-50%)!important;width:min(100%,680px)!important;margin:0!important;padding:0 3px!important;z-index:2!important}
-@media(max-width:600px){.head{padding:10px 11px 20px!important}.headin{min-height:clamp(275px,32vh,385px)!important}.head .desert-back{width:43px!important;height:43px!important}.head .translator-btn{min-width:43px!important;height:43px!important}.head .title{bottom:0!important}}
-</style></head>
+</head>
   <body>
     <header class="head">
       <div class="headin">
@@ -1781,8 +1772,71 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
       async function load() {
         const vsDate = iso(selectedWeek);
         document.getElementById("weekRange").textContent =
-          `Semana ${rangeText(<script id="hola-translator-final">
-(()=> {
+          `Semana ${rangeText()}`;
+        let [a, b] = await Promise.all([
+          sb
+            .from("vs_scores")
+            .select("player_name,day,points,week_type,vs_date")
+            .eq("vs_date", vsDate)
+            .gte("day", 1)
+            .lte("day", 6),
+          sb.from("players").select("name"),
+        ]);
+        if (a.error) throw a.error;
+        if (b.error) console.warn(b.error);
+
+        // Al abrir, muestra directamente la última semana que sí tiene datos.
+        // Así no parece que el selector esté vacío cuando aún no hay resultados
+        // guardados para la semana actual.
+        if (!hasSelectedInitialWeek && !(a.data || []).length) {
+          const latest = await sb
+            .from("vs_scores")
+            .select("vs_date")
+            .order("vs_date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!latest.error && latest.data?.vs_date) {
+            selectedWeek = new Date(`${latest.data.vs_date}T12:00:00`);
+            hasSelectedInitialWeek = true;
+            return load();
+          }
+        }
+        hasSelectedInitialWeek = true;
+        scores = a.data || [];
+        players = b.data || [];
+        // Determina el tipo de semana por mayoría de registros, no por la
+        // primera fila devuelta por Supabase. Así la página pública no puede
+        // mostrar SAVE por una fila aislada o por un orden distinto de respuesta.
+        const pushCount = scores.filter((x) => x.week_type === "push").length;
+        const saveCount = scores.filter((x) => x.week_type === "save").length;
+        weekType = pushCount >= saveCount ? "push" : "save";
+
+        const publicWeekType = document.getElementById("weekTypePublic");
+        if (publicWeekType) {
+          publicWeekType.textContent =
+            weekType === "push" ? "🚀 SEMANA PUSH" : "🛡️ SEMANA SAVE";
+        }
+
+        buttons();
+        render();
+      }
+      load().catch((e) => {
+        console.error(e);
+        buttons();
+        render();
+        document.getElementById("ranking").innerHTML =
+          '<div class="empty">No se pudieron cargar los datos de Supabase.</div>';
+      });
+    </script>
+    <a
+      id="vs-admin-gear"
+      href="admin-vs.html"
+      aria-label="Administración VS"
+      title="Administración VS"
+      >⚙</a
+    >
+    <script id="hola-translator-final">
+      (() => {
         const T = {
           tr:{"Semana actual":"Geçerli hafta","PUNTOS TOTALES":"TOPLAM PUAN","selección actual":"mevcut seçim","PARTICIPANTES":"KATILIMCILAR","con puntos":"puan alan","MEJOR JUGADOR":"EN İYİ OYUNCU","sin datos":"veri yok","MEDIA":"ORTALAMA","por participante":"katılımcı başına","ESTADÍSTICAS DE LA SEMANA":"HAFTALIK İSTATİSTİKLER","Ranking, cumplimiento diario, participación y desglose completo.":"Sıralama, günlük hedefe uyum, katılım ve tüm ayrıntılar.","ABRIR ESTADÍSTICAS →":"İSTATİSTİKLERİ AÇ →","RANKING":"SIRALAMA","RANK":"SIRA","JUGADOR":"OYUNCU","PUNTOS":"PUAN","TOTAL":"TOPLAM","Lunes":"Pazartesi","Martes":"Salı","Miércoles":"Çarşamba","Jueves":"Perşembe","Viernes":"Cuma","Sábado":"Cumartesi","Resumen":"Özet","Cumplimiento":"Hedefe uyum","Incumplimientos":"Hedef dışı","Por día":"Günlere göre","Alianza":"İttifak","Cerrar":"Kapat","Ver nombres":"İsimleri göster","Todavía no hay puntuaciones.":"Henüz puan yok.","SEMANA PUSH":"PUSH HAFTASI","SEMANA SAVE":"SAVE HAFTASI","Puntos por día":"Günlük puanlar","MIEMBROS CON DATOS":"VERİSİ OLAN ÜYELER","TOTAL SUPABASE":"SUPABASE TOPLAMI","TOTAL SUPABASE DE TODOS LOS MIEMBROS":"TÜM ÜYELERİN SUPABASE TOPLAMI","Estadísticas":"İstatistikler","Estadísticas VS":"VS İstatistikleri","Semana ":"Hafta ","Rendimiento y participación de la alianza":"İttifakın performansı ve katılımı","No se pudieron cargar los datos de Supabase.":"Supabase verileri yüklenemedi.","Cargando...":"Yükleniyor...","PARTICIPACIÓN":"KATILIM","6 DÍAS":"6 GÜN","4-5 DÍAS":"4-5 GÜN","1-3 DÍAS":"1-3 GÜN","SIN PARTICIPACIÓN":"KATILIM YOK","SEMANA DE PUSH":"PUSH HAFTASI","SEMANA DE SAVE":"SAVE HAFTASI","TOTAL SUPABASE · SUMA DE LUNES A SÁBADO":"SUPABASE TOPLAMI · PAZARTESİDEN CUMARTESİYE","Lista completa de Supabase":"Supabase'deki tam liste","CUMPLEN":"HEDEFİ TUTTURAN","7,2M cada día":"Her gün 7,2M","7,2M total semanal":"Haftalık toplam 7,2M","LÍDER":"LİDER","Por miembro":"Üye başına","Estado del objetivo":"Hedef durumu","Cumplen los 6 días":"6 günün tamamında hedefe ulaştı","Cumplen exactamente":"Hedefi tam tutturdu","correctos":"başarılı","con incidencia":"sorunlu","Ranking semanal — Total Supabase":"Haftalık sıralama — Supabase toplamı","días con puntos":"puanlı gün","Sin datos.":"Veri yok.","CUMPLE LOS 6 DÍAS":"6 GÜNÜN TAMAMINDA HEDEF","CUMPLE 7,2M":"7,2M HEDEFİ","Todavía no hay jugadores que cumplan.":"Henüz hedefi tutturan oyuncu yok.","Faltan: ":"Eksik günler: ","Faltan ":"Eksik: ","Se pasa ":"Aştı: ","No hay incumplimientos.":"Hedef dışı oyuncu yok.","Desglose diario":"Günlük döküm","Push Week":"Push Haftası","Save Week":"Save Haftası","Ver más...":"Daha fazlasını gör...","Administración VS":"VS Yönetimi","Semana anterior":"Önceki hafta","Semana siguiente":"Sonraki hafta","Lun":"Pzt","Mar":"Sal","Mié":"Çar","Jue":"Per","Vie":"Cum","Sáb":"Cmt"},
           en: {
@@ -1990,20 +2044,9 @@ html{background:#06111f!important}body{background:radial-gradient(ellipse at 50%
             "Todavía no hay puntuaciones.": "Поки що немає балів.",
           },
         };
-
-const extra={"en":{"PARTICIPACIÓN VS":"VS PARTICIPATION","Participación diaria":"Daily participation","Consultar jugadores":"View players","Cumplimiento VS":"VS compliance","CUMPLIERON":"COMPLETED","NO CUMPLIERON":"NOT COMPLETED","PENDIENTES":"PENDING","jugadores":"players","Pendiente de datos":"Awaiting data","No cumple":"Not completed","Cumple":"Completed","Total lunes-viernes:":"Monday–Friday total:","Ninguno":"None","Puntos totales":"Total points","Jugadores con puntos en cada jornada.":"Players with points each day.","Resumen de lunes a viernes · Semana seleccionada":"Monday–Friday summary · Selected week","Ver más":"Show more","Ver menos":"Show less","Sin datos":"No data","Cargando...":"Loading...","Volver al inicio":"Back to home"},"de":{"PARTICIPACIÓN VS":"VS-TEILNAHME","Participación diaria":"Tägliche Teilnahme","Consultar jugadores":"Spieler anzeigen","Cumplimiento VS":"VS-Zielerfüllung","CUMPLIERON":"ERFÜLLT","NO CUMPLIERON":"NICHT ERFÜLLT","PENDIENTES":"AUSSTEHEND","jugadores":"Spieler","Pendiente de datos":"Daten ausstehend","No cumple":"Nicht erfüllt","Cumple":"Erfüllt","Total lunes-viernes:":"Gesamt Montag–Freitag:","Ninguno":"Keine","Jugadores con puntos en cada jornada.":"Spieler mit Punkten pro Tag.","Resumen de lunes a viernes · Semana seleccionada":"Zusammenfassung Montag–Freitag · Gewählte Woche","Ver más":"Mehr anzeigen","Ver menos":"Weniger anzeigen","Sin datos":"Keine Daten","Cargando...":"Laden...","Volver al inicio":"Zur Startseite"},"fr":{"PARTICIPACIÓN VS":"PARTICIPATION VS","Participación diaria":"Participation quotidienne","Consultar jugadores":"Voir les joueurs","Cumplimiento VS":"Objectifs VS","CUMPLIERON":"OBJECTIF ATTEINT","NO CUMPLIERON":"OBJECTIF NON ATTEINT","PENDIENTES":"EN ATTENTE","jugadores":"joueurs","Pendiente de datos":"Données en attente","No cumple":"Non atteint","Cumple":"Atteint","Total lunes-viernes:":"Total lundi–vendredi :","Ninguno":"Aucun","Jugadores con puntos en cada jornada.":"Joueurs ayant marqué des points chaque jour.","Resumen de lunes a viernes · Semana seleccionada":"Résumé du lundi au vendredi · Semaine choisie","Ver más":"Voir plus","Ver menos":"Voir moins","Sin datos":"Aucune donnée","Cargando...":"Chargement...","Volver al inicio":"Retour à l’accueil"},"ro":{"PARTICIPACIÓN VS":"PARTICIPARE VS","Participación diaria":"Participare zilnică","Consultar jugadores":"Vezi jucătorii","Cumplimiento VS":"Îndeplinire VS","CUMPLIERON":"AU ÎNDEPLINIT","NO CUMPLIERON":"NU AU ÎNDEPLINIT","PENDIENTES":"ÎN AȘTEPTARE","jugadores":"jucători","Pendiente de datos":"Date în așteptare","No cumple":"Nu îndeplinește","Cumple":"Îndeplinește","Total lunes-viernes:":"Total luni–vineri:","Ninguno":"Niciunul","Jugadores con puntos en cada jornada.":"Jucători cu puncte în fiecare zi.","Resumen de lunes a viernes · Semana seleccionada":"Rezumat luni–vineri · Săptămâna selectată","Ver más":"Vezi mai mult","Ver menos":"Vezi mai puțin","Sin datos":"Fără date","Cargando...":"Se încarcă...","Volver al inicio":"Înapoi acasă"},"pt":{"PARTICIPACIÓN VS":"PARTICIPAÇÃO VS","Participación diaria":"Participação diária","Consultar jugadores":"Consultar jogadores","Cumplimiento VS":"Cumprimento VS","CUMPLIERON":"CUMPRIRAM","NO CUMPLIERON":"NÃO CUMPRIRAM","PENDIENTES":"PENDENTES","jugadores":"jogadores","Pendiente de datos":"Dados pendentes","No cumple":"Não cumpre","Cumple":"Cumpre","Total lunes-viernes:":"Total segunda–sexta:","Ninguno":"Nenhum","Jugadores con puntos en cada jornada.":"Jogadores com pontos em cada dia.","Resumen de lunes a viernes · Semana seleccionada":"Resumo de segunda a sexta · Semana selecionada","Ver más":"Ver mais","Ver menos":"Ver menos","Sin datos":"Sem dados","Cargando...":"Carregando...","Volver al inicio":"Voltar ao início"},"uk":{"PARTICIPACIÓN VS":"УЧАСТЬ У VS","Participación diaria":"Щоденна участь","Consultar jugadores":"Переглянути гравців","Cumplimiento VS":"Виконання VS","CUMPLIERON":"ВИКОНАЛИ","NO CUMPLIERON":"НЕ ВИКОНАЛИ","PENDIENTES":"ОЧІКУЮТЬ","jugadores":"гравців","Pendiente de datos":"Очікування даних","No cumple":"Не виконав","Cumple":"Виконав","Total lunes-viernes:":"Разом понеділок–п’ятниця:","Ninguno":"Немає","Jugadores con puntos en cada jornada.":"Гравці з балами щодня.","Resumen de lunes a viernes · Semana seleccionada":"Підсумок понеділок–п’ятниця · Обраний тиждень","Ver más":"Показати більше","Ver menos":"Показати менше","Sin datos":"Немає даних","Cargando...":"Завантаження...","Volver al inicio":"На головну"},"tr":{"PARTICIPACIÓN VS":"VS KATILIMI","Participación diaria":"Günlük katılım","Consultar jugadores":"Oyuncuları görüntüle","Cumplimiento VS":"VS hedef durumu","CUMPLIERON":"HEDEFİ TUTTURANLAR","NO CUMPLIERON":"HEDEFİ TUTTURAMAYANLAR","PENDIENTES":"BEKLEYENLER","jugadores":"oyuncu","Pendiente de datos":"Veri bekleniyor","No cumple":"Hedef tutmadı","Cumple":"Hedef tamamlandı","Total lunes-viernes:":"Pazartesi–Cuma toplamı:","Ninguno":"Yok","Jugadores con puntos en cada jornada.":"Her gün puan alan oyuncular.","Resumen de lunes a viernes · Semana seleccionada":"Pazartesi–Cuma özeti · Seçilen hafta","Ver más":"Daha fazla göster","Ver menos":"Daha az göster","Sin datos":"Veri yok","Cargando...":"Yükleniyor...","Volver al inicio":"Ana sayfaya dön"}};
-const labels={es:"🇪🇸 Español",en:"🇬🇧 English",de:"🇩🇪 Deutsch",fr:"🇫🇷 Français",ro:"🇷🇴 Română",pt:"🇵🇹 Português",uk:"🇺🇦 Українська",tr:"🇹🇷 Türkçe"};
-const originals=new WeakMap();let lang="es";let busy=false;
-const skip=p=>!p||p.closest(".translator-wrap")||p.closest("#ranking")||p.closest("#participationNames")||p.closest("#participationChart")||p.id==="vs-admin-gear"||["SCRIPT","STYLE","NOSCRIPT"].includes(p.tagName)||p.closest("[data-no-translate]");
-function visit(root){if(busy||!root)return;busy=true;try{const nodes=[];if(root.nodeType===3)nodes.push(root);else{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())nodes.push(n)}const dict={...(T[lang]||{}),...(extra[lang]||{})};const keys=Object.keys(dict).sort((a,b)=>b.length-a.length);for(const n of nodes){const p=n.parentElement;if(skip(p))continue;if(!originals.has(n))originals.set(n,n.nodeValue);let v=originals.get(n);if(lang!=="es"){for(const k of keys){if(v.includes(k))v=v.split(k).join(dict[k])}}if(n.nodeValue!==v)n.nodeValue=v}}finally{busy=false}}
-function setLanguage(next){lang=labels[next]?next:"es";try{localStorage.setItem("hola-language",lang)}catch(e){}document.documentElement.lang=lang;const btn=document.getElementById("translatorBtn");if(btn)btn.textContent=labels[lang]+" ▾";document.querySelectorAll("#translatorMenu [data-lang]").forEach(x=>x.setAttribute("aria-current",String(x.dataset.lang===lang)));visit(document.body);document.dispatchEvent(new CustomEvent("hola:languagechange",{detail:{lang}}))}
-window.setLanguage=setLanguage;window.changeLanguage=setLanguage;
-const btn=document.getElementById("translatorBtn"),menu=document.getElementById("translatorMenu");
-if(btn&&menu){btn.setAttribute("aria-haspopup","true");btn.setAttribute("aria-expanded","false");btn.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;btn.setAttribute("aria-expanded",String(!menu.hidden))};menu.querySelectorAll("[data-lang]").forEach(x=>x.onclick=e=>{e.stopPropagation();menu.hidden=true;btn.setAttribute("aria-expanded","false");setLanguage(x.dataset.lang)});document.addEventListener("click",e=>{if(!e.target.closest(".translator-wrap")){menu.hidden=true;btn.setAttribute("aria-expanded","false")}});document.addEventListener("keydown",e=>{if(e.key==="Escape"){menu.hidden=true;btn.setAttribute("aria-expanded","false")}})}
-new MutationObserver(ms=>{if(busy)return;for(const m of ms){for(const n of m.addedNodes){if(n.nodeType===1||n.nodeType===3)visit(n)}}}).observe(document.body,{childList:true,subtree:true});
-let saved="es";try{saved=localStorage.getItem("hola-language")||"es"}catch(e){}setLanguage(saved);
-})();
-</script>glish",
+        const labels = {
+          es: "🇪🇸 Español",
+          en: "🇬🇧 English",
           de: "🇩🇪 Deutsch",
           fr: "🇫🇷 Français",
           ro: "🇷🇴 Română",
@@ -2069,7 +2112,81 @@ let saved="es";try{saved=localStorage.getItem("hola-language")||"es"}catch(e){}s
         visit(document.body);
       })();
     </script>
-    
+    <script id="hola-header-translation-fix">
+      (() => {
+        const extra = {
+          tr: {"Rendimiento y participación de la alianza":"İttifakın performansı ve katılımı","Semana ":"Hafta "},
+          en: {
+            "Rendimiento y participación de la alianza":
+              "Alliance performance and participation",
+            "Semana ": "Week ",
+          },
+          de: {
+            "Rendimiento y participación de la alianza":
+              "Leistung und Teilnahme der Allianz",
+            "Semana ": "Woche ",
+          },
+          fr: {
+            "Rendimiento y participación de la alianza":
+              "Performance et participation de l’alliance",
+            "Semana ": "Semaine ",
+          },
+          ro: {
+            "Rendimiento y participación de la alianza":
+              "Performanța și participarea alianței",
+            "Semana ": "Săptămâna ",
+          },
+          pt: {
+            "Rendimiento y participación de la alianza":
+              "Desempenho e participação da aliança",
+            "Semana ": "Semana ",
+          },
+          uk: {
+            "Rendimiento y participación de la alianza":
+              "Результативність та участь альянсу",
+            "Semana ": "Тиждень ",
+          },
+        };
+        let lang = "es";
+        const originals = new WeakMap();
+        function scan() {
+          const w = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+          );
+          let n;
+          while ((n = w.nextNode())) {
+            const p = n.parentElement;
+            if (
+              !p ||
+              p.closest(".translator-wrap") ||
+              p.id === "vs-admin-gear" ||
+              ["SCRIPT", "STYLE"].includes(p.tagName)
+            )
+              continue;
+            if (!originals.has(n)) originals.set(n, n.nodeValue);
+            let s = originals.get(n),
+              d = extra[lang] || {};
+            Object.keys(d)
+              .sort((a, b) => b.length - a.length)
+              .forEach((k) => (s = s.split(k).join(d[k])));
+            n.nodeValue = s;
+          }
+        }
+        document.addEventListener("hola:languagechange", (e) => {
+          lang = e.detail.lang;
+          scan();
+        });
+        const old = window.setLanguage;
+        window.setLanguage = function (l) {
+          lang = l;
+          if (old) old(l);
+          scan();
+        };
+        window.changeLanguage = window.setLanguage;
+        scan();
+      })();
+    </script>
     <script>window.setLanguage?.(localStorage.getItem("hola-language")||((navigator.language||"").slice(0,2)==="tr"?"tr":"es"));</script>
   </body>
 </html>
