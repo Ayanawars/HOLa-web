@@ -48,7 +48,7 @@
         <a class="module" href="admin-vs.html"><span class="tag">ACTIVO</span><span class="icon">⚔️</span><div><strong>Versus</strong><br><small>Semanas, OCR y puntuaciones</small></div></a>
         <a class="module" href="ds-builder.html"><span class="tag">NUEVO</span><span class="icon">🗺️</span><div><strong>DS Strategy Builder</strong><br><small>OCR convocatoria · mapas · fases · correo y carteles · publicar</small></div></a>
         <a class="module" href="ds-scores.html"><span class="tag">ACTIVO</span><span class="icon">🏜️</span><div><strong>DS Scores</strong><br><small>OCR de resultados · scores y resultado de batalla</small></div></a>
-        <a class="module" href="admin-donations.html"><span class="tag">NUEVO</span><span class="icon">🏆</span><div><strong>Donaciones a tecnología</strong><br><small>OCR semanal · revisar Top 7 · publicar en portada</small></div></a><a class="module" href="admin-export.html"><span class="tag">NUEVO</span><span class="icon">📊</span><div><strong>Exportar encuesta</strong><br><small>Descargar miembros y estadísticas en Excel</small></div></a><a class="module" href="admin-audit.html"><span class="tag">NUEVO</span><span class="icon">📜</span><div><strong>Historial de administración</strong><br><small>Quién modificó qué, cuándo y cómo</small></div></a><a class="module" href="train.html"><span class="tag">NUEVO</span><span class="icon">🚂</span><div><strong>Tren</strong><br><small>Conductor automático e historial semanal</small></div></a>
+        <a class="module" href="admin-donations.html"><span class="tag">NUEVO</span><span class="icon">🏆</span><div><strong>Donaciones a tecnología</strong><br><small>OCR semanal · revisar Top 7 · publicar en portada</small></div></a><a class="module" href="admin-export.html"><span class="tag">NUEVO</span><span class="icon">📊</span><div><strong>Exportar encuesta</strong><br><small>Descargar miembros y estadísticas en Excel</small></div></a><a class="module" href="admin-audit.html"><span class="tag">NUEVO</span><span class="icon">📜</span><div><strong>Historial de administración</strong><br><small>Quién modificó qué, cuándo y cómo</small></div></a><a class="module" href="admin-train.html"><span class="tag">NUEVO</span><span class="icon">🚂</span><div><strong>Tren</strong><br><small>Conductor automático e historial semanal</small></div></a>
       </div>
       <button class="logout" id="logoutBtn" type="button">CERRAR SESIÓN</button>
     </section>
@@ -84,6 +84,6 @@
     $('logoutTop').addEventListener('click',logout);$('logoutBtn').addEventListener('click',logout);
     const ok=await verify();if(!ok){await deny();}else{$('guard').hidden=true;$('app').hidden=false;}
   </script>
-<script src="js/admin-center-i18n.js?v=20260926-train-v1"></script>
+<script src="js/admin-center-i18n.js?v=20260927-train-admin-v1"></script>
 </body>
 </html>
