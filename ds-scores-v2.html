@@ -1110,6 +1110,25 @@ function dsV2Read(engine,registered){
     rows.push({name:canonicalDSPlayerName(player),ocrName:line.text,points:candidates[0].value,
       provider:engine.provider});
   }
+  // A decorative glyph can turn JEBRAW into "JEBRAW —6)U". Read the
+  // score immediately below the name in the engine's ORIGINAL text instead
+  // of requiring the whole decorated name to match the roster.
+  const jebMember=registered.find(name=>/^jebraw{1,6}$/.test(dsV2Name(name)));
+  if(jebMember&&!used.has(norm(jebMember))){
+    const rawLines=String(engine.text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    for(let i=0;i<rawLines.length-1;i++){
+      const bare=dsV2Name(rawLines[i]);
+      if(!/^jebraw{1,6}(?:[^a-z0-9].*)?$/.test(bare)&&!/^jebraw{1,6}/.test(bare))continue;
+      const next=rawLines[i+1];
+      if(dsV2Match(next,registered))continue;
+      const points=dsV2Points(next);
+      if(points===null)continue;
+      rows.push({name:canonicalDSPlayerName(jebMember),ocrName:rawLines[i],
+        points,provider:engine.provider+" (fila texto)"});
+      used.add(norm(jebMember));
+      break;
+    }
+  }
   if(!lines.length)warnings.push(engine.provider+": no devolvió coordenadas de texto");
   return {rows,warnings,debug:lines.map(l=>({engine:engine.provider,text:l.text,y:Math.round(l.y),match:dsV2Match(l.text,registered)||"",score:dsV2Points(l.text)}))};
 }
