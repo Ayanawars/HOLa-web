@@ -511,8 +511,16 @@ let detected = [];
 
 $("participantDate").value = battleDate;
 
+function canonicalDSPlayerName(value){
+  const raw=String(value||"").trim();
+  const key=norm(raw);
+  // Keep the registered Supabase identity, regardless of OCR spelling or
+  // old roster aliases. The decorative cat must never become "ww".
+  if(/^jebraw{1,4}$/.test(key))return "JEBRAW ᓚᘏᗢ";
+  return raw;
+}
 function cleanParticipantName(value){
-  return String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
+  return canonicalDSPlayerName(String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim());
 }
 function participants(){
   const seen=new Set();
@@ -634,7 +642,7 @@ async function loadParticipantsFor(selectedDate,selectedTeam){
       $("participantSaveMessage").textContent=`No hay lista guardada para ${selectedDate} · Team ${selectedTeam}.`;
       return;
     }
-    $("participants").value=data.map(x=>x.player_name).join("\n");
+    $("participants").value=data.map(x=>canonicalDSPlayerName(x.player_name)).join("\n");
     battleDate=selectedDate;
     team=selectedTeam;
     $("participantDate").value=battleDate;
