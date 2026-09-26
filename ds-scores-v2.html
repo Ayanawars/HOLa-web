@@ -528,7 +528,8 @@ const $ = id => document.getElementById(id);
 let team = "B";
 let battleDate = new Date().toISOString().slice(0,10);
 let detected = [];
-let dsV2Debug=[];
+let dsScoreEventKey="";
+let dsScoreProcessedFiles=new Set();
 
 $("participantDate").value = battleDate;
 
@@ -1141,7 +1142,6 @@ async function ocrImage(file){
   // Azure checks the same image independently and recovers rows missed locally.
   try{azure=await dsAzureOCR(cropped);}catch(e){azureError=e;}
   const azureRead=azure?dsV2Read(azure,registered):{rows:[],warnings:[]};
-  dsV2Debug.push(...(localRead.debug||[]),...(azureRead.debug||[]));
   for(const engine of [local,azure])if(engine&&!engine.lines?.length)dsV2Debug.push(...engine.text.split(/\r?\n/).filter(Boolean).map(text=>({engine:engine.provider,text,y:"—",match:dsV2Match(text,registered)||"",score:dsV2Points(text)})));
   const localByName=new Map(localRead.rows.map(r=>[norm(r.name),r]));
   const azureByName=new Map(azureRead.rows.map(r=>[norm(r.name),r]));
@@ -1203,24 +1203,8 @@ $("scoresAddBtn").addEventListener("click",()=>{
   $("scoresManualInfo").textContent="✓ "+name+": "+points.toLocaleString("es-ES")+" puntos preparados. Pulsa GUARDAR EN SUPABASE para guardarlos.";
   $("saveStatus").textContent="Hay cambios manuales pendientes de guardar.";
 });
-function dsV2ShowDiagnostics(){
-  let el=$("dsV2Diagnostics");
-  if(!el){el=document.createElement("details");el.id="dsV2Diagnostics";
-    el.style.cssText="margin:16px 0;padding:12px;border:2px solid #00d2ed;border-radius:12px;overflow:auto;background:#f1fcff;color:#18343e";
-    $("resultsBox").insertAdjacentElement("beforebegin",el);}
-  el.open=true;
-  const lines=dsV2Debug;
-  const noLines=dsV2Debug.length===0?"<p><strong>No llegaron líneas con coordenadas del OCR local ni de Azure.</strong> Revisa el estado OCR de arriba y el recorte.</p>":"";
-  el.innerHTML="<summary>DIAGNÓSTICO OCR V2 · "+dsV2Debug.length+" líneas (local y Azure)</summary>"+
-    "<p>Lectura literal de cada motor. No se guarda en Supabase.</p>"+noLines+
-    '<div style="max-height:330px;overflow:auto"><table><thead><tr><th>Motor</th><th>Y</th><th>Texto leído</th><th>Asignación</th><th>Puntos</th></tr></thead><tbody>'+
-    lines.map(x=>"<tr><td>"+escapeHtml(x.engine)+"</td><td>"+x.y+"</td><td>"+escapeHtml(x.text)+
-      "</td><td>"+escapeHtml(x.match)+"</td><td>"+(x.score===null?"—":x.score)+"</td></tr>").join("")+
-    "</tbody></table></div>";
-}
 function renderResults(){
   refreshManualScorePlayers();
-  dsV2ShowDiagnostics();
   const registered=participants();
   const present=new Set(detected.filter(r=>r.playerName).map(r=>norm(r.playerName)));
   const absent=registered.filter(name=>!present.has(norm(name)));
@@ -1274,22 +1258,33 @@ async function runOCR(){
   }
 
   $("ocrStatus").className="status";
-  detected=[];
-  dsV2Debug=[];
+  const eventKey=battleDate+"|"+team;
+  if(dsScoreEventKey!==eventKey){detected=[];dsScoreProcessedFiles.clear();dsScoreEventKey=eventKey;}
   let allTimes=[];
+  let added=0,skipped=0;
+  const conflicts=[];
   const ocrErrors=[];
   try{
     for(let i=0;i<files.length;i++){
+      const file=files[i];
+      const fileKey=[file.name,file.size,file.lastModified].join("|");
+      if(dsScoreProcessedFiles.has(fileKey)){skipped++;continue;}
       $("ocrStatus").textContent=`⚡ Analizando captura ${i+1} de ${files.length}…`;
       let ocr;
-      try{ocr=await ocrImage(files[i]);}
+      try{ocr=await ocrImage(file);}
       catch(err){ocrErrors.push("Captura "+(i+1)+": "+err.message);continue;}
       if(ocr.warning)ocrErrors.push("Captura "+(i+1)+": "+ocr.warning);
       const text=ocr.text;
       const captureTime=parseTime(text);
       if(captureTime) allTimes.push(captureTime);
       const rows=ocr.rows||[];
-      rows.forEach(r=>detected.push({position:0,ocrName:r.ocrName,playerName:canonicalDSPlayerName(r.name),points:r.points,captureTime}));
+      rows.forEach(r=>{
+        const name=canonicalDSPlayerName(r.name);
+        const existing=detected.find(x=>norm(x.playerName)===norm(name));
+        if(existing){if(existing.points!==r.points)conflicts.push(name+": "+existing.points+" / "+r.points);return;}
+        detected.push({position:0,ocrName:r.ocrName,playerName:name,points:r.points,captureTime});added++;
+      });
+      dsScoreProcessedFiles.add(fileKey);
     }
 
     const unique=new Map();
@@ -1314,7 +1309,7 @@ async function runOCR(){
     renderResults();
     const missing=participants().filter(name=>!detected.some(row=>row.playerName&&norm(row.playerName)===norm(name))).length;
     $("ocrStatus").className=detected.length?"status ok":"status err";
-    $("ocrStatus").textContent=(detected.length?`✅ ${detected.length} participaron · ${missing} no aparecen en los resultados.`:"OCR completado, pero no se encontraron filas con el formato esperado.")+(ocrErrors.length?" ⚠ "+ocrErrors.join(" | "):"");
+    $("ocrStatus").textContent=(detected.length?`✅ ${detected.length} resultados acumulados · ${added} nuevos · ${missing} sin score.`:"OCR completado, pero no se encontraron filas con el formato esperado.")+(skipped?` ${skipped} captura(s) ya procesada(s).`:"")+(conflicts.length?" ⚠ Puntos diferentes, se conserva el resultado anterior: "+conflicts.join(" | "):"")+(ocrErrors.length?" ⚠ "+ocrErrors.join(" | "):"");
   }catch(e){
     console.error(e);
     $("ocrStatus").className="status err";
