@@ -22,7 +22,7 @@ function assign({date,day,source,sourceType,used,actualMap}){
   if(effective)used.add(normalize(effective));
   return{date,day,source:sourceType,planned,substitutes,actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available};
 }
-export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[]}){
+export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[]}){
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
   const actualMap=new Map(actualDrivers.map(row=>[String(row.service_date).slice(0,10),row]));
   const used=new Set(
@@ -33,10 +33,12 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
     if(date>=cycle.start&&date<week&&row.actual_driver)used.add(normalize(row.actual_driver));
   }
   const weekVs=vsScores.filter(x=>String(x.vs_date).slice(0,10)===sourceWeek&&Number(x.day)>=1&&Number(x.day)<=5);
-  const weekType=String(weekVs.find(x=>x.week_type)?.week_type||'push').toLowerCase();
+  const savedWeekType=weekSettings.find(x=>String(x.schedule_week).slice(0,10)===week)?.week_type;
+  const weekType=String(savedWeekType||weekVs.find(x=>x.week_type)?.week_type||'push').toLowerCase()==='save'?'save':'push';
   const grouped=new Map;
   for(const row of weekVs){const k=normalize(row.player_name);if(!grouped.has(k))grouped.set(k,{player_name:row.player_name,days:new Map});grouped.get(k).days.set(Number(row.day),Number(row.points)||0)}
-  const vsRanking=[...grouped.values()].filter(x=>x.days.size===5&&[...x.days.values()].every(points=>points>=VS_LIMIT)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>weekType==='save'?(a.total-b.total||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
+  const complies=points=>weekType==='save'?points<=VS_LIMIT:points>=VS_LIMIT;
+  const vsRanking=[...grouped.values()].filter(x=>x.days.size===5&&[...x.days.values()].every(complies)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>weekType==='save'?(a.total-b.total||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
   const dsWeek=dsScores.filter(x=>String(x.battle_date).slice(0,10)>=sourceWeek&&String(x.battle_date).slice(0,10)<=addDays(sourceWeek,6));
   const teamA=dsWeek.filter(x=>String(x.team).toUpperCase()==='A').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
   const teamB=dsWeek.filter(x=>String(x.team).toUpperCase()==='B').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
