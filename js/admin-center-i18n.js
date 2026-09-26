@@ -6,6 +6,8 @@ const auditModuleTexts={"es":["Historial de administración","Quién modificó q
 for(const [code,[name,info]] of Object.entries(auditModuleTexts))Object.assign(dictionary[code],{audit:name,auditInfo:info});
 const thpModuleTexts={"es":["Actualizador THP","OCR semanal de miembros · revisar y sincronizar Supabase"],"en":["THP Updater","Weekly member OCR · review and sync Supabase"],"fr":["Mise à jour THP","OCR hebdomadaire des membres · vérifier et synchroniser"],"de":["THP-Aktualisierung","Wöchentliches Mitglieder-OCR · prüfen und synchronisieren"],"ro":["Actualizator THP","OCR săptămânal pentru membri · verificare și sincronizare"],"pt":["Atualizador THP","OCR semanal de membros · rever e sincronizar"],"uk":["Оновлення THP","Щотижневе OCR учасників · перевірка та синхронізація"],"it":["Aggiornamento THP","OCR settimanale membri · verifica e sincronizzazione"],"pl":["Aktualizator THP","Tygodniowy OCR członków · sprawdź i synchronizuj"],"tr":["THP Güncelleyici","Haftalık üye OCR · kontrol et ve eşitle"]};
 for(const [code,[name,info]] of Object.entries(thpModuleTexts))Object.assign(dictionary[code],{thp:name,thpInfo:info});
+const exportModuleTexts={"es":["Exportar encuesta","Descargar miembros y estadísticas en Excel"],"en":["Export survey","Download members and statistics in Excel"],"fr":["Exporter le sondage","Télécharger les membres et statistiques dans Excel"],"de":["Umfrage exportieren","Mitglieder und Statistiken als Excel herunterladen"],"ro":["Exportă sondajul","Descarcă membrii și statisticile în Excel"],"pt":["Exportar inquérito","Descarregar membros e estatísticas em Excel"],"uk":["Експорт опитування","Завантажити учасників і статистику в Excel"],"it":["Esporta sondaggio","Scarica membri e statistiche in Excel"],"pl":["Eksportuj ankietę","Pobierz członków i statystyki w Excelu"],"tr":["Anketi dışa aktar","Üyeleri ve istatistikleri Excel olarak indir"]};
+for(const [code,[name,info]] of Object.entries(exportModuleTexts))Object.assign(dictionary[code],{exportData:name,exportDataInfo:info});
 const $=sel=>document.querySelector(sel);
 const languageNames=Object.keys(dictionary);
 const flagImage={es:"es",en:"gb",fr:"fr",de:"de",ro:"ro",pt:"pt",uk:"ua",it:"it",pl:"pl",tr:"tr"};
@@ -22,6 +24,7 @@ const targets={
  builder:'.module[href="ds-builder.html"] strong',builderInfo:'.module[href="ds-builder.html"] small',
  thp:'.module[href="admin-thp.html"] strong',thpInfo:'.module[href="admin-thp.html"] small',
  scores:'.module[href="ds-scores.html"] strong',scoresInfo:'.module[href="ds-scores.html"] small',
+ exportData:'.module[href="admin-export.html"] strong',exportDataInfo:'.module[href="admin-export.html"] small',
  audit:'.module[href="admin-audit.html"] strong',auditInfo:'.module[href="admin-audit.html"] small',
  train:".module.disabled strong",trainInfo:".module.disabled small",
  signout:"#logoutBtn"
@@ -31,7 +34,7 @@ function apply(){
  document.documentElement.lang=lang;document.title="HOLa — "+l.title;
  for(const [key,sel] of Object.entries(targets)){const el=$(sel);if(el)el.textContent=l[key];}
  const modules=[...document.querySelectorAll(".module:not(.disabled)")];
- for(const item of modules){const tag=item.querySelector(".tag");if(tag)tag.textContent=item.matches('[href="ds-builder.html"],[href="admin-thp.html"],[href="admin-audit.html"]')?l.new:l.active;}
+ for(const item of modules){const tag=item.querySelector(".tag");if(tag)tag.textContent=item.matches('[href="ds-builder.html"],[href="admin-thp.html"],[href="admin-export.html"],[href="admin-audit.html"]')?l.new:l.active;}
  const pending=$(".module.disabled .tag");if(pending)pending.textContent=l.coming;
  const back=$(".topbar a.round");if(back)back.setAttribute("aria-label",l.back);
  const exit=$("#logoutTop");if(exit)exit.setAttribute("aria-label",l.logout);
