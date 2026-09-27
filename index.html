@@ -706,6 +706,7 @@
     }
 
 
+.survey-news{margin-top:7px}.survey-news .web-news__bar{background:rgba(255,251,236,.9);border-color:rgba(204,158,57,.38)}.survey-news .web-news__label{background:#f7e7b9;color:#865a0d}.survey-news .web-news__track{animation-duration:24s;-webkit-animation-duration:24s}.survey-news .web-news__item{font-size:11px}.survey-news .web-news__item strong{color:#0d75b3}@media(prefers-reduced-motion:reduce){.survey-news .web-news__track{animation:none;-webkit-animation:none}}
 /* Donaciones: tarjetas crema con podio celeste y dorado */
 .donations-board{background:linear-gradient(150deg,#fffdf6,#f7ebd1);border-color:#d9bb7e}
 .donations-board__emblem{background:linear-gradient(145deg,#f8e7b5,#dfbd6b);color:#90651c;box-shadow:inset 0 0 0 3px #fff7dc}
@@ -1173,6 +1174,14 @@
       </a>
     </section>
 
+    <section class="web-news survey-news" id="surveyNews" aria-label="Últimas encuestas completadas" hidden>
+      <a class="web-news__bar" href="survey.html" aria-label="Ver encuesta HOLa">
+        <span class="web-news__label" id="surveyNewsLabel">ENCUESTA</span>
+        <span class="web-news__viewport" aria-hidden="true"><span class="web-news__track" id="surveyNewsTrack"></span></span>
+        <span class="web-news__arrow" aria-hidden="true">›</span>
+      </a>
+    </section>
+
     <section class="survey-promo" aria-label="Encuesta de jugadores" data-i18n-aria="surveyBannerAria">
       <a class="survey-promo__card" href="survey.html" aria-label="Completar o actualizar encuesta" data-i18n-aria="openSurvey">
         <span class="survey-promo__icon" aria-hidden="true">
@@ -1591,6 +1600,9 @@
     loadUpcomingEvents();
   </script>
   <script src="js/hola-language-portal.js"></script>
+<script id="hola-survey-news">
+(()=>{const base='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/players?select=name,survey_completed_at&survey_completed=eq.true&survey_completed_at=not.is.null&order=survey_completed_at.desc&limit=8';const messages={es:['ENCUESTA','ha completado la encuesta','Últimas encuestas completadas','Ver encuesta HOLa'],en:['SURVEY','completed the survey','Latest completed surveys','Open HOLa survey'],fr:['ENQUÊTE','a répondu à l’enquête','Dernières enquêtes complétées','Ouvrir l’enquête HOLa'],de:['UMFRAGE','hat die Umfrage abgeschlossen','Neueste abgeschlossene Umfragen','HOLa-Umfrage öffnen'],ro:['SONDAJ','a completat sondajul','Ultimele sondaje completate','Deschide sondajul HOLa'],pt:['INQUÉRITO','concluiu o inquérito','Últimos inquéritos concluídos','Abrir inquérito HOLa'],uk:['ОПИТУВАННЯ','завершив(-ла) опитування','Останні завершені опитування','Відкрити опитування HOLa'],it:['SONDAGGIO','ha completato il sondaggio','Ultimi sondaggi completati','Apri il sondaggio HOLa'],pl:['ANKIETA','ukończył(a) ankietę','Ostatnio ukończone ankiety','Otwórz ankietę HOLa'],tr:['ANKET','anketi tamamladı','Son tamamlanan anketler','HOLa anketini aç']};let rows=[];const box=document.getElementById('surveyNews'),track=document.getElementById('surveyNewsTrack');function render(){if(!rows.length)return;const l=document.documentElement.lang,t=messages[l]||messages.es;document.getElementById('surveyNewsLabel').textContent=t[0];box.setAttribute('aria-label',t[2]);box.querySelector('a').setAttribute('aria-label',t[3]);track.replaceChildren();const entries=rows.map(p=>p.name+' '+t[1]);for(let repeat=0;repeat<2;repeat++)for(const message of entries){const item=document.createElement('span');item.className='web-news__item';const dot=document.createElement('span');dot.className='web-news__dot';const strong=document.createElement('strong');strong.textContent=message;item.append(dot,strong);track.append(item)}box.hidden=false;track.style.animationDuration=Math.max(12,entries.length*5)+'s';track.style.webkitAnimationDuration=Math.max(12,entries.length*5)+'s'}fetch(base,{headers:{apikey:'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV'}}).then(r=>{if(!r.ok)throw Error('Survey news '+r.status);return r.json()}).then(data=>{rows=data.filter(p=>p.name&&p.survey_completed_at);render()}).catch(e=>console.warn('Survey news unavailable',e));new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});})();
+</script>
 <script id="hola-donations-home">
 (async()=>{const base='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/technology_donations?select=week_start,player_name,points,rank&order=week_start.desc,rank.asc&limit=100';try{const r=await fetch(base,{headers:{apikey:'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV'}});if(!r.ok)return;const rows=await r.json();if(!rows.length)return;const week=rows[0].week_start;document.getElementById('donationsWeek').textContent='Semana del '+week;const box=document.getElementById('donationsList');box.replaceChildren();const weekly=rows.filter(x=>x.week_start===week).sort((a,b)=>Number(a.rank)-Number(b.rank));const extra=document.createElement('div');extra.className='donations-board__list';extra.id='donationsExtra';extra.hidden=true;extra.style.display='none';for(const x of weekly){const row=document.createElement('div');row.className='donation-row';const rank=document.createElement('span');rank.textContent=x.rank<=3?['🥇','🥈','🥉'][x.rank-1]:'#'+x.rank;const name=document.createElement('strong');name.textContent=x.player_name;const points=document.createElement('b');points.textContent=Number(x.points).toLocaleString('es-ES');row.append(rank,name,points);(Number(x.rank)<=3?box:extra).append(row)}if(extra.children.length){box.append(extra);const button=document.createElement('button');button.type='button';button.className='donations-board__more';button.setAttribute('aria-controls','donationsExtra');button.setAttribute('aria-expanded','false');const label=()=>{const es=(document.documentElement.lang||'es')==='es';button.textContent=extra.hidden?(es?'Ver clasificación completa ↓':'View full ranking ↓'):(es?'Mostrar solo TOP 3 ↑':'Show TOP 3 only ↑')};label();button.addEventListener('click',()=>{extra.hidden=!extra.hidden;extra.style.display=extra.hidden?'none':'grid';button.setAttribute('aria-expanded',String(!extra.hidden));label()});box.append(button)}}catch(e){console.warn('Donations unavailable',e)}})();
 </script>
