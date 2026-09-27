@@ -2331,7 +2331,8 @@ body::before{
 .globe{width:25px!important;height:25px!important;stroke:#fff5cf!important;filter:none!important}
 #languageMenu.language-menu{top:52px!important;right:0!important;width:190px!important;min-width:190px!important;padding:7px!important;border:1px solid rgba(231,180,61,.78)!important;border-radius:15px!important;background:#0c5a91!important;box-shadow:0 18px 38px rgba(16,56,82,.32)!important}
 #languageMenu .language-option{height:38px!important;min-height:38px!important;padding:8px 10px!important;border-radius:9px!important;background:transparent!important;color:#fff!important;font-size:13px!important;font-weight:700!important}
-#languageMenu .language-option:hover,#languageMenu .language-option.active{background:rgba(255,244,205,.18)!important;color:#ffe797!important}\n#surveyCurrentFlag{width:30px;height:30px;border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+#languageMenu .language-option:hover,#languageMenu .language-option.active{background:rgba(255,244,205,.18)!important;color:#ffe797!important}
+#surveyCurrentFlag{width:30px;height:30px;border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
 main,.survey-content{width:100%!important;min-height:calc(100vh - 118px)!important;padding:16px 12px 44px!important;display:flex!important;flex-direction:column!important;align-items:center!important;background:transparent!important}
 
 #surveyStartGate,.player-card,.avatar-card,.thp-card,.squad-detection-card,.player-progress-card,.profile-story-card,.survey-save-card{
@@ -3394,7 +3395,11 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     return 'en';
   }
 
-  function getSavedLanguage() {\n    try {\n      const requested = new URLSearchParams(location.search).get('lang');\n      if (supported.includes(requested)) { localStorage.setItem('hola-language',requested); localStorage.setItem(LANGUAGE_STORAGE_KEY,requested); return requested; }\n      const saved = localStorage.getItem('hola-language') || localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  function getSavedLanguage() {
+    try {
+      const requested = new URLSearchParams(location.search).get('lang');
+      if (supported.includes(requested)) { localStorage.setItem('hola-language',requested); localStorage.setItem(LANGUAGE_STORAGE_KEY,requested); return requested; }
+      const saved = localStorage.getItem('hola-language') || localStorage.getItem(LANGUAGE_STORAGE_KEY);
       if (supported.includes(saved)) return saved;
     } catch (_) {}
     return null;
@@ -3455,7 +3460,12 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
     else if (memberStatusEl?.classList.contains('no')) memberStatusEl.textContent = window.holaT('memberInvalid','✕ Invalid HOLa member');
     const saveBtnText = document.getElementById('saveSurveyBtnText');
     if (saveBtnText && !saveBtnText.dataset.manualOverride) saveBtnText.textContent = saveTexts.saveSurveyButton || window.holaT('saveSurveyButton','SAVE / UPDATE');
-    document.title = texts.pageTitle;\n    const flagCodes={en:'gb',es:'es',pt:'pt',ro:'ro',fr:'fr',it:'it',de:'de',pl:'pl',uk:'ua',ru:'ru',tr:'tr'};\n    const languageNames={en:'English',es:'Español',pt:'Português',ro:'Română',fr:'Français',it:'Italiano',de:'Deutsch',pl:'Polski',uk:'Українська',ru:'Русский',tr:'Türkçe'};\n    const currentFlag=document.getElementById('surveyCurrentFlag');\n    if(currentFlag){currentFlag.src='https://flagcdn.com/w80/'+(flagCodes[lang]||'gb')+'.png';currentFlag.alt=languageNames[lang]||lang;}\n    toggle.setAttribute('aria-label', lang === 'es' ? 'Seleccionar idioma' : lang === 'en' ? 'Select language' : 'Select language');
+    document.title = texts.pageTitle;
+    const flagCodes={en:'gb',es:'es',pt:'pt',ro:'ro',fr:'fr',it:'it',de:'de',pl:'pl',uk:'ua',ru:'ru',tr:'tr'};
+    const languageNames={en:'English',es:'Español',pt:'Português',ro:'Română',fr:'Français',it:'Italiano',de:'Deutsch',pl:'Polski',uk:'Українська',ru:'Русский',tr:'Türkçe'};
+    const currentFlag=document.getElementById('surveyCurrentFlag');
+    if(currentFlag){currentFlag.src='https://flagcdn.com/w80/'+(flagCodes[lang]||'gb')+'.png';currentFlag.alt=languageNames[lang]||lang;}
+    toggle.setAttribute('aria-label', lang === 'es' ? 'Seleccionar idioma' : lang === 'en' ? 'Select language' : 'Select language');
     const countryNames = new Intl.DisplayNames([lang], {type:'region'});
     document.querySelectorAll('#playerFlag option').forEach(option => {
       const value = option.value;
@@ -4521,5 +4531,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 }
 </style>
 
-<script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
+<script src="js/hola-russian.js?v=20260927-8"></script>
+</body>
 </html>
