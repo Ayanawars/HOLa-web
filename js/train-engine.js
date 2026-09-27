@@ -23,7 +23,9 @@ function assign({date,day,source,sourceType,used,actualMap}){
   if(planned)used.add(normalize(planned));
   return{date,day,source:sourceType,planned,substitutes:[],actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available,rankedSource:source,excludedBefore:source.filter(row=>used.has(normalize(row.player_name)))};
 }
-export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[]}){
+export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[],players=[]}){
+  const r1=new Set(players.filter(p=>String(p.rank||'').trim().toUpperCase()==='R1').map(p=>normalize(p.name)));
+  const canDrive=row=>!r1.has(normalize(row.player_name));
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
   const actualMap=new Map(actualDrivers.map(row=>[String(row.service_date).slice(0,10),row]));
   const used=new Set(cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===cycle.start).map(x=>normalize(x.player_name)));
@@ -34,12 +36,12 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const grouped=new Map;
   for(const row of weekVs){const k=normalize(row.player_name);if(!grouped.has(k))grouped.set(k,{player_name:row.player_name,days:new Map});grouped.get(k).days.set(Number(row.day),Number(row.points)||0)}
   const complies=points=>weekType==='save'?points<=VS_LIMIT:points>=VS_LIMIT;
-  const vsRanking=[...grouped.values()].filter(x=>x.days.size===5&&[...x.days.values()].every(complies)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>weekType==='save'?(a.total-b.total||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
+  const vsRanking=[...grouped.values()].filter(canDrive).filter(x=>x.days.size===5&&[...x.days.values()].every(complies)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>weekType==='save'?(a.total-b.total||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
   const dsWeek=dsScores.filter(x=>String(x.battle_date).slice(0,10)>=sourceWeek&&String(x.battle_date).slice(0,10)<=addDays(sourceWeek,6));
-  const teamA=dsWeek.filter(x=>String(x.team).toUpperCase()==='A').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
-  const teamB=dsWeek.filter(x=>String(x.team).toUpperCase()==='B').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
+  const teamA=dsWeek.filter(canDrive).filter(x=>String(x.team).toUpperCase()==='A').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
+  const teamB=dsWeek.filter(canDrive).filter(x=>String(x.team).toUpperCase()==='B').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
   const vsEligibleNames=new Set(vsRanking.map(x=>normalize(x.player_name)));
-  const donationRanking=donations.filter(x=>String(x.week_start).slice(0,10)===sourceWeek&&vsEligibleNames.has(normalize(x.player_name))).sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.rank)-Number(b.rank));
+  const donationRanking=donations.filter(canDrive).filter(x=>String(x.week_start).slice(0,10)===sourceWeek&&vsEligibleNames.has(normalize(x.player_name))).sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.rank)-Number(b.rank));
   // Desert Storm takes priority over VS when a player appears in both rankings.
   // Assign in priority order, then display the schedule in calendar order.
   const dsB=assign({date:addDays(week,4),day:5,source:teamB,sourceType:'DS_B',used,actualMap});
