@@ -106,13 +106,34 @@ $('read').addEventListener('click',async()=>{
       const key=(item.player?.name||normalize(item.name))+'|'+item.points;
       if(!unique.some(x=>x.key===key))unique.push({...item,key})
     }
-    makeRows(Math.max(unique.length,$('rows').children.length));
-    for(let i=0;i<unique.length;i++){
-      const item=unique[i],row=$('rows').children[i];
-      row.querySelector('input').value=item.points;
-      if(item.player)row.querySelector('select').value=item.player.name
+    // Merge new screenshots into the current review without erasing earlier OCR or manual edits.
+    const existing=[...$('rows').children].map(row=>({
+      player_name:row.querySelector('select').value,
+      points:row.querySelector('input').value
+    })).filter(row=>row.player_name||row.points!=='');
+    const merged=existing.map(row=>({...row}));
+    let added=0,duplicates=0,unmatched=0;
+    for(const item of unique){
+      if(!item.player){unmatched++;warnings.push('Sin coincidencia HOLa: '+item.name+' ('+item.points.toLocaleString('es-ES')+' puntos)');continue}
+      const key=normalize(item.player.name);
+      const previous=merged.find(row=>normalize(row.player_name)===key);
+      if(previous){
+        duplicates++;
+        if(previous.points!==''&&Number(previous.points)!==item.points)
+          warnings.push('Puntuación diferente para '+item.player.name+': se conserva '+Number(previous.points).toLocaleString('es-ES')+'; OCR leyó '+item.points.toLocaleString('es-ES'));
+        continue;
+      }
+      merged.push({player_name:item.player.name,points:String(item.points)});
+      added++;
     }
-    status(tr('done',{results:unique.length,names:unique.filter(x=>x.player).length})+(warnings.length?'\n'+warnings.join('; '):'\n'+tr('check')))
+    merged.sort((a,b)=>Number(b.points)-Number(a.points));
+    makeRows(Math.max(7,merged.length));
+    merged.forEach((item,i)=>{
+      const row=$('rows').children[i];
+      row.querySelector('select').value=item.player_name;
+      row.querySelector('input').value=item.points;
+    });
+    status('OCR: '+unique.length+' detectados · '+added+' nuevos · '+duplicates+' repetidos · '+unmatched+' por revisar. Total conservado: '+merged.length+'.'+(warnings.length?'\n'+warnings.join('; '):''))
   }catch(e){status(tr('ocrError',{error:e.message}),true)}
   finally{btn.disabled=false}
 });
