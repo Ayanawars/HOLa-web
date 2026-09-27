@@ -40,13 +40,16 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const teamB=dsWeek.filter(x=>String(x.team).toUpperCase()==='B').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
   const vsEligibleNames=new Set(vsRanking.map(x=>normalize(x.player_name)));
   const donationRanking=donations.filter(x=>String(x.week_start).slice(0,10)===sourceWeek&&vsEligibleNames.has(normalize(x.player_name))).sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.rank)-Number(b.rank));
-  const days=[];
-  for(let i=0;i<4;i++)days.push(assign({date:addDays(week,i),day:i+1,source:vsRanking,sourceType:'VS',used,actualMap}));
-  days.push(assign({date:addDays(week,4),day:5,source:teamB,sourceType:'DS_B',used,actualMap}));
-  days.push(assign({date:addDays(week,5),day:6,source:teamA,sourceType:'DS_A',used,actualMap}));
-  days.push(assign({date:addDays(week,6),day:7,source:donationRanking,sourceType:'DONATIONS',used,actualMap}));
-  // Select all titulars first, then one shared, ordered reserve pool per category.
-  const reserveUsed=new Set(used),reservePlan=[['VS',vsRanking,4],['DS_B',teamB,2],['DS_A',teamA,2],['DONATIONS',donationRanking,3]];
+  // Desert Storm takes priority over VS when a player appears in both rankings.
+  // Assign in priority order, then display the schedule in calendar order.
+  const dsB=assign({date:addDays(week,4),day:5,source:teamB,sourceType:'DS_B',used,actualMap});
+  const dsA=assign({date:addDays(week,5),day:6,source:teamA,sourceType:'DS_A',used,actualMap});
+  const vsDays=[];
+  for(let i=0;i<4;i++)vsDays.push(assign({date:addDays(week,i),day:i+1,source:vsRanking,sourceType:'VS',used,actualMap}));
+  const donationDay=assign({date:addDays(week,6),day:7,source:donationRanking,sourceType:'DONATIONS',used,actualMap});
+  const days=[...vsDays,dsB,dsA,donationDay];
+  // DS substitute pools also take priority when candidates overlap categories.
+  const reserveUsed=new Set(used),reservePlan=[['DS_B',teamB,2],['DS_A',teamA,2],['VS',vsRanking,4],['DONATIONS',donationRanking,3]];
   const reservePools={};
   for(const [type,source,count] of reservePlan){const pool=sourceCandidates(source,reserveUsed).slice(0,count).map(x=>x.player_name);reservePools[type]=pool;for(const name of pool)reserveUsed.add(normalize(name))}
   for(const item of days)item.substitutes=reservePools[item.source];
