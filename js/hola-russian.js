@@ -40,7 +40,7 @@ function translateNode(root){
  if(document.title)document.title=translateValue(document.title).replace('Alliance Tracker','Центр альянса').replace('Centro de la alianza','Центр альянса');
  const walker=document.createTreeWalker(root||document.body,NodeFilter.SHOW_TEXT);
  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
- for(const n of nodes){const p=n.parentElement;if(!p||/^(SCRIPT|STYLE|TEXTAREA|OPTION)$/i.test(p.tagName)||p.closest('[data-no-translate]'))continue;const v=translateValue(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}
+ for(const n of nodes){const p=n.parentElement;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/i.test(p.tagName)||p.closest('[data-no-translate]'))continue;const v=translateValue(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}
  for(const el of (root||document).querySelectorAll?.('*')||[]){for(const a of ATTR){if(el.hasAttribute(a)){const v=translateValue(el.getAttribute(a));if(v!==el.getAttribute(a))el.setAttribute(a,v)}}}
  for(const img of document.querySelectorAll('#currentFlag,#flag,.translator-btn img,.language__current')){img.src='https://flagcdn.com/w80/ru.png';img.alt='Русский'}
 }
