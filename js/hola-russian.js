@@ -1,10 +1,11 @@
 (function(){
 'use strict';
 const STORAGE_KEYS=['hola-language','hola-lang','hola_survey_language','hola_avatar_lang'];
-const saved=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang')||localStorage.getItem('hola_survey_language')||localStorage.getItem('hola_avatar_lang');
+let saved=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang')||localStorage.getItem('hola_survey_language')||localStorage.getItem('hola_avatar_lang');
 const browser=(navigator.language||'').toLowerCase().split(/[-_]/)[0];
-if(!saved&&browser==='ru')STORAGE_KEYS.forEach(k=>localStorage.setItem(k,'ru'));
-const active=()=>STORAGE_KEYS.some(k=>localStorage.getItem(k)==='ru');
+if(!saved&&browser==='ru'){saved='ru';STORAGE_KEYS.forEach(k=>localStorage.setItem(k,'ru'))}
+const active=()=>localStorage.getItem('hola-language')==='ru';
+function syncLanguage(lang){if(!lang)return;STORAGE_KEYS.forEach(k=>localStorage.setItem(k,lang))}
 const D=new Map(Object.entries({
 'Alliance Overview':'Обзор альянса','Resumen de la alianza':'Обзор альянса','Strategy':'Стратегия','Estrategia':'Стратегия','Teamwork':'Командная работа','Equipo':'Команда','Family':'Семья','Familia':'Семья','Victory':'Победа','Victoria':'Победа',
 'Members':'Участники','Miembros':'Участники','Countries':'Страны','Países':'Страны','Upcoming events':'Предстоящие события','Próximos eventos':'Предстоящие события','View all →':'Посмотреть все →','Ver todos →':'Посмотреть все →',
@@ -57,7 +58,35 @@ function russianButton(){
  const span=button.querySelector('span');if(span)span.textContent='Русский';else{const flag=button.querySelector('img');button.childNodes.forEach(n=>{if(n.nodeType===3)n.remove()});button.append(document.createTextNode(' Русский'))}
  const parent=sample.parentElement?.tagName==='LI'?sample.parentElement.cloneNode(false):null;if(parent){parent.append(button);sample.parentElement.parentElement.append(parent)}else sample.parentElement.append(button);
 }
-document.addEventListener('click',e=>{const b=e.target.closest?.('[data-lang="ru"],[data-html="ru"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();STORAGE_KEYS.forEach(k=>localStorage.setItem(k,'ru'));location.reload()},true);
-function boot(){russianButton();if(active())translateNode(document.body);const obs=new MutationObserver(list=>{if(!active())return;for(const m of list)for(const n of m.addedNodes)if(n.nodeType===1||n.nodeType===3)translateNode(n.nodeType===1?n:n.parentElement)});obs.observe(document.body,{childList:true,subtree:true});setInterval(russianButton,1500)}
+document.addEventListener('click',e=>{
+ const b=e.target.closest?.('[data-lang],[data-html]');
+ if(!b)return;
+ const lang=b.dataset.lang||b.dataset.html;
+ if(lang)syncLanguage(lang);
+ if(lang==='ru'){e.preventDefault();e.stopImmediatePropagation();location.reload()}
+},true);
+function boot(){
+ russianButton();
+ if(!active())return;
+ translateNode(document.body);
+ let timer=0,pending=new Set(),busy=false;
+ const obs=new MutationObserver(list=>{
+  if(!active()||busy)return;
+  for(const m of list)for(const n of m.addedNodes){
+   const el=n.nodeType===1?n:(n.nodeType===3?n.parentElement:null);
+   if(el)pending.add(el);
+  }
+  if(!pending.size||timer)return;
+  timer=setTimeout(()=>{
+   timer=0;if(!active())return pending.clear();
+   busy=true;obs.disconnect();
+   const roots=[...pending];pending.clear();
+   for(const root of roots)if(root.isConnected)translateNode(root);
+   obs.observe(document.body,{childList:true,subtree:true});
+   busy=false;
+  },250);
+ });
+ obs.observe(document.body,{childList:true,subtree:true});
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
