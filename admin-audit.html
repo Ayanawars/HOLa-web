@@ -29,4 +29,4 @@ async function load(){if(done)return;$('status').textContent=t('loading');let q=
 async function fillFilters(){const{data}=await sb.from('admin_audit_log').select('admin_name,table_name').limit(1000);const admins=[...new Set((data||[]).map(x=>x.admin_name))].sort(),mods=[...new Set((data||[]).map(x=>x.table_name))].sort();for(const a of admins)$('adminFilter').insertAdjacentHTML('beforeend','<option>'+esc(a)+'</option>');for(const m of mods)$('moduleFilter').insertAdjacentHTML('beforeend','<option value="'+esc(m)+'">'+esc(moduleName(m))+'</option>')}
 function reset(){offset=0;done=false;$('list').innerHTML='';fillFilters().then(load)}
 for(const id of ['adminFilter','moduleFilter','actionFilter'])$(id).onchange=reset;$('more').onclick=load;apply();if(!await authorized()){alert(t('unauthorized'));location.replace('admin-login.html')}else await reset();
-</script><script src="js/hola-russian.js?v=20260927-3"></script>\n</body></html>
+</script><script src="js/hola-russian.js?v=20260927-4"></script>\n</body></html>
