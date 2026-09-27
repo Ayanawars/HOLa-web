@@ -747,6 +747,31 @@
       -webkit-tap-highlight-color:transparent;
     }
 
+    /* Acceso rápido: crema egipcio con acentos celestes y dorados alternos */
+    .quick-access__card {
+      background:linear-gradient(125deg,#fffdf5 0%,#f8efd9 55%,#f0dfbb 100%);
+      border-color:#d7b978;
+      color:#173f62;
+      box-shadow:0 6px 15px rgba(111,78,26,.15),inset 0 1px 0 #fff;
+    }
+    .quick-access__card:nth-of-type(odd) {
+      background:radial-gradient(circle at 90% 10%,rgba(115,212,237,.24),transparent 42%),linear-gradient(125deg,#fffdf7,#edf9f9 55%,#d8eff0);
+      border-color:#91c9d6;
+    }
+    .quick-access__card:nth-of-type(even) {
+      background:radial-gradient(circle at 90% 10%,rgba(255,218,115,.35),transparent 42%),linear-gradient(125deg,#fffdf5,#fbf1d8 55%,#f4dfa7);
+      border-color:#d8b45d;
+    }
+    .quick-access__card .quick-access__title { color:#154d75; text-shadow:none; }
+    .quick-access__card .quick-access__subtitle { color:#63758a; }
+    .quick-access__card .quick-access__arrow { color:#b4892c; text-shadow:none; }
+    .quick-access__card:nth-of-type(odd) .quick-access__icon { background:linear-gradient(145deg,#d9f6fb,#8ed8e9);border-color:#61b8d0;box-shadow:inset 0 0 0 3px rgba(255,255,255,.48),0 4px 10px rgba(21,107,148,.16); }
+    .quick-access__card:nth-of-type(even) .quick-access__icon { background:linear-gradient(145deg,#fff6d4,#efc96c);border-color:#cba047;box-shadow:inset 0 0 0 3px rgba(255,255,255,.48),0 4px 10px rgba(133,93,21,.15); }
+    .quick-access__card .quick-access__icon svg { stroke:#17608d;filter:none; }
+    .quick-access__card:nth-of-type(even) .quick-access__icon svg { stroke:#956919; }
+    .quick-access__card::after { border-color:rgba(174,139,74,.28); }
+    .quick-access__card:hover,.quick-access__card:focus-visible {box-shadow:0 9px 18px rgba(94,76,42,.19),0 0 0 2px rgba(209,173,90,.3),inset 0 1px 0 #fff;}
+
     .quick-access__card::before {
       content:"";
       position:absolute;
