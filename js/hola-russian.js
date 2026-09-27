@@ -55,6 +55,6 @@ function russianButton(){
  const parent=sample.parentElement?.tagName==='LI'?sample.parentElement.cloneNode(false):null;if(parent){parent.append(button);sample.parentElement.parentElement.append(parent)}else sample.parentElement.append(button);
 }
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-lang="ru"],[data-html="ru"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();STORAGE_KEYS.forEach(k=>localStorage.setItem(k,'ru'));location.reload()},true);
-function boot(){russianButton();if(active())translateNode(document.body);const obs=new MutationObserver(list=>{if(!active())return;for(const m of list)for(const n of m.addedNodes)if(n.nodeType===1||n.nodeType===3)translateNode(n.nodeType===1?n:n.parentElement)});obs.observe(document.body,{childList:true,subtree:true});setInterval(()=>{russianButton();if(active())translateNode(document.body)},1200)}
+function boot(){russianButton();if(active())translateNode(document.body);const obs=new MutationObserver(list=>{if(!active())return;for(const m of list)for(const n of m.addedNodes)if(n.nodeType===1||n.nodeType===3)translateNode(n.nodeType===1?n:n.parentElement)});obs.observe(document.body,{childList:true,subtree:true});setInterval(russianButton,1500)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
