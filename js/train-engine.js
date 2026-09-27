@@ -17,21 +17,17 @@ function sourceCandidates(source,used){
   return uniqueByName(source).filter(row=>!used.has(normalize(row.player_name)));
 }
 function assign({date,day,source,sourceType,used,actualMap}){
-  const available=sourceCandidates(source,used),planned=available[0]?.player_name||'',substitutes=available.slice(1,3).map(x=>x.player_name);
-  const saved=actualMap.get(date),actual=saved?.actual_driver||'',effective=actual||planned;
-  if(effective)used.add(normalize(effective));
-  return{date,day,source:sourceType,planned,substitutes,actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available,rankedSource:source,excludedBefore:source.filter(row=>used.has(normalize(row.player_name)))};
+  const available=sourceCandidates(source,used),planned=available[0]?.player_name||'';
+  const saved=actualMap.get(date),actual=saved?.actual_driver||'';
+  // Reserve the seven published titular slots; never reserve a substitute as a driver.
+  if(planned)used.add(normalize(planned));
+  return{date,day,source:sourceType,planned,substitutes:[],actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available,rankedSource:source,excludedBefore:source.filter(row=>used.has(normalize(row.player_name)))};
 }
 export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[]}){
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
   const actualMap=new Map(actualDrivers.map(row=>[String(row.service_date).slice(0,10),row]));
-  const used=new Set(
-    cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===cycle.start).map(x=>normalize(x.player_name))
-  );
-  for(const row of actualDrivers){
-    const date=String(row.service_date).slice(0,10);
-    if(date>=cycle.start&&date<week&&row.actual_driver)used.add(normalize(row.actual_driver));
-  }
+  const used=new Set(cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===cycle.start).map(x=>normalize(x.player_name)));
+  for(const row of actualDrivers){const date=String(row.service_date).slice(0,10);if(date>=cycle.start&&date<=weekEnd&&row.actual_driver)used.add(normalize(row.actual_driver))}
   const weekVs=vsScores.filter(x=>String(x.vs_date).slice(0,10)===sourceWeek&&Number(x.day)>=1&&Number(x.day)<=5);
   const savedWeekType=weekSettings.find(x=>String(x.schedule_week).slice(0,10)===week)?.week_type;
   const weekType=String(savedWeekType||weekVs.find(x=>x.week_type)?.week_type||'push').toLowerCase()==='save'?'save':'push';
@@ -49,7 +45,12 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   days.push(assign({date:addDays(week,4),day:5,source:teamB,sourceType:'DS_B',used,actualMap}));
   days.push(assign({date:addDays(week,5),day:6,source:teamA,sourceType:'DS_A',used,actualMap}));
   days.push(assign({date:addDays(week,6),day:7,source:donationRanking,sourceType:'DONATIONS',used,actualMap}));
-  return{week,weekEnd,sourceWeek,cycle,weekType,days,vsRanking,teamA,teamB,donationRanking};
+  // Select all titulars first, then one shared, ordered reserve pool per category.
+  const reserveUsed=new Set(used),reservePlan=[['VS',vsRanking,4],['DS_B',teamB,2],['DS_A',teamA,2],['DONATIONS',donationRanking,3]];
+  const reservePools={};
+  for(const [type,source,count] of reservePlan){const pool=sourceCandidates(source,reserveUsed).slice(0,count).map(x=>x.player_name);reservePools[type]=pool;for(const name of pool)reserveUsed.add(normalize(name))}
+  for(const item of days)item.substitutes=reservePools[item.source];
+  return{week,weekEnd,sourceWeek,cycle,weekType,days,reservePools,vsRanking,teamA,teamB,donationRanking};
 }
 
 /** Explain the exact input data and selection for any player on any service day. */
@@ -83,7 +84,7 @@ export function auditPlayer({schedule,playerName,vsScores=[],dsScores=[],donatio
     if(item.source.startsWith('DS')&&!rank)reasons.push('Sin puntuación registrada en '+item.source.replace('_',' '));
     if(!rank&&!reasons.length)reasons.push('No figura entre los candidatos registrados para este día');
     if(rank&&!availableRank&&!reasons.length)reasons.push('Excluido por el historial o las restricciones del ciclo');
-    if(availableRank>3&&!reasons.length)reasons.push('Elegible, pero quedó por detrás de los tres primeros candidatos disponibles');
+    if(availableRank&&!selected&&!reasons.length)reasons.push('Elegible, pero no está entre los titulares ni en la bolsa de suplentes de su categoría');
     return{date:item.date,day:item.day,source:item.source,selected,actual,rank,availableRank,reasons,vsDaily:[1,2,3,4,5].map(day=>({day,points:daily.get(day)??null})),donation:donation?{points:donation.points,rank:donation.rank}:null,driver:item.planned,substitutes:item.substitutes};
   });
 }
