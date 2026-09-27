@@ -1614,5 +1614,14 @@
 <script id="hola-donations-home">
 (async()=>{const base='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/technology_donations?select=week_start,player_name,points,rank&order=week_start.desc,rank.asc&limit=100';try{const r=await fetch(base,{headers:{apikey:'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV'}});if(!r.ok)return;const rows=await r.json();if(!rows.length)return;const week=rows[0].week_start;document.getElementById('donationsWeek').textContent='Semana del '+week;const box=document.getElementById('donationsList');box.replaceChildren();const weekly=rows.filter(x=>x.week_start===week).sort((a,b)=>Number(a.rank)-Number(b.rank));const extra=document.createElement('div');extra.className='donations-board__list';extra.id='donationsExtra';extra.hidden=true;extra.style.display='none';for(const x of weekly){const row=document.createElement('div');row.className='donation-row';const rank=document.createElement('span');rank.textContent=x.rank<=3?['🥇','🥈','🥉'][x.rank-1]:'#'+x.rank;const name=document.createElement('strong');name.textContent=x.player_name;const points=document.createElement('b');points.textContent=Number(x.points).toLocaleString('es-ES');row.append(rank,name,points);(Number(x.rank)<=3?box:extra).append(row)}if(extra.children.length){box.append(extra);const button=document.createElement('button');button.type='button';button.className='donations-board__more';button.setAttribute('aria-controls','donationsExtra');button.setAttribute('aria-expanded','false');const label=()=>{const es=(document.documentElement.lang||'es')==='es';button.textContent=extra.hidden?(es?'Ver clasificación completa ↓':'View full ranking ↓'):(es?'Mostrar solo TOP 3 ↑':'Show TOP 3 only ↑')};label();button.addEventListener('click',()=>{extra.hidden=!extra.hidden;extra.style.display=extra.hidden?'none':'grid';button.setAttribute('aria-expanded',String(!extra.hidden));label()});box.append(button)}}catch(e){console.warn('Donations unavailable',e)}})();
 </script>
-<script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
+<script src="js/hola-russian.js?v=20260927-8"></script>
+<script>
+document.addEventListener('click',function(event){
+  const link=event.target.closest('a[href^="survey.html"]');
+  if(!link)return;
+  const lang=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang');
+  if(lang==='ru')link.href='survey.html?lang=ru';
+},{capture:true});
+</script>
+</body>
 </html>
