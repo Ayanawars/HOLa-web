@@ -110,11 +110,11 @@ $('read').addEventListener('click',async()=>{
     const existing=[...$('rows').children].map(row=>({
       player_name:row.querySelector('select').value,
       points:row.querySelector('input').value
-    })).filter(row=>row.player_name||row.points!=='');
+    })).filter(row=>row.player_name||(row.points!==''&&Number(row.points)>0));
     const merged=existing.map(row=>({...row}));
     let added=0,duplicates=0,unmatched=0;
     for(const item of unique){
-      if(!item.player){unmatched++;warnings.push('Sin coincidencia HOLa: '+item.name+' ('+item.points.toLocaleString('es-ES')+' puntos)');continue}
+      if(!item.player){unmatched++;if(!merged.some(row=>!row.player_name&&Number(row.points)===item.points))merged.push({player_name:'',points:String(item.points)});warnings.push('Revisa y selecciona el nombre de '+item.name+' ('+item.points.toLocaleString('es-ES')+' puntos)');continue}
       const key=normalize(item.player.name);
       const previous=merged.find(row=>normalize(row.player_name)===key);
       if(previous){
@@ -133,7 +133,7 @@ $('read').addEventListener('click',async()=>{
       row.querySelector('select').value=item.player_name;
       row.querySelector('input').value=item.points;
     });
-    status('OCR: '+unique.length+' detectados · '+added+' nuevos · '+duplicates+' repetidos · '+unmatched+' por revisar. Total conservado: '+merged.length+'.'+(warnings.length?'\n'+warnings.join('; '):''))
+    status('OCR: '+unique.length+' detectados · '+added+' nuevos · '+duplicates+' repetidos · '+unmatched+' por revisar. Filas con puntuación: '+merged.length+'.'+(warnings.length?'\n'+warnings.join('; '):''))
   }catch(e){status(tr('ocrError',{error:e.message}),true)}
   finally{btn.disabled=false}
 });
