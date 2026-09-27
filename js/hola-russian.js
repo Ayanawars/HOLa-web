@@ -4,6 +4,11 @@ const STORAGE_KEYS=['hola-language','hola-lang','hola_survey_language','hola_ava
 let saved=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang')||localStorage.getItem('hola_survey_language')||localStorage.getItem('hola_avatar_lang');
 const browser=(navigator.language||'').toLowerCase().split(/[-_]/)[0];
 if(!saved&&browser==='ru'){saved='ru';STORAGE_KEYS.forEach(k=>localStorage.setItem(k,'ru'))}
+const storedLanguages=STORAGE_KEYS.map(k=>localStorage.getItem(k)).filter(Boolean);
+if(new Set(storedLanguages).size>1){
+ const nonRussian=storedLanguages.find(lang=>lang!=='ru');
+ if(nonRussian){saved=nonRussian;STORAGE_KEYS.forEach(k=>localStorage.setItem(k,nonRussian))}
+}
 const active=()=>localStorage.getItem('hola-language')==='ru';
 function syncLanguage(lang){if(!lang)return;STORAGE_KEYS.forEach(k=>localStorage.setItem(k,lang))}
 const D=new Map(Object.entries({
