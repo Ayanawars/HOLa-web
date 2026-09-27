@@ -24,16 +24,16 @@
     <div class="topbar"><a class="round" href="admin-center-hola_login.html" aria-label="Volver">‹</a><a class="round" href="train.html" aria-label="Ver página pública">🚂</a></div>
     <section class="card hero">
       <div class="kicker">TREN · ADMINISTRACIÓN</div><h1>Conductores reales</h1>
-      <p>La planificación se calcula automáticamente. Solo confirma quién condujo realmente cada día; las asignaciones posteriores cambiarán al instante.</p>
+      <p>La planificación incluye siete titulares y una bolsa semanal de once suplentes. Confirma quién condujo realmente cada día.</p>
       <div class="week-row"><select id="week"></select><div class="cycle" id="cycle">—</div></div>
       <div class="summary"><span class="pill" id="type">—</span><span class="pill" id="sourceWeek">—</span></div>
       <div class="mode-box"><label for="weekType">TIPO Y NORMA DE LA SEMANA</label><div class="mode-row"><select id="weekType"><option value="push">Push</option><option value="save">Save</option></select><button class="save" id="saveWeekType" type="button">GUARDAR</button></div><p class="mode-rule" id="modeRule"></p><div class="mode-status" id="modeStatus"></div></div>
     </section>
-    <div class="days" id="days"></div>
+    <div class="days" id="days"></div><section class="card hero" style="margin-top:14px"><h2>Bolsa semanal de suplentes</h2><div id="reservePools"></div></section>
   </main>
   <script type="module">
     import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260927-3';
+    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260927-5';
     const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id),dayNames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],sourceNames={VS:'VS semanal',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
     let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[],settings:[]},schedule;
@@ -50,11 +50,12 @@
       const box=$('days');box.replaceChildren();
       for(const item of schedule.days){
         const card=document.createElement('section');card.className='day';const pending=!item.planned;
-        card.innerHTML='<div class="day-head"><h2>'+dayNames[item.day]+' · '+fmt(item.date)+'</h2><span class="source">'+sourceNames[item.source]+'</span></div><div class="planned"><div class="slot main"><small>CONDUCTOR CALCULADO</small><strong></strong></div><div class="slot"><small>SUPLENTE 1</small><strong></strong></div><div class="slot"><small>SUPLENTE 2</small><strong></strong></div></div><div class="actual"><select aria-label="Conductor real"></select><button class="save" type="button">GUARDAR</button></div><div class="saved"></div>';
-        const names=card.querySelectorAll('.slot strong');names[0].textContent=item.planned||'Pendiente de datos';names[1].textContent=item.substitutes[0]||'—';names[2].textContent=item.substitutes[1]||'—';
+        card.innerHTML='<div class="day-head"><h2>'+dayNames[item.day]+' · '+fmt(item.date)+'</h2><span class="source">'+sourceNames[item.source]+'</span></div><div class="planned"><div class="slot main"><small>CONDUCTOR CALCULADO</small><strong></strong></div></div><div class="actual"><select aria-label="Conductor real"></select><button class="save" type="button">GUARDAR</button></div><div class="saved"></div>';
+        const names=card.querySelectorAll('.slot strong');names[0].textContent=item.planned||'Pendiente de datos';
         const select=card.querySelector('select');select.append(playerOptions(item.actual));const status=card.querySelector('.saved');status.textContent=item.actual?'Registrado: '+item.actual:(pending?'Esperando '+sourceNames[item.source].toLowerCase():'Sin confirmar');if(!item.actual)status.classList.add('pending');
         card.querySelector('.save').addEventListener('click',()=>save(item,select,card.querySelector('.save'),status));box.append(card)
       }
+      const poolBox=$('reservePools');poolBox.replaceChildren();for(const [type,label,count] of [['VS','VS · lunes a jueves',4],['DS_B','Desert Storm B · viernes',2],['DS_A','Desert Storm A · sábado',2],['DONATIONS','Donaciones · domingo',3]]){const p=document.createElement('p');p.style.cssText='padding:10px 0;border-bottom:1px solid #e1c986;font-size:12px;line-height:1.7';const names=schedule.reservePools[type]||[];p.textContent=label+' ('+names.length+'/'+count+'): '+(names.map((name,i)=>(i+1)+'. '+name).join(' · ')||'Sin candidatos');poolBox.append(p)}
     }
     async function save(item,select,button,status){
       if(!select.value){status.textContent='Selecciona quién condujo realmente.';status.className='saved pending';return}
