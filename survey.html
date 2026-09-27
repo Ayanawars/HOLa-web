@@ -4234,7 +4234,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const name=clean($("playerName")?.value);
   if(!name){notice(t("incomplete"),"error");window.HOLaSurveyValidation?.showStep(0);return;}
   const scanned=window.HOLaSquadScanReceipt?.get(name);
-  if(!scanned?.token){notice(t("scan"),"error");window.HOLaSurveyValidation?.showStep(2);return;}
+  // OCR is optional: manually entered squad types and powers are validated above.
   const types=["s1type","s2type","s3type"].map(id=>clean($(id)?.value));
   const rawProfession=document.querySelector('input[name="profession"]:checked')?.value||"";
   const rawT10=document.querySelector('input[name="t10"]:checked')?.value||"";
@@ -4254,7 +4254,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   };
   button.disabled=true;if(caption)caption.textContent=window.holaT?.("saving","SAVING…")||"Guardando…";notice("","");
   try{
-   const response=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+KEY},body:JSON.stringify({name,verificationToken:scanned.token,profile})});
+   const response=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+KEY},body:JSON.stringify({name,verificationToken:scanned?.token||null,profile})});
    const data=await response.json().catch(()=>({}));
    if(!response.ok){
     if(["VERIFICATION_REQUIRED","VERIFICATION_INVALID","VERIFICATION_EXPIRED"].includes(String(data.code||""))){
