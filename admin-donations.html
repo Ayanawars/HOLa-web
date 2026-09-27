@@ -41,6 +41,8 @@ function fillSundays(){const select=$('week');select.replaceChildren();const tod
 function makeRows(count=7){const box=$('rows');box.replaceChildren();for(let i=1;i<=Math.max(7,count);i++){const row=document.createElement('div');row.className='row';row.innerHTML='<strong>#'+i+'</strong><label>'+tr('player')+'<select class="player"><option value="">'+tr('select')+'</option></select></label><label>'+tr('points')+'<input class="points" inputmode="numeric" type="number" min="0" step="1" placeholder="0"></label>';const select=row.querySelector('select');for(const p of players){const opt=document.createElement('option');opt.value=p.name;opt.textContent=p.name;select.append(opt)}box.append(row)}}
 function addDonationRow(){const existing=[...$('rows').children].map((r,i)=>({rank:i+1,name:r.querySelector('select').value,points:r.querySelector('input').value}));makeRows(existing.length+1);for(const r of existing){const el=$('rows').children[r.rank-1];el.querySelector('select').value=r.name;el.querySelector('input').value=r.points}}
 const addRowButton=document.createElement('button');addRowButton.type='button';addRowButton.className='btn';addRowButton.textContent='+ Añadir puesto al ranking';addRowButton.addEventListener('click',addDonationRow);$('rows').after(addRowButton);
+function reviewedRows(){return [...$('rows').children].map(row=>({player_name:row.querySelector('select').value,points:row.querySelector('input').value})).filter(row=>row.player_name||(row.points!==''&&Number(row.points)>0))}
+function mergeReviewed(target,incoming){for(const row of incoming){const key=normalize(row.player_name);const found=key?target.find(x=>normalize(x.player_name)===key):target.find(x=>!x.player_name&&x.points===row.points);if(!found)target.push({...row});else if((found.points===''||Number(found.points)===0)&&row.points!=='')found.points=row.points}return target}
 function assign(rank,name,points){const row=$('rows').children[rank-1];if(!row)return;const target=normalize(name);let found=players.find(p=>normalize(p.name)===target);if(!found&&target.length>3){const matches=players.filter(p=>normalize(p.name).startsWith(target)||target.startsWith(normalize(p.name)));if(matches.length===1)found=matches[0]}if(found)row.querySelector('select').value=found.name;if(Number.isFinite(points))row.querySelector('input').value=points;return !!found}
 async function init(){try{const {createClient}=await Promise.race([import('https://esm.sh/@supabase/supabase-js@2'),new Promise((_,reject)=>setTimeout(()=>reject(Error('No se pudo cargar Supabase')),12000))]);sb=createClient(SUPABASE_URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data:{session}}=await Promise.race([sb.auth.getSession(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Tiempo de espera agotado al comprobar la sesión')),12000))]);if(!session)throw Error('Sin sesión');const {data:admin,error:ae}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(ae||!admin)throw Error('Sin acceso');const {data:p,error:pe}=await sb.from('players').select('name,rank').order('name');if(pe)throw pe;players=p;const officer=p.find(x=>normalize(x.name)===normalize(admin.display_name)&&['R4','R5'].includes(String(x.rank).toUpperCase()));if(!officer)throw Error('No eres R4/R5');$('guard').hidden=true;$('app').hidden=false;fillSundays();makeRows();await loadWeek()}catch(e){$('guard').textContent='No se pudo comprobar el acceso: '+e.message+'. Abre el centro de administración e inicia sesión de nuevo.';console.error('Donations admin access:',e)}}
 async function loadWeek(){const sunday=$('week').value;if(!sunday)return;const week=monday(sunday);const {data,error}=await sb.from('technology_donations').select('player_name,points,rank').eq('week_start',week).order('rank');if(error){status(error.message,true);return}makeRows(Math.max(7,...(data||[]).map(r=>Number(r.rank)||0)));for(const r of data||[])assign(r.rank,r.player_name,Number(r.points));status(data?.length?tr('loaded'):tr('empty'))}
@@ -79,7 +81,7 @@ function parseRowText(text){
 $('read').addEventListener('click',async()=>{
   const files=[...$('shots').files];if(!files.length){status('Selecciona una o varias capturas.',true);return}
   if(!window.Tesseract){status(tr('noOcr'),true);return}
-  const btn=$('read');btn.disabled=true;const detected=[],warnings=[];
+  const btn=$('read');btn.disabled=true;const detected=[],warnings=[],beforeOcr=reviewedRows();
   try{
     const worker=await Tesseract.createWorker('eng');
     try{
@@ -107,11 +109,15 @@ $('read').addEventListener('click',async()=>{
       if(!unique.some(x=>x.key===key))unique.push({...item,key})
     }
     // Merge new screenshots into the current review without erasing earlier OCR or manual edits.
-    const existing=[...$('rows').children].map(row=>({
-      player_name:row.querySelector('select').value,
-      points:row.querySelector('input').value
-    })).filter(row=>row.player_name||(row.points!==''&&Number(row.points)>0));
-    const merged=existing.map(row=>({...row}));
+    // Take a snapshot before OCR starts and merge it with any edits made while OCR was running.
+    const merged=mergeReviewed(beforeOcr.map(row=>({...row})),reviewedRows());
+    // Also restore previously published rows for this same week, so a fresh browser session cannot erase them.
+    const sunday=$('week').value;
+    if(sunday){
+      const {data:stored,error:storedError}=await sb.from('technology_donations').select('player_name,points,rank').eq('week_start',monday(sunday)).order('rank');
+      if(storedError)throw storedError;
+      mergeReviewed(merged,(stored||[]).map(row=>({player_name:row.player_name,points:String(row.points)})));
+    }
     let added=0,duplicates=0,unmatched=0;
     for(const item of unique){
       if(!item.player){unmatched++;if(!merged.some(row=>!row.player_name&&Number(row.points)===item.points))merged.push({player_name:'',points:String(item.points)});warnings.push('Revisa y selecciona el nombre de '+item.name+' ('+item.points.toLocaleString('es-ES')+' puntos)');continue}
