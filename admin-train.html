@@ -93,5 +93,5 @@
     fillWeeks();$('week').addEventListener('change',render);$('weekType').addEventListener('change',()=>{$('modeRule').textContent=$('weekType').value==='save'?'SAVE: mínimo 7,2 M cada día de lunes a viernes. Entre quienes cumplen, tiene prioridad el menor total semanal (más cerca de 7,2 M diarios).':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='Cambio sin guardar.'});$('saveWeekType').addEventListener('click',saveWeekType);
     if(!await verify())location.replace('admin-login.html');else{try{await load();$('guard').hidden=true;$('app').hidden=false}catch(error){$('guard').innerHTML='<div class="error">'+error.message+'</div>'}}
   </script>
-<script src="js/hola-russian.js?v=20260927-4"></script>\n</body>
+<script src="js/hola-russian.js?v=20260927-5"></script>\n</body>
 </html>
