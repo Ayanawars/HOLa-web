@@ -23,18 +23,19 @@ const D=new Map(Object.entries({
 '⚠ ESTA SEMANA ES DE PRUEBA':'⚠ ЭТА НЕДЕЛЯ ТЕСТОВАЯ','Semana del tren':'Неделя поезда','Conductores de la semana':'Машинисты недели','7 DÍAS · 7 TITULARES':'7 ДНЕЙ · 7 ОСНОВНЫХ МАШИНИСТОВ','Suplentes de la semana':'Запасные на неделю','VS · lunes a jueves':'VS · с понедельника по четверг','DONATIONS':'ПОЖЕРТВОВАНИЯ','11 suplentes por categoría. Si falta un titular, entra el siguiente de su lista. Cada conductor decide sus puestos VIP y Guardián.':'11 запасных по категориям. Если основной машинист отсутствует, его заменяет следующий из списка. Каждый машинист сам назначает места VIP и Стража.','Auditoría del tren':'История поезда','Consulta los resultados, fechas y motivos de un jugador.':'Просмотрите результаты, даты и причины для выбранного игрока.','Escribe el nombre de un jugador para ver su semana.':'Введите имя игрока, чтобы увидеть его неделю.','Las posiciones mostradas esta semana no son las correctas. La clasificación oficial es la que N6C6R6 envíe por correo.':'Позиции, показанные на этой неделе, являются тестовыми. Официальный рейтинг будет указан в письме от N6C6R6.','El método automático se utilizará a partir de la semana del 5 al 10 de octubre, con los datos recogidos del 28 de septiembre al 4 de octubre.':'Автоматический метод начнёт применяться с недели 5–10 октября на основе данных, собранных с 28 сентября по 4 октября.','Del 28 de septiembre al 4 de octubre':'С 28 сентября по 4 октября','Donaciones':'Пожертвования','Suplentes':'Запасные','Titulares':'Основные машинисты','Guardián':'Страж','Jugador':'Игрок','Puntos':'Очки','Fecha':'Дата','Motivo':'Причина'
 }));
 const ATTR=['placeholder','title','aria-label'];
+function localizeDates(value){const months={' ene ':' янв. ',' feb ':' февр. ',' mar ':' марта ',' abr ':' апр. ',' may ':' мая ',' jun ':' июня ',' jul ':' июля ',' ago ':' авг. ',' sept ':' сент. ',' oct ':' окт. ',' nov ':' нояб. ',' dic ':' дек. '};let out=' '+value+' ';for(const [a,b] of Object.entries(months))out=out.replaceAll(a,b);return out.slice(1,-1)}
 function translateValue(value){
  if(!value)return value;
  const trimmed=value.trim();
- if(D.has(trimmed))return value.replace(trimmed,D.get(trimmed));
- let m=trimmed.match(/^(Week|Semana) (\d)\/4 · (.+)$/);if(m)return 'Неделя '+m[2]+'/4 · '+m[3];
- m=trimmed.match(/^(Data|Datos): (.+)$/);if(m)return 'Данные: '+m[2];
- m=trimmed.match(/^(Monday|Lunes|Tuesday|Martes|Wednesday|Miércoles|Thursday|Jueves|Friday|Viernes|Saturday|Sábado|Sunday|Domingo) · (.+)$/);if(m)return (D.get(m[1])||m[1])+' · '+m[2];
- m=trimmed.match(/^(Real driver|Conductor real): (.+)$/);if(m)return 'Фактический машинист: '+m[2];
- m=trimmed.match(/^(Registered|Registrado): (.+)$/);if(m)return 'Записан: '+m[2];
- m=trimmed.match(/^(TOP|Top) (\d+)/);if(m)return trimmed.replace(m[0],'ТОП '+m[2]);
- const months={' ene ':' янв. ',' feb ':' февр. ',' mar ':' марта ',' abr ':' апр. ',' may ':' мая ',' jun ':' июня ',' jul ':' июля ',' ago ':' авг. ',' sept ':' сент. ',' oct ':' окт. ',' nov ':' нояб. ',' dic ':' дек. '};
- let dated=' '+value+' ';for(const [a,b] of Object.entries(months))dated=dated.replaceAll(a,b);return dated.slice(1,-1);
+ if(D.has(trimmed))return localizeDates(value.replace(trimmed,D.get(trimmed)));
+ let m=trimmed.match(/^(Week|Semana) (\d)\/4 · (.+)$/);if(m)return localizeDates('Неделя '+m[2]+'/4 · '+(D.get(m[3])||m[3]));
+ m=trimmed.match(/^(Data|Datos): (.+)$/);if(m)return localizeDates('Данные: '+m[2]);
+ m=trimmed.match(/^(Monday|Lunes|Tuesday|Martes|Wednesday|Miércoles|Thursday|Jueves|Friday|Viernes|Saturday|Sábado|Sunday|Domingo) · (.+)$/);if(m)return localizeDates((D.get(m[1])||m[1])+' · '+m[2]);
+ m=trimmed.match(/^(Real driver|Conductor real): (.+)$/);if(m)return localizeDates('Фактический машинист: '+m[2]);
+ m=trimmed.match(/^(Registered|Registrado): (.+)$/);if(m)return localizeDates('Записан: '+m[2]);
+ m=trimmed.match(/^(TOP|Top) (\d+)/);if(m)return localizeDates(trimmed.replace(m[0],'ТОП '+m[2]));
+ m=trimmed.match(/^(Week|Semana) (\d)\/4$/);if(m)return 'Неделя '+m[2]+'/4';
+ return localizeDates(value);
 }
 function translateNode(root){
  if(!active())return;
