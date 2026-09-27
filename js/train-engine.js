@@ -35,7 +35,7 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const weekType=String(savedWeekType||weekVs.find(x=>x.week_type)?.week_type||'push').toLowerCase()==='save'?'save':'push';
   const grouped=new Map;
   for(const row of weekVs){const k=normalize(row.player_name);if(!grouped.has(k))grouped.set(k,{player_name:row.player_name,days:new Map});grouped.get(k).days.set(Number(row.day),Number(row.points)||0)}
-  const complies=points=>weekType==='save'?points<=VS_LIMIT:points>=VS_LIMIT;
+  const complies=points=>points>=VS_LIMIT;
   const vsRanking=[...grouped.values()].filter(canDrive).filter(x=>x.days.size===5&&[...x.days.values()].every(complies)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>weekType==='save'?(a.total-b.total||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
   const dsWeek=dsScores.filter(x=>String(x.battle_date).slice(0,10)>=sourceWeek&&String(x.battle_date).slice(0,10)<=addDays(sourceWeek,6));
   const teamA=dsWeek.filter(canDrive).filter(x=>String(x.team).toUpperCase()==='A').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
@@ -64,7 +64,7 @@ export function auditPlayer({schedule,playerName,vsScores=[],dsScores=[],donatio
   const vs=vsScores.filter(x=>String(x.vs_date).slice(0,10)===sourceWeek&&normalize(x.player_name)===name&&Number(x.day)>=1&&Number(x.day)<=5);
   const daily=new Map(vs.map(x=>[Number(x.day),Number(x.points)||0]));
   const missing=[1,2,3,4,5].filter(d=>!daily.has(d));
-  const failed=[...daily].filter(([d,p])=>weekType==='save'?p>VS_LIMIT:p<VS_LIMIT).map(([day,points])=>({day,points}));
+  const failed=[...daily].filter(([d,p])=>p<VS_LIMIT).map(([day,points])=>({day,points}));
   const vsPass=!missing.length&&!failed.length;
   const history=actualDrivers.filter(x=>normalize(x.actual_driver)===name&&String(x.service_date).slice(0,10)>=schedule.cycle.start&&String(x.service_date).slice(0,10)<=schedule.cycle.end);
   const exclusions=cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===schedule.cycle.start&&normalize(x.player_name)===name);
