@@ -8,6 +8,7 @@ const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;
 const format=value=>Number(value||0).toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+"M";
 const aliases={"jebraw":"JEBRAWW","jebrawuu":"JEBRAWW","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ"};
 let profiles=[],byName=new Map(),results=[],worker=null,busy=false,scanned=false,session=null,report=null;
+let thpReportText="";
 function message(value,kind="info",id="scanStatus"){const el=$(id);el.textContent=value;el.className="notice "+(kind==="info"?"":kind);}
 function parseTHP(value){
  const text=String(value??"").trim().replace(/\s/g,"").replace(/[Мᴍｍ]/g,"M");
@@ -244,10 +245,11 @@ function mergeCandidates(found){
  }
 }
 async function loadProfiles(){
- const {data,error}=await sb.from("players").select("name,rank,thp").order("name");
+ const {data,error}=await sb.from("players").select("name,rank,thp,thp_updated_at").order("name");
  if(error)throw new Error("No se pudo leer los miembros: "+error.message);
  profiles=data||[];byName=new Map(profiles.map(row=>[normal(row.name),row]));
  results.forEach(row=>{if(row.name){const match=official(row.name);if(match)row.name=match.name;}});
+ if(!$("thpAuditResults").hidden)renderTHPReport();
 }
 async function verify(){
  const auth=await sb.auth.getSession(),record=auth.data?.session;
@@ -416,6 +418,104 @@ async function save(){
 async function refresh(){
  if(busy)return;busy=true;$("reload").disabled=true;try{await loadProfiles();render();message("✓ Fichas oficiales recuperadas de Supabase.","success");}catch(e){message(String(e?.message||e),"error");}finally{busy=false;$("reload").disabled=false;render();}
 }
+
+function renderTHPReport(){
+ if($("thpAuditResults").hidden)return;
+ const threshold=Number($("staleDays").value)||14,now=Date.now(),oneDay=86400000;
+ const missing=[],stale=[],unknown=[];let current=0;
+ const dateText=stamp=>new Date(stamp).toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"numeric"});
+ for(const player of profiles){
+  const raw=String(player.thp??"").trim(),power=savedTHP(player.thp);
+  if(!raw||power==null){
+   missing.push({player,detail:raw?"THP con formato incorrecto: "+raw:"THP vacío"});
+   continue;
+  }
+  const stamp=player.thp_updated_at?Date.parse(player.thp_updated_at):NaN;
+  if(!Number.isFinite(stamp)||stamp>now+oneDay){
+   unknown.push({player,detail:raw+" · No consta cuándo cambió el THP"});
+   continue;
+  }
+  const elapsed=Math.max(0,now-stamp),age=Math.floor(elapsed/oneDay);
+  if(elapsed>=threshold*oneDay){
+   stale.push({player,stamp,detail:raw+" · "+dateText(stamp)+" · hace "+age+" día"+(age===1?"":"s")});
+  }else current++;
+ }
+ missing.sort((a,b)=>a.player.name.localeCompare(b.player.name,"es"));
+ unknown.sort((a,b)=>a.player.name.localeCompare(b.player.name,"es"));
+ stale.sort((a,b)=>a.stamp-b.stamp||a.player.name.localeCompare(b.player.name,"es"));
+ $("thpEmptyCount").textContent=missing.length;
+ $("thpStaleCount").textContent=stale.length;
+ $("thpUnknownCount").textContent=unknown.length;
+ $("thpCurrentCount").textContent=current;
+ const group=(heading,note,rows,emptyText)=>
+  '<section class="audit-group"><h3>'+esc(heading)+' ('+rows.length+')</h3>'+
+  '<p class="tip">'+esc(note)+'</p>'+
+  (rows.length?rows.map(item=>'<div class="audit-item"><b>'+esc(item.player.name)+
+   '</b><span>'+esc(item.detail)+'</span></div>').join(""):
+   '<p class="audit-ok">'+esc(emptyText)+'</p>')+'</section>';
+ $("thpAuditGroups").innerHTML=
+  group("Sin THP","Miembros cuyo valor está vacío o tiene un formato que el actualizador no puede interpretar.",
+   missing,"Ningún THP vacío o incorrecto.")+
+  group("Sin actualizar desde hace "+threshold+" días",
+   "Ordenados desde la actualización más antigua. Solo cuenta la última modificación real del THP.",
+   stale,"Ningún miembro supera este plazo.")+
+  group("Sin fecha verificable",
+   "Su THP existe, pero no hay una fecha histórica fiable. No se clasifican como desactualizados por suposiciones.",
+   unknown,"Todas las fichas con THP tienen fecha verificable.");
+ const lines=[
+  "HOLa · CONTROL THP · "+new Date(now).toLocaleDateString("es-ES"),
+  "Pendiente si no se actualiza en "+threshold+" días.",
+  "",
+  "SIN THP ("+missing.length+")",
+  ...(missing.length?missing.map(item=>item.player.name+" — "+item.detail):["Ninguno"]),
+  "",
+  "SIN ACTUALIZAR ("+stale.length+")",
+  ...(stale.length?stale.map(item=>item.player.name+" — "+item.detail):["Ninguno"]),
+  "",
+  "SIN FECHA VERIFICABLE ("+unknown.length+")",
+  ...(unknown.length?unknown.map(item=>item.player.name+" — "+item.detail):["Ninguno"]),
+  "",
+  "AL DÍA: "+current+" de "+profiles.length
+ ];
+ thpReportText=lines.join("\n");
+ message("Control actualizado: "+missing.length+" sin THP, "+stale.length+
+  " sin actualizar desde hace "+threshold+" días, "+unknown.length+
+  " sin fecha verificable y "+current+" al día.",
+  missing.length||stale.length||unknown.length?"warn":"success","thpAuditStatus");
+}
+async function checkTHPPending(){
+ if(busy)return;
+ busy=true;$("auditTHP").disabled=true;$("scan").disabled=true;$("reload").disabled=true;
+ message("Consultando los THP y las fechas de actualización en Supabase…","info","thpAuditStatus");
+ try{
+  await loadProfiles();
+  $("thpAuditResults").hidden=false;
+  renderTHPReport();
+ }catch(error){
+  $("thpAuditResults").hidden=true;
+  thpReportText="";
+  message("No se pudo revisar el THP: "+String(error?.message||error),"error","thpAuditStatus");
+ }finally{
+  busy=false;$("auditTHP").disabled=false;$("scan").disabled=false;$("reload").disabled=false;
+ }
+}
+async function copyTHPPending(){
+ if(!thpReportText)return;
+ try{
+  if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(thpReportText);
+  else{
+   const input=document.createElement("textarea");input.value=thpReportText;
+   input.style.position="fixed";input.style.opacity="0";document.body.append(input);
+   input.select();
+   const copied=document.execCommand("copy");input.remove();
+   if(!copied)throw new Error("El navegador no permite copiar.");
+  }
+  message("Informe THP copiado. Puedes pegarlo en el correo del juego.","success","thpAuditStatus");
+ }catch(error){
+  message("No se pudo copiar automáticamente: "+String(error?.message||error),"error","thpAuditStatus");
+ }
+}
+
 function bind(){
  $("screenshots").addEventListener("change",()=>{$("selected").textContent=$("screenshots").files.length+" capturas seleccionadas.";});
  $("scan").addEventListener("click",scan);$("reload").addEventListener("click",refresh);
@@ -431,5 +531,8 @@ function bind(){
  $("selectSafe").addEventListener("click",selectSafe);$("unselectAll").addEventListener("click",()=>{results.forEach(r=>r.selected=false);$("confirmChanges").checked=false;render();});
  $("confirmChanges").addEventListener("change",render);
  $("save").addEventListener("click",save);
+ $("auditTHP").addEventListener("click",checkTHPPending);
+ $("staleDays").addEventListener("change",renderTHPReport);
+ $("copyTHPReport").addEventListener("click",copyTHPPending);
 }
 (async()=>{try{if(!await verify())return;bind();}catch(e){$("gate").textContent="No se pudo abrir el actualizador THP: "+String(e?.message||e);$("gate").className="panel gate notice error";console.error(e);}})();
