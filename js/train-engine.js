@@ -29,7 +29,10 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
   const actualMap=new Map(actualDrivers.map(row=>[String(row.service_date).slice(0,10),row]));
   const used=new Set(cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===cycle.start).map(x=>normalize(x.player_name)));
-  for(const row of actualDrivers){const date=String(row.service_date).slice(0,10);if(date>=cycle.start&&date<=weekEnd&&row.actual_driver)used.add(normalize(row.actual_driver))}
+  // Only drivers from earlier weeks of this same cycle are excluded when planning this week.
+  // A confirmation during the selected week must never reshuffle its published titulars or reserves.
+  // On week 1/4, cycle.start === week, so drivers from the previous cycle become eligible again.
+  for(const row of actualDrivers){const date=String(row.service_date).slice(0,10);if(date>=cycle.start&&date<week&&row.actual_driver)used.add(normalize(row.actual_driver))}
   const weekVs=vsScores.filter(x=>String(x.vs_date).slice(0,10)===sourceWeek&&Number(x.day)>=1&&Number(x.day)<=5);
   const savedWeekType=weekSettings.find(x=>String(x.schedule_week).slice(0,10)===week)?.week_type;
   const weekType=String(savedWeekType||weekVs.find(x=>x.week_type)?.week_type||'push').toLowerCase()==='save'?'save':'push';
