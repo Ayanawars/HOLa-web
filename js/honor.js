@@ -8,8 +8,8 @@ const categories=[
   {type:'Aircraft',icon:'assets/icon-air-custom.png',label:'aircraft'}
 ];
 const deities={
-  mujer:[['Serket','assets/honor-serket.webp'],['Isis','assets/honor-isis.webp'],['Bastet','assets/honor-bastet.webp'],['Sekhmet','assets/honor-sekhmet.webp']],
-  hombre:[['Ra','assets/honor-ra.webp'],['Anubis','assets/honor-anubis.webp'],['Osiris','assets/honor-osiris.webp'],['Horus','assets/honor-horus.webp'],['Seth','assets/honor-seth.webp']]
+  mujer:[['Serket','assets/honor-serket.webp?v=2'],['Isis','assets/honor-isis.webp?v=2'],['Bastet','assets/honor-bastet.webp?v=2'],['Sekhmet','assets/honor-sekhmet.webp']],
+  hombre:[['Ra','assets/honor-ra.webp?v=2'],['Anubis','assets/honor-anubis.webp?v=2'],['Osiris','assets/honor-osiris.webp?v=2'],['Horus','assets/honor-horus.webp?v=2'],['Seth','assets/honor-seth.webp']]
 };
 const generic={mujer:'assets/honor-generic-female.webp',hombre:'assets/honor-generic-male.webp'};
 const translations={
