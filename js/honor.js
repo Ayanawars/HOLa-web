@@ -1,7 +1,6 @@
 (()=>{'use strict';
 const API='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/players?select=name,avatar,squad1_type,squad1_power,squad2_type,squad2_power,squad3_type,squad3_power&limit=1000';
 const KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
-const CACHE='hola-honor-ranking-v2';
 const categories=[
   {type:'Tank',icon:'assets/icon-tank-custom.png',label:'tank'},
   {type:'Missile',icon:'assets/icon-missile-custom.png',label:'missile'},
@@ -46,6 +45,6 @@ function applyLanguage(lang){const t=translations[lang]||translations.es;documen
 function goTo(index,smooth=true){current=Math.max(0,Math.min(2,index));rankings.scrollTo({left:current*rankings.clientWidth,behavior:smooth?'smooth':'auto'});document.querySelectorAll('.squad-tab').forEach((tab,i)=>tab.classList.toggle('active',i===current));document.querySelectorAll('.dots i').forEach((dot,i)=>dot.classList.toggle('active',i===current))}
 document.querySelectorAll('.squad-tab').forEach(tab=>tab.addEventListener('click',()=>goTo(Number(tab.dataset.index))));$('previous').addEventListener('click',()=>goTo((current+2)%3));$('next').addEventListener('click',()=>goTo((current+1)%3));let scrollTimer;rankings.addEventListener('scroll',()=>{clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>goTo(Math.round(rankings.scrollLeft/rankings.clientWidth),false),80)},{passive:true});
 $('languageButton').addEventListener('click',()=>{$('languageSheet').hidden=!$('languageSheet').hidden});$('languageSheet').addEventListener('click',e=>{const button=e.target.closest('[data-lang]');if(!button)return;applyLanguage(button.dataset.lang);$('languageSheet').hidden=true});document.addEventListener('click',e=>{if(!e.target.closest('#languageButton')&&!e.target.closest('#languageSheet'))$('languageSheet').hidden=true});
-async function load(){try{const response=await fetch(API,{headers:{apikey:KEY},cache:'no-store'});if(!response.ok)throw Error(`HTTP ${response.status}`);const data=await response.json();if(!Array.isArray(data))throw Error('Invalid response');rows=data;localStorage.setItem(CACHE,JSON.stringify(data));render()}catch(error){console.warn('Honor ranking live load failed',error);if(!rows.length){$('status').classList.add('error');$('status').textContent=(translations[getLanguage()]||translations.es).empty}}}
-try{const cached=JSON.parse(localStorage.getItem(CACHE)||'null');if(Array.isArray(cached)&&cached.length){rows=cached;render()}}catch{}applyLanguage(getLanguage());load();
+async function load(){try{const response=await fetch(API,{headers:{apikey:KEY},cache:'no-store'});if(!response.ok)throw Error(`HTTP ${response.status}`);const data=await response.json();if(!Array.isArray(data))throw Error('Invalid response');rows=data;render()}catch(error){console.warn('Honor ranking live load failed',error);if(!rows.length){$('status').classList.add('error');$('status').textContent=(translations[getLanguage()]||translations.es).empty}}}
+applyLanguage(getLanguage());load();
 })();
