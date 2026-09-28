@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const API='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/players?select=name,avatar,uploaded_avatar,hola_avatar,default_avatar,squad1_type,squad1_power,squad2_type,squad2_power,squad3_type,squad3_power&limit=1000';
+const API='https://ovybstpiomphrouvqxmf.supabase.co/rest/v1/players?select=name,avatar,squad1_type,squad1_power,squad2_type,squad2_power,squad3_type,squad3_power&limit=1000';
 const KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
 const CACHE='hola-honor-ranking-v2';
 const categories=[
@@ -34,7 +34,7 @@ const deityFor=p=>{const sex=genderOf(p.name),pool=deities[sex];return pool[hash
 const parsePower=v=>{const raw=String(v??'').trim().replace(/\s/g,'').replace(',','.');if(!raw)return 0;const m=raw.match(/^([\d.]+)([KMB])?$/i);if(!m)return 0;const n=Number(m[1]);return Number.isFinite(n)&&n>0?n*({K:1e3,M:1e6,B:1e9}[m[2]?.toUpperCase()]||1e6):0};
 const formatPower=n=>n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2).replace(/\.00$/,'')+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(Math.round(n));
 const element=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node};
-function avatarUrl(p){const url=p.default_avatar==='hola'&&p.hola_avatar?p.hola_avatar:p.uploaded_avatar||p.avatar||p.hola_avatar;return url&&/^(https:\/\/|data:image\/)/i.test(url)?url:''}
+function avatarUrl(p){const url=p.avatar;return url&&/^(https:\/\/|data:image\/)/i.test(url)?url:''}
 function image(src,cls,alt=''){const img=new Image();img.src=src;img.className=cls;img.alt=alt;img.loading='lazy';img.decoding='async';return img}
 function playerAvatar(p){const src=avatarUrl(p);if(src)return image(src,'player-avatar',p.name);const fallback=document.createElement('div');fallback.className='player-avatar avatar-letter';fallback.textContent=String(p.name||'?').trim()[0]?.toUpperCase()||'?';return fallback}
 function podiumCard(p,rank){const card=element('article','deity-card');card.dataset.rank=rank;const [deity,src]=deityFor(p);card.setAttribute('aria-label',`${rank}. ${p.name}, ${formatPower(p.power)}, ${deity}`);card.append(image(src,'deity-art',deity),element('span','rank-medal',rank));const info=element('div','podium-info');info.append(element('div','podium-name',p.name),element('div','podium-power',formatPower(p.power)));card.append(info,playerAvatar(p));return card}
