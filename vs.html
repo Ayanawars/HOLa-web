@@ -1547,6 +1547,41 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
           }))
           .sort((a, b) => b.total - a.total);
       }
+      // SAVE y PUSH exigen 7,2M diarios de lunes a viernes.
+      // El mejor de SAVE es el total válido más próximo a 36M; PUSH, el mayor.
+      const VS_MIN = 7200000;
+      const VS_DAYS = [1, 2, 3, 4, 5];
+      function vsRecorded() {
+        const recorded = new Set(
+          scores.filter(x => VS_DAYS.includes(Number(x.day)))
+            .map(x => key(x.player_name) + "|" + Number(x.day)),
+        );
+        const days = VS_DAYS.filter(day => scores.some(x => Number(x.day) === day));
+        return { recorded, days };
+      }
+      function bestVsPlayer(rows, selectedDay = "TOTAL") {
+        const { recorded, days: availableDays } = vsRecorded();
+        const days = selectedDay === "TOTAL"
+          ? availableDays
+          : availableDays.filter(day => day === Number(selectedDay));
+        const provisional = selectedDay === "TOTAL" && days.length < VS_DAYS.length;
+        if (!days.length) return { player: null, days, provisional };
+        const candidates = rows
+          .filter(x => days.every(d =>
+            recorded.has(key(x.name) + "|" + d) && Number(x.daily[d]) >= VS_MIN,
+          ))
+          .map(x => ({
+            ...x,
+            qualifyingTotal: days.reduce((sum, d) => sum + Number(x.daily[d]), 0),
+          }))
+          .sort((a, b) =>
+            (weekType === "save"
+              ? a.qualifyingTotal - b.qualifyingTotal
+              : b.qualifyingTotal - a.qualifyingTotal)
+            || a.name.localeCompare(b.name, "es", { sensitivity: "base" }),
+          );
+        return { player: candidates[0] || null, days, provisional };
+      }
       function render() {
         const rows = buildRows();
         const active =
@@ -1559,8 +1594,13 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         const sum = active.reduce((a, x) => a + x.total, 0);
         total.textContent = f(sum);
         participants.textContent = active.filter((x) => x.total > 0).length;
-        best.textContent = active[0]?.name || "—";
-        bestp.textContent = active[0] ? f(active[0].total) : "sin datos";
+        const bestResult = bestVsPlayer(rows, sel);
+        best.textContent = bestResult.player?.name || "—";
+        bestp.textContent = bestResult.player
+          ? (weekType.toUpperCase() + " · " + f(bestResult.player.qualifyingTotal)
+              + (sel === "TOTAL" ? " L-V" : "")
+              + (bestResult.provisional ? " · provisional" : ""))
+          : (bestResult.days.length ? "Sin jugadores que cumplan" : "Pendiente de datos");
         avg.textContent = active.length ? f(sum / active.length) : "—";
         ranking.innerHTML = active.length
           ? (() => {
@@ -1624,14 +1664,13 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         const eligible = rows.filter(x => days.every(d => hasRecord(x,d)));
         const pending = categories.find(c => c.id === "pending").items;
         const isPush = weekType === "push";
-        const fulfills = x => isPush ? days.every(d => x.daily[d] >= 7200000)
-          : days.reduce((sum,d) => sum + x.daily[d],0) === 7200000;
+        const fulfills = x => days.every(d => x.daily[d] >= VS_MIN);
         const passed = eligible.filter(fulfills);
         const failed = eligible.filter(x => !fulfills(x));
         const dayIndicator = (x,d) => {
           const saved = hasRecord(x,d);
           const points = x.daily[d];
-          const status = !saved ? "pending" : isPush ? (points >= 7200000 ? "ok" : "bad") : "saved";
+          const status = !saved ? "pending" : (points >= VS_MIN ? "ok" : "bad");
           const text = !saved ? "Sin datos" : f(points) + " puntos";
           const symbol = status === "ok" ? "●" : status === "bad" ? "●" : status === "saved" ? "●" : "○";
           return '<div class="compliance-day ' + status + '" title="' + esc(dayNames[d] + ": " + text) +
@@ -1660,7 +1699,7 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
                 esc(x.name) + '</b><span>' + result + '</span></div><div class="compliance-days">' +
                 days.map(d => dayIndicator(x,d)).join("") + '</div>' +
                 (!isPush ? '<div class="compliance-week-total">Total lunes-viernes: <b>' + f(total5) +
-                  '</b> / 7,2M</div>' : '') + '</article>';
+                  '</b> / 36M</div>' : '') + '</article>';
             }).join("") : '<div class="participation-empty">Ninguno</div>');
           window.translateVS?.(modal);
           modal.dataset.tone = tone;
@@ -1670,7 +1709,7 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         };
         document.getElementById("participationCompliance").innerHTML =
           '<p>' + (isPush ? 'Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.'
-            : 'Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.') +
+            : 'Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.') +
           '</p><div class="compliance-groups">' +
           complianceBox("CUMPLIERON",passed,"success") +
           complianceBox("NO CUMPLIERON",failed,"failure") +
@@ -1687,33 +1726,37 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
 
       }
       function compliance(rows) {
-        return rows.map((x) => {
-          const failed = [1, 2, 3, 4, 5, 6].filter((d) => x.daily[d] < 7200000);
-          const p = x.total;
-          let ok,
-            delta = 0;
-          if (weekType === "push") {
-            ok = failed.length === 0;
-            delta = failed.length;
-          } else {
-            ok = p === 7200000;
-            delta = Math.abs(p - 7200000);
-          }
-          return { ...x, ok, failed, delta };
+        const { recorded } = vsRecorded();
+        return rows.map(x => {
+          const missing = VS_DAYS.filter(d =>
+            !recorded.has(key(x.name) + "|" + d),
+          );
+          const failed = VS_DAYS.filter(d =>
+            recorded.has(key(x.name) + "|" + d) && Number(x.daily[d]) < VS_MIN,
+          );
+          const ok = missing.length === 0 && failed.length === 0;
+          const pending = missing.length > 0;
+          const total5 = VS_DAYS.reduce((sum, d) => sum + Number(x.daily[d]), 0);
+          const delta = weekType === "save"
+            ? Math.max(0, total5 - VS_MIN * VS_DAYS.length)
+            : failed.length;
+          return { ...x, ok, pending, missing, failed, delta, total5 };
         });
       }
       function renderStats() {
         const rows = buildRows(),
           c = compliance(rows),
           ok = c.filter((x) => x.ok).length,
-          fail = c.length - ok,
+          fail = c.filter(x => !x.ok && !x.pending).length,
+          pendingCount = c.filter(x => x.pending).length,
+          bestWeek = bestVsPlayer(rows),
           totalAlliance = rows.reduce((a, x) => a + x.total, 0),
           max = Math.max(1, ...rows.map((x) => x.total)),
           percent = rows.length ? Math.round((ok / rows.length) * 100) : 0;
         const push = weekType === "push";
         let html = "";
         if (currentTab === "summary") {
-          html = `<div class="hero"><div class="kicker">${push ? "🚀 SEMANA DE PUSH" : "🛡️ SEMANA DE SAVE"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">${push ? "7,2M cada día" : "7,2M total semanal"}</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(rows[0]?.name || "—")}</div><div class="small">${rows[0] ? f(rows[0].total) : ""}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>${push ? "Cumplen los 6 días" : "Cumplen exactamente"}</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia</div></div>`;
+          html = `<div class="hero"><div class="kicker">${push ? "🚀 SEMANA DE PUSH" : "🛡️ SEMANA DE SAVE"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">7,2M cada día</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(bestWeek.player?.name || "—")}</div><div class="small">${bestWeek.player ? f(bestWeek.player.qualifyingTotal) + " L-V" + (bestWeek.provisional ? " · provisional" : "") : "Pendiente de datos"}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>Cumplen lunes-viernes</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia · ⏳ ${pendingCount} PENDIENTES</div></div>`;
         }
         if (currentTab === "ranking") {
           html = `<div class="section"><h4>🏆 Ranking semanal — Total Supabase</h4>${rows.map((x, i) => `<div class="rank"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><div><b>${esc(x.name)}</b><div class="small">${x.days}/6 días con puntos</div></div><div class="points">${f(x.total)}</div></div>`).join("") || '<div class="status">Sin datos.</div>'}</div>`;
@@ -1724,7 +1767,7 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
               .filter((x) => x.ok)
               .map(
                 (x, i) =>
-                  `<div class="rank"><b>#${i + 1}</b><div><b>${esc(x.name)}</b><div class="badge ok">${push ? "CUMPLE LOS 6 DÍAS" : "CUMPLE 7,2M"}</div></div><div class="points">${f(x.total)}</div></div>`,
+                  `<div class="rank"><b>#${i + 1}</b><div><b>${esc(x.name)}</b><div class="badge ok">CUMPLE LOS 5 DÍAS</div></div><div class="points">${f(x.total)}</div></div>`,
               )
               .join("") ||
             '<div class="status">Todavía no hay jugadores que cumplan.</div>'
@@ -1733,13 +1776,9 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         if (currentTab === "noncompliance") {
           html = `<div class="section"><h4>🔴 Incumplimientos</h4>${
             c
-              .filter((x) => !x.ok)
+              .filter((x) => !x.ok && !x.pending)
               .map((x) => {
-                const msg = push
-                  ? `Faltan: ${x.failed.map((d) => dayNames[d]).join(", ")}`
-                  : x.total < 7200000
-                    ? `Faltan ${f(7200000 - x.total)}`
-                    : `Se pasa ${f(x.total - 7200000)}`;
+                const msg = `Faltan: ${x.failed.map((d) => dayNames[d]).join(", ")}`;
                 return `<div class="rank"><b>⚠</b><div><b>${esc(x.name)}</b><div class="badge bad">${esc(msg)}</div></div><div class="points">${f(x.total)}</div></div>`;
               })
               .join("") || '<div class="status">No hay incumplimientos.</div>'
@@ -1846,9 +1885,11 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         // Determina el tipo de semana por mayoría de registros, no por la
         // primera fila devuelta por Supabase. Así la página pública no puede
         // mostrar SAVE por una fila aislada o por un orden distinto de respuesta.
-        const pushCount = scores.filter((x) => x.week_type === "push").length;
-        const saveCount = scores.filter((x) => x.week_type === "save").length;
+        const pushCount = scores.filter(x => x.week_type === "push").length;
+        const saveCount = scores.filter(x => x.week_type === "save").length;
         weekType = pushCount >= saveCount ? "push" : "save";
+        // Los puntos de un modo no deben mezclarse con los del otro.
+        scores = scores.filter(x => !x.week_type || x.week_type === weekType);
 
         const publicWeekType = document.getElementById("weekTypePublic");
         if (publicWeekType) {
@@ -2089,6 +2130,9 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         for (const [code, words] of Object.entries(additionalTranslations)) Object.assign(T[code], words);
         const complianceTranslations = {"en":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: green = reaches 7.2M; red = below 7.2M; grey = no data.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: daily points are blue; compliance depends on the weekly total of 7.2M. Grey = no data."," puntos":" points"},"de":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: Grün = mindestens 7,2 Mio.; Rot = darunter; Grau = keine Daten.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: Tagespunkte sind blau; entscheidend sind insgesamt 7,2 Mio. pro Woche. Grau = keine Daten."," puntos":" Punkte"},"fr":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push : vert = au moins 7,2 M ; rouge = moins de 7,2 M ; gris = aucune donnée.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save : les points quotidiens sont bleus ; l’objectif dépend du total hebdomadaire de 7,2 M. Gris = aucune donnée."," puntos":" points"},"ro":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: verde = cel puțin 7,2M; roșu = sub 7,2M; gri = fără date.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: punctele zilnice sunt albastre; obiectivul depinde de totalul săptămânal de 7,2M. Gri = fără date."," puntos":" puncte"},"pt":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: verde = atinge 7,2M; vermelho = abaixo de 7,2M; cinzento = sem dados.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: os pontos diários aparecem a azul; o objetivo depende do total semanal de 7,2M. Cinzento = sem dados."," puntos":" pontos"},"uk":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: зелений = від 7,2 млн; червоний = менше; сірий = немає даних.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: щоденні бали сині; виконання залежить від тижневого підсумку 7,2 млн. Сірий = немає даних."," puntos":" балів"},"tr":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: yeşil = 7,2M ve üzeri; kırmızı = altında; gri = veri yok.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: günlük puanlar mavi; hedef haftalık toplam 7,2M üzerinden hesaplanır. Gri = veri yok."," puntos":" puan"},"it":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: verde = almeno 7,2M; rosso = sotto 7,2M; grigio = nessun dato.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: i punti giornalieri sono blu; l’obiettivo dipende dal totale settimanale di 7,2M. Grigio = nessun dato."," puntos":" punti"},"pl":{"Push: verde = alcanza 7,2M; rojo = no alcanza 7,2M; gris = sin datos.":"Push: zielony = co najmniej 7,2 mln; czerwony = poniżej; szary = brak danych.","Save: los puntos diarios se muestran en azul; el cumplimiento depende del total semanal de 7,2M. Gris = sin datos.":"Save: dzienne punkty są niebieskie; cel zależy od tygodniowej sumy 7,2 mln. Szary = brak danych."," puntos":" punktów"}};
         for (const [code, words] of Object.entries(complianceTranslations)) Object.assign(T[code], words);
+        const saveComplianceTranslations = {"en":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: green = at least 7.2M each day (Monday–Friday); red = below; grey = no data. Going above the minimum also counts.","Cumplen lunes-viernes":"Meets Monday–Friday","CUMPLE LOS 5 DÍAS":"MEETS ALL 5 DAYS","Sin jugadores que cumplan":"No qualifying players","provisional":"provisional"},"de":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: Grün = täglich mindestens 7,2 Mio. (Mo.–Fr.); Rot = darunter; Grau = keine Daten. Mehr als das Minimum zählt ebenfalls.","Cumplen lunes-viernes":"Montag–Freitag erfüllt","CUMPLE LOS 5 DÍAS":"ALLE 5 TAGE ERFÜLLT","Sin jugadores que cumplan":"Keine berechtigten Spieler","provisional":"vorläufig"},"fr":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save : vert = au moins 7,2 M chaque jour (lun.–ven.) ; rouge = en dessous ; gris = aucune donnée. Dépasser le minimum compte aussi.","Cumplen lunes-viernes":"Objectif atteint du lundi au vendredi","CUMPLE LOS 5 DÍAS":"OBJECTIF ATTEINT LES 5 JOURS","Sin jugadores que cumplan":"Aucun joueur admissible","provisional":"provisoire"},"ro":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: verde = minimum 7,2M zilnic (luni–vineri); roșu = sub minim; gri = fără date. Depășirea minimului este acceptată.","Cumplen lunes-viernes":"Îndeplinesc luni–vineri","CUMPLE LOS 5 DÍAS":"TOATE CELE 5 ZILE ÎNDEPLINITE","Sin jugadores que cumplan":"Niciun jucător eligibil","provisional":"provizoriu"},"pt":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: verde = mínimo diário de 7,2M (segunda–sexta); vermelho = abaixo; cinzento = sem dados. Ultrapassar o mínimo também conta.","Cumplen lunes-viernes":"Cumprem segunda–sexta","CUMPLE LOS 5 DÍAS":"CUMPRE OS 5 DIAS","Sin jugadores que cumplan":"Nenhum jogador elegível","provisional":"provisório"},"uk":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: зелений = щодня щонайменше 7,2 млн (пн.–пт.); червоний = менше; сірий = немає даних. Перевищення мінімуму також зараховується.","Cumplen lunes-viernes":"Виконано з понеділка по пʼятницю","CUMPLE LOS 5 DÍAS":"ВИКОНАНО ВСІ 5 ДНІВ","Sin jugadores que cumplan":"Немає гравців, які виконали умови","provisional":"попередньо"},"tr":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: yeşil = her gün en az 7,2M (Pzt.–Cum.); kırmızı = altında; gri = veri yok. Minimumu aşmak da geçerlidir.","Cumplen lunes-viernes":"Pazartesi–Cuma hedefini karşılıyor","CUMPLE LOS 5 DÍAS":"5 GÜNÜN TAMAMINDA BAŞARILI","Sin jugadores que cumplan":"Koşulları sağlayan oyuncu yok","provisional":"geçici"},"it":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: verde = almeno 7,2M al giorno (lun.–ven.); rosso = sotto; grigio = nessun dato. Superare il minimo conta comunque.","Cumplen lunes-viernes":"Obiettivo raggiunto lunedì–venerdì","CUMPLE LOS 5 DÍAS":"OBIETTIVO RAGGIUNTO TUTTI I 5 GIORNI","Sin jugadores que cumplan":"Nessun giocatore idoneo","provisional":"provvisorio"},"pl":{"Save: verde = mínimo diario de 7,2M (lunes-viernes); rojo = por debajo; gris = sin datos. Superar el mínimo también cumple.":"Save: zielony = co najmniej 7,2 mln dziennie (pon.–pt.); czerwony = poniżej; szary = brak danych. Przekroczenie minimum też się liczy.","Cumplen lunes-viernes":"Cel spełniony od poniedziałku do piątku","CUMPLE LOS 5 DÍAS":"CEL SPEŁNIONY PRZEZ 5 DNI","Sin jugadores que cumplan":"Brak kwalifikujących się graczy","provisional":"tymczasowo"}};
+        for (const [code, words] of Object.entries(saveComplianceTranslations))
+          Object.assign(T[code], words);
         const labels = {
           es: "🇪🇸 Español",
           en: "🇬🇧 English",
