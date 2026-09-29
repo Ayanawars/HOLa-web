@@ -1005,6 +1005,15 @@
         );
       }
 
+      // En la captura se busca JEBRAW, sin el adorno. El nombre completo solo
+      // se usa como identidad oficial al asociar los puntos y guardarlos.
+      function ocrMatchKey(memberName) {
+        const key = normName(memberName);
+        return key === normName("JEBRAW ᓚᘏᗢ")
+          ? normName("JEBRAW")
+          : key;
+      }
+
       function uniqueMemberNames(list) {
         const seen = new Set();
         return list
@@ -1383,6 +1392,7 @@
         { base: "Judéx", official: "Judéx ᓚᘏᗢ" },
         { base: "Ophicat", official: "Ophicat ᓚᘏᗢ" },
         { base: "sinsifeX", official: "sinsifeX ᓚᘏᗢ" },
+        { base: "JEBRAW", official: "JEBRAW ᓚᘏᗢ" },
       ];
 
       function matchDecoratedMemberVariant(key) {
@@ -1447,7 +1457,7 @@
         if (!variants.length) return null;
 
         for (const key of variants) {
-          const exact = memberNames.find((name) => normName(name) === key);
+          const exact = memberNames.find((name) => ocrMatchKey(name) === key);
           if (exact) return { name: exact, score: 1 };
 
           // Antes de la coincidencia aproximada general, resolvemos los nombres
@@ -1470,7 +1480,7 @@
         // únicamente un nombre oficial largo al inicio y un sufijo corto.
         for (const key of variants) {
           for (const name of memberNames) {
-            const memberKey = normName(name);
+            const memberKey = ocrMatchKey(name);
             const suffixLength = key.length - memberKey.length;
             if (
               memberKey.length >= 6 &&
@@ -1485,7 +1495,7 @@
 
         let best = null;
         for (const name of memberNames) {
-          const k = normName(name);
+          const k = ocrMatchKey(name);
           if (!k) continue;
           for (const key of variants) {
             const dist = levenshtein(key, k);
@@ -1496,7 +1506,7 @@
         if (!best) return null;
         const minLen = Math.min(
           ...variants.map((key) =>
-            Math.min(key.length, normName(best.name).length),
+            Math.min(key.length, ocrMatchKey(best.name).length),
           ),
         );
         // La coincidencia aproximada solo corrige errores claros de OCR; nunca
@@ -2178,14 +2188,36 @@
             .replace(/\s*heroes\s+of\s+last\s+area.*$/iu, "")
             .trim();
 
-          if (!text || isBadName(text)) continue;
+          if (!text) continue;
 
-          const match = matchMemberName(text);
+          // Si la línea OCR mezcla JEBRAW con el gato o el texto de la alianza,
+          // recuperamos SOLO la palabra JEBRAW (sin buscar el nombre con gato).
+          const jebrawWord = (line.Words || []).find(
+            (word) => normName(word.WordText) === normName("JEBRAW"),
+          );
+          const officialJebraw = jebrawWord
+            ? memberNames.find(
+                (name) => normName(name) === normName("JEBRAW ᓚᘏᗢ"),
+              )
+            : null;
+          const match = officialJebraw
+            ? { name: officialJebraw, score: 1 }
+            : !isBadName(text)
+              ? matchMemberName(text)
+              : null;
           if (!match) continue;
 
           const key = normName(match.name);
-          const top = Number(line.MinTop || 0);
-          const height = Number(line.MaxHeight || 0);
+          const top = Number(
+            officialJebraw
+              ? (jebrawWord.Top ?? line.MinTop ?? 0)
+              : (line.MinTop || 0),
+          );
+          const height = Number(
+            officialJebraw
+              ? (jebrawWord.Height ?? line.MaxHeight ?? 0)
+              : (line.MaxHeight || 0),
+          );
           const center = top + height / 2;
 
           // Una misma fila puede salir duplicada en el overlay.
