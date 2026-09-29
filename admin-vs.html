@@ -1014,6 +1014,14 @@
           : key;
       }
 
+      // El campo "Nombre detectado por OCR" muestra el nombre que aparece
+      // en la captura; el selector conserva la identidad oficial de Supabase.
+      function ocrDisplayName(name) {
+        return normName(name) === normName("JEBRAW ᓚᘏᗢ")
+          ? "JEBRAW"
+          : name;
+      }
+
       function uniqueMemberNames(list) {
         const seen = new Set();
         return list
@@ -2844,7 +2852,7 @@
               select.classList.add("has-selection");
             }
           } else {
-            add(x.name, x.points);
+            add(ocrDisplayName(x.name), x.points);
           }
         }
       }
@@ -3305,7 +3313,7 @@
             rankWarnings.map((issue) => [issue.key, issue]),
           );
           allFound.forEach((x) => {
-            add(x.name, x.points);
+            add(ocrDisplayName(x.name), x.points);
             const issue = warningsByMember.get(normName(x.name));
             if (issue) renderRankOrderWarning(rows.lastElementChild, issue);
           });
@@ -3318,7 +3326,7 @@
             (name) => !accepted.has(normName(name)),
           );
           missing.forEach((name) => {
-            add(name, "");
+            add(ocrDisplayName(name), "");
             const row = rows.lastElementChild;
             row.style.cssText += ";border:2px solid #e4b548;border-radius:12px;padding:10px;margin:8px 0";
             const note = document.createElement("div");
@@ -3339,7 +3347,7 @@
 
           if (missing.length) {
             ocrStatus.textContent +=
-              ` Faltan ${missing.length}: ${missing.join(" · ")}.`;
+              ` Faltan ${missing.length}: ${missing.map(ocrDisplayName).join(" · ")}.`;
           }
 
           if (rankWarnings.length) {
@@ -3432,7 +3440,7 @@
         rows.innerHTML = "";
         updateRankReviewPanel();
         if (missing.length) {
-          missing.forEach((name) => add(name, ""));
+          missing.forEach((name) => add(ocrDisplayName(name), ""));
           requestAnimationFrame(() =>
             rows.children[0]?.scrollIntoView({
               behavior: "smooth",
