@@ -120,18 +120,18 @@
       return input;
     }
     function renderTripComposition(card,item){
-      const saved=tripRowsFor(item.date),special=saved.find(x=>x.role==='vip'||x.role==='guardian')||null;
-      const specialValueInitial=special?.player_name||'',specialRoleInitial=special?.role||'vip';
+      const saved=tripRowsFor(item.date),specialSaved=saved.find(x=>x.role==='vip'||x.role==='guardian')||null;
+      const specialValueInitial=specialSaved?.player_name||'',specialRoleInitial=specialSaved?.role||'vip';
       const passengers=new Map(saved.filter(x=>x.role==='passenger').map(x=>[normalize(x.player_name),x.player_name]));
       const details=document.createElement('details');details.className='trip-details';
       const summary=document.createElement('summary'),sumText=document.createElement('span'),sumMeta=document.createElement('span');sumText.textContent='👥 COMPOSICIÓN REAL DEL TREN';sumMeta.className='trip-summary';summary.append(sumText,sumMeta);
       const body=document.createElement('div');body.className='trip-body';
 
-      const special=document.createElement('div');special.className='special-grid';
+      const specialArea=document.createElement('div');specialArea.className='special-grid';
       const specialBox=document.createElement('div');specialBox.className='special-card';specialBox.innerHTML='<label>INVITADO DEL CONDUCTOR · selección manual</label>';
       const roleSelect=document.createElement('select');roleSelect.style.cssText='width:100%;min-height:42px;margin-bottom:7px;padding:0 10px;border:1px solid #b8c9d2;border-radius:11px;background:#fff;color:#113f66;font-size:12px;font-weight:900';
       roleSelect.innerHTML='<option value="vip">VIP</option><option value="guardian">Guardián</option>';roleSelect.value=specialRoleInitial;
-      const specialSearch=document.createElement('div');specialBox.append(roleSelect,specialSearch);special.append(specialBox);
+      const specialSearch=document.createElement('div');specialBox.append(roleSelect,specialSearch);specialArea.append(specialBox);
       let specialValue=specialValueInitial,specialRole=specialRoleInitial;
       const specialInput=buildMemberPicker(specialSearch,specialValue,'Buscar miembro para VIP / Guardián…',v=>{specialValue=v;refreshSummary()});
       roleSelect.addEventListener('change',()=>{specialRole=roleSelect.value;refreshSummary()});
@@ -143,7 +143,7 @@
       const chips=document.createElement('div');chips.className='passenger-chips';
       const saveBtn=document.createElement('button');saveBtn.type='button';saveBtn.className='trip-save';saveBtn.textContent='GUARDAR COMPOSICIÓN REAL';
       const saveStatus=document.createElement('div');saveStatus.className='trip-save-status';
-      passengerBox.append(actions,pStatus,chips,saveBtn,saveStatus);body.append(special,passengerBox);details.append(summary,body);card.append(details);
+      passengerBox.append(actions,pStatus,chips,saveBtn,saveStatus);body.append(specialArea,passengerBox);details.append(summary,body);card.append(details);
 
       function specialLabel(){return specialRole==='guardian'?'Guardián':'VIP'}
       function refreshSummary(){sumMeta.textContent=(specialValue?specialLabel()+' ✓':'Invitado —')+' · '+passengers.size+' pasajero'+(passengers.size===1?'':'s')}
