@@ -343,7 +343,10 @@
       countAnim($('trips'),rows.length);countAnim($('unique'),unique);countAnim($('rotation'),rot,'%');
       $('uniqueNote').textContent='de '+totalMembers+' miembros registrados';
       $('rotationNote').textContent=(Math.max(0,totalMembers-unique))+' todavía sin viaje en este periodo';
-      $('leader').textContent=leader?.name||'—';$('leaderNote').textContent=leader?(leader.count+' '+(leader.count===1?'viaje':'viajes')):'Sin datos';
+      if(!leader){$('leader').textContent='—';$('leaderNote').textContent='Sin datos';return}
+      const tied=ranking.filter(x=>x.count===leader.count);
+      $('leader').textContent=tied.length>1?'EMPATE ×'+tied.length:leader.name;
+      $('leaderNote').textContent=tied.length>1?(leader.count+' '+(leader.count===1?'viaje':'viajes')+' cada uno'):(leader.count+' '+(leader.count===1?'viaje':'viajes'));
     }
 
     function renderSource(rows){
@@ -374,10 +377,12 @@
     function renderHall(rows,ranking){
       const box=$('hall');box.replaceChildren();
       if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay conductores registrados en este periodo.</div>';return}
-      ranking.slice(0,15).forEach((item,index)=>{
-        const button=document.createElement('button');button.type='button';button.className='driver '+(index<3?'top'+(index+1):'');
+      const distinctCounts=[...new Set(ranking.map(x=>x.count))];
+      ranking.slice(0,30).forEach((item,index)=>{
+        const denseRank=distinctCounts.indexOf(item.count)+1;
+        const button=document.createElement('button');button.type='button';button.className='driver '+(distinctCounts.length>1&&denseRank<=3?'top'+denseRank:'');
         const chips=Object.entries(item.sources).filter(([,n])=>n).map(([k,n])=>'<span>'+esc(sourceNames[k])+' '+n+'</span>').join('');
-        button.innerHTML='<span class="rank">#'+(index+1)+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE':'VIAJES')+'</small><div class="source-mini">'+chips+'</div>';
+        button.innerHTML='<span class="rank">#'+denseRank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE':'VIAJES')+'</small><div class="source-mini">'+chips+'</div>';
         button.addEventListener('click',()=>openPlayer(item.name,rows));box.append(button)
       });
     }
