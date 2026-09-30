@@ -433,6 +433,7 @@
   </style>
 <link rel="stylesheet" href="stats-egypt.css?v=20260930-egypt-1">
 <style>.imperial .last-art{background:none;overflow:hidden;aspect-ratio:1}.last-art img{display:block;width:100%;height:100%;object-fit:cover}.last-art img.hola{object-fit:contain;background:#f8edcf}</style>
+<style>.imperial .last-art{position:relative;border:0;border-radius:0;overflow:visible;background:none;box-shadow:none;aspect-ratio:1}.last-art #artLastAvatar{position:absolute;left:15%;top:20%;width:70%;height:64%;object-fit:cover;border-radius:4px}.last-art #artLastAvatar.hola{object-fit:contain}.last-art .driver-frame{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:2}.imperial .last-grid{grid-template-columns:35% 1fr}</style>
 </head>
 <body>
   <div class="dust"></div>
@@ -478,7 +479,7 @@
     <section class="imperial" id="imperial">
  <div class="imperial-summary"><div><i aria-hidden="true">♜</i><strong id="artDrivers">—</strong><span data-i18n="uniqueDrivers">Conductores</span></div><div><i aria-hidden="true">♟</i><strong id="artPassengers">—</strong><span data-i18n="passengerSeats">Viajes de pasajeros</span></div><div><i aria-hidden="true">✦</i><strong id="artGuests">—</strong><span data-i18n="vipGuardian">Invitados</span></div></div>
  <div class="imperial-period"><span id="artPeriod">—</span><div id="artRange"></div></div>
- <section class="imperial-last"><h2 id="artLastHeading">Último tren</h2><div class="last-grid"><div class="last-art"><img id="artLastAvatar" src="assets/icon-user-card.webp" alt="" width="200" height="200"></div><div class="last-copy"><span data-i18n="driverRanking">Conductor</span><strong id="artLastDriver">—</strong><span data-i18n="driverGuest">Invitado</span><strong id="artLastGuest">—</strong><div class="last-count" id="artLastCount">—</div></div></div></section>
+ <section class="imperial-last"><h2 id="artLastHeading">Último tren</h2><div class="last-grid"><div class="last-art"><img id="artLastAvatar" src="assets/icon-user-card.webp" alt="" width="200" height="200"><img class="driver-frame" src="assets/stats-driver-frame.webp" alt="" aria-hidden="true" width="1254" height="1254"></div><div class="last-copy"><span data-i18n="driverRanking">Conductor</span><strong id="artLastDriver">—</strong><span data-i18n="driverGuest">Invitado</span><strong id="artLastGuest">—</strong><div class="last-count" id="artLastCount">—</div></div></div></section>
  <nav class="imperial-tabs" aria-label="Historial del tren"><button type="button" data-art-tab="passengers" aria-pressed="true" data-i18n="passengerRanking">Pasajeros</button><button type="button" data-art-tab="drivers" aria-pressed="false" data-i18n="driverRanking">Conductores</button><button type="button" data-art-tab="guests" aria-pressed="false" data-i18n="vipGuardian">VIP / Guardián</button></nav>
  <h2 class="imperial-heading" id="artHeading">Los más afortunados</h2><p class="imperial-note" id="artNote">Selección aleatoria del juego</p>
  <section id="artPassengersPanel"></section><section id="artDriversPanel" hidden></section><section id="artGuestsPanel" hidden></section>
@@ -856,7 +857,7 @@
       $('artPassengersPanel').append($('passengerHall'));$('artDriversPanel').append($('hall'));$('artGuestsPanel').append($('guestHall'));$('artHistory').append($('history'));
       const main=document.querySelector('main');
       [...main.children].forEach(el=>{if(el===imperial||el.classList.contains('hero')||el.classList.contains('topbar'))return;if(el.classList.contains('kpis')||el.classList.contains('grid2')){$('artMore').append(el)}else{el.hidden=true}});
-      document.querySelectorAll('[data-art-tab]').forEach(button=>button.addEventListener('click',()=>{artTab=button.dataset.artTab;renderImperial()}));
+      document.querySelectorAll('[data-art-tab]').forEach(button=>button.addEventListener('click',()=>{artTab=button.dataset.artTab;renderImperial();applyAvatarImages()}));
       new MutationObserver(()=>{$('artSync').textContent=$('dataFresh').textContent}).observe($('dataFresh'),{childList:true,characterData:true,subtree:true});
     }
     function renderImperial(){
@@ -890,10 +891,34 @@
       $('modalHistory').innerHTML=records.map(row=>'<div class="trip"><time>'+esc(fmtShort(isoDate(row.service_date)))+'</time><strong>'+esc(drivers.get(isoDate(row.service_date))||'—')+'</strong><span class="badge">'+esc(row.role==='passenger'?tr('passengerRanking'):tr(row.role))+'</span></div>').join('');$('modal').hidden=false;document.body.style.overflow='hidden';
     }
 
+    // Avatars are large base64 images: never include them in the critical statistics query.
+    const avatarCache=new Map(),avatarPending=new Set();let avatarObserver;
+    function applyAvatarImages(){
+      const last=[...selectedRows()].sort((a,b)=>isoDate(b.service_date).localeCompare(isoDate(a.service_date)))[0];
+      if(last){const image=$('artLastAvatar');image.dataset.player=last.actual_driver;image.src=avatarOf(last.actual_driver);image.className=avatarClass(last.actual_driver);}
+      document.querySelectorAll('.hall .driver').forEach(card=>{const name=card.querySelector('h4')?.textContent,image=card.querySelector('.avatar');if(!name||!image)return;image.dataset.player=name;image.src=avatarOf(name);if(avatarClass(name))image.classList.add('hola');image.loading='lazy';image.decoding='async';});
+      document.querySelectorAll('img[data-player]').forEach(image=>{if(avatarObserver)avatarObserver.observe(image)});
+      if(last)void loadPlayerAvatar(last.actual_driver);
+    }
+    async function loadPlayerAvatar(name){
+      const key=norm(name);if(avatarPending.has(key)||avatarCache.has(key))return;
+      const member=playerInfo(name),exactName=member.name||name;avatarPending.add(key);
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+      try{
+        const {data:avatars,error}=await sb.from('players').select('name,avatar,default_avatar').in('name',[exactName]).abortSignal(controller.signal);
+        if(error)throw error;
+        const found=avatars?.[0];avatarCache.set(key,found||null);if(found)playerMap.set(key,{...member,...found});
+        document.querySelectorAll('img[data-player]').forEach(image=>{if(norm(image.dataset.player)!==key)return;image.src=avatarOf(name);if(avatarClass(name))image.classList.add('hola')});
+      }catch(error){console.warn('HOLa avatar unavailable',name,error?.message||error)}finally{clearTimeout(timer);avatarPending.delete(key)}
+    }
+    function setupAvatarObserver(){
+      if('IntersectionObserver' in window)avatarObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){void loadPlayerAvatar(entry.target.dataset.player);avatarObserver.unobserve(entry.target)}})},{rootMargin:'150px'});
+    }
+
     function render(){
       const rows=selectedRows(),ranking=aggregate(rows),r=ranges()[$('range').value]||ranges()['4w'];
       $('dataPeriod').textContent=r.label.toUpperCase()+' · '+fmt(r.start)+' — '+fmt(r.end);
-      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderTravellerStats(selectedTripMembers());renderHistory(rows);renderImperial();
+      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderTravellerStats(selectedTripMembers());renderHistory(rows);renderImperial();applyAvatarImages();
     }
 
     async function load(){
@@ -901,7 +926,7 @@
         // Carga crítica y ligera: debe mostrar la página aunque fallen
         // después los datos secundarios usados para reconstruir la planificación.
         const [players,actuals,tripMembers]=await Promise.all([
-          fetchAll('players','name,rank,avatar,default_avatar'),
+          fetchAll('players','name,rank,default_avatar'),
           fetchAll('train_actual_drivers','service_date,actual_driver'),
           fetchAll('train_trip_members','service_date,player_name,role,source')
         ]);
@@ -948,6 +973,7 @@
       }
     }
 
+    setupAvatarObserver();
     setupImperial();
     setupLanguage();
     document.querySelector('[data-i18n=heroSub]').textContent=({es:'DEL TREN',en:'TRAIN',tr:'TREN',fr:'DU TRAIN',de:'ZUG',pt:'DO TREM',ro:'TREN',uk:'ПОТЯГА',it:'DEL TRENO',pl:'POCIĄGU',ru:'ПОЕЗДА'})[currentLang]||'TRAIN';
@@ -956,3 +982,4 @@
   </script>
 </body>
 </html>
+
