@@ -463,7 +463,11 @@
     import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
     import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260928-fixed-week-plan-1';
 
-    const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV');
+    const sb=createClient(
+      'https://ovybstpiomphrouvqxmf.supabase.co',
+      'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',
+      {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+    );
     const $=id=>document.getElementById(id);
     const FALLBACK='assets/icon-user-card.webp';
     const sourceNames={VS:'VS',DS_B:'DS B',DS_A:'DS A',DONATIONS:'Donaciones'};
