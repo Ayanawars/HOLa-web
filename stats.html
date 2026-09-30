@@ -569,6 +569,7 @@
   <script type="module">
     import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
     import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260928-fixed-week-plan-1';
+    import {I18N,LANGS,fill} from './js/stats-i18n.js?v=20260930-1';
 
     const sb=createClient(
       'https://ovybstpiomphrouvqxmf.supabase.co',
@@ -577,16 +578,42 @@
     );
     const $=id=>document.getElementById(id);
     const FALLBACK='assets/icon-user-card.webp';
-    const sourceNames={VS:'VS',DS_B:'DS B',DS_A:'DS A',DONATIONS:'Donaciones'};
-    const sourceLong={VS:'Versus',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
-    const dayShort=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
     const norm=v=>String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
     const isoDate=v=>String(v||'').slice(0,10);
-    const fmt=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
-    const fmtShort=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const sourceForDate=date=>{const day=new Date(date+'T12:00:00Z').getUTCDay();return day>=1&&day<=4?'VS':day===5?'DS_B':day===6?'DS_A':'DONATIONS'};
     let data={players:[],actuals:[],vs:[],ds:[],donations:[],exclusions:[],settings:[],tripMembers:[]},playerMap=new Map(),planMap=new Map();
+    let currentLang='es';
+
+    const tr=(key,vars={})=>fill((I18N[currentLang]||I18N.es)[key]??I18N.es[key]??key,vars);
+    const dict=()=>I18N[currentLang]||I18N.es;
+    const locale=()=>LANGS[currentLang]?.locale||'es-ES';
+    const sourceName=key=>dict().sources?.[key]||I18N.es.sources[key]||key;
+    const sourceLongName=key=>dict().sourceLong?.[key]||sourceName(key);
+    const dayShortName=index=>dict().days?.[index]||I18N.es.days[index]||'';
+    const fmt=d=>new Intl.DateTimeFormat(locale(),{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
+    const fmtShort=d=>new Intl.DateTimeFormat(locale(),{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
+
+    function applyLanguage(lang,{rerender=true}={}){
+      currentLang=I18N[lang]?lang:'es';
+      const d=dict(),meta=LANGS[currentLang]||LANGS.es;
+      document.documentElement.lang=currentLang;
+      document.title=d.pageTitle||I18N.es.pageTitle;
+      document.querySelectorAll('[data-i18n]').forEach(el=>{const value=d[el.dataset.i18n]??I18N.es[el.dataset.i18n];if(value!=null)el.textContent=value});
+      document.querySelectorAll('[data-i18n-aria]').forEach(el=>{const value=d[el.dataset.i18nAria]??I18N.es[el.dataset.i18nAria];if(value!=null)el.setAttribute('aria-label',value)});
+      const flag=$('currentFlag');if(flag){flag.src='https://flagcdn.com/w80/'+meta.code+'.png';flag.alt=meta.name}
+      localStorage.setItem('hola-language',currentLang);localStorage.setItem('hola-lang',currentLang);
+      if(rerender&&data.actuals.length)render();
+    }
+
+    function setupLanguage(){
+      const toggle=$('languageToggle'),list=$('languageList');
+      toggle?.addEventListener('click',()=>{list.hidden=!list.hidden;toggle.setAttribute('aria-expanded',String(!list.hidden))});
+      list?.addEventListener('click',event=>{const option=event.target.closest('.language__option');if(!option)return;applyLanguage(option.dataset.html);list.hidden=true;toggle?.setAttribute('aria-expanded','false')});
+      document.addEventListener('click',event=>{if(!event.target.closest('.language')){if(list)list.hidden=true;if(toggle)toggle.setAttribute('aria-expanded','false')}});
+      const saved=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang')||((navigator.language||'es').slice(0,2));
+      applyLanguage(I18N[saved]?saved:'es',{rerender:false});
+    }
 
     async function fetchAll(table,fields){
       const rows=[];
@@ -605,9 +632,9 @@
       const last=dates.at(-1)||first;
       const cycle=cycleFor(monday(last));
       return{
-        '4w':{start:addDays(last,-27),end:last,label:'Últimas 4 semanas'},
-        cycle:{start:cycle.start,end:cycle.end,label:'Ciclo actual · '+cycle.number+'/4'},
-        s3:{start:first,end:last,label:'Temporada S3'}
+        '4w':{start:addDays(last,-27),end:last,label:tr('last4w')},
+        cycle:{start:cycle.start,end:cycle.end,label:tr('currentCycle')+' · '+cycle.number+'/4'},
+        s3:{start:first,end:last,label:tr('seasonS3')}
       };
     }
 
@@ -659,12 +686,12 @@
     function renderKpis(rows,ranking){
       const unique=ranking.length,totalMembers=data.players.length,rot=totalMembers?Math.round(unique/totalMembers*100):0,leader=ranking[0];
       countAnim($('trips'),rows.length);countAnim($('unique'),unique);countAnim($('rotation'),rot,'%');
-      $('uniqueNote').textContent='de '+totalMembers+' miembros registrados';
-      $('rotationNote').textContent=(Math.max(0,totalMembers-unique))+' todavía sin viaje en este periodo';
-      if(!leader){$('leader').textContent='—';$('leaderNote').textContent='Sin datos';return}
+      $('uniqueNote').textContent=tr('membersRegistered',{n:totalMembers});
+      $('rotationNote').textContent=tr('withoutTrip',{n:Math.max(0,totalMembers-unique)});
+      if(!leader){$('leader').textContent='—';$('leaderNote').textContent=tr('noData');return}
       const tied=ranking.filter(x=>x.count===leader.count);
-      $('leader').textContent=tied.length>1?'EMPATE ×'+tied.length:leader.name;
-      $('leaderNote').textContent=tied.length>1?(leader.count+' '+(leader.count===1?'viaje':'viajes')+' cada uno'):(leader.count+' '+(leader.count===1?'viaje':'viajes'));
+      $('leader').textContent=tied.length>1?tr('tie',{n:tied.length}):leader.name;
+      $('leaderNote').textContent=tied.length>1?(leader.count+' '+(leader.count===1?tr('tripOne'):tr('tripMany'))+' '+tr('each')):(leader.count+' '+(leader.count===1?tr('tripOne'):tr('tripMany')));
     }
 
     function renderSource(rows){
@@ -676,7 +703,7 @@
       const colors={VS:'#53d6ff',DS_B:'#eac15c',DS_A:'#aa8cff',DONATIONS:'#52d7a1'};
       $('sourceLegend').innerHTML=order.map(key=>{
         const pct=rows.length?Math.round(counts[key]/rows.length*100):0;
-        return '<div class="legend-row"><i style="background:'+colors[key]+'"></i><span>'+sourceLong[key]+'</span><b>'+counts[key]+' · '+pct+'%</b></div>'
+        return '<div class="legend-row"><i style="background:'+colors[key]+'"></i><span>'+esc(sourceLongName(key))+'</span><b>'+counts[key]+' · '+pct+'%</b></div>'
       }).join('');
     }
 
@@ -694,13 +721,13 @@
 
     function renderHall(rows,ranking){
       const box=$('hall');box.replaceChildren();
-      if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay conductores registrados en este periodo.</div>';return}
+      if(!ranking.length){box.innerHTML='<div class="loading">'+esc(tr('noDriversPeriod'))+'</div>';return}
       const distinctCounts=[...new Set(ranking.map(x=>x.count))];
       ranking.slice(0,30).forEach((item,index)=>{
         const denseRank=distinctCounts.indexOf(item.count)+1;
         const button=document.createElement('button');button.type='button';button.className='driver '+(distinctCounts.length>1&&denseRank<=3?'top'+denseRank:'');
-        const chips=Object.entries(item.sources).filter(([,n])=>n).map(([k,n])=>'<span>'+esc(sourceNames[k])+' '+n+'</span>').join('');
-        button.innerHTML='<span class="rank">#'+denseRank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE':'VIAJES')+'</small><div class="source-mini">'+chips+'</div>';
+        const chips=Object.entries(item.sources).filter(([,n])=>n).map(([k,n])=>'<span>'+esc(sourceName(k))+' '+n+'</span>').join('');
+        button.innerHTML='<span class="rank">#'+denseRank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?tr('journeyOne'):tr('journeyMany'))+'</small><div class="source-mini">'+chips+'</div>';
         button.addEventListener('click',()=>openPlayer(item.name,rows));box.append(button)
       });
     }
@@ -732,40 +759,40 @@
       const ranking=aggregateTravellers(rows,'passenger'),guests=aggregateSpecialGuests(rows),unique=new Set(passengers.map(x=>norm(x.player_name)).filter(Boolean)).size;
       const vip=special.filter(x=>x.role==='vip').length,guardian=special.filter(x=>x.role==='guardian').length;
       countAnim($('passengerTrips'),passengers.length);countAnim($('passengerUnique'),unique);countAnim($('specialGuests'),special.length);
-      $('passengerUniqueNote').textContent=passengers.length?unique+' personas diferentes':'Sin datos en este periodo';
-      $('specialGuestsNote').textContent='VIP '+vip+' · Guardián '+guardian;
+      $('passengerUniqueNote').textContent=passengers.length?tr('peopleDifferent',{n:unique}):tr('noData');
+      $('specialGuestsNote').textContent=tr('vip')+' '+vip+' · '+tr('guardian')+' '+guardian;
       const leader=ranking[0];
-      if(!leader){$('passengerLeader').textContent='—';$('passengerLeaderNote').textContent='Sin datos';}
+      if(!leader){$('passengerLeader').textContent='—';$('passengerLeaderNote').textContent=tr('noData');}
       else{
         const tied=ranking.filter(x=>x.count===leader.count);
-        $('passengerLeader').textContent=tied.length>1?'EMPATE ×'+tied.length:leader.name;
-        $('passengerLeaderNote').textContent=leader.count+' '+(leader.count===1?'viaje como pasajero':'viajes como pasajero');
+        $('passengerLeader').textContent=tied.length>1?tr('tie',{n:tied.length}):leader.name;
+        $('passengerLeaderNote').textContent=leader.count+' '+(leader.count===1?tr('passengerTripOne'):tr('passengerTripMany'));
       }
       renderPassengerHall(ranking);renderGuestHall(guests);
     }
 
     function renderPassengerHall(ranking){
       const box=$('passengerHall');box.replaceChildren();
-      if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay pasajeros registrados en este periodo.</div>';return}
+      if(!ranking.length){box.innerHTML='<div class="loading">'+esc(tr('noPassengersPeriod'))+'</div>';return}
       const distinct=[...new Set(ranking.map(x=>x.count))];
       ranking.slice(0,30).forEach(item=>{
         const rank=distinct.indexOf(item.count)+1,card=document.createElement('article');
         card.className='driver passenger-card '+(distinct.length>1&&rank<=3?'top'+rank:'');
-        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><div class="passenger-copy"><h4>'+esc(item.name)+'</h4><div class="passenger-count"><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE':'VIAJES')+'</small></div></div>';
+        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><div class="passenger-copy"><h4>'+esc(item.name)+'</h4><div class="passenger-count"><strong>'+item.count+'</strong><small>'+(item.count===1?tr('journeyOne'):tr('journeyMany'))+'</small></div></div>';
         box.append(card);
       });
     }
 
     function renderGuestHall(ranking){
       const box=$('guestHall');box.replaceChildren();
-      if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay VIP o Guardianes registrados en este periodo.</div>';return}
+      if(!ranking.length){box.innerHTML='<div class="loading">'+esc(tr('noGuestsPeriod'))+'</div>';return}
       const distinct=[...new Set(ranking.map(x=>x.count))];
       ranking.slice(0,30).forEach(item=>{
         const rank=distinct.indexOf(item.count)+1,card=document.createElement('article');
         card.className='driver '+(distinct.length>1&&rank<=3?'top'+rank:'');
-        let label=item.vip&&item.guardian?'VIP '+item.vip+' · GUARDIÁN '+item.guardian:item.vip?'VIP · '+item.vip:'GUARDIÁN · '+item.guardian;
+        let label=item.vip&&item.guardian?tr('vip')+' '+item.vip+' · '+tr('guardian')+' '+item.guardian:item.vip?tr('vip')+' · '+item.vip:tr('guardian')+' · '+item.guardian;
         const roleClass=item.guardian&&!item.vip?' guardian':'';
-        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'INVITACIÓN':'INVITACIONES')+'</small><span class="role-chip'+roleClass+'">'+esc(label)+'</span>';
+        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?tr('invitationOne'):tr('invitationMany'))+'</small><span class="role-chip'+roleClass+'">'+esc(label)+'</span>';
         box.append(card);
       });
     }
@@ -780,15 +807,15 @@
       const box=$('history');box.replaceChildren();const r=ranges()[$('range').value]||ranges()['4w'],byDate=new Map(rows.map(x=>[isoDate(x.service_date),x])),tripByDate=new Map();
       for(const tm of selectedTripMembers()){const d=isoDate(tm.service_date);if(!tripByDate.has(d))tripByDate.set(d,[]);tripByDate.get(d).push(tm)}
       const weeks=weeksBetween(r.start,r.end).reverse();
-      if(!weeks.length){box.innerHTML='<div class="loading">Sin historial para este periodo.</div>';return}
+      if(!weeks.length){box.innerHTML='<div class="loading">'+esc(tr('noHistory'))+'</div>';return}
       for(const weekStart of weeks){
         const weekEnd=addDays(weekStart,6),cycle=cycleFor(weekStart),section=document.createElement('article');section.className='week';
         section.innerHTML='<header class="week-head"><strong>'+esc(fmt(weekStart))+' — '+esc(fmt(weekEnd))+'</strong><span>CICLO '+cycle.number+'/4</span></header>';
         const days=document.createElement('div');days.className='week-days';
         for(let i=0;i<7;i++){
           const date=addDays(weekStart,i),row=byDate.get(date),source=sourceForDate(date),cell=document.createElement('button');cell.type='button';cell.className='day '+(row?'':'empty');
-          const composition=tripByDate.get(date)||[],pCount=composition.filter(x=>x.role==='passenger').length,special=composition.find(x=>x.role==='vip'||x.role==='guardian'),specialText=special?(special.role==='vip'?'VIP ':'GUARDIÁN ')+special.player_name:'';
-          cell.innerHTML='<small>'+dayShort[new Date(date+'T12:00:00Z').getUTCDay()]+' · '+esc(fmtShort(date))+'</small><b>'+esc(row?.actual_driver||'—')+'</b><span class="src">'+esc(sourceNames[source])+'</span>'+(pCount||specialText?'<span class="people">👥 '+pCount+(specialText?' · '+esc(specialText):'')+'</span>':'');
+          const composition=tripByDate.get(date)||[],pCount=composition.filter(x=>x.role==='passenger').length,special=composition.find(x=>x.role==='vip'||x.role==='guardian'),specialText=special?(special.role==='vip'?tr('vip')+' ':tr('guardian')+' ')+special.player_name:'';
+          cell.innerHTML='<small>'+dayShortName(new Date(date+'T12:00:00Z').getUTCDay())+' · '+esc(fmtShort(date))+'</small><b>'+esc(row?.actual_driver||'—')+'</b><span class="src">'+esc(sourceName(source))+'</span>'+(pCount||specialText?'<span class="people">👥 '+pCount+(specialText?' · '+esc(specialText):'')+'</span>':'');
           if(row)cell.addEventListener('click',()=>openPlayer(row.actual_driver,rows));days.append(cell)
         }
         section.append(days);box.append(section)
@@ -800,8 +827,8 @@
       const period=periodRows.filter(x=>norm(x.actual_driver)===norm(name)),cycles=new Set(allRows.map(x=>cycleFor(monday(isoDate(x.service_date))).start));
       $('modalName').textContent=name;$('modalAvatar').src=avatarOf(name);$('modalAvatar').className='sheet-avatar '+avatarClass(name);
       $('modalTrips').textContent=allRows.length;$('modalCycles').textContent=cycles.size;$('modalLast').textContent=allRows[0]?fmtShort(isoDate(allRows[0].service_date)):'—';
-      $('modalSub').textContent=period.length+' viaje'+(period.length===1?'':'s')+' dentro del periodo seleccionado · '+allRows.length+' histórico'+(allRows.length===1?'':'s');
-      $('modalHistory').innerHTML=allRows.map(row=>{const date=isoDate(row.service_date),source=sourceForDate(date),plan=planMap.get(date),same=plan?.planned&&norm(plan.planned)===norm(name);return '<div class="trip"><time>'+esc(fmtShort(date))+'</time><strong>'+(same?'Titular calculado y conductor real':plan?.planned?'Conductor real · previsto: '+esc(plan.planned):'Conductor real')+'</strong><span class="badge">'+esc(sourceNames[source])+'</span></div>'}).join('');
+      $('modalSub').textContent=tr('modalPeriod',{n:period.length,s:period.length===1?'':'s',m:allRows.length,h:allRows.length===1?'':'s'});
+      $('modalHistory').innerHTML=allRows.map(row=>{const date=isoDate(row.service_date),source=sourceForDate(date),plan=planMap.get(date),same=plan?.planned&&norm(plan.planned)===norm(name);return '<div class="trip"><time>'+esc(fmtShort(date))+'</time><strong>'+(same?tr('plannedAndReal'):plan?.planned?tr('realPlanned',{name:plan.planned}):tr('realDriver'))+'</strong><span class="badge">'+esc(sourceNames[source])+'</span></div>'}).join('');
       $('modal').hidden=false;document.body.style.overflow='hidden';
     }
     function closeModal(){$('modal').hidden=true;document.body.style.overflow=''}
@@ -829,7 +856,7 @@
         playerMap=new Map(players.map(p=>[norm(p.name),p]));
 
         const dates=data.actuals.map(x=>isoDate(x.service_date));
-        $('dataFresh').textContent='DATOS REALES · '+data.actuals.length+' TRENES · '+data.tripMembers.length+' VIAJEROS';
+        $('dataFresh').textContent=tr('dataReal',{trains:data.actuals.length,travelers:data.tripMembers.length});
         if(dates.length)$('dataPeriod').textContent='S3 · '+fmt(dates[0])+' — '+fmt(dates.at(-1));
 
         // Render inmediato con todos los datos esenciales.
@@ -853,20 +880,19 @@
         buildPlans();
         render();
         const failedSecondary=secondary.filter(x=>x.status==='rejected').length;
-        $('dataFresh').textContent=failedSecondary
-          ?'DATOS REALES · '+data.actuals.length+' TRENES · '+data.tripMembers.length+' VIAJEROS · '+failedSecondary+' FUENTE SECUNDARIA PENDIENTE'
-          :'DATOS REALES · '+data.actuals.length+' TRENES · '+data.tripMembers.length+' VIAJEROS';
+        $('dataFresh').textContent=tr('dataReal',{trains:data.actuals.length,travelers:data.tripMembers.length})+(failedSecondary?tr('secondaryPending',{n:failedSecondary}):'');
       }catch(error){
         console.error('HOLa stats · core load',error);
-        $('dataFresh').textContent='ERROR AL CARGAR DATOS PRINCIPALES';
+        $('dataFresh').textContent=tr('errorMain');
         const message=esc(error?.message||error||'Error desconocido');
         $('hall').innerHTML='<div class="loading">No se pudieron cargar los conductores.<br><small>'+message+'</small></div>';
         $('passengerHall').innerHTML='<div class="loading">No se pudieron cargar los pasajeros.<br><small>'+message+'</small></div>';
         $('guestHall').innerHTML='<div class="loading">No se pudieron cargar los invitados.<br><small>'+message+'</small></div>';
-        $('history').innerHTML='<div class="loading">Sin datos disponibles.</div>';
+        $('history').innerHTML='<div class="loading">'+esc(tr('noData'))+'</div>';
       }
     }
 
+    setupLanguage();
     $('range').addEventListener('change',render);
     await load();
   </script>
