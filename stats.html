@@ -407,104 +407,147 @@
       .passenger-hall .passenger-card .passenger-count small{font-size:6.5px}
     }
 
+  
+    .top-actions{display:flex;align-items:center;gap:7px}
+    .language{position:relative;z-index:90}
+    .language__toggle{
+      width:44px;height:44px;padding:0;display:grid;place-items:center;border-radius:14px;
+      border:1px solid rgba(202,157,57,.62);background:rgba(255,253,246,.94);
+      box-shadow:0 6px 18px rgba(91,63,16,.14);overflow:hidden
+    }
+    .language__current{width:28px;height:28px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px #fff}
+    .language__list{
+      position:absolute;right:0;top:51px;width:190px;max-height:420px;overflow:auto;margin:0;padding:6px;
+      list-style:none;border:1px solid #dcc48e;border-radius:14px;background:#fffdf7;
+      box-shadow:0 14px 30px rgba(70,53,24,.22)
+    }
+    .language__list[hidden]{display:none}
+    .language__option{
+      width:100%;display:flex;align-items:center;gap:9px;padding:8px 9px;border:0;border-radius:9px;
+      background:transparent;color:#174b70;font-size:11px;font-weight:850;text-align:left
+    }
+    .language__option:hover,.language__option:focus-visible{background:#e9f6f9;outline:none}
+    .language__option img{width:24px;height:24px;border-radius:50%;object-fit:cover}
+    @media(max-width:520px){.language__toggle{width:40px;height:40px}.language__current{width:25px;height:25px}}
+
   </style>
 </head>
 <body>
   <div class="dust"></div>
   <main class="shell">
     <div class="topbar">
-      <a class="round" href="index.html" aria-label="Volver">‹</a>
+      <a class="round" href="index.html" aria-label="Volver" data-i18n-aria="back">‹</a>
       <img class="mini-logo" src="hola-s3-logo.webp" alt="HOLa">
-      <a class="round" href="train.html" aria-label="Tren">🚂</a>
+      <div class="top-actions">
+        <a class="round" href="train.html" aria-label="Tren" data-i18n-aria="trainAria">🚂</a>
+        <div class="language">
+          <button class="language__toggle" id="languageToggle" type="button" aria-label="Cambiar idioma" data-i18n-aria="changeLanguage" aria-expanded="false" aria-controls="languageList">
+            <img class="language__current" id="currentFlag" src="https://flagcdn.com/w80/es.png" alt="Español">
+          </button>
+          <ul class="language__list" id="languageList" hidden>
+            <li><button class="language__option" data-code="es" data-html="es" data-name="Español"><img src="https://flagcdn.com/w40/es.png" alt="">Español</button></li>
+            <li><button class="language__option" data-code="gb" data-html="en" data-name="English"><img src="https://flagcdn.com/w40/gb.png" alt="">English</button></li>
+            <li><button class="language__option" data-code="tr" data-html="tr" data-name="Türkçe"><img src="https://flagcdn.com/w40/tr.png" alt="">Türkçe</button></li>
+            <li><button class="language__option" data-code="fr" data-html="fr" data-name="Français"><img src="https://flagcdn.com/w40/fr.png" alt="">Français</button></li>
+            <li><button class="language__option" data-code="de" data-html="de" data-name="Deutsch"><img src="https://flagcdn.com/w40/de.png" alt="">Deutsch</button></li>
+            <li><button class="language__option" data-code="ro" data-html="ro" data-name="Română"><img src="https://flagcdn.com/w40/ro.png" alt="">Română</button></li>
+            <li><button class="language__option" data-code="pt" data-html="pt" data-name="Português"><img src="https://flagcdn.com/w40/pt.png" alt="">Português</button></li>
+            <li><button class="language__option" data-code="ua" data-html="uk" data-name="Українська"><img src="https://flagcdn.com/w40/ua.png" alt="">Українська</button></li>
+            <li><button class="language__option" data-code="it" data-html="it" data-name="Italiano"><img src="https://flagcdn.com/w40/it.png" alt="">Italiano</button></li>
+            <li><button class="language__option" data-code="pl" data-html="pl" data-name="Polski"><img src="https://flagcdn.com/w40/pl.png" alt="">Polski</button></li>
+            <li><button class="language__option" data-code="ru" data-html="ru" data-name="Русский"><img src="https://flagcdn.com/w40/ru.png" alt="">Русский</button></li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <section class="hero">
       <div class="hero-copy">
-        <div class="eyebrow">HOLa · ALLIANCE INTELLIGENCE CENTER</div>
-        <h1>ESTADÍSTICAS <span>TRAIN ANALYTICS</span></h1>
-        <p>Historial real del tren, rotación de conductores, origen de cada asignación y evolución de la alianza. Todos los datos se calculan desde los registros reales de HOLa.</p>
+        <div class="eyebrow" data-i18n="eyebrow">HOLa · CENTRO DE INTELIGENCIA DE LA ALIANZA</div>
+        <h1><span data-i18n="heroTitle" style="display:inline;color:inherit;font-size:inherit;letter-spacing:inherit">ESTADÍSTICAS</span> <span data-i18n="heroSub">ANÁLISIS DEL TREN</span></h1>
+        <p data-i18n="heroDesc">Historial real del tren, rotación de conductores, origen de cada asignación y evolución de la alianza. Todos los datos se calculan desde los registros reales de HOLa.</p>
         <div class="statusline">
-          <span class="status-pill" id="dataPeriod">Cargando periodo…</span>
-          <span class="status-pill" id="dataFresh">Sincronizando Supabase…</span>
+          <span class="status-pill" id="dataPeriod" data-i18n="loadingPeriod">Cargando periodo…</span>
+          <span class="status-pill" id="dataFresh" data-i18n="syncing">Sincronizando datos…</span>
         </div>
       </div>
     </section>
 
-    <nav class="tabs" aria-label="Tipos de estadísticas">
-      <button class="tab active">🚂 TREN</button>
-      <button class="tab" disabled>⚔ VS · PRÓX.</button>
-      <button class="tab" disabled>🛡 DS · PRÓX.</button>
-      <button class="tab" disabled>✦ DONACIONES · PRÓX.</button>
+    <nav class="tabs" aria-label="Tipos de estadísticas" data-i18n-aria="statsAria">
+      <button class="tab active">🚂 <span data-i18n="trainTab">TREN</span></button>
+      <button class="tab" disabled>⚔ VS · <span data-i18n="soon">PRÓX.</span></button>
+      <button class="tab" disabled>🛡 DS · <span data-i18n="soon">PRÓX.</span></button>
+      <button class="tab" disabled>✦ <span data-i18n="donations">DONACIONES</span> · <span data-i18n="soon">PRÓX.</span></button>
     </nav>
 
     <div class="toolbar">
-      <div class="section-title"><small>RESUMEN EJECUTIVO</small><h2>Estado del tren</h2></div>
-      <select id="range" class="range" aria-label="Periodo">
-        <option value="4w">ÚLTIMAS 4 SEMANAS</option>
-        <option value="cycle">CICLO ACTUAL</option>
-        <option value="s3">TEMPORADA S3</option>
+      <div class="section-title"><small data-i18n="executive">RESUMEN EJECUTIVO</small><h2 data-i18n="trainStatus">Estado del tren</h2></div>
+      <select id="range" class="range" aria-label="Periodo" data-i18n-aria="period">
+        <option value="4w" data-i18n="last4w">ÚLTIMAS 4 SEMANAS</option>
+        <option value="cycle" data-i18n="currentCycle">CICLO ACTUAL</option>
+        <option value="s3" data-i18n="seasonS3">TEMPORADA S3</option>
       </select>
     </div>
 
     <section class="kpis">
-      <article class="kpi"><div class="kpi-icon">🚂</div><div class="kpi-label">VIAJES REGISTRADOS</div><strong class="kpi-value" id="trips">—</strong><div class="kpi-note">conductores reales confirmados</div></article>
-      <article class="kpi"><div class="kpi-icon">♚</div><div class="kpi-label">CONDUCTORES ÚNICOS</div><strong class="kpi-value" id="unique">—</strong><div class="kpi-note" id="uniqueNote">—</div></article>
-      <article class="kpi"><div class="kpi-icon">𓂀</div><div class="kpi-label">ROTACIÓN HOLa</div><strong class="kpi-value" id="rotation">—</strong><div class="kpi-note" id="rotationNote">—</div></article>
-      <article class="kpi"><div class="kpi-icon">🏆</div><div class="kpi-label">MÁS VIAJES</div><strong class="kpi-value" id="leader">—</strong><div class="kpi-note" id="leaderNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">🚂</div><div class="kpi-label" data-i18n="registeredTrips">VIAJES REGISTRADOS</div><strong class="kpi-value" id="trips">—</strong><div class="kpi-note" data-i18n="confirmedDrivers">conductores reales confirmados</div></article>
+      <article class="kpi"><div class="kpi-icon">♚</div><div class="kpi-label" data-i18n="uniqueDrivers">CONDUCTORES ÚNICOS</div><strong class="kpi-value" id="unique">—</strong><div class="kpi-note" id="uniqueNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">𓂀</div><div class="kpi-label" data-i18n="rotation">ROTACIÓN HOLa</div><strong class="kpi-value" id="rotation">—</strong><div class="kpi-note" id="rotationNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">🏆</div><div class="kpi-label" data-i18n="mostTrips">MÁS VIAJES</div><strong class="kpi-value" id="leader">—</strong><div class="kpi-note" id="leaderNote">—</div></article>
     </section>
 
     <section class="grid2">
       <article class="panel">
-        <header class="panel-head"><div><h3>Origen del tren</h3><p>Cómo se repartieron los viajes reales por día/fuente.</p></div></header>
+        <header class="panel-head"><div><h3 data-i18n="trainOrigin">Origen del tren</h3><p data-i18n="originDesc">Cómo se repartieron los viajes reales por día/fuente.</p></div></header>
         <div class="panel-body distribution">
-          <div class="donut" id="sourceDonut"><div class="donut-center"><strong id="donutTotal">—</strong><span>VIAJES</span></div></div>
+          <div class="donut" id="sourceDonut"><div class="donut-center"><strong id="donutTotal">—</strong><span data-i18n="trips">VIAJES</span></div></div>
           <div class="legend" id="sourceLegend"></div>
         </div>
       </article>
       <article class="panel">
-        <header class="panel-head"><div><h3>Planificado vs real</h3><p>Coincidencia entre el conductor calculado y el confirmado.</p></div></header>
+        <header class="panel-head"><div><h3 data-i18n="plannedReal">Planificado vs real</h3><p data-i18n="plannedDesc">Coincidencia entre el conductor calculado y el confirmado.</p></div></header>
         <div class="panel-body fidelity">
-          <div class="ring" id="matchRing"><div class="ring-inner"><div><strong id="matchPct">—</strong><span>COINCIDENCIA</span></div></div></div>
+          <div class="ring" id="matchRing"><div class="ring-inner"><div><strong id="matchPct">—</strong><span data-i18n="match">COINCIDENCIA</span></div></div></div>
           <div class="fact-list">
-            <div class="fact"><small>COINCIDENCIAS</small><strong id="matches">—</strong></div>
-            <div class="fact"><small>CAMBIOS DE TITULAR</small><strong id="changes">—</strong></div>
-            <div class="fact"><small>SIN PLAN CALCULABLE</small><strong id="unplanned">—</strong></div>
+            <div class="fact"><small data-i18n="matches">COINCIDENCIAS</small><strong id="matches">—</strong></div>
+            <div class="fact"><small data-i18n="driverChanges">CAMBIOS DE TITULAR</small><strong id="changes">—</strong></div>
+            <div class="fact"><small data-i18n="noPlan">SIN PLAN CALCULABLE</small><strong id="unplanned">—</strong></div>
           </div>
         </div>
       </article>
     </section>
 
     <div class="toolbar">
-      <div class="section-title"><small>SALÓN DE MAQUINISTAS</small><h2>Ranking de conductores</h2></div>
+      <div class="section-title"><small data-i18n="driverHall">SALÓN DE MAQUINISTAS</small><h2 data-i18n="driverRanking">Ranking de conductores</h2></div>
     </div>
-    <section class="hall" id="hall"><div class="loading"><div><div class="spinner"></div>Cargando conductores…</div></div></section>
+    <section class="hall" id="hall"><div class="loading"><div><div class="spinner"></div><span data-i18n="loadingDrivers">Cargando conductores…</span></div></div></section>
 
     <div class="toolbar">
-      <div class="section-title"><small>QUIÉN SUBIÓ AL TREN</small><h2>Pasajeros e invitados</h2></div>
+      <div class="section-title"><small data-i18n="whoBoarded">QUIÉN SUBIÓ AL TREN</small><h2 data-i18n="passengersGuests">Pasajeros e invitados</h2></div>
     </div>
     <section class="kpis traveler-kpis">
-      <article class="kpi"><div class="kpi-icon">👥</div><div class="kpi-label">PUESTOS DE PASAJERO</div><strong class="kpi-value" id="passengerTrips">—</strong><div class="kpi-note">registros de pasajeros en el periodo</div></article>
-      <article class="kpi"><div class="kpi-icon">𓅓</div><div class="kpi-label">PASAJEROS ÚNICOS</div><strong class="kpi-value" id="passengerUnique">—</strong><div class="kpi-note" id="passengerUniqueNote">—</div></article>
-      <article class="kpi"><div class="kpi-icon">♛</div><div class="kpi-label">VIP / GUARDIÁN</div><strong class="kpi-value" id="specialGuests">—</strong><div class="kpi-note" id="specialGuestsNote">—</div></article>
-      <article class="kpi"><div class="kpi-icon">🏅</div><div class="kpi-label">MÁS VIAJERO</div><strong class="kpi-value" id="passengerLeader">—</strong><div class="kpi-note" id="passengerLeaderNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">👥</div><div class="kpi-label" data-i18n="passengerSeats">PUESTOS DE PASAJERO</div><strong class="kpi-value" id="passengerTrips">—</strong><div class="kpi-note" data-i18n="passengerRecords">registros de pasajeros en el periodo</div></article>
+      <article class="kpi"><div class="kpi-icon">𓅓</div><div class="kpi-label" data-i18n="uniquePassengers">PASAJEROS ÚNICOS</div><strong class="kpi-value" id="passengerUnique">—</strong><div class="kpi-note" id="passengerUniqueNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">♛</div><div class="kpi-label" data-i18n="vipGuardian">VIP / GUARDIÁN</div><strong class="kpi-value" id="specialGuests">—</strong><div class="kpi-note" id="specialGuestsNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">🏅</div><div class="kpi-label" data-i18n="mostTraveler">MÁS VIAJERO</div><strong class="kpi-value" id="passengerLeader">—</strong><div class="kpi-note" id="passengerLeaderNote">—</div></article>
     </section>
 
     <div class="toolbar">
-      <div class="section-title"><small>RANKING DE PASAJEROS</small><h2>Los que más han viajado</h2></div>
+      <div class="section-title"><small data-i18n="passengerRanking">RANKING DE PASAJEROS</small><h2 data-i18n="mostTravelled">Los que más han viajado</h2></div>
     </div>
-    <section class="hall passenger-hall" id="passengerHall"><div class="loading">Aún no hay pasajeros registrados.</div></section>
+    <section class="hall passenger-hall" id="passengerHall"><div class="loading"><span data-i18n="noPassengers">Aún no hay pasajeros registrados.</span></div></section>
 
     <div class="toolbar">
-      <div class="section-title"><small>INVITADO DEL CONDUCTOR</small><h2>VIP y Guardianes</h2></div>
+      <div class="section-title"><small data-i18n="driverGuest">INVITADO DEL CONDUCTOR</small><h2 data-i18n="vipGuardians">VIP y Guardianes</h2></div>
     </div>
-    <section class="hall guest-hall" id="guestHall"><div class="loading">Aún no hay invitados registrados.</div></section>
+    <section class="hall guest-hall" id="guestHall"><div class="loading"><span data-i18n="noGuests">Aún no hay invitados registrados.</span></div></section>
 
     <div class="toolbar">
-      <div class="section-title"><small>CRONOLOGÍA</small><h2>Historial semanal</h2></div>
+      <div class="section-title"><small data-i18n="timeline">CRONOLOGÍA</small><h2 data-i18n="weeklyHistory">Historial semanal</h2></div>
     </div>
-    <section class="history" id="history"><div class="loading"><div><div class="spinner"></div>Construyendo historial…</div></div></section>
+    <section class="history" id="history"><div class="loading"><div><div class="spinner"></div><span data-i18n="buildingHistory">Construyendo historial…</span></div></div></section>
 
-    <p class="footnote">La estadística de viajes usa únicamente conductores reales confirmados. La comparación “planificado vs real” reconstruye la planificación con los datos guardados actualmente para cada semana.</p>
+    <p class="footnote" data-i18n="footnote">La estadística de viajes usa únicamente conductores reales confirmados. La comparación “planificado vs real” reconstruye la planificación con los datos guardados actualmente para cada semana.</p>
   </main>
 
   <div class="modal" id="modal" hidden>
@@ -512,12 +555,12 @@
       <header class="sheet-hero">
         <img class="sheet-avatar" id="modalAvatar" src="assets/icon-user-card.webp" alt="">
         <div><h3 id="modalName">—</h3><div class="sheet-sub" id="modalSub">—</div></div>
-        <button class="close" id="closeModal" type="button" aria-label="Cerrar">×</button>
+        <button class="close" id="closeModal" type="button" aria-label="Cerrar" data-i18n-aria="close">×</button>
       </header>
       <div class="sheet-stats">
-        <div class="sheet-stat"><strong id="modalTrips">—</strong><small>VIAJES</small></div>
-        <div class="sheet-stat"><strong id="modalCycles">—</strong><small>CICLOS</small></div>
-        <div class="sheet-stat"><strong id="modalLast">—</strong><small>ÚLTIMO</small></div>
+        <div class="sheet-stat"><strong id="modalTrips">—</strong><small data-i18n="trips">VIAJES</small></div>
+        <div class="sheet-stat"><strong id="modalCycles">—</strong><small data-i18n="cycles">CICLOS</small></div>
+        <div class="sheet-stat"><strong id="modalLast">—</strong><small data-i18n="last">ÚLTIMO</small></div>
       </div>
       <div class="trips" id="modalHistory"></div>
     </section>
