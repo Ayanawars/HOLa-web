@@ -343,6 +343,70 @@
       .driver.top1 .avatar-wrap{width:88px;height:88px}
     }
 
+  
+    /* Compact passenger ranking */
+    .passenger-hall{
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:7px;
+    }
+    .passenger-hall .passenger-card{
+      min-height:58px;
+      display:grid;
+      grid-template-columns:24px 42px minmax(0,1fr);
+      align-items:center;
+      gap:7px;
+      padding:7px 8px;
+      text-align:left;
+      border-radius:13px;
+    }
+    .passenger-hall .passenger-card .rank{
+      position:static;
+      width:24px;height:24px;min-width:24px;
+      padding:0;
+      display:grid;place-items:center;
+      border-radius:7px!important;
+      font-size:8px;
+    }
+    .passenger-hall .passenger-card .avatar-wrap,
+    .passenger-hall .passenger-card.top1 .avatar-wrap{
+      width:42px;height:42px;
+      margin:0;padding:2px;
+      border-radius:10px!important;
+    }
+    .passenger-hall .passenger-card .avatar{border-radius:8px!important;border-width:2px}
+    .passenger-hall .passenger-card .passenger-copy{min-width:0}
+    .passenger-hall .passenger-card h4{
+      margin:0;
+      font-size:10px;
+      line-height:1.15;
+      text-align:left;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .passenger-hall .passenger-card .passenger-count{
+      display:flex;align-items:baseline;gap:4px;margin-top:3px;
+      white-space:nowrap;
+    }
+    .passenger-hall .passenger-card .passenger-count strong{
+      display:inline;margin:0;font:900 15px/1 Georgia,serif;color:#278b69;
+    }
+    .passenger-hall .passenger-card .passenger-count small{
+      font-size:7px;color:#758a96;font-weight:900;letter-spacing:.03em;
+    }
+    .passenger-hall .passenger-card.top1{grid-column:auto}
+    @media(max-width:760px){.passenger-hall{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:520px){
+      .passenger-hall{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+      .passenger-hall .passenger-card{min-height:56px;padding:6px;grid-template-columns:22px 38px minmax(0,1fr);gap:6px}
+      .passenger-hall .passenger-card .rank{width:22px;height:22px;min-width:22px}
+      .passenger-hall .passenger-card .avatar-wrap,
+      .passenger-hall .passenger-card.top1 .avatar-wrap{width:38px;height:38px}
+      .passenger-hall .passenger-card h4{font-size:9px}
+      .passenger-hall .passenger-card .passenger-count strong{font-size:14px}
+      .passenger-hall .passenger-card .passenger-count small{font-size:6.5px}
+    }
+
   </style>
 </head>
 <body>
@@ -643,8 +707,8 @@
       const distinct=[...new Set(ranking.map(x=>x.count))];
       ranking.slice(0,30).forEach(item=>{
         const rank=distinct.indexOf(item.count)+1,card=document.createElement('article');
-        card.className='driver '+(distinct.length>1&&rank<=3?'top'+rank:'');
-        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE COMO PASAJERO':'VIAJES COMO PASAJERO')+'</small>';
+        card.className='driver passenger-card '+(distinct.length>1&&rank<=3?'top'+rank:'');
+        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><div class="passenger-copy"><h4>'+esc(item.name)+'</h4><div class="passenger-count"><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE':'VIAJES')+'</small></div></div>';
         box.append(card);
       });
     }
