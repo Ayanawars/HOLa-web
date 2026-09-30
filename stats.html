@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#041c31">
+  <title>HOLa — Estadísticas</title>
+  <style>
+    :root{
+      --night:#031320;--night2:#062b49;--navy:#0a4778;--cyan:#53d6ff;--cyan2:#1ba7dc;
+      --gold:#efc664;--gold2:#b98324;--cream:#fff1c5;--paper:#fff8e6;--muted:#a9c8d7;
+      --ok:#55e0ae;--danger:#ff967d;--line:rgba(239,198,100,.30)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;min-height:100vh;color:#eefaff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+      background:#031522;padding:0 12px max(42px,env(safe-area-inset-bottom));
+    }
+    body:before{
+      content:"";position:fixed;inset:0;z-index:-3;
+      background:url('hola-s3-background-square.webp') center top/cover fixed no-repeat;
+      filter:saturate(.72) brightness(.48) contrast(1.08);
+    }
+    body:after{
+      content:"";position:fixed;inset:0;z-index:-2;
+      background:
+        radial-gradient(circle at 50% -10%,rgba(62,189,235,.23),transparent 34%),
+        radial-gradient(circle at 88% 18%,rgba(235,185,72,.11),transparent 23%),
+        linear-gradient(180deg,rgba(2,16,29,.76),rgba(2,23,40,.91) 32%,rgba(3,19,32,.97));
+    }
+    .dust{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.28;background-image:
+      radial-gradient(circle at 10% 20%,#ffe6a9 0 1px,transparent 1.5px),
+      radial-gradient(circle at 78% 38%,#bfefff 0 1px,transparent 1.5px),
+      radial-gradient(circle at 32% 72%,#ffe6a9 0 1px,transparent 1.5px);
+      background-size:120px 110px,160px 150px,190px 180px;animation:dust 18s linear infinite}
+    @keyframes dust{to{transform:translateY(-70px)}}
+    button,select{font:inherit}
+    button{cursor:pointer}
+    .shell{width:min(100%,980px);margin:auto;padding-top:max(10px,env(safe-area-inset-top))}
+    .topbar{height:52px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:5}
+    .round{
+      width:44px;height:44px;display:grid;place-items:center;border-radius:50%;text-decoration:none;
+      border:1px solid rgba(239,198,100,.75);color:#fff5cb;background:rgba(4,36,61,.78);
+      box-shadow:0 8px 24px #0008,inset 0 0 0 1px rgba(83,214,255,.18);font-size:26px
+    }
+    .mini-logo{width:70px;filter:drop-shadow(0 4px 10px #0009)}
+    .hero{
+      position:relative;overflow:hidden;min-height:330px;margin-top:-52px;padding:82px 24px 26px;
+      border:1px solid rgba(239,198,100,.62);border-top:0;border-radius:0 0 34px 34px;
+      background:
+        linear-gradient(105deg,rgba(2,22,39,.96),rgba(4,53,88,.86) 50%,rgba(3,29,49,.95)),
+        url('hola-s3-header.png') center/cover;
+      box-shadow:0 24px 55px #0008,0 0 45px rgba(18,145,200,.08),inset 0 -1px 0 rgba(239,198,100,.25)
+    }
+    .hero:before{
+      content:"";position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,transparent 0 52%,rgba(9,91,130,.18)),radial-gradient(circle at 82% 15%,rgba(255,215,116,.22),transparent 28%);
+    }
+    .hero:after{content:"𓂀 𓁹 𓆣";position:absolute;right:22px;bottom:18px;color:rgba(239,198,100,.22);font-size:25px;letter-spacing:10px}
+    .hero-copy{position:relative;z-index:2;max-width:690px}
+    .eyebrow{font-size:10px;font-weight:950;letter-spacing:.26em;color:var(--gold);text-transform:uppercase}
+    .hero h1{margin:10px 0 7px;font:900 clamp(38px,9vw,74px)/.93 Georgia,serif;color:#fff3c4;letter-spacing:-.04em;text-shadow:0 6px 20px #000}
+    .hero h1 span{display:block;color:#8ce6ff;font-size:.43em;letter-spacing:.16em;margin-top:10px}
+    .hero p{margin:14px 0 0;max-width:610px;color:#cde9f5;font-size:13px;line-height:1.6}
+    .statusline{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+    .status-pill{padding:7px 10px;border:1px solid rgba(83,214,255,.28);border-radius:999px;background:rgba(3,38,64,.65);color:#d9f6ff;font-size:10px;font-weight:800}
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}
+    .tab{min-height:48px;border-radius:15px;border:1px solid rgba(239,198,100,.24);background:rgba(5,38,62,.74);color:#7fa7ba;font-weight:950;letter-spacing:.06em;font-size:11px}
+    .tab.active{color:#092b45;background:linear-gradient(135deg,#fff0b8,#e7b849);border-color:#fff0ae;box-shadow:0 8px 22px rgba(224,170,55,.22)}
+    .tab[disabled]{cursor:default}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 2px 12px}
+    .section-title small{display:block;color:#b9d6e2;font-size:9px;letter-spacing:.2em;font-weight:900;margin-bottom:4px}
+    .section-title h2{margin:0;color:#fff0bd;font:900 25px Georgia,serif}
+    .range{min-width:145px;height:42px;padding:0 12px;border-radius:13px;border:1px solid rgba(239,198,100,.55);background:#082d4a;color:#fff1c5;font-weight:850;font-size:11px}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .kpi{
+      position:relative;overflow:hidden;min-height:145px;padding:16px 15px;border-radius:21px;
+      border:1px solid rgba(239,198,100,.30);
+      background:linear-gradient(145deg,rgba(7,45,73,.94),rgba(3,29,48,.96));
+      box-shadow:0 12px 26px #0006,inset 0 1px 0 rgba(255,255,255,.05)
+    }
+    .kpi:after{content:"";position:absolute;inset:auto -30px -55px auto;width:120px;height:120px;border:1px solid rgba(83,214,255,.16);border-radius:50%;box-shadow:0 0 0 18px rgba(83,214,255,.035),0 0 0 36px rgba(239,198,100,.025)}
+    .kpi-icon{font-size:23px;color:#7de5ff}
+    .kpi-label{margin-top:17px;color:#8bb3c5;font-size:9px;letter-spacing:.16em;font-weight:950}
+    .kpi-value{display:block;margin-top:4px;color:#fff2bf;font:900 31px/1 Georgia,serif;overflow-wrap:anywhere}
+    .kpi-note{margin-top:6px;color:#b7d1dd;font-size:10px;line-height:1.35}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .panel{border:1px solid rgba(239,198,100,.29);border-radius:24px;background:linear-gradient(155deg,rgba(7,43,70,.95),rgba(3,27,45,.96));box-shadow:0 13px 28px #0006;overflow:hidden}
+    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:18px 18px 0}
+    .panel-head h3{margin:0;color:#ffefba;font:900 20px Georgia,serif}
+    .panel-head p{margin:5px 0 0;color:#8eb1c0;font-size:10px}
+    .panel-body{padding:18px}
+    .distribution{display:grid;grid-template-columns:160px 1fr;gap:18px;align-items:center}
+    .donut{
+      --p:0deg;width:150px;height:150px;border-radius:50%;display:grid;place-items:center;position:relative;
+      background:conic-gradient(#53d6ff 0 var(--vs),#eac15c var(--vs) var(--dsb),#aa8cff var(--dsb) var(--dsa),#52d7a1 var(--dsa) 360deg);
+      box-shadow:0 0 0 7px rgba(255,255,255,.025),0 12px 25px #0007
+    }
+    .donut:after{content:"";position:absolute;width:102px;height:102px;border-radius:50%;background:#06243b;border:1px solid rgba(239,198,100,.25);box-shadow:inset 0 0 18px #0007}
+    .donut-center{position:relative;z-index:2;text-align:center}
+    .donut-center strong{display:block;color:#fff1bd;font:900 29px Georgia,serif}.donut-center span{display:block;color:#82cce8;font-size:9px;font-weight:850;letter-spacing:.12em}
+    .legend{display:grid;gap:9px}
+    .legend-row{display:grid;grid-template-columns:11px minmax(0,1fr) auto;gap:8px;align-items:center;color:#d6edf6;font-size:11px}
+    .legend-row i{width:9px;height:9px;border-radius:50%}.legend-row b{color:#fff0bd}
+    .fidelity{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center}
+    .ring{width:148px;height:148px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ok) 0 var(--match),rgba(255,255,255,.08) var(--match) 100%);box-shadow:0 0 0 7px rgba(255,255,255,.025)}
+    .ring-inner{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;text-align:center;background:#06243b;border:1px solid rgba(239,198,100,.25)}
+    .ring strong{display:block;color:#fff2c1;font:900 29px Georgia,serif}.ring span{display:block;color:#8fc7d9;font-size:9px}
+    .fact-list{display:grid;gap:9px}.fact{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(83,214,255,.10)}
+    .fact small{display:block;color:#86aebf;font-size:9px;font-weight:900;letter-spacing:.08em}.fact strong{display:block;margin-top:3px;color:#e8f8ff;font-size:16px}
+    .hall{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    .driver{
+      position:relative;min-width:0;border:1px solid rgba(239,198,100,.25);border-radius:19px;padding:10px;background:linear-gradient(160deg,rgba(8,52,84,.94),rgba(4,29,48,.98));text-align:center;color:white;
+      box-shadow:0 9px 20px #0005;transition:.18s
+    }
+    .driver:hover{transform:translateY(-3px);border-color:rgba(239,198,100,.6)}
+    .driver.top1{border-color:#f2cb63;box-shadow:0 0 28px rgba(238,193,83,.14),0 12px 22px #0006}
+    .driver.top2{border-color:#a9dced}.driver.top3{border-color:#d79f64}
+    .rank{position:absolute;left:8px;top:8px;z-index:2;width:27px;height:27px;display:grid;place-items:center;border-radius:50%;background:#0b3757;border:1px solid rgba(239,198,100,.5);color:#ffe9a5;font-size:10px;font-weight:950}
+    .avatar-wrap{width:76px;height:76px;margin:4px auto 9px;padding:3px;border-radius:50%;background:linear-gradient(145deg,#f2c95c,#62d9ff,#f2c95c);box-shadow:0 7px 16px #0007}
+    .driver.top1 .avatar-wrap{width:88px;height:88px}
+    .avatar{width:100%;height:100%;object-fit:cover;border-radius:50%;background:#0a2b46;border:3px solid #09243a}
+    .avatar.hola{object-fit:contain;background:transparent}
+    .driver h4{margin:0;color:#fff0bf;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .driver strong{display:block;margin-top:7px;color:#7de2ff;font:900 19px Georgia,serif}.driver small{color:#8caebe;font-size:9px}
+    .source-mini{display:flex;justify-content:center;flex-wrap:wrap;gap:4px;margin-top:8px}.source-mini span{padding:3px 5px;border-radius:999px;background:rgba(255,255,255,.05);font-size:8px;color:#cce5ef}
+    .history{display:grid;gap:11px}
+    .week{
+      border:1px solid rgba(239,198,100,.24);border-radius:20px;background:linear-gradient(145deg,rgba(8,45,72,.91),rgba(3,27,44,.97));overflow:hidden
+    }
+    .week-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid rgba(239,198,100,.14)}
+    .week-head strong{color:#ffedb2;font:900 15px Georgia,serif}.week-head span{color:#7fcde8;font-size:9px;font-weight:900}
+    .week-days{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:rgba(239,198,100,.09)}
+    .day{min-width:0;padding:12px 6px 13px;background:#062640;text-align:center}
+    .day small{display:block;color:#789fb1;font-size:8px;font-weight:950}.day b{display:block;margin-top:5px;color:#dff7ff;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .day .src{display:inline-block;margin-top:6px;padding:3px 5px;border-radius:999px;background:#0a3c5e;color:#7fdcff;font-size:7px}
+    .day.empty{opacity:.47}.day.today{background:linear-gradient(180deg,#0a4269,#082b47)}
+    .loading{min-height:160px;display:grid;place-items:center;color:#add1df;text-align:center}.spinner{width:42px;height:42px;border:4px solid rgba(255,255,255,.12);border-top-color:#69defd;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}
+    .empty{color:#819eaa}
+    .modal{position:fixed;inset:0;z-index:70;display:grid;place-items:end center;padding:12px;background:rgba(0,8,15,.73);backdrop-filter:blur(5px)}
+    .modal[hidden]{display:none}
+    .sheet{width:min(100%,650px);max-height:min(86vh,760px);overflow:auto;border:1px solid rgba(239,198,100,.55);border-radius:26px 26px 18px 18px;background:linear-gradient(165deg,#083353,#031a2c);box-shadow:0 -20px 50px #000c}
+    .sheet-hero{position:relative;padding:21px 20px 18px;display:grid;grid-template-columns:92px 1fr auto;gap:14px;align-items:center;border-bottom:1px solid rgba(239,198,100,.20);background:radial-gradient(circle at 80% 10%,rgba(239,198,100,.17),transparent 30%)}
+    .sheet-avatar{width:92px;height:92px;object-fit:cover;border-radius:22px;border:2px solid #e4ba55;background:#082943}.sheet-avatar.hola{object-fit:contain;background:transparent}
+    .sheet h3{margin:0;color:#fff0bb;font:900 25px Georgia,serif;overflow-wrap:anywhere}.sheet-sub{margin-top:5px;color:#9bc6d8;font-size:11px}
+    .close{align-self:start;width:36px;height:36px;border-radius:50%;border:1px solid rgba(239,198,100,.35);background:#06233a;color:#fff1bf;font-size:20px}
+    .sheet-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.sheet-stat{padding:11px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(83,214,255,.1);text-align:center}.sheet-stat strong{display:block;color:#fff0bd;font-size:20px}.sheet-stat small{display:block;margin-top:3px;color:#8bb4c6;font-size:8px;font-weight:900}
+    .trips{padding:0 14px 18px}.trip{display:grid;grid-template-columns:76px 1fr auto;gap:8px;align-items:center;padding:11px 4px;border-bottom:1px solid rgba(239,198,100,.12)}.trip time{color:#8eb7c8;font-size:10px}.trip strong{font-size:11px;color:#e7f7ff}.trip .badge{font-size:8px;padding:4px 7px;border-radius:999px;background:#0b456c;color:#92e5ff}
+    .footnote{margin:14px 2px 0;color:#7799a8;font-size:9px;line-height:1.5;text-align:center}
+    @media(max-width:760px){
+      .kpis{grid-template-columns:repeat(2,1fr)}.hall{grid-template-columns:repeat(3,1fr)}
+      .distribution,.fidelity{grid-template-columns:140px 1fr}.donut,.ring{width:132px;height:132px}.donut:after,.ring-inner{width:91px;height:91px}
+      .week-days{grid-template-columns:repeat(7,minmax(84px,1fr));overflow-x:auto}.week{overflow-x:auto}.week-head{position:sticky;left:0}
+    }
+    @media(max-width:520px){
+      body{padding-left:9px;padding-right:9px}.hero{min-height:310px;padding:78px 16px 22px;border-radius:0 0 27px 27px}.hero h1{font-size:46px}.hero p{font-size:11px}
+      .tabs{gap:5px}.tab{font-size:9px;padding:0 4px}.toolbar{align-items:end}.section-title h2{font-size:22px}.range{min-width:124px;font-size:9px}
+      .kpi{min-height:132px;padding:14px 12px}.kpi-value{font-size:27px}.kpi-label{font-size:8px}
+      .grid2{grid-template-columns:1fr}.distribution,.fidelity{grid-template-columns:125px 1fr}.donut,.ring{width:118px;height:118px}.donut:after,.ring-inner{width:80px;height:80px}.donut-center strong,.ring strong{font-size:24px}
+      .hall{grid-template-columns:repeat(2,1fr)}.driver.top1{grid-column:span 2}.driver.top1 .avatar-wrap{width:98px;height:98px}
+      .week-days{grid-template-columns:repeat(7,86px)}.sheet-hero{grid-template-columns:72px 1fr auto;padding:16px 14px}.sheet-avatar{width:72px;height:72px;border-radius:18px}.sheet h3{font-size:20px}
+    }
+  </style>
+</head>
+<body>
+  <div class="dust"></div>
+  <main class="shell">
+    <div class="topbar">
+      <a class="round" href="index.html" aria-label="Volver">‹</a>
+      <img class="mini-logo" src="hola-s3-logo.webp" alt="HOLa">
+      <a class="round" href="train.html" aria-label="Tren">🚂</a>
+    </div>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">HOLa · ALLIANCE INTELLIGENCE CENTER</div>
+        <h1>ESTADÍSTICAS <span>TRAIN ANALYTICS</span></h1>
+        <p>Historial real del tren, rotación de conductores, origen de cada asignación y evolución de la alianza. Todos los datos se calculan desde los registros reales de HOLa.</p>
+        <div class="statusline">
+          <span class="status-pill" id="dataPeriod">Cargando periodo…</span>
+          <span class="status-pill" id="dataFresh">Sincronizando Supabase…</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Tipos de estadísticas">
+      <button class="tab active">🚂 TREN</button>
+      <button class="tab" disabled>⚔ VS · PRÓX.</button>
+      <button class="tab" disabled>🛡 DS · PRÓX.</button>
+      <button class="tab" disabled>✦ DONACIONES · PRÓX.</button>
+    </nav>
+
+    <div class="toolbar">
+      <div class="section-title"><small>RESUMEN EJECUTIVO</small><h2>Estado del tren</h2></div>
+      <select id="range" class="range" aria-label="Periodo">
+        <option value="4w">ÚLTIMAS 4 SEMANAS</option>
+        <option value="cycle">CICLO ACTUAL</option>
+        <option value="s3">TEMPORADA S3</option>
+      </select>
+    </div>
+
+    <section class="kpis">
+      <article class="kpi"><div class="kpi-icon">🚂</div><div class="kpi-label">VIAJES REGISTRADOS</div><strong class="kpi-value" id="trips">—</strong><div class="kpi-note">conductores reales confirmados</div></article>
+      <article class="kpi"><div class="kpi-icon">♚</div><div class="kpi-label">CONDUCTORES ÚNICOS</div><strong class="kpi-value" id="unique">—</strong><div class="kpi-note" id="uniqueNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">𓂀</div><div class="kpi-label">ROTACIÓN HOLa</div><strong class="kpi-value" id="rotation">—</strong><div class="kpi-note" id="rotationNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">🏆</div><div class="kpi-label">MÁS VIAJES</div><strong class="kpi-value" id="leader">—</strong><div class="kpi-note" id="leaderNote">—</div></article>
+    </section>
+
+    <section class="grid2">
+      <article class="panel">
+        <header class="panel-head"><div><h3>Origen del tren</h3><p>Cómo se repartieron los viajes reales por día/fuente.</p></div></header>
+        <div class="panel-body distribution">
+          <div class="donut" id="sourceDonut"><div class="donut-center"><strong id="donutTotal">—</strong><span>VIAJES</span></div></div>
+          <div class="legend" id="sourceLegend"></div>
+        </div>
+      </article>
+      <article class="panel">
+        <header class="panel-head"><div><h3>Planificado vs real</h3><p>Coincidencia entre el conductor calculado y el confirmado.</p></div></header>
+        <div class="panel-body fidelity">
+          <div class="ring" id="matchRing"><div class="ring-inner"><div><strong id="matchPct">—</strong><span>COINCIDENCIA</span></div></div></div>
+          <div class="fact-list">
+            <div class="fact"><small>COINCIDENCIAS</small><strong id="matches">—</strong></div>
+            <div class="fact"><small>CAMBIOS DE TITULAR</small><strong id="changes">—</strong></div>
+            <div class="fact"><small>SIN PLAN CALCULABLE</small><strong id="unplanned">—</strong></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="toolbar">
+      <div class="section-title"><small>SALÓN DE MAQUINISTAS</small><h2>Ranking de conductores</h2></div>
+    </div>
+    <section class="hall" id="hall"><div class="loading"><div><div class="spinner"></div>Cargando conductores…</div></div></section>
+
+    <div class="toolbar">
+      <div class="section-title"><small>CRONOLOGÍA</small><h2>Historial semanal</h2></div>
+    </div>
+    <section class="history" id="history"><div class="loading"><div><div class="spinner"></div>Construyendo historial…</div></div></section>
+
+    <p class="footnote">La estadística de viajes usa únicamente conductores reales confirmados. La comparación “planificado vs real” reconstruye la planificación con los datos guardados actualmente para cada semana.</p>
+  </main>
+
+  <div class="modal" id="modal" hidden>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalName">
+      <header class="sheet-hero">
+        <img class="sheet-avatar" id="modalAvatar" src="assets/icon-user-card.webp" alt="">
+        <div><h3 id="modalName">—</h3><div class="sheet-sub" id="modalSub">—</div></div>
+        <button class="close" id="closeModal" type="button" aria-label="Cerrar">×</button>
+      </header>
+      <div class="sheet-stats">
+        <div class="sheet-stat"><strong id="modalTrips">—</strong><small>VIAJES</small></div>
+        <div class="sheet-stat"><strong id="modalCycles">—</strong><small>CICLOS</small></div>
+        <div class="sheet-stat"><strong id="modalLast">—</strong><small>ÚLTIMO</small></div>
+      </div>
+      <div class="trips" id="modalHistory"></div>
+    </section>
+  </div>
+
+  <script type="module">
+    import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20260928-fixed-week-plan-1';
+
+    const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV');
+    const $=id=>document.getElementById(id);
+    const FALLBACK='assets/icon-user-card.webp';
+    const sourceNames={VS:'VS',DS_B:'DS B',DS_A:'DS A',DONATIONS:'Donaciones'};
+    const sourceLong={VS:'Versus',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
+    const dayShort=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+    const norm=v=>String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+    const isoDate=v=>String(v||'').slice(0,10);
+    const fmt=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
+    const fmtShort=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
+    const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const sourceForDate=date=>{const day=new Date(date+'T12:00:00Z').getUTCDay();return day>=1&&day<=4?'VS':day===5?'DS_B':day===6?'DS_A':'DONATIONS'};
+    let data={players:[],actuals:[],vs:[],ds:[],donations:[],exclusions:[],settings:[]},playerMap=new Map(),planMap=new Map();
+
+    async function fetchAll(table,fields){
+      const rows=[];
+      for(let from=0;;from+=1000){
+        const {data,error}=await sb.from(table).select(fields).range(from,from+999);
+        if(error)throw error;
+        rows.push(...(data||[]));
+        if(!data||data.length<1000)break;
+      }
+      return rows;
+    }
+
+    function ranges(){
+      const dates=data.actuals.map(x=>isoDate(x.service_date)).filter(Boolean).sort();
+      const first=dates[0]||monday(new Date().toISOString().slice(0,10));
+      const last=dates.at(-1)||first;
+      const cycle=cycleFor(monday(last));
+      return{
+        '4w':{start:addDays(last,-27),end:last,label:'Últimas 4 semanas'},
+        cycle:{start:cycle.start,end:cycle.end,label:'Ciclo actual · '+cycle.number+'/4'},
+        s3:{start:first,end:last,label:'Temporada S3'}
+      };
+    }
+
+    function selectedRows(){
+      const r=ranges()[$('range').value]||ranges()['4w'];
+      return data.actuals.filter(x=>{const d=isoDate(x.service_date);return d>=r.start&&d<=r.end&&x.actual_driver});
+    }
+
+    function playerInfo(name){return playerMap.get(norm(name))||{name,avatar:'',default_avatar:''}}
+    function avatarOf(name){const p=playerInfo(name),src=String(p.avatar||'').trim();return (/^https?:\/\//i.test(src)||src.startsWith('data:image/'))?src:FALLBACK}
+    function avatarClass(name){return playerInfo(name).default_avatar==='hola'&&avatarOf(name)!==FALLBACK?'hola':''}
+
+    function aggregate(rows){
+      const map=new Map();
+      for(const row of rows){
+        const key=norm(row.actual_driver);if(!key)continue;
+        if(!map.has(key))map.set(key,{name:row.actual_driver,count:0,dates:[],sources:{VS:0,DS_B:0,DS_A:0,DONATIONS:0}});
+        const item=map.get(key),date=isoDate(row.service_date),source=sourceForDate(date);
+        item.count++;item.dates.push(date);item.sources[source]++;
+      }
+      return [...map.values()].sort((a,b)=>b.count-a.count||b.dates.at(-1).localeCompare(a.dates.at(-1))||a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+    }
+
+    function countAnim(el,value,suffix=''){
+      const target=Number(value)||0,start=performance.now(),duration=650;
+      const tick=now=>{const p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3);el.textContent=Math.round(target*eased)+suffix;if(p<1)requestAnimationFrame(tick)};
+      requestAnimationFrame(tick);
+    }
+
+    function buildPlans(){
+      planMap=new Map();
+      const weeks=[...new Set(data.actuals.map(x=>monday(isoDate(x.service_date))))];
+      for(const week of weeks){
+        try{
+          const schedule=buildSchedule({
+            scheduleWeek:week,vsScores:data.vs,dsScores:data.ds,donations:data.donations,
+            actualDrivers:data.actuals,cycleExclusions:data.exclusions,weekSettings:data.settings,players:data.players
+          });
+          for(const item of schedule.days)planMap.set(item.date,{planned:item.planned,source:item.source,week});
+        }catch(error){console.warn('HOLa stats · planning',week,error)}
+      }
+    }
+
+    function renderKpis(rows,ranking){
+      const unique=ranking.length,totalMembers=data.players.length,rot=totalMembers?Math.round(unique/totalMembers*100):0,leader=ranking[0];
+      countAnim($('trips'),rows.length);countAnim($('unique'),unique);countAnim($('rotation'),rot,'%');
+      $('uniqueNote').textContent='de '+totalMembers+' miembros registrados';
+      $('rotationNote').textContent=(Math.max(0,totalMembers-unique))+' todavía sin viaje en este periodo';
+      $('leader').textContent=leader?.name||'—';$('leaderNote').textContent=leader?(leader.count+' '+(leader.count===1?'viaje':'viajes')):'Sin datos';
+    }
+
+    function renderSource(rows){
+      const counts={VS:0,DS_B:0,DS_A:0,DONATIONS:0};for(const row of rows)counts[sourceForDate(isoDate(row.service_date))]++;
+      const total=rows.length||1,angles={},order=['VS','DS_B','DS_A','DONATIONS'];let acc=0;
+      for(const key of order){acc+=counts[key]/total*360;angles[key]=acc+'deg'}
+      const donut=$('sourceDonut');donut.style.setProperty('--vs',angles.VS);donut.style.setProperty('--dsb',angles.DS_B);donut.style.setProperty('--dsa',angles.DS_A);
+      $('donutTotal').textContent=rows.length;
+      const colors={VS:'#53d6ff',DS_B:'#eac15c',DS_A:'#aa8cff',DONATIONS:'#52d7a1'};
+      $('sourceLegend').innerHTML=order.map(key=>{
+        const pct=rows.length?Math.round(counts[key]/rows.length*100):0;
+        return '<div class="legend-row"><i style="background:'+colors[key]+'"></i><span>'+sourceLong[key]+'</span><b>'+counts[key]+' · '+pct+'%</b></div>'
+      }).join('');
+    }
+
+    function renderMatch(rows){
+      let matches=0,changes=0,unplanned=0;
+      for(const row of rows){
+        const date=isoDate(row.service_date),plan=planMap.get(date);
+        if(!plan?.planned){unplanned++;continue}
+        if(norm(plan.planned)===norm(row.actual_driver))matches++;else changes++;
+      }
+      const comparable=matches+changes,pct=comparable?Math.round(matches/comparable*100):0;
+      $('matchRing').style.setProperty('--match',pct+'%');$('matchPct').textContent=pct+'%';
+      $('matches').textContent=matches;$('changes').textContent=changes;$('unplanned').textContent=unplanned;
+    }
+
+    function renderHall(rows,ranking){
+      const box=$('hall');box.replaceChildren();
+      if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay conductores registrados en este periodo.</div>';return}
+      ranking.slice(0,15).forEach((item,index)=>{
+        const button=document.createElement('button');button.type='button';button.className='driver '+(index<3?'top'+(index+1):'');
+        const chips=Object.entries(item.sources).filter(([,n])=>n).map(([k,n])=>'<span>'+esc(sourceNames[k])+' '+n+'</span>').join('');
+        button.innerHTML='<span class="rank">#'+(index+1)+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE':'VIAJES')+'</small><div class="source-mini">'+chips+'</div>';
+        button.addEventListener('click',()=>openPlayer(item.name,rows));box.append(button)
+      });
+    }
+
+    function weeksBetween(start,end){
+      const out=[];let w=monday(start),guard=0;
+      while(w<=end&&guard++<60){out.push(w);w=addDays(w,7)}
+      return out;
+    }
+
+    function renderHistory(rows){
+      const box=$('history');box.replaceChildren();const r=ranges()[$('range').value]||ranges()['4w'],byDate=new Map(rows.map(x=>[isoDate(x.service_date),x]));
+      const weeks=weeksBetween(r.start,r.end).reverse();
+      if(!weeks.length){box.innerHTML='<div class="loading">Sin historial para este periodo.</div>';return}
+      for(const weekStart of weeks){
+        const weekEnd=addDays(weekStart,6),cycle=cycleFor(weekStart),section=document.createElement('article');section.className='week';
+        section.innerHTML='<header class="week-head"><strong>'+esc(fmt(weekStart))+' — '+esc(fmt(weekEnd))+'</strong><span>CICLO '+cycle.number+'/4</span></header>';
+        const days=document.createElement('div');days.className='week-days';
+        for(let i=0;i<7;i++){
+          const date=addDays(weekStart,i),row=byDate.get(date),source=sourceForDate(date),cell=document.createElement('button');cell.type='button';cell.className='day '+(row?'':'empty');
+          cell.innerHTML='<small>'+dayShort[new Date(date+'T12:00:00Z').getUTCDay()]+' · '+esc(fmtShort(date))+'</small><b>'+esc(row?.actual_driver||'—')+'</b><span class="src">'+esc(sourceNames[source])+'</span>';
+          if(row)cell.addEventListener('click',()=>openPlayer(row.actual_driver,rows));days.append(cell)
+        }
+        section.append(days);box.append(section)
+      }
+    }
+
+    function openPlayer(name,periodRows){
+      const allRows=data.actuals.filter(x=>norm(x.actual_driver)===norm(name)).sort((a,b)=>isoDate(b.service_date).localeCompare(isoDate(a.service_date)));
+      const period=periodRows.filter(x=>norm(x.actual_driver)===norm(name)),cycles=new Set(allRows.map(x=>cycleFor(monday(isoDate(x.service_date))).start));
+      $('modalName').textContent=name;$('modalAvatar').src=avatarOf(name);$('modalAvatar').className='sheet-avatar '+avatarClass(name);
+      $('modalTrips').textContent=allRows.length;$('modalCycles').textContent=cycles.size;$('modalLast').textContent=allRows[0]?fmtShort(isoDate(allRows[0].service_date)):'—';
+      $('modalSub').textContent=period.length+' viaje'+(period.length===1?'':'s')+' dentro del periodo seleccionado · '+allRows.length+' histórico'+(allRows.length===1?'':'s');
+      $('modalHistory').innerHTML=allRows.map(row=>{const date=isoDate(row.service_date),source=sourceForDate(date),plan=planMap.get(date),same=plan?.planned&&norm(plan.planned)===norm(name);return '<div class="trip"><time>'+esc(fmtShort(date))+'</time><strong>'+(same?'Titular calculado y conductor real':plan?.planned?'Conductor real · previsto: '+esc(plan.planned):'Conductor real')+'</strong><span class="badge">'+esc(sourceNames[source])+'</span></div>'}).join('');
+      $('modal').hidden=false;document.body.style.overflow='hidden';
+    }
+    function closeModal(){$('modal').hidden=true;document.body.style.overflow=''}
+    $('closeModal').addEventListener('click',closeModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+    function render(){
+      const rows=selectedRows(),ranking=aggregate(rows),r=ranges()[$('range').value]||ranges()['4w'];
+      $('dataPeriod').textContent=r.label.toUpperCase()+' · '+fmt(r.start)+' — '+fmt(r.end);
+      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderHistory(rows);
+    }
+
+    async function load(){
+      try{
+        const [players,actuals,vs,ds,donations,exclusions,settings]=await Promise.all([
+          fetchAll('players','name,rank,avatar,default_avatar'),
+          fetchAll('train_actual_drivers','service_date,actual_driver'),
+          fetchAll('vs_scores','player_name,day,points,week_type,vs_date'),
+          fetchAll('desert_storm_scores','battle_date,team,player_name,position,points'),
+          fetchAll('technology_donations','week_start,player_name,points,rank'),
+          fetchAll('train_cycle_exclusions','*'),
+          fetchAll('train_week_settings','*')
+        ]);
+        data={players,actuals:actuals.filter(x=>x.actual_driver).sort((a,b)=>isoDate(a.service_date).localeCompare(isoDate(b.service_date))),vs,ds,donations,exclusions,settings};
+        playerMap=new Map(players.map(p=>[norm(p.name),p]));buildPlans();
+        const dates=data.actuals.map(x=>isoDate(x.service_date));
+        $('dataFresh').textContent='DATOS REALES · '+data.actuals.length+' REGISTROS';
+        if(dates.length)$('dataPeriod').textContent='S3 · '+fmt(dates[0])+' — '+fmt(dates.at(-1));
+        render();
+      }catch(error){
+        console.error(error);
+        $('dataFresh').textContent='ERROR AL CARGAR DATOS';
+        $('hall').innerHTML='<div class="loading">No se pudieron cargar las estadísticas.<br><small>'+esc(error.message||error)+'</small></div>';
+        $('history').innerHTML='<div class="loading">Sin datos disponibles.</div>';
+      }
+    }
+
+    $('range').addEventListener('change',render);
+    await load();
+  </script>
+</body>
+</html>
