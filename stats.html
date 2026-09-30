@@ -828,7 +828,7 @@
       $('modalName').textContent=name;$('modalAvatar').src=avatarOf(name);$('modalAvatar').className='sheet-avatar '+avatarClass(name);
       $('modalTrips').textContent=allRows.length;$('modalCycles').textContent=cycles.size;$('modalLast').textContent=allRows[0]?fmtShort(isoDate(allRows[0].service_date)):'—';
       $('modalSub').textContent=tr('modalPeriod',{n:period.length,s:period.length===1?'':'s',m:allRows.length,h:allRows.length===1?'':'s'});
-      $('modalHistory').innerHTML=allRows.map(row=>{const date=isoDate(row.service_date),source=sourceForDate(date),plan=planMap.get(date),same=plan?.planned&&norm(plan.planned)===norm(name);return '<div class="trip"><time>'+esc(fmtShort(date))+'</time><strong>'+(same?tr('plannedAndReal'):plan?.planned?tr('realPlanned',{name:plan.planned}):tr('realDriver'))+'</strong><span class="badge">'+esc(sourceNames[source])+'</span></div>'}).join('');
+      $('modalHistory').innerHTML=allRows.map(row=>{const date=isoDate(row.service_date),source=sourceForDate(date),plan=planMap.get(date),same=plan?.planned&&norm(plan.planned)===norm(name);return '<div class="trip"><time>'+esc(fmtShort(date))+'</time><strong>'+(same?tr('plannedAndReal'):plan?.planned?tr('realPlanned',{name:plan.planned}):tr('realDriver'))+'</strong><span class="badge">'+esc(sourceName(source))+'</span></div>'}).join('');
       $('modal').hidden=false;document.body.style.overflow='hidden';
     }
     function closeModal(){$('modal').hidden=true;document.body.style.overflow=''}
