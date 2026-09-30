@@ -704,26 +704,54 @@
 
     async function load(){
       try{
-        const [players,actuals,vs,ds,donations,exclusions,settings,tripMembers]=await Promise.all([
+        // Carga crítica y ligera: debe mostrar la página aunque fallen
+        // después los datos secundarios usados para reconstruir la planificación.
+        const [players,actuals,tripMembers]=await Promise.all([
           fetchAll('players','name,rank,avatar,default_avatar'),
           fetchAll('train_actual_drivers','service_date,actual_driver'),
+          fetchAll('train_trip_members','service_date,player_name,role,source')
+        ]);
+
+        data.players=players;
+        data.actuals=actuals.filter(x=>x.actual_driver).sort((a,b)=>isoDate(a.service_date).localeCompare(isoDate(b.service_date)));
+        data.tripMembers=tripMembers;
+        playerMap=new Map(players.map(p=>[norm(p.name),p]));
+
+        const dates=data.actuals.map(x=>isoDate(x.service_date));
+        $('dataFresh').textContent='DATOS REALES · '+data.actuals.length+' TRENES · '+data.tripMembers.length+' VIAJEROS';
+        if(dates.length)$('dataPeriod').textContent='S3 · '+fmt(dates[0])+' — '+fmt(dates.at(-1));
+
+        // Render inmediato con todos los datos esenciales.
+        render();
+
+        // El histórico VS/DS es secundario. Si alguna tabla falla no debe
+        // dejar la página entera en blanco.
+        const secondary=await Promise.allSettled([
           fetchAll('vs_scores','player_name,day,points,week_type,vs_date'),
           fetchAll('desert_storm_scores','battle_date,team,player_name,position,points'),
           fetchAll('technology_donations','week_start,player_name,points,rank'),
           fetchAll('train_cycle_exclusions','*'),
-          fetchAll('train_week_settings','*'),
-          fetchAll('train_trip_members','service_date,player_name,role,source')
+          fetchAll('train_week_settings','*')
         ]);
-        data={players,actuals:actuals.filter(x=>x.actual_driver).sort((a,b)=>isoDate(a.service_date).localeCompare(isoDate(b.service_date))),vs,ds,donations,exclusions,settings,tripMembers};
-        playerMap=new Map(players.map(p=>[norm(p.name),p]));buildPlans();
-        const dates=data.actuals.map(x=>isoDate(x.service_date));
-        $('dataFresh').textContent='DATOS REALES · '+data.actuals.length+' REGISTROS';
-        if(dates.length)$('dataPeriod').textContent='S3 · '+fmt(dates[0])+' — '+fmt(dates.at(-1));
+        const keys=['vs','ds','donations','exclusions','settings'];
+        secondary.forEach((result,index)=>{
+          if(result.status==='fulfilled')data[keys[index]]=result.value;
+          else console.warn('HOLa stats · '+keys[index],result.reason);
+        });
+
+        buildPlans();
         render();
+        const failedSecondary=secondary.filter(x=>x.status==='rejected').length;
+        $('dataFresh').textContent=failedSecondary
+          ?'DATOS REALES · '+data.actuals.length+' TRENES · '+data.tripMembers.length+' VIAJEROS · '+failedSecondary+' FUENTE SECUNDARIA PENDIENTE'
+          :'DATOS REALES · '+data.actuals.length+' TRENES · '+data.tripMembers.length+' VIAJEROS';
       }catch(error){
-        console.error(error);
-        $('dataFresh').textContent='ERROR AL CARGAR DATOS';
-        $('hall').innerHTML='<div class="loading">No se pudieron cargar las estadísticas.<br><small>'+esc(error.message||error)+'</small></div>';
+        console.error('HOLa stats · core load',error);
+        $('dataFresh').textContent='ERROR AL CARGAR DATOS PRINCIPALES';
+        const message=esc(error?.message||error||'Error desconocido');
+        $('hall').innerHTML='<div class="loading">No se pudieron cargar los conductores.<br><small>'+message+'</small></div>';
+        $('passengerHall').innerHTML='<div class="loading">No se pudieron cargar los pasajeros.<br><small>'+message+'</small></div>';
+        $('guestHall').innerHTML='<div class="loading">No se pudieron cargar los invitados.<br><small>'+message+'</small></div>';
         $('history').innerHTML='<div class="loading">Sin datos disponibles.</div>';
       }
     }
