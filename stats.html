@@ -291,6 +291,58 @@
     .trip{border-bottom-color:#e5d6b5}.trip time{color:#78919e}.trip strong{color:#174b70}.trip .badge{background:#dff3f8;color:#26718d}
     .footnote{color:#71828b}
 
+  
+    /* === LESS ORBS · cleaner index-like geometry === */
+    .kpi:after{display:none!important}
+    .distribution,.fidelity{grid-template-columns:150px 1fr}
+    .donut{
+      width:150px;height:104px;border-radius:18px;
+      background:linear-gradient(145deg,#e7f7fb,#fff8df)!important;
+      border:1px solid #d9c18b;
+      box-shadow:0 6px 14px rgba(103,83,51,.10)!important;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .donut:after{display:none}
+    .donut-center{position:static}
+    .donut-center strong{font-size:32px}
+    .donut-center span{margin-top:4px}
+    .ring{
+      width:150px;height:104px;border-radius:18px;
+      padding:7px;
+      background:
+        linear-gradient(90deg,rgba(39,139,105,.20) 0 var(--match),rgba(255,255,255,.55) var(--match) 100%)!important;
+      border:1px solid #d9c18b;
+      box-shadow:0 6px 14px rgba(103,83,51,.10)!important;
+      display:grid;place-items:center;
+    }
+    .ring-inner{
+      width:100%;height:100%;border-radius:12px;
+      background:rgba(255,253,248,.88);
+      border:1px solid rgba(218,190,128,.55);
+      box-shadow:none;
+    }
+    .avatar-wrap{
+      width:78px;height:78px;border-radius:18px!important;
+      padding:3px;background:linear-gradient(145deg,#f1c864,#8dd9e9,#f1c864);
+    }
+    .driver.top1 .avatar-wrap{width:88px;height:88px}
+    .avatar{border-radius:14px!important}
+    .rank{
+      width:auto;height:auto;min-width:34px;padding:5px 8px;
+      border-radius:9px!important;
+    }
+    .round{border-radius:14px!important}
+    .role-chip,.source-mini span,.status-pill{border-radius:10px!important}
+    @media(max-width:760px){
+      .distribution,.fidelity{grid-template-columns:132px 1fr}
+      .donut,.ring{width:132px;height:94px}
+    }
+    @media(max-width:520px){
+      .distribution,.fidelity{grid-template-columns:116px 1fr}
+      .donut,.ring{width:116px;height:88px}
+      .driver.top1 .avatar-wrap{width:88px;height:88px}
+    }
+
   </style>
 </head>
 <body>
