@@ -431,6 +431,7 @@
     @media(max-width:520px){.language__toggle{width:40px;height:40px}.language__current{width:25px;height:25px}}
 
   </style>
+<link rel="stylesheet" href="stats-egypt.css?v=20260930-egypt-1">
 </head>
 <body>
   <div class="dust"></div>
@@ -473,7 +474,19 @@
       </div>
     </section>
 
-    <nav class="tabs" aria-label="Tipos de estadísticas" data-i18n-aria="statsAria">
+    <section class="imperial" id="imperial">
+ <div class="imperial-summary"><div><i aria-hidden="true">♜</i><strong id="artDrivers">—</strong><span data-i18n="uniqueDrivers">Conductores</span></div><div><i aria-hidden="true">♟</i><strong id="artPassengers">—</strong><span data-i18n="passengerSeats">Viajes de pasajeros</span></div><div><i aria-hidden="true">✦</i><strong id="artGuests">—</strong><span data-i18n="vipGuardian">Invitados</span></div></div>
+ <div class="imperial-period"><span id="artPeriod">—</span><div id="artRange"></div></div>
+ <section class="imperial-last"><h2 id="artLastHeading">Último tren</h2><div class="last-grid"><div class="last-art" aria-hidden="true"></div><div class="last-copy"><span data-i18n="driverRanking">Conductor</span><strong id="artLastDriver">—</strong><span data-i18n="driverGuest">Invitado</span><strong id="artLastGuest">—</strong><div class="last-count" id="artLastCount">—</div></div></div></section>
+ <nav class="imperial-tabs" aria-label="Historial del tren"><button type="button" data-art-tab="passengers" aria-pressed="true" data-i18n="passengerRanking">Pasajeros</button><button type="button" data-art-tab="drivers" aria-pressed="false" data-i18n="driverRanking">Conductores</button><button type="button" data-art-tab="guests" aria-pressed="false" data-i18n="vipGuardian">VIP / Guardián</button></nav>
+ <h2 class="imperial-heading" id="artHeading">Los más afortunados</h2><p class="imperial-note" id="artNote">Selección aleatoria del juego</p>
+ <section id="artPassengersPanel"></section><section id="artDriversPanel" hidden></section><section id="artGuestsPanel" hidden></section>
+ <details class="imperial-extra"><summary data-i18n="weeklyHistory">Historial semanal</summary><div id="artHistory"></div></details>
+ <details class="imperial-extra"><summary data-i18n="trainStatus">Más estadísticas del tren</summary><div id="artMore"></div></details>
+ <p class="footnote" id="artFootnote">Viajes registrados. Un día sin captura no equivale a una ausencia.</p><p class="footnote" id="artSync" aria-live="polite"></p>
+</section>
+
+<nav class="tabs" aria-label="Tipos de estadísticas" data-i18n-aria="statsAria">
       <button class="tab active">🚂 <span data-i18n="trainTab">TREN</span></button>
       <button class="tab" disabled>⚔ VS · <span data-i18n="soon">PRÓX.</span></button>
       <button class="tab" disabled>🛡 DS · <span data-i18n="soon">PRÓX.</span></button>
@@ -834,10 +847,50 @@
     function closeModal(){$('modal').hidden=true;document.body.style.overflow=''}
     $('closeModal').addEventListener('click',closeModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
+    let artTab='passengers';
+    const artWords={tr:['En şanslı yolcular','Oyunda rastgele seçim','Son tren','Kaydedilmedi','Ekran görüntüsü olmayan bir gün devamsızlık anlamına gelmez.'],es:['Los más afortunados','Selección aleatoria del juego','Último tren','Sin registrar','Un día sin captura no equivale a una ausencia.'],en:['The luckiest travellers','Random selection by the game','Latest train','Not recorded','A day without a screenshot does not mean absence.'],fr:['Les plus chanceux','Sélection aléatoire du jeu','Dernier train','Non enregistré','Un jour sans capture ne signifie pas une absence.'],de:['Die glücklichsten Reisenden','Zufällige Auswahl im Spiel','Letzter Zug','Nicht erfasst','Ein Tag ohne Screenshot bedeutet keine Abwesenheit.'],pt:['Os mais sortudos','Seleção aleatória do jogo','Último trem','Não registado','Um dia sem captura não significa ausência.'],ro:['Cei mai norocoși','Selecție aleatorie în joc','Ultimul tren','Neînregistrat','O zi fără captură nu înseamnă absență.'],uk:['Найщасливіші пасажири','Випадковий вибір у грі','Останній потяг','Не записано','День без знімка не означає відсутність.'],it:['I più fortunati','Selezione casuale del gioco','Ultimo treno','Non registrato','Un giorno senza screenshot non significa assenza.'],pl:['Najszczęśliwsi pasażerowie','Losowy wybór w grze','Ostatni pociąg','Brak zapisu','Dzień bez zrzutu nie oznacza nieobecności.'],ru:['Самые удачливые','Случайный выбор в игре','Последний поезд','Не записано','День без снимка не означает отсутствие.']};
+    function setupImperial(){
+      const imperial=$('imperial');
+      $('artRange').append($('range'));
+      $('artPassengersPanel').append($('passengerHall'));$('artDriversPanel').append($('hall'));$('artGuestsPanel').append($('guestHall'));$('artHistory').append($('history'));
+      const main=document.querySelector('main');
+      [...main.children].forEach(el=>{if(el===imperial||el.classList.contains('hero')||el.classList.contains('topbar'))return;if(el.classList.contains('kpis')||el.classList.contains('grid2')){$('artMore').append(el)}else{el.hidden=true}});
+      document.querySelectorAll('[data-art-tab]').forEach(button=>button.addEventListener('click',()=>{artTab=button.dataset.artTab;renderImperial()}));
+      new MutationObserver(()=>{$('artSync').textContent=$('dataFresh').textContent}).observe($('dataFresh'),{childList:true,characterData:true,subtree:true});
+    }
+    function renderImperial(){
+      const words=artWords[currentLang]||artWords.en,rows=selectedRows(),members=selectedTripMembers();
+      $('artDrivers').textContent=new Set(rows.map(r=>norm(r.actual_driver))).size;
+      $('artPassengers').textContent=members.filter(r=>r.role==='passenger').length;
+      $('artGuests').textContent=members.filter(r=>r.role==='vip'||r.role==='guardian').length;
+      const r=ranges()[$('range').value]||ranges()['4w'];$('artPeriod').textContent=fmtShort(r.start)+' — '+fmtShort(r.end);
+      const last=[...rows].sort((a,b)=>isoDate(b.service_date).localeCompare(isoDate(a.service_date)))[0],composition=last?members.filter(m=>isoDate(m.service_date)===isoDate(last.service_date)):[],guest=composition.find(m=>m.role==='vip'||m.role==='guardian');
+      $('artLastHeading').textContent=words[2]+(last?' · '+fmtShort(isoDate(last.service_date)):'');$('artLastDriver').textContent=last?.actual_driver||words[3];$('artLastGuest').textContent=guest?guest.player_name+' · '+tr(guest.role):words[3];
+      const count=composition.filter(m=>m.role==='passenger').length;$('artLastCount').textContent=count?count+' · '+tr('passengerRecords'):words[3];
+      $('artHeading').textContent=artTab==='passengers'?words[0]:artTab==='drivers'?tr('driverRanking'):tr('vipGuardians');$('artNote').textContent=artTab==='passengers'?words[1]:artTab==='guests'?tr('driverGuest'):tr('confirmedDrivers');$('artFootnote').textContent=words[4];
+      const labels={es:['Conductores','Viajes de pasajeros','Invitados','Pasajeros','Conductores','Conductor','Invitado'],en:['Drivers','Passenger journeys','Guests','Passengers','Drivers','Driver','Guest'],tr:['Sürücüler','Yolcu seyahatleri','Misafirler','Yolcular','Sürücüler','Sürücü','Misafir'],fr:['Conducteurs','Voyages passagers','Invités','Passagers','Conducteurs','Conducteur','Invité'],de:['Fahrer','Passagierfahrten','Gäste','Passagiere','Fahrer','Fahrer','Gast'],pt:['Condutores','Viagens de passageiros','Convidados','Passageiros','Condutores','Condutor','Convidado'],ro:['Conductori','Călătorii pasageri','Invitați','Pasageri','Conductori','Conductor','Invitat'],uk:['Машиністи','Поїздки пасажирів','Гості','Пасажири','Машиністи','Машиніст','Гість'],it:['Conducenti','Viaggi passeggeri','Ospiti','Passeggeri','Conducenti','Conducente','Ospite'],pl:['Maszyniści','Przejazdy pasażerów','Goście','Pasażerowie','Maszyniści','Maszynista','Gość'],ru:['Машинисты','Поездки пассажиров','Гости','Пассажиры','Машинисты','Машинист','Гость']}[currentLang]||['Drivers','Passenger journeys','Guests','Passengers','Drivers','Driver','Guest'];
+      document.querySelectorAll('.imperial-summary span').forEach((el,i)=>el.textContent=labels[i]);document.querySelector('[data-art-tab=passengers]').textContent=labels[3];document.querySelector('[data-art-tab=drivers]').textContent=labels[4];document.querySelectorAll('.last-copy>span').forEach((el,i)=>el.textContent=labels[5+i]);
+      $('artPassengersPanel').hidden=artTab!=='passengers';$('artDriversPanel').hidden=artTab!=='drivers';$('artGuestsPanel').hidden=artTab!=='guests';document.querySelectorAll('[data-art-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.artTab===artTab)));
+      const sets=[['passengerHall',aggregateTravellers(members)],['hall',aggregate(rows)],['guestHall',aggregateSpecialGuests(members)]];
+      for(const [id,ranking] of sets){const box=$(id);[...box.children].filter(c=>c.classList.contains('driver')).forEach((card,index)=>{const item=ranking[index];if(!item)return;
+        // Competition ranking gives equal trip counts the same position.
+        card.querySelector('.rank').textContent=String(ranking.findIndex(x=>x.count===item.count)+1);
+        let copy=card.querySelector('.passenger-copy');if(!copy){copy=document.createElement('div');copy.className='passenger-copy';const name=card.querySelector('h4');if(name)copy.append(name);const role=card.querySelector('.role-chip');if(role)copy.append(role);card.append(copy)}
+        if(id==='passengerHall'&&!copy.querySelector('.travel-bar')){const bar=document.createElement('div');bar.className='travel-bar';const fill=document.createElement('i');fill.style.width=(item.count/ranking[0].count*100)+'%';bar.append(fill);copy.append(bar)}
+        card.querySelector('.row-count')?.remove();const value=document.createElement('div');value.className='row-count';value.textContent=item.count;const label=document.createElement('small');label.textContent=id==='guestHall'?(item.count===1?tr('invitationOne'):tr('invitationMany')):(item.count===1?tr('journeyOne'):tr('journeyMany'));value.append(label);card.append(value);
+        if(id!=='hall'){card.setAttribute('role','button');card.tabIndex=0;card.onclick=()=>openTraveller(item.name);card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTraveller(item.name)}}}
+      })}
+    }
+    function openTraveller(name){
+      const records=selectedTripMembers().filter(r=>norm(r.player_name)===norm(name)).sort((a,b)=>isoDate(b.service_date).localeCompare(isoDate(a.service_date))),drivers=new Map(data.actuals.map(r=>[isoDate(r.service_date),r.actual_driver]));
+      $('modalName').textContent=name;$('modalAvatar').src=avatarOf(name);$('modalAvatar').className='sheet-avatar '+avatarClass(name);$('modalSub').textContent=tr('passengersGuests');$('modalTrips').textContent=records.length;$('modalCycles').textContent=new Set(records.map(r=>cycleFor(monday(isoDate(r.service_date))).start)).size;$('modalLast').textContent=records[0]?fmtShort(isoDate(records[0].service_date)):'—';
+      $('modalHistory').innerHTML=records.map(row=>'<div class="trip"><time>'+esc(fmtShort(isoDate(row.service_date)))+'</time><strong>'+esc(drivers.get(isoDate(row.service_date))||'—')+'</strong><span class="badge">'+esc(row.role==='passenger'?tr('passengerRanking'):tr(row.role))+'</span></div>').join('');$('modal').hidden=false;document.body.style.overflow='hidden';
+    }
+
     function render(){
       const rows=selectedRows(),ranking=aggregate(rows),r=ranges()[$('range').value]||ranges()['4w'];
       $('dataPeriod').textContent=r.label.toUpperCase()+' · '+fmt(r.start)+' — '+fmt(r.end);
-      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderTravellerStats(selectedTripMembers());renderHistory(rows);
+      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderTravellerStats(selectedTripMembers());renderHistory(rows);renderImperial();
     }
 
     async function load(){
@@ -892,6 +945,7 @@
       }
     }
 
+    setupImperial();
     setupLanguage();
     $('range').addEventListener('change',render);
     await load();
