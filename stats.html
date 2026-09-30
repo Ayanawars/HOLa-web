@@ -147,6 +147,12 @@
     .close{align-self:start;width:36px;height:36px;border-radius:50%;border:1px solid rgba(239,198,100,.35);background:#06233a;color:#fff1bf;font-size:20px}
     .sheet-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.sheet-stat{padding:11px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(83,214,255,.1);text-align:center}.sheet-stat strong{display:block;color:#fff0bd;font-size:20px}.sheet-stat small{display:block;margin-top:3px;color:#8bb4c6;font-size:8px;font-weight:900}
     .trips{padding:0 14px 18px}.trip{display:grid;grid-template-columns:76px 1fr auto;gap:8px;align-items:center;padding:11px 4px;border-bottom:1px solid rgba(239,198,100,.12)}.trip time{color:#8eb7c8;font-size:10px}.trip strong{font-size:11px;color:#e7f7ff}.trip .badge{font-size:8px;padding:4px 7px;border-radius:999px;background:#0b456c;color:#92e5ff}
+    .traveler-kpis{margin-top:12px}
+    .passenger-hall .driver strong{color:#78efc2}
+    .guest-hall .driver strong{color:#efc664}
+    .role-chip{display:inline-block;margin-top:7px;padding:4px 8px;border-radius:999px;background:rgba(239,198,100,.10);border:1px solid rgba(239,198,100,.22);color:#ffe7a0;font-size:8px;font-weight:950;letter-spacing:.05em}
+    .role-chip.guardian{background:rgba(83,214,255,.09);border-color:rgba(83,214,255,.22);color:#9ee9ff}
+    .day .people{display:block;margin-top:5px;color:#97c5d7;font-size:7px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .footnote{margin:14px 2px 0;color:#7799a8;font-size:9px;line-height:1.5;text-align:center}
     @media(max-width:760px){
       .kpis{grid-template-columns:repeat(2,1fr)}.hall{grid-template-columns:repeat(3,1fr)}
@@ -234,6 +240,26 @@
     <section class="hall" id="hall"><div class="loading"><div><div class="spinner"></div>Cargando conductores…</div></div></section>
 
     <div class="toolbar">
+      <div class="section-title"><small>QUIÉN SUBIÓ AL TREN</small><h2>Pasajeros e invitados</h2></div>
+    </div>
+    <section class="kpis traveler-kpis">
+      <article class="kpi"><div class="kpi-icon">👥</div><div class="kpi-label">PUESTOS DE PASAJERO</div><strong class="kpi-value" id="passengerTrips">—</strong><div class="kpi-note">registros de pasajeros en el periodo</div></article>
+      <article class="kpi"><div class="kpi-icon">𓅓</div><div class="kpi-label">PASAJEROS ÚNICOS</div><strong class="kpi-value" id="passengerUnique">—</strong><div class="kpi-note" id="passengerUniqueNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">♛</div><div class="kpi-label">VIP / GUARDIÁN</div><strong class="kpi-value" id="specialGuests">—</strong><div class="kpi-note" id="specialGuestsNote">—</div></article>
+      <article class="kpi"><div class="kpi-icon">🏅</div><div class="kpi-label">MÁS VIAJERO</div><strong class="kpi-value" id="passengerLeader">—</strong><div class="kpi-note" id="passengerLeaderNote">—</div></article>
+    </section>
+
+    <div class="toolbar">
+      <div class="section-title"><small>RANKING DE PASAJEROS</small><h2>Los que más han viajado</h2></div>
+    </div>
+    <section class="hall passenger-hall" id="passengerHall"><div class="loading">Aún no hay pasajeros registrados.</div></section>
+
+    <div class="toolbar">
+      <div class="section-title"><small>INVITADO DEL CONDUCTOR</small><h2>VIP y Guardianes</h2></div>
+    </div>
+    <section class="hall guest-hall" id="guestHall"><div class="loading">Aún no hay invitados registrados.</div></section>
+
+    <div class="toolbar">
       <div class="section-title"><small>CRONOLOGÍA</small><h2>Historial semanal</h2></div>
     </div>
     <section class="history" id="history"><div class="loading"><div><div class="spinner"></div>Construyendo historial…</div></div></section>
@@ -273,7 +299,7 @@
     const fmtShort=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const sourceForDate=date=>{const day=new Date(date+'T12:00:00Z').getUTCDay();return day>=1&&day<=4?'VS':day===5?'DS_B':day===6?'DS_A':'DONATIONS'};
-    let data={players:[],actuals:[],vs:[],ds:[],donations:[],exclusions:[],settings:[]},playerMap=new Map(),planMap=new Map();
+    let data={players:[],actuals:[],vs:[],ds:[],donations:[],exclusions:[],settings:[],tripMembers:[]},playerMap=new Map(),planMap=new Map();
 
     async function fetchAll(table,fields){
       const rows=[];
@@ -301,6 +327,11 @@
     function selectedRows(){
       const r=ranges()[$('range').value]||ranges()['4w'];
       return data.actuals.filter(x=>{const d=isoDate(x.service_date);return d>=r.start&&d<=r.end&&x.actual_driver});
+    }
+
+    function selectedTripMembers(){
+      const r=ranges()[$('range').value]||ranges()['4w'];
+      return data.tripMembers.filter(x=>{const d=isoDate(x.service_date);return d>=r.start&&d<=r.end});
     }
 
     function playerInfo(name){return playerMap.get(norm(name))||{name,avatar:'',default_avatar:''}}
@@ -387,6 +418,71 @@
       });
     }
 
+    function aggregateTravellers(rows,role='passenger'){
+      const map=new Map();
+      for(const row of rows){
+        if(row.role!==role)continue;
+        const key=norm(row.player_name);if(!key)continue;
+        if(!map.has(key))map.set(key,{name:row.player_name,count:0,dates:[]});
+        const item=map.get(key);item.count++;item.dates.push(isoDate(row.service_date));
+      }
+      return [...map.values()].sort((a,b)=>b.count-a.count||b.dates.at(-1).localeCompare(a.dates.at(-1))||a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+    }
+
+    function aggregateSpecialGuests(rows){
+      const map=new Map();
+      for(const row of rows){
+        if(row.role!=='vip'&&row.role!=='guardian')continue;
+        const key=norm(row.player_name);if(!key)continue;
+        if(!map.has(key))map.set(key,{name:row.player_name,count:0,vip:0,guardian:0,dates:[]});
+        const item=map.get(key);item.count++;item[row.role]++;item.dates.push(isoDate(row.service_date));
+      }
+      return [...map.values()].sort((a,b)=>b.count-a.count||b.dates.at(-1).localeCompare(a.dates.at(-1))||a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+    }
+
+    function renderTravellerStats(rows){
+      const passengers=rows.filter(x=>x.role==='passenger'),special=rows.filter(x=>x.role==='vip'||x.role==='guardian');
+      const ranking=aggregateTravellers(rows,'passenger'),guests=aggregateSpecialGuests(rows),unique=new Set(passengers.map(x=>norm(x.player_name)).filter(Boolean)).size;
+      const vip=special.filter(x=>x.role==='vip').length,guardian=special.filter(x=>x.role==='guardian').length;
+      countAnim($('passengerTrips'),passengers.length);countAnim($('passengerUnique'),unique);countAnim($('specialGuests'),special.length);
+      $('passengerUniqueNote').textContent=passengers.length?unique+' personas diferentes':'Sin datos en este periodo';
+      $('specialGuestsNote').textContent='VIP '+vip+' · Guardián '+guardian;
+      const leader=ranking[0];
+      if(!leader){$('passengerLeader').textContent='—';$('passengerLeaderNote').textContent='Sin datos';}
+      else{
+        const tied=ranking.filter(x=>x.count===leader.count);
+        $('passengerLeader').textContent=tied.length>1?'EMPATE ×'+tied.length:leader.name;
+        $('passengerLeaderNote').textContent=leader.count+' '+(leader.count===1?'viaje como pasajero':'viajes como pasajero');
+      }
+      renderPassengerHall(ranking);renderGuestHall(guests);
+    }
+
+    function renderPassengerHall(ranking){
+      const box=$('passengerHall');box.replaceChildren();
+      if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay pasajeros registrados en este periodo.</div>';return}
+      const distinct=[...new Set(ranking.map(x=>x.count))];
+      ranking.slice(0,30).forEach(item=>{
+        const rank=distinct.indexOf(item.count)+1,card=document.createElement('article');
+        card.className='driver '+(distinct.length>1&&rank<=3?'top'+rank:'');
+        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'VIAJE COMO PASAJERO':'VIAJES COMO PASAJERO')+'</small>';
+        box.append(card);
+      });
+    }
+
+    function renderGuestHall(ranking){
+      const box=$('guestHall');box.replaceChildren();
+      if(!ranking.length){box.innerHTML='<div class="loading">Todavía no hay VIP o Guardianes registrados en este periodo.</div>';return}
+      const distinct=[...new Set(ranking.map(x=>x.count))];
+      ranking.slice(0,30).forEach(item=>{
+        const rank=distinct.indexOf(item.count)+1,card=document.createElement('article');
+        card.className='driver '+(distinct.length>1&&rank<=3?'top'+rank:'');
+        let label=item.vip&&item.guardian?'VIP '+item.vip+' · GUARDIÁN '+item.guardian:item.vip?'VIP · '+item.vip:'GUARDIÁN · '+item.guardian;
+        const roleClass=item.guardian&&!item.vip?' guardian':'';
+        card.innerHTML='<span class="rank">#'+rank+'</span><div class="avatar-wrap"><img class="avatar '+avatarClass(item.name)+'" src="'+esc(avatarOf(item.name))+'" alt=""></div><h4>'+esc(item.name)+'</h4><strong>'+item.count+'</strong><small>'+(item.count===1?'INVITACIÓN':'INVITACIONES')+'</small><span class="role-chip'+roleClass+'">'+esc(label)+'</span>';
+        box.append(card);
+      });
+    }
+
     function weeksBetween(start,end){
       const out=[];let w=monday(start),guard=0;
       while(w<=end&&guard++<60){out.push(w);w=addDays(w,7)}
@@ -394,7 +490,8 @@
     }
 
     function renderHistory(rows){
-      const box=$('history');box.replaceChildren();const r=ranges()[$('range').value]||ranges()['4w'],byDate=new Map(rows.map(x=>[isoDate(x.service_date),x]));
+      const box=$('history');box.replaceChildren();const r=ranges()[$('range').value]||ranges()['4w'],byDate=new Map(rows.map(x=>[isoDate(x.service_date),x])),tripByDate=new Map();
+      for(const tm of selectedTripMembers()){const d=isoDate(tm.service_date);if(!tripByDate.has(d))tripByDate.set(d,[]);tripByDate.get(d).push(tm)}
       const weeks=weeksBetween(r.start,r.end).reverse();
       if(!weeks.length){box.innerHTML='<div class="loading">Sin historial para este periodo.</div>';return}
       for(const weekStart of weeks){
@@ -403,7 +500,8 @@
         const days=document.createElement('div');days.className='week-days';
         for(let i=0;i<7;i++){
           const date=addDays(weekStart,i),row=byDate.get(date),source=sourceForDate(date),cell=document.createElement('button');cell.type='button';cell.className='day '+(row?'':'empty');
-          cell.innerHTML='<small>'+dayShort[new Date(date+'T12:00:00Z').getUTCDay()]+' · '+esc(fmtShort(date))+'</small><b>'+esc(row?.actual_driver||'—')+'</b><span class="src">'+esc(sourceNames[source])+'</span>';
+          const composition=tripByDate.get(date)||[],pCount=composition.filter(x=>x.role==='passenger').length,special=composition.find(x=>x.role==='vip'||x.role==='guardian'),specialText=special?(special.role==='vip'?'VIP ':'GUARDIÁN ')+special.player_name:'';
+          cell.innerHTML='<small>'+dayShort[new Date(date+'T12:00:00Z').getUTCDay()]+' · '+esc(fmtShort(date))+'</small><b>'+esc(row?.actual_driver||'—')+'</b><span class="src">'+esc(sourceNames[source])+'</span>'+(pCount||specialText?'<span class="people">👥 '+pCount+(specialText?' · '+esc(specialText):'')+'</span>':'');
           if(row)cell.addEventListener('click',()=>openPlayer(row.actual_driver,rows));days.append(cell)
         }
         section.append(days);box.append(section)
@@ -425,21 +523,22 @@
     function render(){
       const rows=selectedRows(),ranking=aggregate(rows),r=ranges()[$('range').value]||ranges()['4w'];
       $('dataPeriod').textContent=r.label.toUpperCase()+' · '+fmt(r.start)+' — '+fmt(r.end);
-      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderHistory(rows);
+      renderKpis(rows,ranking);renderSource(rows);renderMatch(rows);renderHall(rows,ranking);renderTravellerStats(selectedTripMembers());renderHistory(rows);
     }
 
     async function load(){
       try{
-        const [players,actuals,vs,ds,donations,exclusions,settings]=await Promise.all([
+        const [players,actuals,vs,ds,donations,exclusions,settings,tripMembers]=await Promise.all([
           fetchAll('players','name,rank,avatar,default_avatar'),
           fetchAll('train_actual_drivers','service_date,actual_driver'),
           fetchAll('vs_scores','player_name,day,points,week_type,vs_date'),
           fetchAll('desert_storm_scores','battle_date,team,player_name,position,points'),
           fetchAll('technology_donations','week_start,player_name,points,rank'),
           fetchAll('train_cycle_exclusions','*'),
-          fetchAll('train_week_settings','*')
+          fetchAll('train_week_settings','*'),
+          fetchAll('train_trip_members','service_date,player_name,role,source')
         ]);
-        data={players,actuals:actuals.filter(x=>x.actual_driver).sort((a,b)=>isoDate(a.service_date).localeCompare(isoDate(b.service_date))),vs,ds,donations,exclusions,settings};
+        data={players,actuals:actuals.filter(x=>x.actual_driver).sort((a,b)=>isoDate(a.service_date).localeCompare(isoDate(b.service_date))),vs,ds,donations,exclusions,settings,tripMembers};
         playerMap=new Map(players.map(p=>[norm(p.name),p]));buildPlans();
         const dates=data.actuals.map(x=>isoDate(x.service_date));
         $('dataFresh').textContent='DATOS REALES · '+data.actuals.length+' REGISTROS';
