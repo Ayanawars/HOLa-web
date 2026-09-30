@@ -64,12 +64,38 @@
       return bestScore>=.78?best:null;
     }
     function detectedMembersFromText(text){
-      const found=new Map();
-      for(const line of String(text||'').split(/\r?\n/)){
-        const name=memberFromOcrLine(line);if(name)found.set(normalize(name),name);
+      const raw=String(text||''),found=new Map();
+      const add=name=>{if(name)found.set(normalize(name),name)};
+
+      // En el correo del tren aparecen dos columnas. Tesseract puede unir los
+      // dos pasajeros de una misma fila, así que extraemos CADA bloque
+      // "[HOLa] Nombre ... Lv.xx" de forma independiente.
+      const tagRx=/\[?\s*HOLa\s*\]?\s*([\s\S]*?)(?=\s*Lv\.?\s*\d{1,2})/gi;
+      let match;
+      while((match=tagRx.exec(raw))!==null){
+        const fragment=String(match[1]||'')
+          .replace(/^[\s:;,.\-]+|[\s:;,.\-]+$/g,'')
+          .replace(/\[?\s*HOLa\s*\]?/gi,' ');
+        add(memberFromOcrLine(fragment));
       }
-      const full=passengerKey(text);
-      for(const p of players){const pk=passengerKey(p.name);if(pk.length>=5&&full.includes(pk))found.set(normalize(p.name),p.name)}
+
+      // Respaldo por líneas para capturas donde el prefijo HOLa se lea mal.
+      for(const line of raw.split(/\r?\n/)){
+        const chunks=line.split(/\[?\s*HOLa\s*\]?/i).filter(Boolean);
+        if(chunks.length>1){
+          for(const chunk of chunks){
+            const beforeLevel=chunk.split(/\s*Lv\.?\s*\d{1,2}/i)[0];
+            add(memberFromOcrLine(beforeLevel));
+          }
+        }else add(memberFromOcrLine(line));
+      }
+
+      // Recupera coincidencias exactas aunque OCR haya reorganizado las líneas.
+      const full=passengerKey(raw);
+      for(const p of players){
+        const pk=passengerKey(p.name);
+        if(pk.length>=4&&full.includes(pk))add(p.name);
+      }
       return [...found.values()];
     }
     async function getPassengerTesseract(){
@@ -84,24 +110,31 @@
       return passengerTesseractPromise;
     }
     async function readPassengersFromImage(file,statusEl){
-      let names=[];
+      const merged=new Map(),addAll=list=>{for(const name of list||[])if(name)merged.set(normalize(name),name)};
+
+      // Siempre hacemos las dos pasadas. Una lectura parcial de Tesseract
+      // nunca debe impedir que Azure recupere los pasajeros que faltan.
       try{
-        statusEl.textContent='Leyendo captura localmente…';
+        statusEl.textContent='Tesseract: leyendo pasajeros…';
         const worker=await getPassengerTesseract();
         const result=await worker.recognize(file);
-        names=detectedMembersFromText(result?.data?.text||'');
+        addAll(detectedMembersFromText(result?.data?.text||''));
       }catch(error){console.warn('Passenger OCR local:',error)}
-      if(names.length>=2)return names;
+
       try{
-        statusEl.textContent='Completando lectura con Azure Vision…';
+        statusEl.textContent='Azure Vision: completando pasajeros detectados…';
         const response=await fetch('https://ovybstpiomphrouvqxmf.supabase.co/functions/v1/vs-azure-ocr',{method:'POST',headers:{apikey:'sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV','Content-Type':file.type||'application/octet-stream'},body:file});
         const json=await response.json().catch(()=>({}));
         if(response.ok){
-          const text=(json?.ParsedResults||[]).map(r=>r?.ParsedText||r?.TextOverlay?.Lines?.map(x=>x.LineText).join('\n')||'').join('\n');
-          for(const name of detectedMembersFromText(text))if(!names.some(x=>normalize(x)===normalize(name)))names.push(name);
-        }
+          const azureText=(json?.ParsedResults||[]).map(r=>{
+            const overlay=(r?.TextOverlay?.Lines||[]).map(x=>x.LineText).join('\n');
+            return [r?.ParsedText||'',overlay].filter(Boolean).join('\n');
+          }).join('\n');
+          addAll(detectedMembersFromText(azureText));
+        }else console.warn('Passenger OCR Azure:',json?.error||response.status);
       }catch(error){console.warn('Passenger OCR Azure:',error)}
-      return names;
+
+      return [...merged.values()];
     }
     function tripRowsFor(date){return data.tripMembers.filter(x=>String(x.service_date).slice(0,10)===date)}
     function buildMemberPicker(container,current,placeholder,onChange){
