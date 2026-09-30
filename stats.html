@@ -870,6 +870,8 @@
       $('artHeading').textContent=artTab==='passengers'?words[0]:artTab==='drivers'?tr('driverRanking'):tr('vipGuardians');$('artNote').textContent=artTab==='passengers'?words[1]:artTab==='guests'?tr('driverGuest'):tr('confirmedDrivers');$('artFootnote').textContent=words[4];
       const labels={es:['Conductores','Viajes de pasajeros','Invitados','Pasajeros','Conductores','Conductor','Invitado'],en:['Drivers','Passenger journeys','Guests','Passengers','Drivers','Driver','Guest'],tr:['Sürücüler','Yolcu seyahatleri','Misafirler','Yolcular','Sürücüler','Sürücü','Misafir'],fr:['Conducteurs','Voyages passagers','Invités','Passagers','Conducteurs','Conducteur','Invité'],de:['Fahrer','Passagierfahrten','Gäste','Passagiere','Fahrer','Fahrer','Gast'],pt:['Condutores','Viagens de passageiros','Convidados','Passageiros','Condutores','Condutor','Convidado'],ro:['Conductori','Călătorii pasageri','Invitați','Pasageri','Conductori','Conductor','Invitat'],uk:['Машиністи','Поїздки пасажирів','Гості','Пасажири','Машиністи','Машиніст','Гість'],it:['Conducenti','Viaggi passeggeri','Ospiti','Passeggeri','Conducenti','Conducente','Ospite'],pl:['Maszyniści','Przejazdy pasażerów','Goście','Pasażerowie','Maszyniści','Maszynista','Gość'],ru:['Машинисты','Поездки пассажиров','Гости','Пассажиры','Машинисты','Машинист','Гость']}[currentLang]||['Drivers','Passenger journeys','Guests','Passengers','Drivers','Driver','Guest'];
       document.querySelectorAll('.imperial-summary span').forEach((el,i)=>el.textContent=labels[i]);document.querySelector('[data-art-tab=passengers]').textContent=labels[3];document.querySelector('[data-art-tab=drivers]').textContent=labels[4];document.querySelectorAll('.last-copy>span').forEach((el,i)=>el.textContent=labels[5+i]);
+      if(count)$('artLastCount').textContent=count+' '+labels[3].toLocaleLowerCase(locale());
+      document.querySelector('[data-i18n=heroSub]').textContent=({es:'DEL TREN',en:'TRAIN',tr:'TREN',fr:'DU TRAIN',de:'ZUG',pt:'DO TREM',ro:'TREN',uk:'ПОТЯГА',it:'DEL TRENO',pl:'POCIĄGU',ru:'ПОЕЗДА'})[currentLang]||'TRAIN';
       $('artPassengersPanel').hidden=artTab!=='passengers';$('artDriversPanel').hidden=artTab!=='drivers';$('artGuestsPanel').hidden=artTab!=='guests';document.querySelectorAll('[data-art-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.artTab===artTab)));
       const sets=[['passengerHall',aggregateTravellers(members)],['hall',aggregate(rows)],['guestHall',aggregateSpecialGuests(members)]];
       for(const [id,ranking] of sets){const box=$(id);[...box.children].filter(c=>c.classList.contains('driver')).forEach((card,index)=>{const item=ranking[index];if(!item)return;
@@ -947,6 +949,7 @@
 
     setupImperial();
     setupLanguage();
+    document.querySelector('[data-i18n=heroSub]').textContent=({es:'DEL TREN',en:'TRAIN',tr:'TREN',fr:'DU TRAIN',de:'ZUG',pt:'DO TREM',ro:'TREN',uk:'ПОТЯГА',it:'DEL TRENO',pl:'POCIĄGU',ru:'ПОЕЗДА'})[currentLang]||'TRAIN';
     $('range').addEventListener('change',render);
     await load();
   </script>
