@@ -51,12 +51,18 @@ h2{font:400 26px/1.2 Georgia,serif;margin:30px 0 16px;letter-spacing:-.4px}.wrap
 .participation-card:nth-child(3) .pc-icon{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23759bbb%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2017l6-6%204%203%208-10M15%204h6v6%22/%3E%3C/svg%3E")}
 .participation-card:nth-child(4) .pc-icon{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23759bbb%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%228%22%20r%3D%224%22/%3E%3Cpath%20d%3D%22M4%2021a8%208%200%200%201%2016%200%22/%3E%3C/svg%3E")}
 
-/* Versus artwork: keep both opposing teams visible on every screen. */
-.header-art{right:8px;top:5px;width:560px;height:251px;object-fit:contain;object-position:center bottom;opacity:1}
-@media(max-width:700px){.head{height:370px}.title{top:78px;max-width:90%}.title h1{font-size:34px;margin-bottom:6px}.title p{max-width:320px}.hero-eyebrow{margin-bottom:7px}.header-art{left:50%;right:auto;top:155px;transform:translateX(-50%);width:min(95%,345px);height:210px;opacity:1;object-fit:contain;object-position:center bottom}}
+/* Center the confrontation; clip each team from the shared artwork. */
+.head{height:335px}
+.versus-scene{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);width:min(90%,760px);height:250px;pointer-events:none}
+.versus-team{position:absolute;top:0;bottom:0;width:calc(50% - 34px);overflow:hidden}
+.versus-team-left{left:0}.versus-team-right{right:0}
+.versus-team img{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none}
+.versus-team-left img{transform:translateX(-25%)}.versus-team-right img{transform:translateX(-75%)}
+.versus-mark{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) skew(-7deg);margin:0;z-index:2;font:900 62px/1 Georgia,serif;letter-spacing:-5px;color:#fff4ca;text-shadow:0 2px 0 #9e722e,0 4px 0 #735423,0 6px 16px #29445f55;-webkit-text-stroke:1px #a27d3d}
+@media(max-width:700px){.head{height:300px}.versus-scene{width:100%;height:205px;bottom:19px}.versus-team{width:calc(50% - 22px)}.versus-mark{font-size:44px;letter-spacing:-3px;top:52%}}
 </style></head>
   <body>
-    <header class="head"><img class="header-art" src="assets/hola-versus-blonde-faceoff.svg?v=81be53f9" alt="" aria-hidden="true"><img class="header-brand" src="assets/hola-egypt-gold-logo.webp" alt="HOLa">
+    <header class="head"><div class="versus-scene" aria-hidden="true"><div class="versus-team versus-team-left"><img src="assets/hola-versus-blonde-faceoff.svg?v=81be53f9" alt=""></div><div class="versus-team versus-team-right"><img src="assets/hola-versus-blonde-faceoff.svg?v=81be53f9" alt=""></div><h1 class="versus-mark">VS</h1></div><img class="header-brand" src="assets/hola-egypt-gold-logo.webp" alt="HOLa">
       <div class="headin">
         <a class="desert-back" href="index.html" aria-label="Volver al inicio">‹</a>
         <div class="logo-area">
@@ -75,11 +81,6 @@ h2{font:400 26px/1.2 Georgia,serif;margin:30px 0 16px;letter-spacing:-.4px}.wrap
               <button type="button" data-lang="pl"><img src="https://flagcdn.com/w40/pl.png" width="27" height="18" alt="" /> <span>Polski</span></button>
             </div>
           </div>
-        </div>
-        <div class="title">
-          <img class="brand-logo" src="hola-s3-logo.webp" alt="HOLa" />
-          <span class="hero-eyebrow">HOLa · S3</span><h1>Versus</h1>
-          <p>Rendimiento y participación de la alianza</p>
         </div>
       </div>
     </header>
