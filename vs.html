@@ -74,7 +74,7 @@ h2{font:400 26px/1.2 Georgia,serif;margin:30px 0 16px;letter-spacing:-.4px}.wrap
         </div>
         <div class="title">
           <img class="brand-logo" src="hola-s3-logo.webp" alt="HOLa" />
-          <span class="hero-eyebrow">HOLa · TEMPORADA 3</span><h1>Versus</h1>
+          <span class="hero-eyebrow">HOLa · S3</span><h1>Versus</h1>
           <p>Rendimiento y participación de la alianza</p>
         </div>
       </div>
@@ -899,6 +899,7 @@ h2{font:400 26px/1.2 Georgia,serif;margin:30px 0 16px;letter-spacing:-.4px}.wrap
           it: "🇮🇹 Italiano",
           pl: "🇵🇱 Polski",
         };
+        Object.entries({"es":"Estadísticas","en":"Statistics","de":"Statistiken","fr":"Statistiques","ro":"Statistici","pt":"Estatísticas","uk":"Статистика","tr":"İstatistikler","it":"Statistiche","pl":"Statystyki","ru":"Статистика"}).forEach(([code, label]) => { (T[code] ||= {})["Estadísticas"] = label; });
         let lang = "es";
         const original = new WeakMap();
         function visit(root) {
@@ -993,6 +994,7 @@ h2{font:400 26px/1.2 Georgia,serif;margin:30px 0 16px;letter-spacing:-.4px}.wrap
             "Semana ": "Тиждень ",
           },
         };
+        Object.entries({"es":"Estadísticas","en":"Statistics","de":"Statistiken","fr":"Statistiques","ro":"Statistici","pt":"Estatísticas","uk":"Статистика","tr":"İstatistikler","it":"Statistiche","pl":"Statystyki","ru":"Статистика"}).forEach(([code, label]) => { (extra[code] ||= {})["Estadísticas"] = label; });
         let lang = "es";
         const originals = new WeakMap();
         function scan() {
