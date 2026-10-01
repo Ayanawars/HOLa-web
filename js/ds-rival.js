@@ -22,10 +22,8 @@
   const t=()=>words[document.documentElement.lang]||words.en;
   const format=n=>n==null?t()[11]:new Intl.NumberFormat(document.documentElement.lang||'en',{maximumFractionDigits:2,minimumFractionDigits:2}).format(n/(n>=1e9?1e9:1e6))+(n>=1e9?' B':' M');
   function rows(){
-    const query=$('rivalSearch').value.trim().toLocaleLowerCase();
     const body=$('rivalRows');body.replaceChildren();
     data.players.forEach((p,i)=>{
-      if(query&&!p.name.toLocaleLowerCase().includes(query))return;
       const row=document.createElement('tr');
       const rank=document.createElement('td');rank.textContent=i+1;
       const player=document.createElement('td');player.className='rival-player';
@@ -40,9 +38,8 @@
   function render(){
     const w=t();$('rivalButtonLabel').textContent=w[0];$('rivalClose').textContent=w[1];
     $('rivalContext').textContent=w[14];$('rivalTitle').textContent='[CCBz] Chonky Cat Brigade';
-    $('rivalNote').textContent=w[12];$('rivalSource').textContent=w[13];$('rivalRanking').textContent=w[10];
+    $('rivalNote').textContent=w[12];$('rivalRanking').textContent=w[10];
     $('rivalPlayerHeading').textContent=w[15];$('rivalPowerHeading').textContent=w[5];
-    $('rivalSearch').placeholder=w[16];$('rivalSearch').setAttribute('aria-label',w[16]);
     const stats=[[w[2],'1885'],[w[3],'Bergfinn'],[w[4],'100/100'],[w[9],'2 / 90'],[w[5],format(data.power)],[w[6],format(data.thp)],[w[7],format(data.power/100)],[w[8],format(data.kills)]];
     $('rivalStats').replaceChildren();
     stats.forEach(([label,value])=>{const item=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;item.append(dt,dd);$('rivalStats').append(item)});
@@ -52,7 +49,6 @@
   $('rivalClose').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
   dialog.addEventListener('close',()=>button.focus());
-  $('rivalSearch').addEventListener('input',rows);
   new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   document.querySelectorAll('[data-team]').forEach(b=>b.addEventListener('click',()=>{button.hidden=b.dataset.team!=='B'}));
   render();
