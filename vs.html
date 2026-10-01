@@ -1559,6 +1559,13 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
         const days = VS_DAYS.filter(day => scores.some(x => Number(x.day) === day));
         return { recorded, days };
       }
+      function saveVsRanking(rows) {
+        const { recorded, days } = vsRecorded();
+        if (!days.length) return [];
+        return rows.filter(x => days.every(d => recorded.has(key(x.name) + "|" + d) && Number(x.daily[d]) >= VS_MIN))
+          .map(x => ({ ...x, qualifyingTotal: days.reduce((sum,d) => sum + Number(x.daily[d]), 0), qualifyingAverage: days.reduce((sum,d) => sum + Number(x.daily[d]), 0) / days.length }))
+          .sort((a,b) => Math.abs(a.qualifyingAverage - VS_MIN) - Math.abs(b.qualifyingAverage - VS_MIN) || a.name.localeCompare(b.name, "es", {sensitivity:"base"}));
+      }
       function bestVsPlayer(rows, selectedDay = "TOTAL") {
         const { recorded, days: availableDays } = vsRecorded();
         const days = selectedDay === "TOTAL"
@@ -1566,7 +1573,7 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
           : availableDays.filter(day => day === Number(selectedDay));
         const provisional = selectedDay === "TOTAL" && days.length < VS_DAYS.length;
         if (!days.length) return { player: null, days, provisional };
-        const candidates = rows
+        const candidates = (weekType === "save" ? saveVsRanking(rows) : rows)
           .filter(x => days.every(d =>
             recorded.has(key(x.name) + "|" + d) && Number(x.daily[d]) >= VS_MIN,
           ))
@@ -1576,7 +1583,7 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
           }))
           .sort((a, b) =>
             (weekType === "save"
-              ? a.qualifyingTotal - b.qualifyingTotal
+              ? Math.abs(a.qualifyingAverage - VS_MIN) - Math.abs(b.qualifyingAverage - VS_MIN)
               : b.qualifyingTotal - a.qualifyingTotal)
             || a.name.localeCompare(b.name, "es", { sensitivity: "base" }),
           );
@@ -1591,6 +1598,7 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
                 .map((x) => ({ ...x, total: x.daily[sel] || 0 }))
                 .filter((x) => x.total > 0)
                 .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
+        const ranked = weekType === "save" ? saveVsRanking(rows).map(x => ({...x,total:sel === "TOTAL" ? x.qualifyingTotal : Number(x.daily[sel]) || 0})).filter(x => x.total > 0) : active;
         const sum = active.reduce((a, x) => a + x.total, 0);
         total.textContent = f(sum);
         participants.textContent = active.filter((x) => x.total > 0).length;
@@ -1602,14 +1610,14 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
               + (bestResult.provisional ? " · provisional" : ""))
           : (bestResult.days.length ? "Sin jugadores que cumplan" : "Pendiente de datos");
         avg.textContent = active.length ? f(sum / active.length) : "—";
-        ranking.innerHTML = active.length
+        ranking.innerHTML = ranked.length
           ? (() => {
               const row = (x, i) =>
                 `<div class="rr"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><b>${esc(x.name)}</b><b>${f(x.total)}</b></div>`;
-              const top = active.slice(0, 10).map(row).join("");
+              const top = ranked.slice(0, 10).map(row).join("");
               const rest =
-                active.length > 10
-                  ? `<details class="ranking-more"><summary>Ver más...</summary><div>${active
+                ranked.length > 10
+                  ? `<details class="ranking-more"><summary>Ver más...</summary><div>${ranked
                       .slice(10)
                       .map((x, i) => row(x, i + 10))
                       .join("")}</div></details>`
@@ -1759,7 +1767,8 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
           html = `<div class="hero"><div class="kicker">${push ? "🚀 SEMANA DE PUSH" : "🛡️ SEMANA DE SAVE"}</div><div class="big-number">${f(totalAlliance)}</div><div class="small">TOTAL SUPABASE · SUMA DE LUNES A SÁBADO</div></div><div class="grid"><div class="s-card"><div class="label">👥 PARTICIPANTES</div><div class="value">${rows.length}</div><div class="small">Lista completa de Supabase</div></div><div class="s-card"><div class="label">🎯 CUMPLEN</div><div class="value">${ok}/${rows.length}</div><div class="small">7,2M cada día</div></div><div class="s-card"><div class="label">🏆 LÍDER</div><div class="value">${esc(bestWeek.player?.name || "—")}</div><div class="small">${bestWeek.player ? f(bestWeek.player.qualifyingTotal) + " L-V" + (bestWeek.provisional ? " · provisional" : "") : "Pendiente de datos"}</div></div><div class="s-card"><div class="label">📈 MEDIA</div><div class="value">${rows.length ? f(totalAlliance / rows.length) : "—"}</div><div class="small">Por miembro</div></div></div><div class="section"><h4>🎯 Estado del objetivo</h4><div style="display:flex;justify-content:space-between;font-weight:900"><span>Cumplen lunes-viernes</span><span>${percent}%</span></div><div class="bar" style="margin:10px 0"><div class="fill" style="width:${percent}%"></div></div><div class="small">🟢 ${ok} correctos · 🔴 ${fail} con incidencia · ⏳ ${pendingCount} PENDIENTES</div></div>`;
         }
         if (currentTab === "ranking") {
-          html = `<div class="section"><h4>🏆 Ranking semanal — Total Supabase</h4>${rows.map((x, i) => `<div class="rank"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><div><b>${esc(x.name)}</b><div class="small">${x.days}/6 días con puntos</div></div><div class="points">${f(x.total)}</div></div>`).join("") || '<div class="status">Sin datos.</div>'}</div>`;
+          const weeklyRank = push ? rows : saveVsRanking(rows).map(x => ({...x,total:x.qualifyingTotal,days:vsRecorded().days.length}));
+          html = `<div class="section"><h4>🏆 Ranking semanal — Total Supabase</h4>${weeklyRank.map((x, i) => `<div class="rank"><b>${i < 3 ? ["🥇", "🥈", "🥉"][i] : "#" + (i + 1)}</b><div><b>${esc(x.name)}</b><div class="small">${x.days}/${push ? 6 : vsRecorded().days.length} días con puntos</div></div><div class="points">${f(x.total)}</div></div>`).join("") || '<div class="status">Sin datos.</div>'}</div>`;
         }
         if (currentTab === "compliance") {
           html = `<div class="section"><h4>🟢 Cumplimiento</h4>${
@@ -2282,3 +2291,4 @@ box-sizing:content-box!important;width:38px!important;height:38px!important;min-
     <script>window.setLanguage?.(localStorage.getItem("hola-language")||((navigator.language||"").slice(0,2)==="tr"?"tr":"es"));</script>
   <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
 </html>
+
