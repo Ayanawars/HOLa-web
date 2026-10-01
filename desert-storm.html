@@ -133,7 +133,6 @@
     @media(max-width:380px){.hero{--ds-title-top:54px;--ds-title-width:84%;height:230px}.players{grid-template-columns:1fr}.summary__item strong{font-size:14px}.battle-date strong{font-size:13px}}
     @media(prefers-reduced-motion:no-preference){.hero__copy{animation:rise .65s ease-out both}.battle-card{animation:rise .55s .12s ease-out both}@keyframes rise{from{opacity:0;transform:translateY(12px)}}}
   </style>
-  <link rel="stylesheet" href="css/ds-rival.css?v=20261001-2">
 </head>
 <body>
 <div class="app">
@@ -178,8 +177,6 @@
         <button class="team-btn" data-team="A" type="button" data-i18n="teamA">FUERZA ESPECIAL A</button>
       </div>
     </section>
-
-    <button class="rival-button" id="rivalButton" type="button" aria-haspopup="dialog" aria-controls="rivalDialog"><span id="rivalButtonLabel">Rival</span><small>Team B · 02/10/2026 ↗</small></button>
 
     <nav class="anchor-nav" aria-label="Secciones">
       <a href="#roster"><span>♟</span><span data-i18n="navRoster">Equipo</span></a>
@@ -226,12 +223,6 @@
 
 <div class="lightbox" id="mapLightbox" hidden><button id="closeMap" type="button" aria-label="Cerrar">×</button><img id="mapLightboxImage" alt="Desert Storm map"></div>
 
-<dialog class="rival-dialog" id="rivalDialog" aria-labelledby="rivalTitle">
-  <header class="rival-head"><div><small id="rivalContext">Rival del Team B · 02/10/2026</small><h2 id="rivalTitle">[CCBz] Chonky Cat Brigade</h2></div><button id="rivalClose" type="button">Cerrar</button></header>
-  <div class="rival-body"><dl class="rival-stats" id="rivalStats"></dl><h3 id="rivalRanking">Top 30 por poder total</h3><table class="rival-table"><thead><tr><th>#</th><th id="rivalPlayerHeading">Jugador</th><th id="rivalPowerHeading">Poder total</th><th>THP</th></tr></thead><tbody id="rivalRows"></tbody></table><p id="rivalNote" class="rival-note"></p></div>
-</dialog>
-<script src="js/ds-rival-data.js?v=20261001"></script>
-<script src="js/ds-rival.js?v=20261001-2"></script>
 <script src="js/ds-poster.js?v=20260925-public-maps-v1"></script>
 <script src="js/ds-plan-view.js?v=20260925-phase-mission-colors-v1"></script>
 <script>
