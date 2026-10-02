@@ -79,7 +79,8 @@ setLanguage(stored||detected);
   if(button.disabled)return;
   button.disabled=true;feedback.textContent=tr('Preparando imagen…');
   try{
-   const name=selectedName;await avatarRequests.get(name);if(name!==selectedName)return;
+   const name=selectedName;await selectPlayer(name);if(name!==selectedName)return;
+   const avatarSource=av(players.find(player=>player.name===name));
    const profile=document.querySelector('#view .profile');if(!profile)throw Error('No profile');
    const metrics=[...view.querySelectorAll('.stat')].map(el=>({label:el.querySelector('small').textContent,value:el.querySelector('b').textContent}));
    const rates=[...view.querySelectorAll('.ring')].map(el=>({label:el.querySelector('small').textContent,value:el.querySelector('b').textContent}));
@@ -89,13 +90,13 @@ setLanguage(stored||detected);
    const c=canvas.getContext('2d'),ink='#29445f',muted='#73808c',gold='#c2953c',line='#e4ddca';
    function box(x,y,w,h,fill='#fffdf7',radius=20){c.fillStyle=fill;c.beginPath();c.roundRect(x,y,w,h,radius);c.fill();c.strokeStyle=line;c.lineWidth=1.5;c.stroke();}
    function text(value,x,y,size=24,color=ink,max=950,weight=400){c.fillStyle=color;c.font=weight+' '+size+'px Arial, sans-serif';while(c.measureText(value).width>max&&size>14){size--;c.font=weight+' '+size+'px Arial, sans-serif'}c.fillText(value,x,y);}
-   async function picture(source){if(!source)return null;const img=new Image();if(!source.startsWith('data:'))img.crossOrigin='anonymous';img.src=source;try{await img.decode();return img}catch{return null}}
+   async function picture(source){if(!source)return null;const img=new Image();if(!source.startsWith('data:'))img.crossOrigin='anonymous';img.src=source;await img.decode();if(!img.naturalWidth||!img.naturalHeight)throw new Error('Avatar could not be loaded');return img}
    c.fillStyle='#f8f5ed';c.fillRect(0,0,1080,height);
    const gradient=c.createLinearGradient(0,0,1080,180);gradient.addColorStop(0,'#c8e5f4');gradient.addColorStop(1,'#f3e8c8');c.fillStyle=gradient;c.fillRect(0,0,1080,155);
    text('HOLa',48,67,43,gold,300,700);text(tr('Estadísticas VS'),48,115,27,ink,950,600);
    text(new Date().toLocaleDateString(document.documentElement.lang,{day:'2-digit',month:'short',year:'numeric'}),785,65,22,muted,245);
    c.fillStyle=gold;c.fillRect(0,151,1080,4);
-   box(40,184,1000,175);const avatar=await picture(profile.querySelector('img')?.src);
+   box(40,184,1000,175);const avatar=await picture(avatarSource||profile.querySelector('.avatar img')?.src);
    c.save();c.beginPath();c.arc(130,271,59,0,Math.PI*2);c.clip();c.fillStyle='#dcecf8';c.fillRect(71,212,118,118);
    if(avatar){const side=Math.min(avatar.width,avatar.height);c.drawImage(avatar,(avatar.width-side)/2,(avatar.height-side)/2,side,side,71,212,118,118)}else{text(profile.querySelector('.avatar').textContent.trim(),85,285,35)}
    c.restore();c.strokeStyle=gold;c.lineWidth=3;c.beginPath();c.arc(130,271,62,0,Math.PI*2);c.stroke();
