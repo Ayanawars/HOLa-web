@@ -72,7 +72,7 @@ setLanguage(stored||detected);
 <script id="vs-stats-image-export">
 (()=>{
  const button=document.getElementById('exportStatsImage'),feedback=document.getElementById('exportFeedback'),dialog=document.getElementById('imageExportDialog'),preview=document.getElementById('imageExportPreview'),download=document.getElementById('imageExportDownload'),closeButton=document.getElementById('imageExportClose');
- let imageURL='',previousOverflow='';
+ let imageURL='',previousOverflow='',exportStage='profile';
  const tr=text=>window.statsText?.(text)||text;
  function close(){dialog.hidden=true;document.body.style.overflow=previousOverflow;button.focus();}
  closeButton.onclick=close;dialog.onclick=e=>{if(e.target===dialog)close()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.hidden)close();if(e.key==='Tab'&&!dialog.hidden){if(e.shiftKey&&document.activeElement===closeButton){e.preventDefault();download.focus()}else if(!e.shiftKey&&document.activeElement===download){e.preventDefault();closeButton.focus()}}});
@@ -80,7 +80,7 @@ setLanguage(stored||detected);
   if(button.disabled)return;
   button.disabled=true;feedback.textContent=tr('Preparando imagen…');
   try{
-   const name=selectedName;await selectPlayer(name);if(name!==selectedName)return;
+   exportStage='profile';const name=selectedName;await selectPlayer(name);if(name!==selectedName)return;
    const avatarSource=av(players.find(player=>player.name===name));
    const profile=document.querySelector('#view .profile');if(!profile)throw Error('No profile');
    const metrics=[...view.querySelectorAll('.stat')].map(el=>({label:el.querySelector('small').textContent,value:el.querySelector('b').textContent}));
@@ -88,7 +88,7 @@ setLanguage(stored||detected);
    const modes=[...view.querySelectorAll('.mode')].map(el=>({title:el.querySelector('.head').textContent,lines:[...el.querySelectorAll('.line')].map(row=>({label:row.querySelector('span').textContent,value:row.querySelector('b').textContent}))}));
    const weeks=[...view.querySelectorAll('.week')].map(el=>({date:el.children[0].textContent,type:el.children[1].textContent,total:el.children[2].textContent,status:el.children[3].textContent,ok:el.children[3].classList.contains('ok')}));
    const height=metrics.length?1620+weeks.length*66:460,canvas=document.createElement('canvas');canvas.width=1080;canvas.height=height;
-   const c=canvas.getContext('2d'),ink='#29445f',muted='#73808c',gold='#c2953c',line='#e4ddca';
+   exportStage='canvas';const c=canvas.getContext('2d');if(!c)throw new Error('Canvas 2D unavailable');const ink='#29445f',muted='#73808c',gold='#c2953c',line='#e4ddca';
    function box(x,y,w,h,fill='#fffdf7',radius=20){c.fillStyle=fill;c.beginPath();const r=Math.min(radius,w/2,h/2);c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();c.fill();c.strokeStyle=line;c.lineWidth=1.5;c.stroke();}
    function text(value,x,y,size=24,color=ink,max=950,weight=400){c.fillStyle=color;c.font=weight+' '+size+'px Arial, sans-serif';while(c.measureText(value).width>max&&size>14){size--;c.font=weight+' '+size+'px Arial, sans-serif'}c.fillText(value,x,y);}
    function picture(source){if(!source)return Promise.resolve(null);return new Promise(resolve=>{const img=new Image();let finished=false;const done=value=>{if(finished)return;finished=true;clearTimeout(timer);img.onload=img.onerror=null;resolve(value)};const timer=setTimeout(()=>done(null),15000);img.onload=()=>done(img.naturalWidth&&img.naturalHeight?img:null);img.onerror=()=>done(null);if(!source.startsWith('data:'))img.crossOrigin='anonymous';img.src=source;if(img.complete&&img.naturalWidth)done(img);})}
@@ -112,7 +112,7 @@ setLanguage(stored||detected);
    text('HOLa',48,67,43,gold,300,700);text(tr('Estadísticas VS'),48,115,27,ink,950,600);
    text(new Date().toLocaleDateString(document.documentElement.lang,{day:'2-digit',month:'short',year:'numeric'}),785,65,22,muted,245);
    c.fillStyle=gold;c.fillRect(0,151,1080,4);
-   box(40,184,1000,175);const avatar=await exportAvatar();
+   box(40,184,1000,175);exportStage='avatar';const avatar=await exportAvatar();exportStage='drawing';
    c.save();c.beginPath();c.arc(130,271,59,0,Math.PI*2);c.clip();c.fillStyle='#dcecf8';c.fillRect(71,212,118,118);
    if(avatar){const side=Math.min(avatar.width,avatar.height);c.drawImage(avatar,(avatar.width-side)/2,(avatar.height-side)/2,side,side,71,212,118,118)}else{text(name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase(),85,285,35)}
    c.restore();c.strokeStyle=gold;c.lineWidth=3;c.beginPath();c.arc(130,271,62,0,Math.PI*2);c.stroke();
@@ -128,11 +128,11 @@ setLanguage(stored||detected);
     box(40,y,1000,weeks.length*66+20);weeks.forEach((week,i)=>{const top=y+48+i*66;text(week.date,64,top,23,muted,120);text(week.type,215,top,22,week.type==='SAVE'?'#547fa3':'#a96b29',150,700);text(week.total,465,top,28,ink,230,700);text(week.status,745,top,22,week.ok?'#458960':'#ba5252',260,600)});
    }
    text('HOLa · HEROES OF LAST AREA',40,height-31,18,muted,1000,600);
-   imageURL=canvas.toDataURL('image/png');if(!imageURL.startsWith('data:image/png'))throw Error('No image');
+   exportStage='png';imageURL=canvas.toDataURL('image/png');if(!imageURL.startsWith('data:image/png'))throw Error('No image');
    preview.src=imageURL;preview.alt=tr('Estadísticas VS')+' · '+name;
    download.href=imageURL;download.download='HOLa-VS-'+name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-')+'.png';
    previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';dialog.hidden=false;feedback.textContent='';document.getElementById('imageExportNotice').textContent=avatarSource&&!avatar?tr('No se pudo incluir el avatar. Las estadísticas sí se guardan.') : '';closeButton.focus();
-  }catch(error){console.error('VS image export',error);feedback.textContent=tr('No se pudo crear la imagen. Vuelve a intentarlo.')}
+  }catch(error){console.error('VS image export',error);feedback.textContent=tr('No se pudo crear la imagen. Vuelve a intentarlo.')+' ['+exportStage+': '+String(error?.name||'Error')+' · '+String(error?.message||error).slice(0,200)+']'}
   finally{button.disabled=false;if(feedback.textContent===tr('Preparando imagen…'))feedback.textContent=''}
  };
 })();
