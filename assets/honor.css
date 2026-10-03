@@ -24,3 +24,5 @@
 
 /* Keep five categories readable on mobile. */
 .squad-tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.squad-tabs::-webkit-scrollbar{display:none}.squad-tab{flex:1 0 82px;cursor:pointer}.kills-source{display:block;width:max-content;margin:0 auto 12px;color:#bca36f;font-size:10px;text-decoration:underline;text-underline-offset:3px}
+
+.ranking-page:has(.kills-source) .updated{color:#f5dfab;font-size:11px;text-shadow:0 1px 3px #000}.kills-source{color:#f5dfab;text-shadow:0 1px 3px #000}
