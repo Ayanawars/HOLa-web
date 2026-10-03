@@ -31,7 +31,7 @@
       <div class="kicker">ADMINISTRACIÓN · S3</div>
       <h1 class="title">Editar miembros</h1>
       <p class="sub">Busca un jugador y modifica manualmente sus datos guardados en Supabase. Los cambios de nombre actualizan también los registros VS, Desert Storm y encuestas.</p>
-      <button class="save" id="newMember" type="button" style="width:100%;margin:0 0 13px">＋ NUEVO MIEMBRO</button><div class="searchbox">
+      <button class="save" id="newMember" type="button" style="width:100%;margin:0 0 13px">＋ NUEVO MIEMBRO</button><button class="secondary" id="retryMembers" type="button" hidden style="width:100%;margin-bottom:12px">Reintentar carga de miembros</button><div class="searchbox">
         <input id="memberSearch" type="search" autocomplete="off" placeholder="Buscar jugador…">
         <div class="results" id="searchResults" hidden></div>
       </div>
@@ -126,7 +126,7 @@
     }
     function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
     async function loadPlayers(){
-      const {data,error}=await sb.from('players').select('*').order('name',{ascending:true}); if(error)throw error; players=Array.isArray(data)?data:[];
+      const {data,error}=await sb.from('players').select('name,rank,thp').order('name',{ascending:true}); if(error)throw error; players=Array.isArray(data)?data:[];
     }
     function fill(row){
       selected=row; creatingMember=false; avatarValue=row.avatar||'';
@@ -136,7 +136,7 @@
       $('avatarPreview').src=avatarValue||fallbackAvatar;$('selectedName').textContent=row.name||'—';$('selectedRank').textContent=row.rank||'—';$('selectedSummary').textContent=[row.thp||'Sin THP',row.country||row.community||'Sin ubicación'].join(' · ');setStatus('');
     }
     async function selectPlayer(name){
-      const local=players.find(p=>p.name===name); if(local){fill(local);return;} const {data,error}=await sb.from('players').select('*').eq('name',name).single();if(error){setStatus('No se pudo cargar el jugador: '+error.message,'error');return;}fill(data);
+      setStatus('Cargando datos del jugador…');try{const {data,error}=await sb.from('players').select('*').eq('name',name).single();if(error)throw error;fill(data);}catch(error){setStatus('No se pudo cargar el jugador: '+(error?.message||error),'error');}
     }
     function cleanText(id){const v=$(id).value.trim();return v||null}
     function cleanPower(id){const raw=$(id).value.trim().replace(',','.');if(!raw)return null;const m=raw.match(/^([0-9]+(?:\.[0-9]+)?)\s*M?$/i);if(!m)return raw;return Number(m[1]).toFixed(2)+'M';}
@@ -212,7 +212,8 @@
     $('memberLanguage').value=memberI18n[localStorage.getItem('hola-language')]?localStorage.getItem('hola-language'):'es';
     $('memberLanguage').addEventListener('change',e=>applyMemberLanguage(e.target.value));
     applyMemberLanguage($('memberLanguage').value);
-    const ok=await verify();if(!ok){await deny()}else{try{await loadPlayers();$('guard').hidden=true;$('app').hidden=false;renderResults('');$('searchResults').hidden=true}catch(e){await deny()}}
+    $('retryMembers').addEventListener('click',async()=>{const b=$('retryMembers');b.disabled=true;try{await loadPlayers();b.hidden=true;setStatus('');}catch(e){setStatus('No se pudo cargar la lista: '+(e?.message||e),'error');}finally{b.disabled=false;}});
+    const ok=await verify();if(!ok){await deny()}else{try{await loadPlayers();$('guard').hidden=true;$('app').hidden=false;renderResults('');$('searchResults').hidden=true}catch(e){$('guard').hidden=true;$('app').hidden=false;setStatus('No se pudo cargar la lista de miembros: '+(e?.message||e)+'. Pulsa Reintentar.','error');$('retryMembers').hidden=false;}}
   </script>
 
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
