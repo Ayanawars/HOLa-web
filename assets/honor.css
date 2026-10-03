@@ -21,3 +21,6 @@
 
 /* Four categories, including total hero power. */
 .squad-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}.thp-tab-icon{font-size:25px;line-height:1;color:#efc866}.squad-tab{flex-direction:column;gap:3px}.squad-tab img{width:25px;height:25px}.squad-tab.active .thp-tab-icon{color:#fff2c5}@media(max-width:420px){.squad-tab{font-size:9px;min-height:56px}.squad-tabs{gap:3px;padding:5px}}
+
+/* Keep five categories readable on mobile. */
+.squad-tabs{display:flex;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.squad-tabs::-webkit-scrollbar{display:none}.squad-tab{flex:1 0 82px;cursor:pointer}.kills-source{display:block;width:max-content;margin:0 auto 12px;color:#bca36f;font-size:10px;text-decoration:underline;text-underline-offset:3px}
