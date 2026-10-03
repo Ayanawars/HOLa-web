@@ -1,4 +1,5 @@
 {
+  "updatedAt": "2026-10-03T19:20:00Z",
   "source": "https://lastintel.io/alliances/VP7xiGc6fADBcd173QLUEQ",
   "players": [
     {
@@ -10,19 +11,19 @@
       "kills": 17490865
     },
     {
-      "name": "Sabie târâș",
+      "name": "Sabie tárás",
       "kills": 8604652
     },
     {
-      "name": "xarnyx",
+      "name": "Xarnyx",
       "kills": 7755465
     },
     {
-      "name": "jack daniels  g",
+      "name": "jack daniels g",
       "kills": 7689031
     },
     {
-      "name": "SilentBG ᓚᘏᗢ",
+      "name": "SilentBG",
       "kills": 7641052
     },
     {
@@ -41,6 +42,5 @@
       "name": "dAndrei20",
       "kills": 5900912
     }
-  ],
-  "updatedOn": "2026-10-03"
+  ]
 }
