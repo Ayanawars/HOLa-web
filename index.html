@@ -1267,6 +1267,11 @@
 
       <section class="quick-access" aria-labelledby="quickAccessTitle">
         <h2 class="quick-access__heading" id="quickAccessTitle" data-i18n="quickAccess">Acceso rápido</h2>
+        <a class="quick-access__card" href="statistics.html" aria-labelledby="homeStatisticsTitle">
+          <span class="quick-access__icon" aria-hidden="true"><svg viewBox="0 0 48 48" focusable="false"><path d="M8 8v32h33M15 33V23h6v10M25 33V15h6v18M35 33V7h6v26"></path></svg></span>
+          <span class="quick-access__copy"><strong class="quick-access__title" id="homeStatisticsTitle" data-hub-home="0">Estadísticas</strong><span class="quick-access__subtitle" data-hub-home="1">Resumen y rankings de HOLa</span></span>
+          <span class="quick-access__arrow" aria-hidden="true">›</span>
+        </a>
         <a class="quick-access__card" href="members.html" aria-label="Abrir miembros" data-i18n-aria="openMembers">
           <span class="quick-access__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" focusable="false">
@@ -1622,6 +1627,9 @@ document.addEventListener('click',function(event){
   const lang=localStorage.getItem('hola-language')||localStorage.getItem('hola-lang');
   if(lang==='ru')link.href='survey.html?lang=ru';
 },{capture:true});
+</script>
+<script id="hola-home-statistics">
+(()=>{const labels={"es":["Estadísticas","Resumen y rankings de HOLa"],"en":["Statistics","HOLa overview and rankings"],"fr":["Statistiques","Résumé et classements HOLa"],"de":["Statistiken","HOLa-Überblick und Ranglisten"],"ro":["Statistici","Rezumat și clasamente HOLa"],"pt":["Estatísticas","Resumo e rankings HOLa"],"uk":["Статистика","Огляд і рейтинги HOLa"],"it":["Statistiche","Riepilogo e classifiche HOLa"],"pl":["Statystyki","Podsumowanie i rankingi HOLa"],"tr":["İstatistikler","HOLa özeti ve sıralamalar"],"ru":["Статистика","Обзор и рейтинги HOLa"]};function update(){const lang=document.documentElement.lang||localStorage.getItem('hola-language')||'en',text=labels[lang]||labels.en;document.querySelectorAll('[data-hub-home]').forEach(el=>el.textContent=text[Number(el.dataset.hubHome)]);}new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});update();})();
 </script>
 </body>
 </html>
