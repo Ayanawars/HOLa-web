@@ -240,13 +240,25 @@
 
 <script src="js/ds-poster.js?v=20260925-public-maps-v1"></script>
 <script src="js/ds-plan-view.js?v=20260925-phase-mission-colors-v1"></script>
+<script src="ds-profiles.js?v=20261004-2"></script>
 <script>
 const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
 const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+const dsRequests=new Map();
 async function rest(table,query=''){
-  const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}${query?`?${query}`:''}`,{headers:{apikey:SUPABASE_KEY}});
-  if(!response.ok){let msg=`Supabase ${response.status}`;try{const e=await response.json();msg=e.message||e.error||msg}catch{}throw new Error(msg)}
-  return await response.json();
+  const id=table+'?'+query,entry=dsRequests.get(id);
+  if(entry&&Date.now()-entry.time<30000)return entry.promise;
+  const promise=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+    try{
+      const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}${query?`?${query}`:''}`,{headers:{apikey:SUPABASE_KEY},signal:controller.signal});
+      if(!response.ok){let msg=`Supabase ${response.status}`;try{const e=await response.json();msg=e.message||e.error||msg}catch{}throw new Error(msg)}
+      return await response.json();
+    }finally{clearTimeout(timer);}
+  })();
+  dsRequests.set(id,{time:Date.now(),promise});
+  promise.catch(()=>{if(dsRequests.get(id)?.promise===promise)dsRequests.delete(id);});
+  return promise;
 }
 const $=id=>document.getElementById(id);
 let lang=localStorage.getItem('hola-language')||'es';
@@ -305,8 +317,42 @@ function profileAvatar(profile){const choices=profile?.default_avatar==='hola'?[
 function renderPlayers(rows,profileRows=[]){const players=uniquePlayers(rows),avatars=new Map((profileRows||[]).map(p=>[playerKey(p.name),profileAvatar(p)]));$('summaryPlayers').textContent=players.length;$('rosterCount').textContent=`${players.length} ${tr('players')}`;$('players').innerHTML=players.length?players.map((x,i)=>{const avatar=avatars.get(playerKey(x.player_name));return `<div class="player"><span class="player__n${avatar?' player__avatar':''}">${avatar?`<img src="${esc(avatar)}" alt="">`:String(i+1).padStart(2,'0')}</span><span class="player__name">${esc(x.player_name)}</span></div>`}).join(''):`<div class="empty">${tr('noParticipants')}</div>`}
 function renderContent(content){window.holaResetDsPublicPosters?.();currentContent=content||{};$('strategyContent').innerHTML=content?.strategy?formatStrategy(content.strategy):`<div class="empty">${tr('noStrategy')}</div>`;if(content?.map_data_url){$('mapWrap').innerHTML=`<img id="battleMapImage" src="${esc(content.map_data_url)}" alt="Desert Storm map"><span class="map-hint">${tr('tapMap')}</span>`;$('battleMapImage').onclick=()=>openMap(content.map_data_url)}else{$('mapWrap').innerHTML=`<div class="empty">${tr('noMap')}</div>`}renderSummary(content)}
 function renderResults(rows,result){const state=$('resultState'),klass=resultClass(result);state.innerHTML=normalizeResult(result)?`<div class="result-banner ${klass}">${resultText(result)}</div>`:'';if(!rows.length){$('resultContent').innerHTML=`<div class="empty">${tr('noResults')}</div>`;return}const medals=['🥇','🥈','🥉'];const top=rows.slice(0,3);let podium='';if(top.length){const order=top.length>=3?[1,0,2]:top.map((_,i)=>i);podium='<div class="podium">'+order.map(idx=>{const x=top[idx];if(!x)return '';return `<div class="podium__card ${idx===0?'first':''}"><div class="podium__medal">${medals[idx]}</div><div class="podium__name">${esc(x.player_name)}</div><div class="podium__pts">${Number(x.points||0).toLocaleString(localeMap[lang]||'es-ES')}</div></div>`}).join('')+'</div>'}const table=`<table class="score-table"><thead><tr><th>#</th><th>${tr('player')}</th><th>${tr('points')}</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${x.position||i+1}</td><td>${esc(x.player_name)}</td><td class="pts">${Number(x.points||0).toLocaleString(localeMap[lang]||'es-ES')}</td></tr>`).join('')}</tbody></table>`;$('resultContent').innerHTML=podium+table}
-async function loadBattle(){applyLanguage();syncTeamBadges();const d=iso(battleDate);$('loadStatus').textContent=tr('loading');$('players').innerHTML=`<div class="empty">${tr('loading')}</div>`;try{const qTeam=encodeURIComponent(team),qDate=encodeURIComponent(d);const [rows,contentRows]=await Promise.all([rest('desert_storm_participants',`select=player_name&battle_date=eq.${qDate}&team=eq.${qTeam}&order=player_name.asc`),rest('desert_storm_content',`select=strategy,map_data_url,result&battle_date=eq.${qDate}&team=eq.${qTeam}&limit=1`)]);const publicPlans=await rest('desert_storm_published_plans',`select=published&battle_date=eq.${qDate}&team=eq.${qTeam}&limit=1`).catch(error=>{console.warn('DS published plan:',error);return []});const publishedPlan=publicPlans?.[0]?.published||null;const effectiveRows=publishedPlan?.roster?.length?publishedPlan.roster.map(r=>({player_name:r.name})):(rows||[]);const names=uniquePlayers(effectiveRows).map(x=>x.player_name);const quotedNames=names.map(name=>encodeURIComponent(`"${String(name).replace(/\\\\/g,'\\\\\\\\').replace(/"/g,'\\\\"')}"`)).join(',');const profiles=quotedNames?await rest('players',`select=name,avatar,uploaded_avatar,hola_avatar,default_avatar&name=in.(${quotedNames})`):[];const content=contentRows?.[0]||{};renderPlayers(effectiveRows,profiles||[]);renderContent(content);if(publishedPlan&&window.holaRenderDsPublishedPlan)window.holaRenderDsPublishedPlan(publishedPlan,{language:lang,avatarProfiles:(profiles||[]).map(p=>({name:p.name,avatar:profileAvatar(p)}))});$('loadStatus').textContent=(effectiveRows.length||publishedPlan||content.strategy||content.map_data_url)?tr('battleLoaded'):tr('battleEmpty')}catch(err){$('loadStatus').textContent=err?.message||String(err)}await loadResults()}
-async function loadResults(){const d=iso(battleDate);try{const qTeam=encodeURIComponent(team),qDate=encodeURIComponent(d);const [rows,contentRows]=await Promise.all([rest('desert_storm_scores',`select=player_name,position,points&battle_date=eq.${qDate}&team=eq.${qTeam}&order=position.asc`),rest('desert_storm_content',`select=result&battle_date=eq.${qDate}&team=eq.${qTeam}&limit=1`)]);renderResults(rows||[],contentRows?.[0]?.result||'')}catch(err){$('resultContent').innerHTML=`<div class="empty">${esc(err?.message||String(err))}</div>`}}
+let dsLoadVersion=0,lastDsRoster=[],lastDsPlan=null;
+async function loadBattle(){
+  const version=++dsLoadVersion,chosenTeam=team,d=iso(battleDate);
+  applyLanguage();syncTeamBadges();$('loadStatus').textContent=tr('loading');
+  $('players').innerHTML=`<div class="empty">${tr('loading')}</div>`;
+  lastDsRoster=[];lastDsPlan=null;
+  const q=`battle_date=eq.${encodeURIComponent(d)}&team=eq.${encodeURIComponent(chosenTeam)}`;
+  const resultTask=loadResults(d,chosenTeam,version);
+  const profilesTask=window.holaDsProfiles.get();
+  try{
+    const [rows,contentRows,plans]=await Promise.all([
+      rest('desert_storm_participants',`select=player_name&${q}&order=player_name.asc`),
+      rest('desert_storm_content',`select=strategy,map_data_url,result&${q}&limit=1`),
+      rest('desert_storm_published_plans',`select=published&${q}&limit=1`).catch(()=>[])
+    ]);
+    if(version!==dsLoadVersion)return;
+    lastDsPlan=plans?.[0]?.published||null;
+    lastDsRoster=uniquePlayers(lastDsPlan?.roster?.length?lastDsPlan.roster.map(r=>({player_name:r.name})):(rows||[]));
+    const content=contentRows?.[0]||{};
+    renderPlayers(lastDsRoster,window.holaDsProfiles.current());renderContent(content);renderDsPlanProfiles();
+    $('loadStatus').textContent=(lastDsRoster.length||lastDsPlan||content.strategy||content.map_data_url)?tr('battleLoaded'):tr('battleEmpty');
+    profilesTask.then(profiles=>{if(version===dsLoadVersion){renderPlayers(lastDsRoster,profiles);renderDsPlanProfiles();}});
+  }catch(err){if(version===dsLoadVersion)$('loadStatus').textContent=err?.message||String(err);}
+  await resultTask;
+}
+function renderDsPlanProfiles(){
+  if(lastDsPlan&&window.holaRenderDsPublishedPlan)window.holaRenderDsPublishedPlan(lastDsPlan,{language:lang,avatarProfiles:window.holaDsProfiles.current().map(p=>({name:p.name,avatar:profileAvatar(p)}))});
+}
+window.addEventListener('hola-ds-profiles',()=>{renderPlayers(lastDsRoster,window.holaDsProfiles.current());renderDsPlanProfiles();});
+async function loadResults(d=iso(battleDate),chosenTeam=team,version=dsLoadVersion){
+  try{
+    const q=`battle_date=eq.${encodeURIComponent(d)}&team=eq.${encodeURIComponent(chosenTeam)}`;
+    const [rows,contentRows]=await Promise.all([rest('desert_storm_scores',`select=player_name,position,points&${q}&order=points.desc`),rest('desert_storm_content',`select=strategy,map_data_url,result&${q}&limit=1`)]);
+    if(version===dsLoadVersion)renderResults(rows||[],contentRows?.[0]?.result||'');
+  }catch(err){if(version===dsLoadVersion)$('resultContent').innerHTML=`<div class="empty">${esc(err?.message||String(err))}</div>`;}
+}
 async function initBattleDate(){try{const today=encodeURIComponent(iso(new Date()));const [rows,plans]=await Promise.all([rest('desert_storm_participants',`select=battle_date&battle_date=lte.${today}&order=battle_date.desc&limit=1`),rest('desert_storm_published_plans','select=battle_date&order=battle_date.desc&limit=1').catch(()=>[])]);const newest=[rows?.[0]?.battle_date,plans?.[0]?.battle_date].filter(Boolean).sort().at(-1);if(newest)battleDate=parseISODate(newest)}catch{}await loadBattle()}
 function openMap(src){$('mapLightboxImage').src=src;$('mapLightbox').hidden=false;document.body.style.overflow='hidden'}function closeMap(){$('mapLightbox').hidden=true;$('mapLightboxImage').src='';document.body.style.overflow=''}
 document.querySelectorAll('[data-team]').forEach(btn=>btn.addEventListener('click',()=>{team=btn.dataset.team;document.querySelectorAll('[data-team]').forEach(x=>x.classList.toggle('active',x===btn));loadBattle()}));
@@ -316,7 +362,7 @@ $('closeMap').onclick=closeMap;$('mapLightbox').onclick=e=>{if(e.target===$('map
 applyLanguage();initBattleDate();
 </script>
   <link rel="stylesheet" href="ds-ranking.css?v=20261004-1">
-  <script src="ds-ranking.js?v=20261004-1"></script>
+  <script src="ds-ranking.js?v=20261004-2"></script>
   <script src="js/hola-language-portal.js"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
 </html>
