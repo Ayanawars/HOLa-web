@@ -102,4 +102,5 @@
   window.addEventListener('storage',e=>{if(e.key==='hola-language')render();});
   window.addEventListener('hola-ds-profiles',()=>{profiles=window.holaDsProfiles.current();render();});
   render();
+  if(window.location?.hash==='#dsRanking')launch.click();
 })();
