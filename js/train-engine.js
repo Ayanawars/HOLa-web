@@ -24,7 +24,8 @@ function assign({date,day,source,sourceType,used,actualMap}){
   if(planned)used.add(normalize(planned));
   return{date,day,source:sourceType,planned,substitutes:[],actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available,rankedSource:source,excludedBefore:source.filter(row=>used.has(normalize(row.player_name)))};
 }
-export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[],players=[]}){
+export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[],players=[],savedWeeks=[]}){
+  const saved=savedWeeks.find(x=>x.schedule_week===scheduleWeek);if(saved?.schedule_snapshot)return JSON.parse(JSON.stringify(saved.schedule_snapshot));
   const r1=new Set(players.filter(p=>String(p.rank||'').trim().toUpperCase()==='R1').map(p=>normalize(p.name)));
   const canDrive=row=>!r1.has(normalize(row.player_name));
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
