@@ -39,12 +39,11 @@ const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co',KEY='sb_publishabl
 const $=id=>document.getElementById(id),normalize=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function status(s,error=false){$('status').textContent=s;$('status').classList.toggle('error',error)}
 function monday(d){const x=new Date(d+'T12:00:00Z');x.setUTCDate(x.getUTCDate()-(x.getUTCDay()+6)%7);return x.toISOString().slice(0,10)}
-function pendingSunday(today,savedWeeks){const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+(7-d.getUTCDay())%7);while(savedWeeks.has(monday(d.toISOString().slice(0,10))))d.setUTCDate(d.getUTCDate()+7);return d.toISOString().slice(0,10)}
+function pendingSunday(savedWeeks){const d=new Date('2026-09-21T12:00:00Z');while(savedWeeks.has(d.toISOString().slice(0,10)))d.setUTCDate(d.getUTCDate()+7);d.setUTCDate(d.getUTCDate()+6);return d.toISOString().slice(0,10)}
 function fillSundays(){
  const select=$('week');select.replaceChildren();
  if(donationWeeksReady){
-  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
-  const value=pendingSunday(parts.year+'-'+parts.month+'-'+parts.day,savedDonationWeeks),opt=document.createElement('option');
+  const value=pendingSunday(savedDonationWeeks),opt=document.createElement('option');
   opt.value=value;opt.textContent=tr('sunday')+' '+new Date(value+'T12:00:00Z').toLocaleDateString(lang==='en'?'en-GB':lang,{day:'2-digit',month:'long',year:'numeric',timeZone:'UTC'});select.append(opt);select.value=value;
  }
  updateWeekNavigation();
