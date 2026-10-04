@@ -16,7 +16,7 @@
   };
   const section=document.getElementById('dsRanking'),launch=document.getElementById('dsRankingOpen');
   if(!section||!launch)return;
-  let selectedTeam='B',mode='latest',scores=[],profiles=[],loaded=false,busy=false,failed=false;
+  let selectedTeam='B',mode='latest',scores=[],profiles=[],loaded=false,busy=false,failed=false,lastLoadedAt=0;
   const key=s=>String(s||'').replace(/[\u200B-\u200D\uFEFF]/g,'').trim().replace(/\s+/g,' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const language=()=>localStorage.getItem('hola-language')||document.documentElement.lang||'es';
@@ -85,7 +85,7 @@
     try{
       scores=await pages('desert_storm_scores','player_name,points,battle_date,team','battle_date.asc,team.asc,player_name.asc');
       window.holaDsProfiles?.get().then(rows=>{profiles=rows;render();});
-      loaded=true;
+      loaded=true;lastLoadedAt=Date.now();
     }catch(e){failed=true;console.error('DS ranking:',e);}
     finally{busy=false;render();}
   }
@@ -94,7 +94,7 @@
     launch.setAttribute('aria-expanded',String(!section.hidden));
     if(section.hidden)return;
     selectedTeam=typeof team==='string'?team:'B';
-    render();if(!loaded)load();section.scrollIntoView({behavior:'smooth',block:'start'});
+    render();if(!loaded||Date.now()-lastLoadedAt>30000)load();section.scrollIntoView({behavior:'smooth',block:'start'});
   };
   section.querySelectorAll('[data-dsr-team]').forEach(b=>b.onclick=()=>{selectedTeam=b.dataset.dsrTeam;render();});
   section.querySelectorAll('[data-dsr-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.dsrMode;render();});
