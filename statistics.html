@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#145c82">
+  <title>HOLa · Estadísticas</title>
+  <link rel="stylesheet" href="statistics-hub.css?v=20261004-1">
+  <script src="statistics-hub.js?v=20261004-1" defer></script>
+</head>
+<body>
+  <header class="hub-header">
+    <div class="hub-top">
+      <a class="hub-back" href="index.html" data-label="back" aria-label="Volver al inicio">‹</a>
+      <img class="hub-logo" src="hola-s3-logo.webp" alt="HOLa" width="86" height="86">
+      <div class="hub-language">
+        <button id="hubLanguageToggle" type="button" aria-expanded="false" aria-controls="hubLanguageList" data-label="language" aria-label="Cambiar idioma"><img id="hubFlag" src="https://flagcdn.com/w80/es.png" alt="Español" width="30" height="30"></button>
+        <div id="hubLanguageList" hidden></div>
+      </div>
+    </div>
+    <p class="hub-kicker">HOLa · HEROES OF LAST AREA</p>
+    <h1 data-hub="title">Estadísticas</h1>
+    <p class="hub-intro" data-hub="intro">La alianza en cifras. Todos los rankings y estadísticas en un solo lugar.</p>
+  </header>
+  <main class="hub-main">
+    <section class="hub-overview" aria-labelledby="overviewTitle">
+      <div class="hub-section-heading"><div><span class="hub-eyebrow">HOLa · #1834</span><h2 id="overviewTitle" data-hub="overview">Resumen de la alianza</h2></div><span class="hub-live" data-hub="summary">RESUMEN</span></div>
+      <div class="hub-metrics">
+        <a href="members.html" class="hub-metric"><span class="hub-metric-mark" aria-hidden="true">01</span><strong id="hubMembers">—</strong><span data-hub="members">Miembros</span></a>
+        <a href="members.html" class="hub-metric"><span class="hub-metric-mark" aria-hidden="true">02</span><strong id="hubSurveys">—</strong><span data-hub="surveys">Encuestas completadas</span><div class="hub-progress" aria-hidden="true"><i id="hubSurveyProgress"></i></div></a>
+        <a href="honor.html" class="hub-metric"><span class="hub-metric-mark" aria-hidden="true">03</span><strong id="hubThp">—</strong><span data-hub="thp">THP registrado</span></a>
+        <a href="members.html" class="hub-metric"><span class="hub-metric-mark" aria-hidden="true">04</span><strong id="hubT10">—</strong><span data-hub="t10">Miembros con T10</span></a>
+      </div>
+      <div class="hub-update"><span id="hubStatus" role="status">Cargando resumen…</span><button id="hubRetry" type="button" hidden data-hub="retry">Reintentar</button></div>
+    </section>
+    <div class="hub-section-heading hub-access-heading"><div><span class="hub-eyebrow" data-hub="explore">EXPLORA HOLa</span><h2 data-hub="access">Todas las estadísticas</h2></div><span class="hub-count">6</span></div>
+    <div class="hub-cards" id="hubCards"></div>
+    <footer>HOLa · Heroes of Last Area · S3 Golden Kingdom</footer>
+  </main>
+</body>
+</html>
