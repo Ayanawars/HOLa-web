@@ -5,7 +5,8 @@ export const CYCLE_ANCHOR_NUMBER=4;
 
 export function iso(value){return new Date(String(value).slice(0,10)+'T12:00:00Z')}
 export function addDays(value,days){return new Date(iso(value).getTime()+days*DAY).toISOString().slice(0,10)}
-export function normalize(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')}
+export function canonicalPlayerName(value){const raw=String(value||'').replace(/[\u200B-\u200D\u2060\uFEFF]/g,'').trim();return /^yugo$/i.test(raw)?'Yugo Léliatrope':raw}
+export function normalize(value){return canonicalPlayerName(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')}
 export function monday(value){const d=iso(value),day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);return d.toISOString().slice(0,10)}
 export function cycleFor(weekStart){
   const diff=Math.round((iso(weekStart)-iso(CYCLE_ANCHOR))/(7*DAY));
