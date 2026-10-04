@@ -18,7 +18,20 @@
     @media(max-width:520px){.hero{padding:18px 14px}.planned{grid-template-columns:1fr}.actual{grid-template-columns:1fr}.save{min-height:45px}.hero h1{font-size:26px}}
 .trip-details{margin-top:13px;border:1px solid #d7b45e;border-radius:16px;background:linear-gradient(145deg,#fffaf0,#eefaff);overflow:visible}.trip-details summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;color:#0b4777;font-size:11px;font-weight:950;cursor:pointer;list-style:none}.trip-details summary::-webkit-details-marker{display:none}.trip-summary{color:#8d6a23;font-size:9px;text-align:right}.trip-body{padding:0 12px 13px;border-top:1px solid #ead8ac}.special-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}.special-card{min-width:0}.special-card>label,.passenger-box>label{display:block;margin-bottom:6px;color:#91691d;font-size:9px;font-weight:950;letter-spacing:.08em}.member-search{position:relative}.member-search input{width:100%;min-height:42px;padding:9px 10px;border:1px solid #b8c9d2;border-radius:11px;background:#fff;color:#113f66;font-size:12px;font-weight:800}.member-results{position:absolute;z-index:45;left:0;right:0;top:calc(100% + 4px);max-height:220px;overflow:auto;padding:5px;border:1px solid #d3ae55;border-radius:11px;background:#fffdf7;box-shadow:0 10px 24px #273e4b35}.member-results[hidden]{display:none}.member-result{display:block;width:100%;padding:9px;border:0;border-radius:8px;background:transparent;color:#16486c;text-align:left;font-size:11px;font-weight:800}.member-result:hover,.member-result:focus{background:#e6f6ff;outline:none}.passenger-box{margin-top:12px;padding-top:12px;border-top:1px solid #e6d5a9}.passenger-actions{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.passenger-actions input{min-width:0;width:100%;padding:8px;border:1px dashed #b99548;border-radius:11px;background:#fffdf6;font-size:10px}.ocr-passengers{min-height:42px;padding:8px 11px;border:1px solid #6dbbd5;border-radius:11px;background:#0d7fac;color:#fff;font-size:10px;font-weight:950}.ocr-passengers:disabled{opacity:.55}.passenger-status{min-height:17px;margin-top:7px;color:#6d7886;font-size:10px;line-height:1.4}.passenger-status.ok{color:#167457}.passenger-status.bad{color:#a64046}.passenger-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.passenger-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 7px;border-radius:999px;border:1px solid #9ed5e5;background:#e9f8ff;color:#14547a;font-size:10px;font-weight:850}.passenger-chip button{width:18px;height:18px;border:0;border-radius:50%;background:#fff;color:#9e403b;font-weight:950;line-height:1}.trip-save{width:100%;min-height:43px;margin-top:11px;border:0;border-radius:12px;background:linear-gradient(100deg,#b78524,#e6bb50);color:#fffdf1;font-size:11px;font-weight:950}.trip-save:disabled{opacity:.55}.trip-save-status{min-height:17px;margin-top:6px;color:#177961;font-size:10px;font-weight:800}.trip-save-status.bad{color:#a64046}@media(max-width:520px){.special-grid{grid-template-columns:1fr}.passenger-actions{grid-template-columns:1fr}.ocr-passengers{width:100%}}
 .mail-card{margin-top:14px}.mail-card h2{margin:5px 0 9px;color:var(--navy);font:900 23px Georgia,serif}.mail-card textarea{display:block;width:100%;min-height:360px;resize:vertical;margin-top:14px;padding:13px;border:1px solid #d5bb80;border-radius:14px;background:#fffdf8;color:var(--ink);font:12px/1.65 system-ui,sans-serif}.mail-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.mail-button{min-height:43px;padding:9px 14px;background:linear-gradient(110deg,#e7d2a5,#f8eacb);border:1px solid #cbaa69;color:#174d6c}.mail-status{min-height:18px;margin-top:9px!important;color:var(--ok)!important;font-weight:800}
-  </style>
+  
+    .week-row{grid-template-columns:minmax(0,1fr)}
+    .week-row #week,.week-row #cycle{display:none}
+    .week-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;padding:9px 7px;border:1px solid #c9a857;border-radius:16px;background:#fffdf7;touch-action:pan-y pinch-zoom;user-select:none}
+    .week-nav button{display:grid;place-items:center;width:44px;height:48px;padding:0;border:1px solid #c9a857;border-radius:12px;background:#f3e4b9;color:#174465;font:900 27px Georgia,serif;cursor:pointer}
+    .week-nav button:disabled{opacity:.35;cursor:default}
+    .week-nav button:focus-visible{outline:3px solid #1598bf;outline-offset:2px}
+    .week-nav-label{min-width:0;text-align:center;color:#174465;line-height:1.5}
+    .week-nav-label strong{display:block;font-size:13px}
+    .week-nav-dates{display:flex;flex-wrap:wrap;justify-content:center;gap:0 5px;font-size:12px;font-weight:800}
+    .week-nav-dates span{white-space:nowrap}
+    @media(max-width:380px){.week-nav{grid-template-columns:40px minmax(0,1fr) 40px;gap:5px}.week-nav button{width:40px}.week-nav-dates{font-size:11px}}
+
+</style>
 </head>
 <body>
   <div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
@@ -27,7 +40,7 @@
     <section class="card hero">
       <div class="kicker">TREN · ADMINISTRACIÓN</div><h1>Conductores reales</h1>
       <p>La planificación incluye siete titulares y una bolsa semanal de once suplentes. Confirma quién condujo realmente cada día.</p>
-      <div class="week-row"><select id="week"></select><div class="cycle" id="cycle">—</div></div>
+      <div class="week-row"><select id="week" hidden aria-hidden="true" tabindex="-1"></select><div class="week-nav" id="weekNav" role="group" aria-label="Seleccionar semana"><button type="button" id="previousWeek" aria-label="Semana anterior">‹</button><div class="week-nav-label" aria-live="polite" aria-atomic="true"><strong id="weekNavTitle"></strong><div class="week-nav-dates"><span id="weekNavStart"></span><span aria-hidden="true">–</span><span id="weekNavEnd"></span></div></div><button type="button" id="nextWeek" aria-label="Semana siguiente">›</button></div><div class="cycle" id="cycle" hidden>—</div></div>
       <div class="summary"><span class="pill" id="type">—</span><span class="pill" id="sourceWeek">—</span></div>
       <div class="mode-box"><label for="weekType">TIPO Y NORMA DE LA SEMANA</label><div class="mode-row"><select id="weekType"><option value="push">Push</option><option value="save">Save</option></select><button class="save" id="saveWeekType" type="button">GUARDAR</button></div><p class="mode-rule" id="modeRule"></p><div class="mode-status" id="modeStatus"></div></div>
     </section>
@@ -45,6 +58,44 @@
     async function verify(){const {data:{session}}=await sb.auth.getSession();if(!session)return false;const {data:admin}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(!admin)return false;const {data:officers}=await sb.from('players').select('name,rank').in('rank',['R4','R5']);return (officers||[]).some(x=>normalize(x.name)===normalize(admin.display_name))}
     function defaultWeek(){const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,x.value])),today=parts.year+'-'+parts.month+'-'+parts.day,day=new Date(today+'T12:00:00Z').getUTCDay();return day===0?addDays(today,1):monday(today)}
     function fillWeeks(){const base=defaultWeek();for(let i=-8;i<=8;i++){const start=addDays(base,i*7),end=addDays(start,6),cycle=cycleFor(start),o=document.createElement('option');o.value=start;o.textContent='Semana '+cycle.number+'/4 · '+fmt(start)+' – '+fmt(end);$('week').append(o)}$('week').value=base}
+
+    function updateWeekNavigation(){
+      const select=$('week'),start=select.value;
+      if(!start)return;
+      $('weekNavTitle').textContent='Semana '+cycleFor(start).number+'/4';
+      $('weekNavStart').textContent=fmt(start);
+      $('weekNavEnd').textContent=fmt(addDays(start,6));
+      $('previousWeek').disabled=select.selectedIndex<=0;
+      $('nextWeek').disabled=select.selectedIndex>=select.options.length-1;
+    }
+    function moveWeek(direction){
+      const select=$('week'),next=select.selectedIndex+direction;
+      if(next<0||next>=select.options.length)return;
+      select.selectedIndex=next;
+      select.dispatchEvent(new Event('change'));
+    }
+    function initWeekNavigation(){
+      $('previousWeek').addEventListener('click',()=>moveWeek(-1));
+      $('nextWeek').addEventListener('click',()=>moveWeek(1));
+      $('week').addEventListener('change',updateWeekNavigation);
+      let touchStart=null;
+      $('weekNav').addEventListener('touchstart',event=>{
+        if(event.touches.length!==1||event.target.closest('button')){touchStart=null;return;}
+        touchStart={x:event.touches[0].clientX,y:event.touches[0].clientY};
+      },{passive:true});
+      $('weekNav').addEventListener('touchend',event=>{
+        if(!touchStart||!event.changedTouches.length)return;
+        const dx=event.changedTouches[0].clientX-touchStart.x,dy=event.changedTouches[0].clientY-touchStart.y;
+        touchStart=null;
+        if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5)moveWeek(dx<0?1:-1);
+      },{passive:true});
+      $('weekNav').addEventListener('touchcancel',()=>{touchStart=null;},{passive:true});
+      $('weekNav').addEventListener('keydown',event=>{
+        if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();moveWeek(event.key==='ArrowLeft'?-1:1);}
+      });
+      updateWeekNavigation();
+    }
+
     function playerOptions(item){const frag=document.createDocumentFragment(),empty=document.createElement('option');empty.value='';empty.textContent='— Sin confirmar —';frag.append(empty);const seen=new Set;const add=(name,label,kind)=>{if(!name||seen.has(normalize(name)))return;seen.add(normalize(name));const o=document.createElement('option');o.value=name;o.textContent=label+' · '+name;o.className=kind;if(normalize(name)===normalize(item.actual))o.selected=true;frag.append(o)};add(item.planned,'★ TITULAR','option-titular');(schedule.reservePools[item.source]||[]).forEach((name,i)=>add(name,'SUP '+(i+1),'option-suplente'));if(item.actual&&!seen.has(normalize(item.actual)))add(item.actual,'CONDUCTOR REGISTRADO','option-historico');return frag}
 
     function passengerKey(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[ᓚᘏᗢ]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,'')}
@@ -266,7 +317,7 @@
       ]);
       const failed=[p,d,n,a,e,s,t].find(x=>x.error);if(failed)throw failed.error;players=p.data||[];data={vs:vsRows,ds:d.data||[],donations:n.data||[],actuals:a.data||[],exclusions:e.data||[],settings:s.data||[],tripMembers:t.data||[]};render();
     }
-    fillWeeks();$('week').addEventListener('change',render);$('weekType').addEventListener('change',()=>{$('modeRule').textContent=$('weekType').value==='save'?'SAVE: mínimo 7,2 M cada día de lunes a viernes. Entre quienes cumplen, tiene prioridad el menor total semanal (más cerca de 7,2 M diarios).':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='Cambio sin guardar.'});$('saveWeekType').addEventListener('click',saveWeekType);
+    fillWeeks();initWeekNavigation();$('week').addEventListener('change',render);$('weekType').addEventListener('change',()=>{$('modeRule').textContent=$('weekType').value==='save'?'SAVE: mínimo 7,2 M cada día de lunes a viernes. Entre quienes cumplen, tiene prioridad el menor total semanal (más cerca de 7,2 M diarios).':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='Cambio sin guardar.'});$('saveWeekType').addEventListener('click',saveWeekType);
     if(!await verify())location.replace('admin-login.html');else{try{await load();$('guard').hidden=true;$('app').hidden=false}catch(error){$('guard').innerHTML='<div class="error">'+error.message+'</div>'}}
   </script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
