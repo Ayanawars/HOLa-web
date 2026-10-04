@@ -83,7 +83,8 @@
     if(busy)return;
     busy=true;failed=false;render();
     try{
-      [scores,profiles]=await Promise.all([pages('desert_storm_scores','player_name,points,battle_date,team','battle_date.asc,team.asc,player_name.asc'),pages('players','name,avatar,uploaded_avatar,hola_avatar,default_avatar','name.asc')]);
+      scores=await pages('desert_storm_scores','player_name,points,battle_date,team','battle_date.asc,team.asc,player_name.asc');
+      window.holaDsProfiles?.get().then(rows=>{profiles=rows;render();});
       loaded=true;
     }catch(e){failed=true;console.error('DS ranking:',e);}
     finally{busy=false;render();}
@@ -93,11 +94,12 @@
     launch.setAttribute('aria-expanded',String(!section.hidden));
     if(section.hidden)return;
     selectedTeam=typeof team==='string'?team:'B';
-    render();load();section.scrollIntoView({behavior:'smooth',block:'start'});
+    render();if(!loaded)load();section.scrollIntoView({behavior:'smooth',block:'start'});
   };
   section.querySelectorAll('[data-dsr-team]').forEach(b=>b.onclick=()=>{selectedTeam=b.dataset.dsrTeam;render();});
   section.querySelectorAll('[data-dsr-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.dsrMode;render();});
   new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('storage',e=>{if(e.key==='hola-language')render();});
+  window.addEventListener('hola-ds-profiles',()=>{profiles=window.holaDsProfiles.current();render();});
   render();
 })();
