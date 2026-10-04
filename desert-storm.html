@@ -185,6 +185,21 @@
       <a href="#results"><span>🏆</span><span data-i18n="navScore">Resultados</span></a>
     </nav>
 
+    <button id="dsRankingOpen" class="ds-ranking-launch" type="button" aria-expanded="false" aria-controls="dsRanking"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Z M8 5H4v2a4 4 0 0 0 4 4 M16 5h4v2a4 4 0 0 1-4 4 M12 12v6 M8 21h8 M9 18h6v3H9Z"/></svg><span data-dsr-label="0">Ranking</span></button>
+    <section class="section" id="dsRanking" hidden aria-labelledby="dsRankingTitle">
+      <div class="section__head"><div><div class="section__eyebrow">DESERT STORM · HOLa</div><h2 id="dsRankingTitle" data-dsr-label="0">Ranking</h2></div></div>
+      <div class="dsr-tabs" role="group" aria-label="Team">
+        <button type="button" data-dsr-team="B" aria-pressed="true">Team B</button>
+        <button type="button" data-dsr-team="A" aria-pressed="false">Team A</button>
+      </div>
+      <div class="dsr-tabs" role="group" aria-labelledby="dsRankingTitle">
+        <button type="button" data-dsr-mode="latest" data-dsr-label="1" aria-pressed="true">Última batalla</button>
+        <button type="button" data-dsr-mode="total" data-dsr-label="2" aria-pressed="false">Acumulado</button>
+      </div>
+      <p class="dsr-meta" id="dsRankingMeta"></p>
+      <div id="dsRankingContent" aria-live="polite"></div>
+    </section>
+
     <section class="summary" aria-label="Resumen">
       <div class="summary__item"><span data-i18n="playersLabel">Jugadores</span><strong id="summaryPlayers">—</strong></div>
       <div class="summary__item"><span data-i18n="mapLabel">Mapa</span><strong id="summaryMap">—</strong></div>
@@ -300,6 +315,8 @@ const toggle=$('languageToggle'),list=$('languageList');toggle.onclick=e=>{e.sto
 $('closeMap').onclick=closeMap;$('mapLightbox').onclick=e=>{if(e.target===$('mapLightbox'))closeMap()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMap();list.hidden=true}});
 applyLanguage();initBattleDate();
 </script>
+  <link rel="stylesheet" href="ds-ranking.css?v=20261004-1">
+  <script src="ds-ranking.js?v=20261004-1"></script>
   <script src="js/hola-language-portal.js"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
 </html>
