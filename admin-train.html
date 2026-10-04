@@ -44,14 +44,14 @@
       <div class="summary"><span class="pill" id="type">—</span><span class="pill" id="sourceWeek">—</span></div>
       <div class="mode-box"><label for="weekType">TIPO Y NORMA DE LA SEMANA</label><div class="mode-row"><select id="weekType"><option value="push">Push</option><option value="save">Save</option></select><button class="save" id="saveWeekType" type="button">GUARDAR</button></div><p class="mode-rule" id="modeRule"></p><div class="mode-status" id="modeStatus"></div></div>
     </section>
-    <div class="days" id="days"></div><section class="card hero" style="margin-top:14px"><h2>Bolsa semanal de suplentes</h2><div id="reservePools"></div></section><section class="card hero mail-card"><div class="kicker">COMUNICACIÓN · HOLa</div><h2>Correo semanal del tren</h2><p>Se genera con la semana seleccionada. Puedes editar el texto antes de copiarlo para el correo del juego.</p><textarea id="trainMail" spellcheck="false" aria-label="Correo semanal del tren"></textarea><div class="mail-actions"><button class="save mail-button" id="refreshMail" type="button">ACTUALIZAR CORREO</button><button class="save mail-button" id="copyMail" type="button">COPIAR CORREO</button></div><p class="mail-status" id="mailStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">NORMAS · HOLa</div><h2>Copiar normas</h2><p>Textos independientes para tu correo manual. No modifican la semana seleccionada.</p><div class="mail-actions"><button class="save mail-button" id="copyPushRules" type="button">COPIAR NORMAS PUSH</button><button class="save mail-button" id="copySaveRules" type="button">COPIAR NORMAS SAVE</button></div><p class="mail-status" id="rulesCopyStatus" role="status"></p></section>
+    <div class="days" id="days"></div><section class="card hero" style="margin-top:14px"><h2>Bolsa semanal de suplentes</h2><div id="reservePools"></div></section><section class="card hero mail-card"><div class="kicker">COMUNICACIÓN · HOLa</div><h2>Correo semanal del tren</h2><p>Se genera con la semana seleccionada. Puedes editar el texto antes de copiarlo para el correo del juego.</p><textarea id="trainMail" spellcheck="false" aria-label="Correo semanal del tren"></textarea><div class="mail-actions"><button class="save mail-button" id="refreshMail" type="button">ACTUALIZAR CORREO</button><button class="save mail-button" id="copyMail" type="button">COPIAR CORREO</button></div><p class="mail-status" id="mailStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">GUARDADO · HOLa</div><h2>Guardar semana</h2><p>Bloquea la planificación, los conductores reales, la composición y los resultados utilizados. Seguirás pudiendo consultar otras semanas y copiar el correo. Guarda antes todos los cambios que quieras incluir.</p><div class="mail-actions"><button class="save mail-button" id="finalizeWeek" type="button">GUARDAR SEMANA</button></div><p class="mail-status" id="finalizeStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">NORMAS · HOLa</div><h2>Copiar normas</h2><p>Textos independientes para tu correo manual. No modifican la semana seleccionada.</p><div class="mail-actions"><button class="save mail-button" id="copyPushRules" type="button">COPIAR NORMAS PUSH</button><button class="save mail-button" id="copySaveRules" type="button">COPIAR NORMAS SAVE</button></div><p class="mail-status" id="rulesCopyStatus" role="status"></p></section>
   </main>
   <script type="module">
     import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20261005-yugo-alias-1';
+    import {addDays,monday,cycleFor,buildSchedule} from './js/train-engine.js?v=20261005-finalized-weeks-1';
     const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id),dayNames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],sourceNames={VS:'VS semanal',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'};
-    let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[],settings:[],tripMembers:[]},schedule;
+    let players=[],data={vs:[],ds:[],donations:[],actuals:[],exclusions:[],settings:[],tripMembers:[],savedWeeks:[]},schedule;
     let passengerTesseractPromise=null;
     const normalize=v=>String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
     const fmt=d=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
@@ -250,6 +250,7 @@
       });
 
       saveBtn.addEventListener('click',async()=>{
+        if(currentSavedWeek()){saveStatus.textContent='Semana guardada y bloqueada.';return}
         specialValue=specialInput.dataset.selected||'';specialRole=roleSelect.value;
         const driver=normalize(item.actual);
         if(specialValue&&normalize(specialValue)===driver){saveStatus.textContent='El conductor no puede ser también '+specialLabel()+'.';saveStatus.className='trip-save-status bad';return}
@@ -273,7 +274,7 @@
     }
 
     function render(){
-      const start=$('week').value;schedule=buildSchedule({scheduleWeek:start,vsScores:data.vs,dsScores:data.ds,donations:data.donations,actualDrivers:data.actuals,cycleExclusions:data.exclusions,weekSettings:data.settings,players});
+      const start=$('week').value;schedule=buildSchedule({scheduleWeek:start,vsScores:data.vs,dsScores:data.ds,donations:data.donations,actualDrivers:data.actuals,cycleExclusions:data.exclusions,weekSettings:data.settings,players,savedWeeks:data.savedWeeks});
       $('cycle').textContent=schedule.cycle.number+'/4';$('type').textContent='Semana '+String(schedule.weekType||'push').toUpperCase();$('sourceWeek').textContent='Datos: '+fmt(schedule.sourceWeek)+' – '+fmt(addDays(schedule.sourceWeek,6));
       $('weekType').value=schedule.weekType;$('modeRule').textContent=schedule.weekType==='save'?'SAVE: mínimo 7,2 M cada día de lunes a viernes. Entre quienes cumplen, tiene prioridad el menor total semanal (más cerca de 7,2 M diarios).':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='';
       const box=$('days');box.replaceChildren();
@@ -285,15 +286,41 @@
         card.querySelector('.save').addEventListener('click',()=>save(item,select,card.querySelector('.save'),status));renderTripComposition(card,item);box.append(card)
       }
       const poolBox=$('reservePools');poolBox.replaceChildren();for(const [type,label,count] of [['VS','VS · lunes a jueves',4],['DS_B','Desert Storm B · viernes',2],['DS_A','Desert Storm A · sábado',2],['DONATIONS','Donaciones · domingo',3]]){const p=document.createElement('p');p.style.cssText='padding:10px 0;border-bottom:1px solid #e1c986;font-size:12px;line-height:1.7';const names=schedule.reservePools[type]||[];p.textContent=label+' ('+names.length+'/'+count+'): '+(names.map((name,i)=>(i+1)+'. '+name).join(' · ')||'Sin candidatos');poolBox.append(p)}
-      refreshTrainMail();
+      refreshTrainMail();applyWeekLock();
     }
     const trainRulesText=mode=>{const save=mode==='save';return ['HOLa - NORMAS DEL TREN · SEMANA '+mode.toUpperCase(),'','REQUISITO VS',save?'De lunes a viernes: mínimo 7.200.000 puntos por día. No alcanzar el mínimo cualquier día significa no cumplir.':'De lunes a viernes: mínimo 7.200.000 puntos por día. No alcanzar el mínimo cualquier día significa no cumplir.','Se necesitan los cinco días registrados.',save?'Entre quienes alcanzan el mínimo los cinco días, se ordena por total semanal de menor a mayor: prioridad para quien más se aproxima a 7.200.000 diarios.':'Los jugadores que cumplen se ordenan por total semanal de mayor a menor.','','ASIGNACIÓN SEMANAL','Prioridad DS: primero se reservan los conductores de Desert Storm B y A. Si un jugador también aparece en VS, conserva el puesto de DS.','Lunes a jueves: los cuatro primeros restantes de la clasificación VS que cumplen la norma.','Viernes: clasificación por puntos de Desert Storm, equipo B.','Sábado: clasificación por puntos de Desert Storm, equipo A.','Domingo: mayor donación total a tecnología de la semana anterior, entre quienes también cumplen el requisito VS de lunes a viernes.','Los resultados utilizados corresponden a la semana anterior a la semana del tren.','','ROTACIÓN Y SUPLENTES','El ciclo dura cuatro semanas. Quien haya conducido realmente no vuelve a conducir durante el resto del ciclo.','Aparecer como titular o suplente no consume el turno si no conduce.','Bolsa semanal de suplentes: VS (4), DS B (2), DS A (2) y donaciones (3). Los suplentes de DS se reservan antes que los de VS. Las sustituciones siguen el orden de cada categoría.','El conductor decide los puestos VIP y Guardián.','','BOLETOS','Quien no done los tres boletos pasa a rango R1. Un jugador R1 no puede conducir el tren ni figurar como suplente.','El rango R1 se excluye automáticamente de la planificación según el rango registrado en miembros. La donación de boletos se comprueba manualmente y el cambio de rango debe quedar registrado en miembros.','','Consulta las normas y la planificación en https://ayanawars.github.io/HOLa-web/train.html'].join('\n')};
     function buildTrainMail(){if(!schedule)return '';const lines=['HOLa - TREN DE LA ALIANZA','SEMANA DEL TREN '+schedule.cycle.number+'/4 · '+fmt(schedule.week)+' - '+fmt(schedule.weekEnd),'','Conductores y suplentes seleccionados con los resultados de la semana del '+fmt(schedule.sourceWeek)+' al '+fmt(addDays(schedule.sourceWeek,6))+'.','TIPO DE SEMANA EVALUADA: '+schedule.weekType.toUpperCase(),'','CONDUCTORES DE LA SEMANA'];for(const item of schedule.days)lines.push(dayNames[item.day]+' '+fmt(item.date)+': '+(item.planned||'Pendiente de asignar')+' ('+sourceNames[item.source]+')');lines.push('','SUPLENTES DE LA SEMANA');for(const [key,label] of [['VS','VS · lunes a jueves'],['DS_B','Desert Storm B · viernes'],['DS_A','Desert Storm A · sábado'],['DONATIONS','Donaciones · domingo']]){const pool=schedule.reservePools[key]||[];lines.push(label+': '+(pool.length?pool.map((name,i)=>(i+1)+'. '+name).join(' / '):'Pendientes de asignar'))}lines.push('','Si un titular no puede conducir, se seguirá el orden de los suplentes de su categoría.','Las normas para obtener el tren están publicadas en nuestra web:','https://ayanawars.github.io/HOLa-web/train.html','','HOLa - Heroes of Last Area');return lines.join('\n')}
-    function refreshTrainMail(){if(!schedule)return;$('trainMail').value=buildTrainMail();$('mailStatus').textContent='Correo actualizado con la planificación actual. Revisa los nombres antes de enviarlo.'}
+    function refreshTrainMail(){if(!schedule)return;$('trainMail').value=currentSavedWeek()?.mail_text??buildTrainMail();$('mailStatus').textContent='Correo actualizado con la planificación actual. Revisa los nombres antes de enviarlo.'}
+
+    function currentSavedWeek(){return (data.savedWeeks||[]).find(w=>w.schedule_week===$('week').value)}
+    function applyWeekLock(){
+      const saved=currentSavedWeek(),locked=!!saved;
+      $('weekType').disabled=locked;$('saveWeekType').disabled=locked;
+      for(const field of $('days').querySelectorAll('button,input,select'))field.disabled=locked;
+      $('trainMail').readOnly=locked;$('refreshMail').disabled=locked;
+      $('finalizeWeek').disabled=locked;$('finalizeWeek').textContent=locked?'SEMANA GUARDADA':'GUARDAR SEMANA';
+      $('finalizeStatus').textContent=locked?'Semana guardada y bloqueada. Puedes consultarla y copiar el correo; sus datos ya no se pueden modificar.':'';
+      if(locked)$('modeStatus').textContent='Semana guardada: norma bloqueada.';
+    }
+    async function finalizeWeek(){
+      if(!schedule||currentSavedWeek())return;
+      const week=schedule.week;
+      const pending=schedule.days.filter(d=>!d.actual).length;
+      if(!confirm('¿GUARDAR Y BLOQUEAR la semana del '+fmt(week)+' al '+fmt(schedule.weekEnd)+'?\n\nResultados utilizados: '+fmt(schedule.sourceWeek)+' al '+fmt(addDays(schedule.sourceWeek,6))+'. Tipo: '+schedule.weekType.toUpperCase()+'.\n\n'+(pending?pending+' días todavía no tienen conductor real confirmado.\n\n':'')+'Solo se incluyen los datos ya guardados. Después no podrás cambiar ni borrar conductores, composición, norma o resultados de esta semana. Podrás consultar semanas anteriores y copiar sus correos.\n\nEsta acción no se puede deshacer desde la página.'))return;
+      const button=$('finalizeWeek');button.disabled=true;
+      $('finalizeStatus').textContent='Guardando y bloqueando semana…';
+      try{
+        const {error}=await sb.rpc('finalize_train_week',{p_schedule_week:week,p_snapshot:schedule,p_mail:buildTrainMail()});
+        if(error)throw error;
+        await load();
+      }catch(error){$('finalizeStatus').textContent='No se pudo guardar: '+error.message;button.disabled=false}
+    }
+    $('finalizeWeek').addEventListener('click',finalizeWeek);
     async function copyText(value,status){try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(value);else{const field=document.createElement('textarea');field.value=value;field.style.cssText='position:fixed;left:-9999px';document.body.append(field);field.select();const ok=document.execCommand('copy');field.remove();if(!ok)throw Error('copy failed')}$(status).textContent='Texto copiado. Ya puedes pegarlo en el correo del juego.'}catch(e){$(status).textContent='No se pudo copiar automáticamente. Selecciona el texto y cópialo manualmente.'}}
     $('refreshMail').addEventListener('click',refreshTrainMail);$('copyMail').addEventListener('click',()=>copyText($('trainMail').value,'mailStatus'));$('copyPushRules').addEventListener('click',()=>copyText(trainRulesText('push'),'rulesCopyStatus'));$('copySaveRules').addEventListener('click',()=>copyText(trainRulesText('save'),'rulesCopyStatus'));
     document.addEventListener('click',event=>{for(const picker of document.querySelectorAll('.driver-picker'))if(!picker.contains(event.target)){const menu=picker.querySelector('.driver-menu');menu.hidden=true;picker.querySelector('.driver-trigger').setAttribute('aria-expanded','false')}});
     async function save(item,select,button,status){
+      if(currentSavedWeek()){status.textContent='Semana guardada y bloqueada.';return}
       if(!select.value){status.textContent='Selecciona quién condujo realmente.';status.className='saved pending';return}
       const permitted=[item.planned,...(schedule.reservePools[item.source]||[]),item.actual,...(canRecordHistoricalDriver(item)?players.map(p=>p.name):[])].filter(Boolean).some(name=>normalize(name)===normalize(select.value));
       if(!permitted){status.textContent='Solo puedes seleccionar al titular o a un suplente de esta categoría.';status.className='saved pending';return}
@@ -305,18 +332,19 @@
       render();
     }
     async function saveWeekType(){
+      if(currentSavedWeek())return;
       const button=$('saveWeekType'),status=$('modeStatus'),payload={schedule_week:$('week').value,week_type:$('weekType').value,updated_at:new Date().toISOString()};button.disabled=true;status.textContent='Guardando norma…';
       const {error}=await sb.from('train_week_settings').upsert(payload,{onConflict:'schedule_week'});button.disabled=false;if(error){status.textContent='No se pudo guardar: '+error.message;return}
       const existing=data.settings.find(x=>String(x.schedule_week).slice(0,10)===payload.schedule_week);if(existing)Object.assign(existing,payload);else data.settings.push(payload);render();$('modeStatus').textContent='Norma guardada y planificación recalculada.';
     }
     async function fetchAll(table,fields){const rows=[];for(let from=0;;from+=1000){const {data,error}=await sb.from(table).select(fields).range(from,from+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break}return rows}
     async function load(){
-      const [p,vsRows,d,n,a,e,s,t]=await Promise.all([
+      const [p,vsRows,d,n,a,e,s,t,f]=await Promise.all([
         sb.from('players').select('name,rank').order('name'),fetchAll('vs_scores','player_name,day,points,week_type,vs_date'),
         sb.from('desert_storm_scores').select('battle_date,team,player_name,position,points'),sb.from('technology_donations').select('week_start,player_name,points,rank'),
-        sb.from('train_actual_drivers').select('*'),sb.from('train_cycle_exclusions').select('*'),sb.from('train_week_settings').select('*'),sb.from('train_trip_members').select('*')
+        sb.from('train_actual_drivers').select('*'),sb.from('train_cycle_exclusions').select('*'),sb.from('train_week_settings').select('*'),sb.from('train_trip_members').select('*'),sb.from('train_saved_weeks').select('*')
       ]);
-      const failed=[p,d,n,a,e,s,t].find(x=>x.error);if(failed)throw failed.error;players=p.data||[];data={vs:vsRows,ds:d.data||[],donations:n.data||[],actuals:a.data||[],exclusions:e.data||[],settings:s.data||[],tripMembers:t.data||[]};render();
+      const failed=[p,d,n,a,e,s,t,f].find(x=>x.error);if(failed)throw failed.error;players=p.data||[];data={vs:vsRows,ds:d.data||[],donations:n.data||[],actuals:a.data||[],exclusions:e.data||[],settings:s.data||[],tripMembers:t.data||[],savedWeeks:f.data||[]};render();
     }
     fillWeeks();initWeekNavigation();$('week').addEventListener('change',render);$('weekType').addEventListener('change',()=>{$('modeRule').textContent=$('weekType').value==='save'?'SAVE: mínimo 7,2 M cada día de lunes a viernes. Entre quienes cumplen, tiene prioridad el menor total semanal (más cerca de 7,2 M diarios).':'PUSH: mínimo 7,2 M cada día de lunes a viernes. Quien no alcance el mínimo no cumple. Se ordena de mayor a menor puntuación total.';$('modeStatus').textContent='Cambio sin guardar.'});$('saveWeekType').addEventListener('click',saveWeekType);
     if(!await verify())location.replace('admin-login.html');else{try{await load();$('guard').hidden=true;$('app').hidden=false}catch(error){$('guard').innerHTML='<div class="error">'+error.message+'</div>'}}
