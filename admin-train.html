@@ -96,7 +96,8 @@
       updateWeekNavigation();
     }
 
-    function playerOptions(item){const frag=document.createDocumentFragment(),empty=document.createElement('option');empty.value='';empty.textContent='— Sin confirmar —';frag.append(empty);const seen=new Set;const add=(name,label,kind)=>{if(!name||seen.has(normalize(name)))return;seen.add(normalize(name));const o=document.createElement('option');o.value=name;o.textContent=label+' · '+name;o.className=kind;if(normalize(name)===normalize(item.actual))o.selected=true;frag.append(o)};add(item.planned,'★ TITULAR','option-titular');(schedule.reservePools[item.source]||[]).forEach((name,i)=>add(name,'SUP '+(i+1),'option-suplente'));if(item.actual&&!seen.has(normalize(item.actual)))add(item.actual,'CONDUCTOR REGISTRADO','option-historico');return frag}
+    function canRecordHistoricalDriver(item){const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const parts=Object.fromEntries(today.map(p=>[p.type,p.value]));return item.date<=parts.year+'-'+parts.month+'-'+parts.day}
+    function playerOptions(item){const frag=document.createDocumentFragment(),empty=document.createElement('option');empty.value='';empty.textContent='— Sin confirmar —';frag.append(empty);const seen=new Set;const add=(name,label,kind)=>{if(!name||seen.has(normalize(name)))return;seen.add(normalize(name));const o=document.createElement('option');o.value=name;o.textContent=label+' · '+name;o.className=kind;if(normalize(name)===normalize(item.actual))o.selected=true;frag.append(o)};add(item.planned,'★ TITULAR','option-titular');(schedule.reservePools[item.source]||[]).forEach((name,i)=>add(name,'SUP '+(i+1),'option-suplente'));if(item.actual&&!seen.has(normalize(item.actual)))add(item.actual,'CONDUCTOR REGISTRADO','option-historico');if(canRecordHistoricalDriver(item))for(const player of players)add(player.name,'CONDUCTOR REAL','option-historico');return frag}
 
     function passengerKey(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[ᓚᘏᗢ]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,'')}
     function editDistance(a,b){a=String(a||'');b=String(b||'');const dp=Array(b.length+1).fill(0).map((_,i)=>i);for(let i=1;i<=a.length;i++){let prev=dp[0];dp[0]=i;for(let j=1;j<=b.length;j++){const old=dp[j];dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=old}}return dp[b.length]}
@@ -294,7 +295,7 @@
     document.addEventListener('click',event=>{for(const picker of document.querySelectorAll('.driver-picker'))if(!picker.contains(event.target)){const menu=picker.querySelector('.driver-menu');menu.hidden=true;picker.querySelector('.driver-trigger').setAttribute('aria-expanded','false')}});
     async function save(item,select,button,status){
       if(!select.value){status.textContent='Selecciona quién condujo realmente.';status.className='saved pending';return}
-      const permitted=[item.planned,...(schedule.reservePools[item.source]||[]),item.actual].filter(Boolean).some(name=>normalize(name)===normalize(select.value));
+      const permitted=[item.planned,...(schedule.reservePools[item.source]||[]),item.actual,...(canRecordHistoricalDriver(item)?players.map(p=>p.name):[])].filter(Boolean).some(name=>normalize(name)===normalize(select.value));
       if(!permitted){status.textContent='Solo puedes seleccionar al titular o a un suplente de esta categoría.';status.className='saved pending';return}
       button.disabled=true;status.textContent='Guardando…';
       const payload={service_date:item.date,actual_driver:select.value,updated_at:new Date().toISOString()};
