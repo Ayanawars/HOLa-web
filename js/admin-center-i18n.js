@@ -8,6 +8,8 @@ const thpModuleTexts={"es":["Actualizador THP","OCR semanal de miembros · revis
 for(const [code,[name,info]] of Object.entries(thpModuleTexts))Object.assign(dictionary[code],{thp:name,thpInfo:info});
 const exportModuleTexts={"es":["Exportar encuesta","Descargar miembros y estadísticas en Excel"],"en":["Export survey","Download members and statistics in Excel"],"fr":["Exporter le sondage","Télécharger les membres et statistiques dans Excel"],"de":["Umfrage exportieren","Mitglieder und Statistiken als Excel herunterladen"],"ro":["Exportă sondajul","Descarcă membrii și statisticile în Excel"],"pt":["Exportar inquérito","Descarregar membros e estatísticas em Excel"],"uk":["Експорт опитування","Завантажити учасників і статистику в Excel"],"it":["Esporta sondaggio","Scarica membri e statistiche in Excel"],"pl":["Eksportuj ankietę","Pobierz członków i statystyki w Excelu"],"tr":["Anketi dışa aktar","Üyeleri ve istatistikleri Excel olarak indir"]};
 for(const [code,[name,info]] of Object.entries(exportModuleTexts))Object.assign(dictionary[code],{exportData:name,exportDataInfo:info});
+const ticketModuleTexts={"es":["Tickets del tren","Control independiente de los 3 tickets"],"en":["Train tickets","Separate tracking of the 3 tickets"],"fr":["Tickets du train","Suivi séparé des 3 tickets"],"de":["Zugtickets","Separate Kontrolle der 3 Tickets"],"ro":["Bilete pentru tren","Control separat al celor 3 bilete"],"pt":["Bilhetes do comboio","Controlo separado dos 3 bilhetes"],"uk":["Квитки на поїзд","Окремий облік 3 квитків"],"it":["Biglietti del treno","Controllo separato dei 3 biglietti"],"pl":["Bilety kolejowe","Osobna kontrola 3 biletów"],"tr":["Tren biletleri","3 bilet için ayrı takip"]};
+for(const [code,[name,info]] of Object.entries(ticketModuleTexts))Object.assign(dictionary[code],{tickets:name,ticketsInfo:info});
 const $=sel=>document.querySelector(sel);
 const languageNames=Object.keys(dictionary);
 const flagImage={es:"es",en:"gb",fr:"fr",de:"de",ro:"ro",pt:"pt",uk:"ua",it:"it",pl:"pl",tr:"tr"};
@@ -27,7 +29,7 @@ const targets={
  exportData:'.module[href="admin-export.html"] strong',exportDataInfo:'.module[href="admin-export.html"] small',
  audit:'.module[href="admin-audit.html"] strong',auditInfo:'.module[href="admin-audit.html"] small',
  train:'.module[href="admin-train.html"] strong',trainInfo:'.module[href="admin-train.html"] small',
- signout:"#logoutBtn"
+ tickets:"#trainTicketsModule strong",ticketsInfo:"#trainTicketsModule small",signout:"#logoutBtn"
 };
 function apply(){
  const l=dictionary[lang]||dictionary.es;
