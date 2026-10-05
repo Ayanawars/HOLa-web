@@ -6,128 +6,141 @@
 <div class="top"><a class="back" href="admin-center-hola_login.html">← Administración</a><img src="hola-s3-logo.png" alt="HOLa"></div>
 <section id="guard" class="card">Comprobando acceso R4/R5…</section>
 <div id="app" hidden>
-<section class="card"><div class="kicker">VETO INMEDIATO · HOLa</div><h1>Sin 3 tickets, no sube</h1><p class="muted">Registra a quien intente subir sin donar los 3 tickets. Un conductor o suplente pierde su puesto y queda vetado esa semana y la siguiente. Quien aún no estaba seleccionado queda vetado solo de la siguiente. Elige su situación en el momento del incumplimiento.</p><label for="banDate">Fecha del incumplimiento</label><input id="banDate" type="date"><label for="banRole">Situación cuando incumplió</label><select id="banRole"><option value="">Selecciona su situación…</option><option value="driver">Conductor de esa semana</option><option value="substitute">Suplente de esa semana</option><option value="unselected">Todavía no seleccionado</option></select><div id="banAffected" class="affected"></div><label for="banSearch">Miembro que intentó subir</label><input id="banSearch" type="search" placeholder="Buscar miembro…" autocomplete="off"><div id="banResults" class="search-results"></div><p id="banSelected" class="muted"></p><button id="confirmBan" class="save" type="button" disabled>CONFIRMAR VETO INMEDIATO</button><p id="banStatus" class="status" role="status"></p><h2 style="margin-top:20px">Vetos activos</h2><div id="activeBans"></div><details><summary>Historial de vetos y correcciones</summary><div id="banHistory"></div></details></section>
-<section class="card"><div class="kicker">REVISIÓN SEMANAL · HOLa</div><h1>🎟️ Tickets del tren</h1><p class="muted">Registra únicamente a los miembros que no donaron los 3 tickets. La lista confirmada los excluye de titulares y suplentes durante la semana siguiente.</p>
-<label for="week">Semana en la que debían donar</label><div class="week-nav"><button id="prev" class="arrow" type="button" aria-label="Semana anterior">‹</button><select id="week"></select><button id="next" class="arrow" type="button" aria-label="Semana siguiente">›</button></div>
-<div class="affected" id="affected"></div><p id="reviewState" class="muted"></p><p id="locked" class="status" hidden>La semana afectada está guardada y bloqueada. Puedes consultar la lista, pero no modificarla.</p>
-<label for="search">Añadir miembro que no donó los 3 tickets</label><input id="search" type="search" placeholder="Buscar miembro…" autocomplete="off"><div id="results" class="search-results" aria-label="Miembros encontrados"></div>
-<h2 style="margin-top:22px">Lista de incumplimientos</h2><ul id="names" class="list"></ul><p id="empty" class="muted"></p>
-<p class="muted">Puedes quitar nombres por error hasta que se bloquee la semana afectada. Esta exclusión no cambia el rango ni consume el turno del ciclo.</p>
-<button id="confirm" class="save" type="button">CONFIRMAR LISTA</button><p id="status" class="status" role="status"></p></section>
-<section class="card"><h2>Historial de confirmaciones</h2><p class="muted">Quién confirmó cada lista, cuándo y qué nombres incluyó o corrigió.</p><div id="history"></div></section>
+<section class="card">
+<div class="kicker">ADMINISTRACIÓN · HOLa</div><h1>Tickets del tren</h1>
+<p class="muted">Añade a los jugadores que no donaron los 3 tickets.</p>
+<label for="week">Semana del incumplimiento</label>
+<div class="week-nav"><button id="prev" class="arrow" type="button" aria-label="Semana anterior">‹</button><select id="week"></select><button id="next" class="arrow" type="button" aria-label="Semana siguiente">›</button></div>
+<label for="search">1. Busca al jugador</label><input id="search" type="search" placeholder="Nombre del jugador…" autocomplete="off"><div id="results" class="search-results" aria-label="Jugadores encontrados"></div><p id="selected" class="muted"></p>
+<label for="role">2. ¿Qué puesto tenía esa semana?</label><select id="role"><option value="">Selecciona su situación…</option><option value="driver">Conductor</option><option value="substitute">Suplente</option><option value="unselected">No seleccionado</option></select>
+<div id="effect" class="affected" role="status">Selecciona un jugador y su situación.</div>
+<details style="margin-top:14px"><summary id="dateSummary">Día del incumplimiento</summary><label for="date">Día en que no donó los 3 tickets</label><input id="date" type="date"><p class="muted">El veto de esta semana empieza ese día. Los viajes ya registrados se conservan.</p></details>
+<button id="save" class="save" type="button" disabled>GUARDAR</button><p id="status" class="status" role="status"></p>
+</section>
+<section class="card"><h2>Lista de esta semana <span id="count"></span></h2><div id="list"></div>
+<details style="margin-top:18px"><summary>Ver historial de cambios</summary><div id="history"></div></details></section>
 </div></main>
 <script type="module">
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 import {addDays,monday,normalize} from './js/train-engine.js?v=20261005-immediate-ticket-veto-1';
 const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-const $=id=>document.getElementById(id),fmt=value=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
-let players=[],reviews=[],exclusions=[],saved=[],history=[],bans=[],banHistory=[],selectedBanName='',drafts=new Map,busy=false;
-function range(week){return fmt(week)+' – '+fmt(addDays(week,6))}
-function currentNames(){const week=$('week').value;if(!drafts.has(week))drafts.set(week,new Set(exclusions.filter(r=>r.source_week===week).map(r=>r.player_name)));return drafts.get(week)}
-function isLocked(){return saved.some(r=>r.schedule_week===addDays($('week').value,7))}
+const $=id=>document.getElementById(id),roles={driver:'Conductor',substitute:'Suplente',unselected:'No seleccionado'};
+const fmt=value=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
+const range=week=>fmt(week)+' – '+fmt(addDays(week,6));
+const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+const today=parts.year+'-'+parts.month+'-'+parts.day;
+let players=[],bans=[],banHistory=[],exclusions=[],saved=[],oldHistory=[],selectedName='',busy=false;
 function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('bad',error)}
-function render(){
- const week=$('week').value,affected=addDays(week,7),locked=isLocked(),names=currentNames(),review=reviews.find(r=>r.source_week===week);
- $('affected').textContent='Exclusión del tren: '+range(affected)+' · solo esta semana';
- $('locked').hidden=!locked;$('search').disabled=locked||busy;$('confirm').disabled=locked||busy;
- $('prev').disabled=busy||$('week').selectedIndex<=0;$('next').disabled=busy||$('week').selectedIndex>=$('week').options.length-1;$('week').disabled=busy;
- const confirmed=new Set(exclusions.filter(r=>r.source_week===week).map(r=>r.player_name));
- const dirty=names.size!==confirmed.size||[...names].some(n=>!confirmed.has(n));
- $('reviewState').textContent=(review?'Última confirmación: '+review.confirmed_by+' · '+new Date(review.confirmed_at).toLocaleString('es-ES'):'Esta semana todavía no tiene una revisión confirmada.')+(dirty?' · Cambios sin confirmar.':'');
- $('names').replaceChildren();
- for(const name of [...names].sort((a,b)=>a.localeCompare(b))){const li=document.createElement('li'),label=document.createElement('span'),remove=document.createElement('button');label.textContent=name;remove.type='button';remove.className='remove';remove.textContent='Quitar';remove.setAttribute('aria-label','Quitar '+name);remove.disabled=locked||busy;remove.addEventListener('click',()=>{names.delete(name);render();searchMembers();status('Cambio pendiente de confirmar.')});li.append(label,remove);$('names').append(li)}
- $('empty').textContent=names.size?'':review&&!dirty?'Lista confirmada sin incumplimientos.':'No hay nombres añadidos. Puedes confirmar una lista vacía si no hubo incumplimientos.';
- searchMembers();
+function effectText(role,week){
+ return role==='unselected'?'Vetado solo la siguiente semana: '+range(addDays(week,7))+'.':'Vetado esta semana: '+range(week)+', y la siguiente: '+range(addDays(week,7))+'.';
+}
+function validDate(){const date=$('date').value;return !!date&&monday(date)===$('week').value}
+function renderForm(){
+ const week=$('week').value,role=$('role').value;
+ $('selected').textContent=selectedName?'Jugador: '+selectedName:'';
+ $('effect').textContent=role?effectText(role,week):'Selecciona un jugador y su situación.';
+ $('dateSummary').textContent='Día del incumplimiento: '+(validDate()?fmt($('date').value):'selecciona un día de esta semana');
+ $('save').disabled=busy||!selectedName||!role||!validDate();
+ for(const id of ['search','role','date','week'])$(id).disabled=busy;
+ $('prev').disabled=busy||$('week').selectedIndex<=0;
+ $('next').disabled=busy||$('week').selectedIndex>=$('week').options.length-1;
 }
 function searchMembers(){
- const box=$('results');box.replaceChildren();const q=normalize($('search').value);if(q.length<2||isLocked()||busy)return;
- const matches=players.filter(p=>normalize(p.name).includes(q)&&!currentNames().has(p.name)).slice(0,20);
- if(!matches.length){const p=document.createElement('p');p.className='muted';p.style.padding='10px';p.textContent='Sin miembros coincidentes disponibles.';box.append(p)}
- for(const p of matches){const btn=document.createElement('button');btn.type='button';btn.className='member';btn.textContent=p.name;btn.addEventListener('click',()=>{currentNames().add(p.name);$('search').value='';render();status('Miembro añadido. Confirma la lista para aplicar la exclusión.')});box.append(btn)}
+ const box=$('results');box.replaceChildren();const q=normalize($('search').value);
+ if(q.length<2||busy||selectedName)return;
+ const matches=players.filter(p=>normalize(p.name).includes(q)).slice(0,20);
+ if(!matches.length){const p=document.createElement('p');p.className='muted';p.textContent='No se encontró ningún jugador.';box.append(p)}
+ for(const player of matches){const button=document.createElement('button');button.type='button';button.className='member';button.textContent=player.name;
+ button.addEventListener('click',()=>{selectedName=player.name;$('search').value=player.name;box.replaceChildren();renderForm()});box.append(button)}
+}
+function weekEntries(){
+ const week=$('week').value,entries=new Map;
+ const entry=name=>{if(!entries.has(name))entries.set(name,{name,bans:[],legacy:false});return entries.get(name)};
+ for(const ban of bans.filter(b=>b.active&&b.week_start===week))entry(ban.player_name).bans.push(ban);
+ for(const row of exclusions.filter(e=>e.source_week===week))entry(row.player_name).legacy=true;
+ return [...entries.values()].sort((a,b)=>a.name.localeCompare(b.name));
+}
+function renderList(){
+ renderForm();const box=$('list');box.replaceChildren();const entries=weekEntries();$('count').textContent='('+entries.length+')';
+ if(!entries.length){const p=document.createElement('p');p.className='muted';p.textContent='No hay jugadores registrados por no donar esta semana.';box.append(p)}
+ for(const entry of entries){
+ const row=document.createElement('div');row.className='entry';
+ const name=document.createElement('strong');name.textContent=entry.name;
+ const situation=document.createElement('p');const current=entry.bans.some(b=>b.selection_role!=='unselected');
+ situation.textContent=entry.bans.length?[...new Set(entry.bans.map(b=>roles[b.selection_role]))].join(' · '):'No seleccionado';
+ const effect=document.createElement('p');effect.className='affected';effect.textContent=effectText(current?'driver':'unselected',$('week').value);
+ const by=document.createElement('small');by.textContent=entry.bans.map(b=>fmt(b.incident_date)+' · registrado por '+b.recorded_by).join(' / ');
+ const remove=document.createElement('button');remove.type='button';remove.className='remove';remove.style.marginTop='12px';remove.textContent='Quitar por error';remove.setAttribute('aria-label','Quitar por error a '+entry.name);
+ const locked=entry.legacy&&saved.some(s=>s.schedule_week===addDays($('week').value,7));remove.disabled=busy||locked;
+ remove.addEventListener('click',()=>removeEntry(entry));
+ row.append(name,situation,effect);if(by.textContent)row.append(by);row.append(remove);
+ if(locked){const p=document.createElement('p');p.className='muted';p.textContent='Este registro ya está incluido en una semana guardada. Solo consulta.';row.append(p)}
+ box.append(row)}
+ renderHistory();
 }
 function renderHistory(){
- const box=$('history');box.replaceChildren();
- if(!history.length){box.textContent='Todavía no hay confirmaciones registradas.';return}
- for(const row of history){const div=document.createElement('div');div.className='entry';const title=document.createElement('strong'),by=document.createElement('small'),details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('p');
- title.textContent='Revisión '+range(row.source_week)+' → exclusión '+range(row.affected_week);
- by.textContent=row.confirmed_by+' · '+new Date(row.confirmed_at).toLocaleString('es-ES');
- const current=row.confirmed_names||[],previous=row.previous_names||[],added=current.filter(n=>!previous.includes(n)),removed=previous.filter(n=>!current.includes(n));
- summary.textContent=current.length+' incumplimientos · ver nombres y cambios';
- body.textContent='Lista confirmada: '+(current.join(', ')||'Sin incumplimientos')+'\nAñadidos: '+(added.join(', ')||'Ninguno')+'\nRetirados: '+(removed.join(', ')||'Ninguno');
- details.append(summary,body);div.append(title,by,details);box.append(div)}
+ const box=$('history');box.replaceChildren();const week=$('week').value;
+ const events=banHistory.filter(h=>monday(h.incident_date)===week).map(h=>({time:h.recorded_at,text:(h.active?'Guardado: ':'Retirado: ')+h.player_name+' · '+roles[h.selection_role]+' · '+h.recorded_by}));
+ for(const h of oldHistory.filter(h=>h.source_week===week))events.push({time:h.confirmed_at,text:'Lista confirmada por '+h.confirmed_by+': '+((h.confirmed_names||[]).join(', ')||'Sin incumplimientos')});
+ events.sort((a,b)=>b.time.localeCompare(a.time));
+ if(!events.length)box.textContent='Todavía no hay cambios registrados para esta semana.';
+ for(const e of events){const p=document.createElement('p');p.textContent=e.text+' · '+new Date(e.time).toLocaleString('es-ES');box.append(p)}
 }
 async function load(){
- const rows=await Promise.all([sb.from('players').select('name').order('name'),sb.from('train_ticket_reviews').select('*'),sb.from('train_ticket_exclusions').select('source_week,affected_week,player_name'),sb.from('train_saved_weeks').select('schedule_week'),sb.from('train_ticket_history').select('source_week,affected_week,confirmed_by,confirmed_at,previous_names,confirmed_names').order('id',{ascending:false}).limit(100),sb.from('train_ticket_bans').select('*').order('incident_date',{ascending:false}),sb.from('train_ticket_ban_history').select('*').order('id',{ascending:false}).limit(100)]);
+ const rows=await Promise.all([
+ sb.from('players').select('name').order('name'),
+ sb.from('train_ticket_bans').select('*').order('incident_date',{ascending:false}),
+ sb.from('train_ticket_ban_history').select('*').order('id',{ascending:false}),
+ sb.from('train_ticket_exclusions').select('source_week,affected_week,player_name'),
+ sb.from('train_saved_weeks').select('schedule_week'),
+ sb.from('train_ticket_history').select('source_week,confirmed_by,confirmed_at,confirmed_names').order('id',{ascending:false})]);
  const error=rows.find(r=>r.error)?.error;if(error)throw error;
- [players,reviews,exclusions,saved,history,bans,banHistory]=rows.map(r=>r.data||[]);
- render();renderHistory();renderBans();
+ [players,bans,banHistory,exclusions,saved,oldHistory]=rows.map(r=>r.data||[]);
+ renderList();
 }
-
-function renderBanSearch(){
- const box=$('banResults');box.replaceChildren();const q=normalize($('banSearch').value);
- if(q.length<2||busy)return;
- for(const p of players.filter(p=>normalize(p.name).includes(q)).slice(0,20)){
- const btn=document.createElement('button');btn.type='button';btn.className='member';btn.textContent=p.name;
- btn.addEventListener('click',()=>{selectedBanName=p.name;$('banSearch').value=p.name;box.replaceChildren();renderBanSelection()});box.append(btn)}
+function selectWeek(){
+ selectedName='';$('search').value='';$('role').value='';$('results').replaceChildren();
+ const week=$('week').value;$('date').min=week;$('date').max=addDays(week,6);
+ $('date').value=monday(today)===week?today:addDays(week,6);
+ status('');renderList();
 }
-function renderBanSelection(){
- const date=$('banDate').value;
- $('banSelected').textContent=selectedBanName?'Seleccionado: '+selectedBanName:'Selecciona un miembro de los resultados.';
- $('confirmBan').disabled=busy||!selectedBanName||!date||!$('banRole').value;
- $('banRole').disabled=busy;$('banDate').disabled=busy;$('banSearch').disabled=busy;
- $('banAffected').textContent=date?'Veto: '+($('banRole').value==='unselected'?'':range(monday(date))+' y ')+range(addDays(monday(date),7)):'Selecciona la fecha del incumplimiento.';
-}
-function renderBans(){
- renderBanSelection();const box=$('activeBans');box.replaceChildren();
- const active=bans.filter(b=>b.active);
- if(!active.length)box.textContent='No hay vetos activos registrados.';
- for(const ban of active){
- const div=document.createElement('div');div.className='entry';const title=document.createElement('strong'),info=document.createElement('p'),who=document.createElement('small'),remove=document.createElement('button');
- title.textContent=ban.player_name+' · '+fmt(ban.incident_date);
- info.textContent=(ban.selection_role==='unselected'?'No seleccionado · ':'Conductor/suplente · ')+'Veto: '+(ban.selection_role==='unselected'?'':range(ban.week_start)+' y ')+range(addDays(ban.week_start,7));
- who.textContent='Registrado por '+ban.recorded_by;
- remove.type='button';remove.className='remove';remove.style.display='block';remove.textContent='Retirar veto por error';remove.disabled=busy;
- remove.addEventListener('click',()=>recordBan(ban.incident_date,ban.player_name,false,ban.selection_role));
- div.append(title,info,who,remove);box.append(div)}
- const log=$('banHistory');log.replaceChildren();
- if(!banHistory.length)log.textContent='Todavía no hay movimientos registrados.';
- for(const row of banHistory){const div=document.createElement('p');div.textContent=(row.active?'Veto confirmado: ':'Veto retirado: ')+row.player_name+' · '+fmt(row.incident_date)+' · '+({driver:'Conductor',substitute:'Suplente',unselected:'No seleccionado'}[row.selection_role]||'')+' · '+row.recorded_by+' · '+new Date(row.recorded_at).toLocaleString('es-ES');log.append(div)}
-}
-async function recordBan(date,name,active,role=$('banRole').value){
- if(busy)return;
- if(!confirm((active?'¿CONFIRMAR VETO para ':'¿RETIRAR POR ERROR el veto de ')+name+'?\n\nFecha: '+fmt(date)+'.\nSemanas afectadas: '+(role==='unselected'?'':range(monday(date))+' y ')+range(addDays(monday(date),7))+'.\n\n'+(active?(role==='unselected'?'No podrá ser conductor ni suplente la siguiente semana.':'Queda eliminado como conductor y suplente desde el incumplimiento. Si tenía un tren pendiente, entrará el siguiente suplente disponible de su categoría. El veto se aplica también a la planificación guardada, conservando su copia original y los viajes ya realizados.'):'Se retirará este veto. Otros incumplimientos o exclusiones de este miembro seguirán vigentes.')))return;
- busy=true;render();renderBans();$('banStatus').classList.remove('bad');$('banStatus').textContent='Guardando…';
- try{
- const {error}=await sb.rpc('record_train_ticket_ban',{p_incident_date:date,p_player_name:name,p_active:active,p_selection_role:role});if(error)throw error;
- await load();$('banStatus').textContent=active?'Veto confirmado para las semanas indicadas según su situación.':'Veto retirado. Corrección registrada en el historial.';
- if(active){selectedBanName='';$('banSearch').value=''}
- }catch(error){$('banStatus').textContent='No se pudo guardar: '+error.message;$('banStatus').classList.add('bad')}
- finally{busy=false;render();renderBans()}
-}
-$('banSearch').addEventListener('input',()=>{selectedBanName='';renderBanSelection();renderBanSearch()});
-$('banDate').addEventListener('change',renderBanSelection);
-$('banRole').addEventListener('change',renderBanSelection);
-$('confirmBan').addEventListener('click',()=>recordBan($('banDate').value,selectedBanName,true));
-
 function fillWeeks(){
- const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
- $('banDate').value=parts.year+'-'+parts.month+'-'+parts.day;const current=monday(parts.year+'-'+parts.month+'-'+parts.day);
- for(let week='2026-09-21';week<=current;week=addDays(week,7)){const opt=document.createElement('option');opt.value=week;opt.textContent=range(week);$('week').append(opt)}
- $('week').value=addDays(current,-7);if(!$('week').value)$('week').value=current;
+ let start='2026-09-21';for(const row of [...bans.map(b=>({week:b.week_start})),...exclusions.map(e=>({week:e.source_week}))])if(row.week<start)start=row.week;
+ const current=monday(today);for(let week=start;week<=current;week=addDays(week,7)){const opt=document.createElement('option');opt.value=week;opt.textContent=range(week);$('week').append(opt)}
+ $('week').value=current;selectWeek();
 }
-function shiftWeek(delta){const select=$('week'),next=select.selectedIndex+delta;if(next<0||next>=select.options.length||busy)return;select.selectedIndex=next;select.dispatchEvent(new Event('change'))}
-$('prev').addEventListener('click',()=>shiftWeek(-1));$('next').addEventListener('click',()=>shiftWeek(1));$('week').addEventListener('change',()=>{$('search').value='';status('');render()});$('search').addEventListener('input',searchMembers);
-$('confirm').addEventListener('click',async()=>{
- if(busy||isLocked())return;const week=$('week').value,names=[...currentNames()].sort((a,b)=>a.localeCompare(b)),affected=addDays(week,7);
- if(!confirm('¿CONFIRMAR el control de los 3 tickets de la semana '+range(week)+'?\n\n'+(names.length?'Quedarán excluidos de titulares y suplentes:\n'+names.join('\n'):'Lista sin incumplimientos: nadie quedará excluido por tickets.')+'\n\nSemana afectada: '+range(affected)+'.\nLa exclusión dura solo esa semana. Esta lista sustituye la confirmación anterior.'))return;
- busy=true;render();status('Guardando confirmación…');
- try{const {error}=await sb.rpc('confirm_train_ticket_review',{p_source_week:week,p_names:names});if(error)throw error;drafts.delete(week);await load();status('Lista confirmada. Exclusiones aplicadas al tren del '+range(affected)+'.')}
- catch(error){status('No se pudo confirmar: '+error.message,true)}
- finally{busy=false;render()}
+function shiftWeek(delta){const next=$('week').selectedIndex+delta;if(busy||next<0||next>=$('week').options.length)return;$('week').selectedIndex=next;selectWeek()}
+$('prev').addEventListener('click',()=>shiftWeek(-1));$('next').addEventListener('click',()=>shiftWeek(1));
+$('week').addEventListener('change',selectWeek);
+$('search').addEventListener('input',()=>{selectedName='';renderForm();searchMembers()});
+$('role').addEventListener('change',renderForm);$('date').addEventListener('change',renderForm);
+$('save').addEventListener('click',async()=>{
+ if(busy||!selectedName||!$('role').value||!validDate())return;
+ const name=selectedName,role=$('role').value,date=$('date').value,week=$('week').value;
+ if(!confirm('¿Guardar a '+name+' por no donar los 3 tickets?\n\nSituación: '+roles[role]+'\nDía: '+fmt(date)+'\n\n'+effectText(role,week)+(role==='unselected'?'':'\n\nPierde su puesto desde ese día. Si era suplente, no podrá sustituir al conductor.')))return;
+ busy=true;renderList();$('results').replaceChildren();status('Guardando…');
+ try{const {error}=await sb.rpc('record_train_ticket_ban',{p_incident_date:date,p_player_name:name,p_active:true,p_selection_role:role});if(error)throw error;
+ selectedName='';$('search').value='';$('role').value='';await load();status(name+' guardado. '+effectText(role,week));
+ }catch(error){status('No se pudo guardar: '+error.message,true)}
+ finally{busy=false;renderList()}
 });
+async function removeEntry(entry){
+ if(busy)return;const week=$('week').value;
+ if(!confirm('¿Quitar a '+entry.name+' de la lista del '+range(week)+'?\n\nSe retirarán los vetos registrados en esta semana por error. La corrección quedará en el historial.'))return;
+ busy=true;renderList();status('Guardando corrección…');
+ try{
+ if(entry.legacy){
+ const fresh=await sb.from('train_ticket_exclusions').select('player_name').eq('source_week',week);if(fresh.error)throw fresh.error;
+ const {error}=await sb.rpc('confirm_train_ticket_review',{p_source_week:week,p_names:(fresh.data||[]).map(r=>r.player_name).filter(n=>n!==entry.name)});if(error)throw error;
+ }
+ for(const ban of entry.bans){const {error}=await sb.rpc('record_train_ticket_ban',{p_incident_date:ban.incident_date,p_player_name:ban.player_name,p_active:false,p_selection_role:ban.selection_role});if(error)throw error}
+ await load();status(entry.name+' retirado. Corrección guardada.');
+ }catch(error){try{await load()}catch{}status('No se pudo completar la corrección: '+error.message,true)}
+ finally{busy=false;renderList()}
+}
 try{
  const {data:{session},error}=await sb.auth.getSession();if(error)throw error;if(!session){location.replace('admin-login.html');throw Error('Inicia sesión como R4/R5.')}
  const access=await sb.rpc('is_hola_r4_r5_admin');if(access.error)throw access.error;if(!access.data)throw Error('Este apartado requiere acceso R4/R5.');
- fillWeeks();await load();$('guard').hidden=true;$('app').hidden=false;
+ await load();fillWeeks();$('guard').hidden=true;$('app').hidden=false;
 }catch(error){$('guard').textContent='No se pudo abrir Tickets del tren: '+error.message}
 </script></body></html>
