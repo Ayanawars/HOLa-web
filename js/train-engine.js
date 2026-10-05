@@ -24,13 +24,15 @@ function assign({date,day,source,sourceType,used,actualMap}){
   if(planned)used.add(normalize(planned));
   return{date,day,source:sourceType,planned,substitutes:[],actual,tickets_donated:saved?.tickets_donated??null,notes:saved?.notes||'',available,rankedSource:source,excludedBefore:source.filter(row=>used.has(normalize(row.player_name)))};
 }
-export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[],players=[],savedWeeks=[]}){
+export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[],actualDrivers=[],cycleExclusions=[],weekSettings=[],players=[],savedWeeks=[],ticketExclusions=[]}){
   const saved=savedWeeks.find(x=>x.schedule_week===scheduleWeek);if(saved?.schedule_snapshot)return JSON.parse(JSON.stringify(saved.schedule_snapshot));
   const r1=new Set(players.filter(p=>String(p.rank||'').trim().toUpperCase()==='R1').map(p=>normalize(p.name)));
   const canDrive=row=>!r1.has(normalize(row.player_name));
   const week=monday(scheduleWeek),sourceWeek=addDays(week,-7),cycle=cycleFor(week),weekEnd=addDays(week,6);
   const actualMap=new Map(actualDrivers.map(row=>[String(row.service_date).slice(0,10),row]));
+  const weeklyTicketExclusions=ticketExclusions.filter(x=>String(x.affected_week).slice(0,10)===week);
   const used=new Set(cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===cycle.start).map(x=>normalize(x.player_name)));
+  for(const row of weeklyTicketExclusions)used.add(normalize(row.player_name));
   // Only drivers from earlier weeks of this same cycle are excluded when planning this week.
   // A confirmation during the selected week must never reshuffle its published titulars or reserves.
   // On week 1/4, cycle.start === week, so drivers from the previous cycle become eligible again.
@@ -60,7 +62,7 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const reservePools={};
   for(const [type,source,count] of reservePlan){const pool=sourceCandidates(source,reserveUsed).slice(0,count).map(x=>x.player_name);reservePools[type]=pool;for(const name of pool)reserveUsed.add(normalize(name))}
   for(const item of days)item.substitutes=reservePools[item.source];
-  return{week,weekEnd,sourceWeek,cycle,weekType,days,reservePools,vsRanking,teamA,teamB,donationRanking};
+  return{week,weekEnd,sourceWeek,cycle,weekType,days,reservePools,vsRanking,teamA,teamB,donationRanking,ticketExclusions:weeklyTicketExclusions};
 }
 
 /** Explain the exact input data and selection for any player on any service day. */
@@ -75,7 +77,7 @@ export function auditPlayer({schedule,playerName,vsScores=[],dsScores=[],donatio
   const exclusions=cycleExclusions.filter(x=>String(x.cycle_start).slice(0,10)===schedule.cycle.start&&normalize(x.player_name)===name);
   const donation=donations.find(x=>String(x.week_start).slice(0,10)===sourceWeek&&normalize(x.player_name)===name);
   return schedule.days.map(item=>{
-    const reasons=[],rank=item.rankedSource.findIndex(x=>normalize(x.player_name)===name)+1;
+    const reasons=[];if((schedule.ticketExclusions||[]).some(x=>normalize(x.player_name)===name))reasons.push('No donó los 3 tickets en la semana anterior. Excluido de la selección de esta semana.');const rank=item.rankedSource.findIndex(x=>normalize(x.player_name)===name)+1;
     const availableRank=item.available.findIndex(x=>normalize(x.player_name)===name)+1;
     const selected=normalize(item.planned)===name?'titular':item.substitutes.findIndex(x=>normalize(x)===name)>=0?'suplente '+(item.substitutes.findIndex(x=>normalize(x)===name)+1):'';
     const actual=normalize(item.actual)===name;
