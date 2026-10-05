@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#d9b35f"><title>HOLa · Tickets del tren</title>
+<style>
+:root{--navy:#103f69;--gold:#d5a832;--ink:#183b5c;--muted:#6b7886}*{box-sizing:border-box}body{margin:0;padding:18px 12px 35px;min-height:100vh;color:var(--ink);font:14px/1.5 system-ui;background:linear-gradient(#83d8ec,#f6e3b5 45%,#edcf8d)}body:before{content:"";position:fixed;inset:0;z-index:-1;background:url('hola-s3-background-square.png') center/cover;opacity:.25}.shell{max-width:780px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between}.back{padding:10px 16px;border:1px solid var(--gold);border-radius:24px;background:#fffaf0;text-decoration:none;color:var(--navy);font-weight:900}.top img{width:150px;height:95px;object-fit:contain}.card{padding:22px;margin-top:15px;border:1px solid #cda135;border-radius:23px;background:#fffaf0;box-shadow:0 12px 28px #69471020}h1,h2{font-family:Georgia,serif;color:var(--navy);line-height:1.15}h1{font-size:29px;margin:7px 0 12px}h2{font-size:23px;margin:0 0 13px}p{margin:10px 0}.kicker{color:#a97617;font-size:10px;font-weight:900;letter-spacing:.18em}.muted{color:var(--muted)}label{display:block;font-weight:850;margin:14px 0 6px}input,select{width:100%;padding:12px;border:1px solid #b8c9d2;border-radius:12px;background:#fff;color:var(--ink);font:inherit}.week-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:7px;align-items:center}.arrow{min-height:44px;border:1px solid #d5b574;border-radius:12px;background:#f8eacb;color:var(--navy);font-size:25px;cursor:pointer}.affected{margin-top:12px;padding:13px;border:1px solid #9ed4e2;border-radius:13px;background:#edfaff;color:#14547a;font-weight:800}.search-results{margin-top:5px;max-height:240px;overflow:auto;border-radius:12px;background:white;border:1px solid #d5b574}.search-results:empty{display:none}.member{display:block;width:100%;border:0;border-bottom:1px solid #eee;padding:12px;background:none;text-align:left;color:var(--ink);font:inherit;cursor:pointer}.member:hover,.member:focus-visible{background:#edfaff}.list{padding:0;list-style:none}.list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #e0cda5;border-radius:12px;background:#fff;margin:7px 0}.remove{padding:8px 12px;border:1px solid #d6a29b;border-radius:10px;background:#fff4ee;color:#9d3b32;cursor:pointer}.save{width:100%;min-height:47px;margin-top:15px;border:0;border-radius:13px;background:linear-gradient(110deg,#087fc5,#36bcdb);color:white;font:900 14px system-ui;cursor:pointer}button:disabled,input:disabled{opacity:.55;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #087fc5;outline-offset:2px}.status{min-height:23px;color:#177961;font-weight:800;white-space:pre-wrap}.status.bad{color:#a64046}.entry{padding:14px 0;border-bottom:1px solid #e4d3ae}.entry strong{display:block}.entry small{color:var(--muted)}details summary{cursor:pointer;color:var(--navy);font-weight:850}details p{white-space:pre-wrap;overflow-wrap:anywhere}[hidden]{display:none!important}
+</style></head><body><main class="shell">
+<div class="top"><a class="back" href="admin-center-hola_login.html">← Administración</a><img src="hola-s3-logo.png" alt="HOLa"></div>
+<section id="guard" class="card">Comprobando acceso R4/R5…</section>
+<div id="app" hidden>
+<section class="card"><div class="kicker">CONTROL · HOLa</div><h1>🎟️ Tickets del tren</h1><p class="muted">Registra únicamente a los miembros que no donaron los 3 tickets. La lista confirmada los excluye de titulares y suplentes durante la semana siguiente.</p>
+<label for="week">Semana en la que debían donar</label><div class="week-nav"><button id="prev" class="arrow" type="button" aria-label="Semana anterior">‹</button><select id="week"></select><button id="next" class="arrow" type="button" aria-label="Semana siguiente">›</button></div>
+<div class="affected" id="affected"></div><p id="reviewState" class="muted"></p><p id="locked" class="status" hidden>La semana afectada está guardada y bloqueada. Puedes consultar la lista, pero no modificarla.</p>
+<label for="search">Añadir miembro que no donó los 3 tickets</label><input id="search" type="search" placeholder="Buscar miembro…" autocomplete="off"><div id="results" class="search-results" aria-label="Miembros encontrados"></div>
+<h2 style="margin-top:22px">Lista de incumplimientos</h2><ul id="names" class="list"></ul><p id="empty" class="muted"></p>
+<p class="muted">Puedes quitar nombres por error hasta que se bloquee la semana afectada. Esta exclusión no cambia el rango ni consume el turno del ciclo.</p>
+<button id="confirm" class="save" type="button">CONFIRMAR LISTA</button><p id="status" class="status" role="status"></p></section>
+<section class="card"><h2>Historial de confirmaciones</h2><p class="muted">Quién confirmó cada lista, cuándo y qué nombres incluyó o corrigió.</p><div id="history"></div></section>
+</div></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+import {addDays,monday,normalize} from './js/train-engine.js?v=20261005-ticket-exclusions-1';
+const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const $=id=>document.getElementById(id),fmt=value=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
+let players=[],reviews=[],exclusions=[],saved=[],history=[],drafts=new Map,busy=false;
+function range(week){return fmt(week)+' – '+fmt(addDays(week,6))}
+function currentNames(){const week=$('week').value;if(!drafts.has(week))drafts.set(week,new Set(exclusions.filter(r=>r.source_week===week).map(r=>r.player_name)));return drafts.get(week)}
+function isLocked(){return saved.some(r=>r.schedule_week===addDays($('week').value,7))}
+function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('bad',error)}
+function render(){
+ const week=$('week').value,affected=addDays(week,7),locked=isLocked(),names=currentNames(),review=reviews.find(r=>r.source_week===week);
+ $('affected').textContent='Exclusión del tren: '+range(affected)+' · solo esta semana';
+ $('locked').hidden=!locked;$('search').disabled=locked||busy;$('confirm').disabled=locked||busy;
+ $('prev').disabled=busy||$('week').selectedIndex<=0;$('next').disabled=busy||$('week').selectedIndex>=$('week').options.length-1;$('week').disabled=busy;
+ const confirmed=new Set(exclusions.filter(r=>r.source_week===week).map(r=>r.player_name));
+ const dirty=names.size!==confirmed.size||[...names].some(n=>!confirmed.has(n));
+ $('reviewState').textContent=(review?'Última confirmación: '+review.confirmed_by+' · '+new Date(review.confirmed_at).toLocaleString('es-ES'):'Esta semana todavía no tiene una revisión confirmada.')+(dirty?' · Cambios sin confirmar.':'');
+ $('names').replaceChildren();
+ for(const name of [...names].sort((a,b)=>a.localeCompare(b))){const li=document.createElement('li'),label=document.createElement('span'),remove=document.createElement('button');label.textContent=name;remove.type='button';remove.className='remove';remove.textContent='Quitar';remove.setAttribute('aria-label','Quitar '+name);remove.disabled=locked||busy;remove.addEventListener('click',()=>{names.delete(name);render();searchMembers();status('Cambio pendiente de confirmar.')});li.append(label,remove);$('names').append(li)}
+ $('empty').textContent=names.size?'':review&&!dirty?'Lista confirmada sin incumplimientos.':'No hay nombres añadidos. Puedes confirmar una lista vacía si no hubo incumplimientos.';
+ searchMembers();
+}
+function searchMembers(){
+ const box=$('results');box.replaceChildren();const q=normalize($('search').value);if(q.length<2||isLocked()||busy)return;
+ const matches=players.filter(p=>normalize(p.name).includes(q)&&!currentNames().has(p.name)).slice(0,20);
+ if(!matches.length){const p=document.createElement('p');p.className='muted';p.style.padding='10px';p.textContent='Sin miembros coincidentes disponibles.';box.append(p)}
+ for(const p of matches){const btn=document.createElement('button');btn.type='button';btn.className='member';btn.textContent=p.name;btn.addEventListener('click',()=>{currentNames().add(p.name);$('search').value='';render();status('Miembro añadido. Confirma la lista para aplicar la exclusión.')});box.append(btn)}
+}
+function renderHistory(){
+ const box=$('history');box.replaceChildren();
+ if(!history.length){box.textContent='Todavía no hay confirmaciones registradas.';return}
+ for(const row of history){const div=document.createElement('div');div.className='entry';const title=document.createElement('strong'),by=document.createElement('small'),details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('p');
+ title.textContent='Revisión '+range(row.source_week)+' → exclusión '+range(row.affected_week);
+ by.textContent=row.confirmed_by+' · '+new Date(row.confirmed_at).toLocaleString('es-ES');
+ const current=row.confirmed_names||[],previous=row.previous_names||[],added=current.filter(n=>!previous.includes(n)),removed=previous.filter(n=>!current.includes(n));
+ summary.textContent=current.length+' incumplimientos · ver nombres y cambios';
+ body.textContent='Lista confirmada: '+(current.join(', ')||'Sin incumplimientos')+'\nAñadidos: '+(added.join(', ')||'Ninguno')+'\nRetirados: '+(removed.join(', ')||'Ninguno');
+ details.append(summary,body);div.append(title,by,details);box.append(div)}
+}
+async function load(){
+ const rows=await Promise.all([sb.from('players').select('name').order('name'),sb.from('train_ticket_reviews').select('*'),sb.from('train_ticket_exclusions').select('source_week,affected_week,player_name'),sb.from('train_saved_weeks').select('schedule_week'),sb.from('train_ticket_history').select('source_week,affected_week,confirmed_by,confirmed_at,previous_names,confirmed_names').order('id',{ascending:false}).limit(100)]);
+ const error=rows.find(r=>r.error)?.error;if(error)throw error;
+ [players,reviews,exclusions,saved,history]=rows.map(r=>r.data||[]);
+ render();renderHistory();
+}
+function fillWeeks(){
+ const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+ const current=monday(parts.year+'-'+parts.month+'-'+parts.day);
+ for(let week='2026-09-21';week<=current;week=addDays(week,7)){const opt=document.createElement('option');opt.value=week;opt.textContent=range(week);$('week').append(opt)}
+ $('week').value=addDays(current,-7);if(!$('week').value)$('week').value=current;
+}
+function shiftWeek(delta){const select=$('week'),next=select.selectedIndex+delta;if(next<0||next>=select.options.length||busy)return;select.selectedIndex=next;select.dispatchEvent(new Event('change'))}
+$('prev').addEventListener('click',()=>shiftWeek(-1));$('next').addEventListener('click',()=>shiftWeek(1));$('week').addEventListener('change',()=>{$('search').value='';status('');render()});$('search').addEventListener('input',searchMembers);
+$('confirm').addEventListener('click',async()=>{
+ if(busy||isLocked())return;const week=$('week').value,names=[...currentNames()].sort((a,b)=>a.localeCompare(b)),affected=addDays(week,7);
+ if(!confirm('¿CONFIRMAR el control de los 3 tickets de la semana '+range(week)+'?\n\n'+(names.length?'Quedarán excluidos de titulares y suplentes:\n'+names.join('\n'):'Lista sin incumplimientos: nadie quedará excluido por tickets.')+'\n\nSemana afectada: '+range(affected)+'.\nLa exclusión dura solo esa semana. Esta lista sustituye la confirmación anterior.'))return;
+ busy=true;render();status('Guardando confirmación…');
+ try{const {error}=await sb.rpc('confirm_train_ticket_review',{p_source_week:week,p_names:names});if(error)throw error;drafts.delete(week);await load();status('Lista confirmada. Exclusiones aplicadas al tren del '+range(affected)+'.')}
+ catch(error){status('No se pudo confirmar: '+error.message,true)}
+ finally{busy=false;render()}
+});
+try{
+ const {data:{session},error}=await sb.auth.getSession();if(error)throw error;if(!session){location.replace('admin-login.html');throw Error('Inicia sesión como R4/R5.')}
+ const access=await sb.rpc('is_hola_r4_r5_admin');if(access.error)throw access.error;if(!access.data)throw Error('Este apartado requiere acceso R4/R5.');
+ fillWeeks();await load();$('guard').hidden=true;$('app').hidden=false;
+}catch(error){$('guard').textContent='No se pudo abrir Tickets del tren: '+error.message}
+</script></body></html>
