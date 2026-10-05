@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#d9b35f"><title>HOLa · Tickets del tren</title>
 <style>
-:root{--navy:#103f69;--gold:#d5a832;--ink:#183b5c;--muted:#6b7886}*{box-sizing:border-box}body{margin:0;padding:18px 12px 35px;min-height:100vh;color:var(--ink);font:14px/1.5 system-ui;background:linear-gradient(#83d8ec,#f6e3b5 45%,#edcf8d)}body:before{content:"";position:fixed;inset:0;z-index:-1;background:url('hola-s3-background-square.png') center/cover;opacity:.25}.shell{max-width:780px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between}.back{padding:10px 16px;border:1px solid var(--gold);border-radius:24px;background:#fffaf0;text-decoration:none;color:var(--navy);font-weight:900}.top img{width:150px;height:95px;object-fit:contain}.card{padding:22px;margin-top:15px;border:1px solid #cda135;border-radius:23px;background:#fffaf0;box-shadow:0 12px 28px #69471020}h1,h2{font-family:Georgia,serif;color:var(--navy);line-height:1.15}h1{font-size:29px;margin:7px 0 12px}h2{font-size:23px;margin:0 0 13px}p{margin:10px 0}.kicker{color:#a97617;font-size:10px;font-weight:900;letter-spacing:.18em}.muted{color:var(--muted)}label{display:block;font-weight:850;margin:14px 0 6px}input,select{width:100%;padding:12px;border:1px solid #b8c9d2;border-radius:12px;background:#fff;color:var(--ink);font:inherit}.week-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:7px;align-items:center}.arrow{min-height:44px;border:1px solid #d5b574;border-radius:12px;background:#f8eacb;color:var(--navy);font-size:25px;cursor:pointer}.affected{margin-top:12px;padding:13px;border:1px solid #9ed4e2;border-radius:13px;background:#edfaff;color:#14547a;font-weight:800}.search-results{margin-top:5px;max-height:240px;overflow:auto;border-radius:12px;background:white;border:1px solid #d5b574}.search-results:empty{display:none}.member{display:block;width:100%;border:0;border-bottom:1px solid #eee;padding:12px;background:none;text-align:left;color:var(--ink);font:inherit;cursor:pointer}.member:hover,.member:focus-visible{background:#edfaff}.list{padding:0;list-style:none}.list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #e0cda5;border-radius:12px;background:#fff;margin:7px 0}.remove{padding:8px 12px;border:1px solid #d6a29b;border-radius:10px;background:#fff4ee;color:#9d3b32;cursor:pointer}.save{width:100%;min-height:47px;margin-top:15px;border:0;border-radius:13px;background:linear-gradient(110deg,#087fc5,#36bcdb);color:white;font:900 14px system-ui;cursor:pointer}button:disabled,input:disabled{opacity:.55;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #087fc5;outline-offset:2px}.status{min-height:23px;color:#177961;font-weight:800;white-space:pre-wrap}.status.bad{color:#a64046}.entry{padding:14px 0;border-bottom:1px solid #e4d3ae}.entry strong{display:block}.entry small{color:var(--muted)}details summary{cursor:pointer;color:var(--navy);font-weight:850}details p{white-space:pre-wrap;overflow-wrap:anywhere}[hidden]{display:none!important}
+:root{--navy:#103f69;--gold:#d5a832;--ink:#183b5c;--muted:#6b7886}*{box-sizing:border-box}body{margin:0;padding:18px 12px 35px;min-height:100vh;color:var(--ink);font:14px/1.5 system-ui;background:linear-gradient(#83d8ec,#f6e3b5 45%,#edcf8d)}body:before{content:"";position:fixed;inset:0;z-index:-1;background:url('hola-s3-background-square.png') center/cover;opacity:.25}.shell{max-width:780px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between}.back{padding:10px 16px;border:1px solid var(--gold);border-radius:24px;background:#fffaf0;text-decoration:none;color:var(--navy);font-weight:900}.top img{width:150px;height:95px;object-fit:contain}.card{padding:22px;margin-top:15px;border:1px solid #cda135;border-radius:23px;background:#fffaf0;box-shadow:0 12px 28px #69471020}h1,h2{font-family:Georgia,serif;color:var(--navy);line-height:1.15}h1{font-size:29px;margin:7px 0 12px}h2{font-size:23px;margin:0 0 13px}p{margin:10px 0}.kicker{color:#a97617;font-size:10px;font-weight:900;letter-spacing:.18em}.muted{color:var(--muted)}label{display:block;font-weight:850;margin:14px 0 6px}input,select{width:100%;padding:12px;border:1px solid #b8c9d2;border-radius:12px;background:#fff;color:var(--ink);font:inherit}.week-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:7px;align-items:center}.arrow{min-height:44px;border:1px solid #d5b574;border-radius:12px;background:#f8eacb;color:var(--navy);font-size:25px;cursor:pointer}.affected{margin-top:12px;padding:13px;border:1px solid #9ed4e2;border-radius:13px;background:#edfaff;color:#14547a;font-weight:800}.search-results{margin-top:5px;max-height:240px;overflow:auto;border-radius:12px;background:white;border:1px solid #d5b574}.search-results:empty{display:none}.member{display:block;width:100%;border:0;border-bottom:1px solid #eee;padding:12px;background:none;text-align:left;color:var(--ink);font:inherit;cursor:pointer}.member:hover,.member:focus-visible{background:#edfaff}.list{padding:0;list-style:none}.list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #e0cda5;border-radius:12px;background:#fff;margin:7px 0}.remove{padding:8px 12px;border:1px solid #d6a29b;border-radius:10px;background:#fff4ee;color:#9d3b32;cursor:pointer}.save{width:100%;min-height:47px;margin-top:15px;border:0;border-radius:13px;background:linear-gradient(110deg,#087fc5,#36bcdb);color:white;font:900 14px system-ui;cursor:pointer}button:disabled,input:disabled,select:disabled{opacity:.55;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #087fc5;outline-offset:2px}.status{min-height:23px;color:#177961;font-weight:800;white-space:pre-wrap}.status.bad{color:#a64046}.entry{padding:14px 0;border-bottom:1px solid #e4d3ae}.entry strong{display:block}.entry small{color:var(--muted)}details summary{cursor:pointer;color:var(--navy);font-weight:850}details p{white-space:pre-wrap;overflow-wrap:anywhere}[hidden]{display:none!important}
 </style></head><body><main class="shell">
 <div class="top"><a class="back" href="admin-center-hola_login.html">← Administración</a><img src="hola-s3-logo.png" alt="HOLa"></div>
 <section id="guard" class="card">Comprobando acceso R4/R5…</section>
 <div id="app" hidden>
-<section class="card"><div class="kicker">CONTROL · HOLa</div><h1>🎟️ Tickets del tren</h1><p class="muted">Registra únicamente a los miembros que no donaron los 3 tickets. La lista confirmada los excluye de titulares y suplentes durante la semana siguiente.</p>
+<section class="card"><div class="kicker">VETO INMEDIATO · HOLa</div><h1>Sin 3 tickets, no sube</h1><p class="muted">Registra a quien intente subir sin donar los 3 tickets. Un conductor o suplente pierde su puesto y queda vetado esa semana y la siguiente. Quien aún no estaba seleccionado queda vetado solo de la siguiente. Elige su situación en el momento del incumplimiento.</p><label for="banDate">Fecha del incumplimiento</label><input id="banDate" type="date"><label for="banRole">Situación cuando incumplió</label><select id="banRole"><option value="">Selecciona su situación…</option><option value="driver">Conductor de esa semana</option><option value="substitute">Suplente de esa semana</option><option value="unselected">Todavía no seleccionado</option></select><div id="banAffected" class="affected"></div><label for="banSearch">Miembro que intentó subir</label><input id="banSearch" type="search" placeholder="Buscar miembro…" autocomplete="off"><div id="banResults" class="search-results"></div><p id="banSelected" class="muted"></p><button id="confirmBan" class="save" type="button" disabled>CONFIRMAR VETO INMEDIATO</button><p id="banStatus" class="status" role="status"></p><h2 style="margin-top:20px">Vetos activos</h2><div id="activeBans"></div><details><summary>Historial de vetos y correcciones</summary><div id="banHistory"></div></details></section>
+<section class="card"><div class="kicker">REVISIÓN SEMANAL · HOLa</div><h1>🎟️ Tickets del tren</h1><p class="muted">Registra únicamente a los miembros que no donaron los 3 tickets. La lista confirmada los excluye de titulares y suplentes durante la semana siguiente.</p>
 <label for="week">Semana en la que debían donar</label><div class="week-nav"><button id="prev" class="arrow" type="button" aria-label="Semana anterior">‹</button><select id="week"></select><button id="next" class="arrow" type="button" aria-label="Semana siguiente">›</button></div>
 <div class="affected" id="affected"></div><p id="reviewState" class="muted"></p><p id="locked" class="status" hidden>La semana afectada está guardada y bloqueada. Puedes consultar la lista, pero no modificarla.</p>
 <label for="search">Añadir miembro que no donó los 3 tickets</label><input id="search" type="search" placeholder="Buscar miembro…" autocomplete="off"><div id="results" class="search-results" aria-label="Miembros encontrados"></div>
@@ -17,10 +18,10 @@
 </div></main>
 <script type="module">
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-import {addDays,monday,normalize} from './js/train-engine.js?v=20261005-ticket-exclusions-1';
+import {addDays,monday,normalize} from './js/train-engine.js?v=20261005-immediate-ticket-veto-1';
 const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id),fmt=value=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
-let players=[],reviews=[],exclusions=[],saved=[],history=[],drafts=new Map,busy=false;
+let players=[],reviews=[],exclusions=[],saved=[],history=[],bans=[],banHistory=[],selectedBanName='',drafts=new Map,busy=false;
 function range(week){return fmt(week)+' – '+fmt(addDays(week,6))}
 function currentNames(){const week=$('week').value;if(!drafts.has(week))drafts.set(week,new Set(exclusions.filter(r=>r.source_week===week).map(r=>r.player_name)));return drafts.get(week)}
 function isLocked(){return saved.some(r=>r.schedule_week===addDays($('week').value,7))}
@@ -56,14 +57,61 @@ function renderHistory(){
  details.append(summary,body);div.append(title,by,details);box.append(div)}
 }
 async function load(){
- const rows=await Promise.all([sb.from('players').select('name').order('name'),sb.from('train_ticket_reviews').select('*'),sb.from('train_ticket_exclusions').select('source_week,affected_week,player_name'),sb.from('train_saved_weeks').select('schedule_week'),sb.from('train_ticket_history').select('source_week,affected_week,confirmed_by,confirmed_at,previous_names,confirmed_names').order('id',{ascending:false}).limit(100)]);
+ const rows=await Promise.all([sb.from('players').select('name').order('name'),sb.from('train_ticket_reviews').select('*'),sb.from('train_ticket_exclusions').select('source_week,affected_week,player_name'),sb.from('train_saved_weeks').select('schedule_week'),sb.from('train_ticket_history').select('source_week,affected_week,confirmed_by,confirmed_at,previous_names,confirmed_names').order('id',{ascending:false}).limit(100),sb.from('train_ticket_bans').select('*').order('incident_date',{ascending:false}),sb.from('train_ticket_ban_history').select('*').order('id',{ascending:false}).limit(100)]);
  const error=rows.find(r=>r.error)?.error;if(error)throw error;
- [players,reviews,exclusions,saved,history]=rows.map(r=>r.data||[]);
- render();renderHistory();
+ [players,reviews,exclusions,saved,history,bans,banHistory]=rows.map(r=>r.data||[]);
+ render();renderHistory();renderBans();
 }
+
+function renderBanSearch(){
+ const box=$('banResults');box.replaceChildren();const q=normalize($('banSearch').value);
+ if(q.length<2||busy)return;
+ for(const p of players.filter(p=>normalize(p.name).includes(q)).slice(0,20)){
+ const btn=document.createElement('button');btn.type='button';btn.className='member';btn.textContent=p.name;
+ btn.addEventListener('click',()=>{selectedBanName=p.name;$('banSearch').value=p.name;box.replaceChildren();renderBanSelection()});box.append(btn)}
+}
+function renderBanSelection(){
+ const date=$('banDate').value;
+ $('banSelected').textContent=selectedBanName?'Seleccionado: '+selectedBanName:'Selecciona un miembro de los resultados.';
+ $('confirmBan').disabled=busy||!selectedBanName||!date||!$('banRole').value;
+ $('banRole').disabled=busy;$('banDate').disabled=busy;$('banSearch').disabled=busy;
+ $('banAffected').textContent=date?'Veto: '+($('banRole').value==='unselected'?'':range(monday(date))+' y ')+range(addDays(monday(date),7)):'Selecciona la fecha del incumplimiento.';
+}
+function renderBans(){
+ renderBanSelection();const box=$('activeBans');box.replaceChildren();
+ const active=bans.filter(b=>b.active);
+ if(!active.length)box.textContent='No hay vetos activos registrados.';
+ for(const ban of active){
+ const div=document.createElement('div');div.className='entry';const title=document.createElement('strong'),info=document.createElement('p'),who=document.createElement('small'),remove=document.createElement('button');
+ title.textContent=ban.player_name+' · '+fmt(ban.incident_date);
+ info.textContent=(ban.selection_role==='unselected'?'No seleccionado · ':'Conductor/suplente · ')+'Veto: '+(ban.selection_role==='unselected'?'':range(ban.week_start)+' y ')+range(addDays(ban.week_start,7));
+ who.textContent='Registrado por '+ban.recorded_by;
+ remove.type='button';remove.className='remove';remove.style.display='block';remove.textContent='Retirar veto por error';remove.disabled=busy;
+ remove.addEventListener('click',()=>recordBan(ban.incident_date,ban.player_name,false,ban.selection_role));
+ div.append(title,info,who,remove);box.append(div)}
+ const log=$('banHistory');log.replaceChildren();
+ if(!banHistory.length)log.textContent='Todavía no hay movimientos registrados.';
+ for(const row of banHistory){const div=document.createElement('p');div.textContent=(row.active?'Veto confirmado: ':'Veto retirado: ')+row.player_name+' · '+fmt(row.incident_date)+' · '+({driver:'Conductor',substitute:'Suplente',unselected:'No seleccionado'}[row.selection_role]||'')+' · '+row.recorded_by+' · '+new Date(row.recorded_at).toLocaleString('es-ES');log.append(div)}
+}
+async function recordBan(date,name,active,role=$('banRole').value){
+ if(busy)return;
+ if(!confirm((active?'¿CONFIRMAR VETO para ':'¿RETIRAR POR ERROR el veto de ')+name+'?\n\nFecha: '+fmt(date)+'.\nSemanas afectadas: '+(role==='unselected'?'':range(monday(date))+' y ')+range(addDays(monday(date),7))+'.\n\n'+(active?(role==='unselected'?'No podrá ser conductor ni suplente la siguiente semana.':'Queda eliminado como conductor y suplente desde el incumplimiento. Si tenía un tren pendiente, entrará el siguiente suplente disponible de su categoría. El veto se aplica también a la planificación guardada, conservando su copia original y los viajes ya realizados.'):'Se retirará este veto. Otros incumplimientos o exclusiones de este miembro seguirán vigentes.')))return;
+ busy=true;render();renderBans();$('banStatus').classList.remove('bad');$('banStatus').textContent='Guardando…';
+ try{
+ const {error}=await sb.rpc('record_train_ticket_ban',{p_incident_date:date,p_player_name:name,p_active:active,p_selection_role:role});if(error)throw error;
+ await load();$('banStatus').textContent=active?'Veto confirmado para las semanas indicadas según su situación.':'Veto retirado. Corrección registrada en el historial.';
+ if(active){selectedBanName='';$('banSearch').value=''}
+ }catch(error){$('banStatus').textContent='No se pudo guardar: '+error.message;$('banStatus').classList.add('bad')}
+ finally{busy=false;render();renderBans()}
+}
+$('banSearch').addEventListener('input',()=>{selectedBanName='';renderBanSelection();renderBanSearch()});
+$('banDate').addEventListener('change',renderBanSelection);
+$('banRole').addEventListener('change',renderBanSelection);
+$('confirmBan').addEventListener('click',()=>recordBan($('banDate').value,selectedBanName,true));
+
 function fillWeeks(){
  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
- const current=monday(parts.year+'-'+parts.month+'-'+parts.day);
+ $('banDate').value=parts.year+'-'+parts.month+'-'+parts.day;const current=monday(parts.year+'-'+parts.month+'-'+parts.day);
  for(let week='2026-09-21';week<=current;week=addDays(week,7)){const opt=document.createElement('option');opt.value=week;opt.textContent=range(week);$('week').append(opt)}
  $('week').value=addDays(current,-7);if(!$('week').value)$('week').value=current;
 }
