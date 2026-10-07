@@ -54,7 +54,7 @@ let players=[];
 async function load(){
  $('content').innerHTML='<div class="empty">Cargando miembros de HOLa…</div>';
  try{
-  const params=new URLSearchParams({select:'name,thp,avatar,hola_avatar,uploaded_avatar,default_avatar',order:'name.asc'});
+  const params=new URLSearchParams({select:'name,thp',order:'name.asc'});
   players=await api('players',params);
   if(!players.length)throw new Error('La lista de miembros está vacía.');
   const preferred=players.find(p=>p.name==='Ayana wars')||players.find(p=>p.thp)||players[0];
@@ -64,7 +64,14 @@ async function load(){
   $('content').innerHTML='<div class="empty"><div><b>No se pudieron cargar los datos.</b><br><br>'+esc(error?.message||error)+'<br><br>Recarga la página para volver a intentarlo.</div></div>';
  }
 }
-function avatar(p){return p.default_avatar==='hola'?(p.hola_avatar||p.avatar||'assets/icon-user-card.webp'):(p.uploaded_avatar||p.avatar||p.hola_avatar||'assets/icon-user-card.webp')}
+function avatar(p){return p._avatar||'assets/icon-user-card.webp'}
+async function loadAvatar(p){
+ try{
+  const params=new URLSearchParams({select:'avatar,hola_avatar,uploaded_avatar,default_avatar',name:'eq.'+p.name,limit:'1'});
+  const rows=await api('players',params),a=rows[0]||{};
+  p._avatar=a.default_avatar==='hola'?(a.hola_avatar||a.avatar||a.uploaded_avatar):(a.uploaded_avatar||a.avatar||a.hola_avatar);
+ }catch(error){console.warn('Avatar:',error)}
+}
 function suggest(){
  const q=norm($('search').value.trim()),box=$('suggestions');
  if(!q){box.hidden=true;return}
@@ -88,6 +95,7 @@ function svgChart(rows){
 async function selectPlayer(name){
  $('suggestions').hidden=true;$('search').value=name;$('content').innerHTML='<div class="empty">Cargando historial…</div>';
  const p=players.find(x=>x.name===name);if(!p)return;
+ await loadAvatar(p);
  let rows=[];
  try{
   const params=new URLSearchParams({select:'thp_m,recorded_at,source',player_name:'eq.'+name,order:'recorded_at.asc'});
