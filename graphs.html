@@ -47,9 +47,18 @@ const fmt=n=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFr
 const fmtDate=s=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'2-digit'}).format(new Date(s));
 let players=[];
 async function load(){
- const {data,error}=await sb.from('players').select('name,thp,avatar,hola_avatar,uploaded_avatar,default_avatar').order('name');
- if(error){$('content').innerHTML='<div class="empty">No se pudieron cargar los miembros.</div>';return}
- players=data||[];
+ $('content').innerHTML='<div class="empty">Cargando miembros de HOLa…</div>';
+ try{
+  const {data,error}=await sb.from('players').select('name,thp,avatar,hola_avatar,uploaded_avatar,default_avatar').order('name');
+  if(error)throw error;
+  players=data||[];
+  if(!players.length)throw new Error('La lista de miembros está vacía.');
+  const preferred=players.find(p=>p.name==='Ayana wars')||players.find(p=>p.thp)||players[0];
+  await selectPlayer(preferred.name);
+ }catch(error){
+  console.error('HOLa graphs load:',error);
+  $('content').innerHTML='<div class="empty"><div><b>No se pudieron cargar los datos.</b><br><br>'+esc(error?.message||error)+'<br><br>Recarga la página para volver a intentarlo.</div></div>';
+ }
 }
 function avatar(p){return p.default_avatar==='hola'?(p.hola_avatar||p.avatar||'assets/icon-user-card.webp'):(p.uploaded_avatar||p.avatar||p.hola_avatar||'assets/icon-user-card.webp')}
 function suggest(){
@@ -76,7 +85,7 @@ async function selectPlayer(name){
  $('suggestions').hidden=true;$('search').value=name;$('content').innerHTML='<div class="empty">Cargando historial…</div>';
  const p=players.find(x=>x.name===name);if(!p)return;
  const {data,error}=await sb.from('thp_history').select('thp_m,recorded_at,source').eq('player_name',name).order('recorded_at',{ascending:true});
- if(error){$('content').innerHTML='<div class="empty">No se pudo cargar el historial THP.</div>';return}
+ if(error){console.error('THP history:',error);$('content').innerHTML='<div class="empty"><div><b>No se pudo cargar el historial THP.</b><br><br>'+esc(error.message||error)+'</div></div>';return}
  const rows=data||[],first=rows[0],last=rows[rows.length-1],growth=first&&last?Number(last.thp_m)-Number(first.thp_m):0,pct=first&&Number(first.thp_m)>0?growth/Number(first.thp_m)*100:0;
  const current=last?Number(last.thp_m):parseFloat(String(p.thp||'').replace(',','.'))||0;
  const history=[...rows].reverse().slice(0,8).map((r,i,a)=>{const older=rows[rows.indexOf(r)-1],d=older?Number(r.thp_m)-Number(older.thp_m):null;return '<div class="history-row"><span>'+fmtDate(r.recorded_at)+'</span><b>'+fmt(r.thp_m)+'</b><span class="delta '+(d>0?'up':'')+'">'+(d==null?'Inicio':(d>=0?'+':'')+d.toFixed(2)+'M')+'</span></div>'}).join('');
