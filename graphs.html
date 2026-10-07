@@ -38,9 +38,14 @@ body:before{content:"";position:fixed;inset:0;z-index:-2;background:url('hola-s3
 </section>
 <p class="note">El historial empieza con la primera medición disponible. A partir de ahora, cada cambio real de THP guardado en HOLa añade automáticamente un nuevo punto.</p>
 </main>
-<script type="module">
-import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+<script>
+const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
+const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
+async function api(table,params){
+ const response=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?'+params.toString(),{headers:{apikey:SUPABASE_KEY,Accept:'application/json'},cache:'no-store'});
+ if(!response.ok)throw new Error('Supabase '+response.status+': '+(await response.text()).slice(0,160));
+ return response.json();
+}
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const fmt=n=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+'M';
@@ -49,9 +54,8 @@ let players=[];
 async function load(){
  $('content').innerHTML='<div class="empty">Cargando miembros de HOLa…</div>';
  try{
-  const {data,error}=await sb.from('players').select('name,thp,avatar,hola_avatar,uploaded_avatar,default_avatar').order('name');
-  if(error)throw error;
-  players=data||[];
+  const params=new URLSearchParams({select:'name,thp,avatar,hola_avatar,uploaded_avatar,default_avatar',order:'name.asc'});
+  players=await api('players',params);
   if(!players.length)throw new Error('La lista de miembros está vacía.');
   const preferred=players.find(p=>p.name==='Ayana wars')||players.find(p=>p.thp)||players[0];
   await selectPlayer(preferred.name);
@@ -84,9 +88,12 @@ function svgChart(rows){
 async function selectPlayer(name){
  $('suggestions').hidden=true;$('search').value=name;$('content').innerHTML='<div class="empty">Cargando historial…</div>';
  const p=players.find(x=>x.name===name);if(!p)return;
- const {data,error}=await sb.from('thp_history').select('thp_m,recorded_at,source').eq('player_name',name).order('recorded_at',{ascending:true});
- if(error){console.error('THP history:',error);$('content').innerHTML='<div class="empty"><div><b>No se pudo cargar el historial THP.</b><br><br>'+esc(error.message||error)+'</div></div>';return}
- const rows=data||[],first=rows[0],last=rows[rows.length-1],growth=first&&last?Number(last.thp_m)-Number(first.thp_m):0,pct=first&&Number(first.thp_m)>0?growth/Number(first.thp_m)*100:0;
+ let rows=[];
+ try{
+  const params=new URLSearchParams({select:'thp_m,recorded_at,source',player_name:'eq.'+name,order:'recorded_at.asc'});
+  rows=await api('thp_history',params);
+ }catch(error){console.error('THP history:',error);$('content').innerHTML='<div class="empty"><div><b>No se pudo cargar el historial THP.</b><br><br>'+esc(error.message||error)+'</div></div>';return}
+ const first=rows[0],last=rows[rows.length-1],growth=first&&last?Number(last.thp_m)-Number(first.thp_m):0,pct=first&&Number(first.thp_m)>0?growth/Number(first.thp_m)*100:0;
  const current=last?Number(last.thp_m):parseFloat(String(p.thp||'').replace(',','.'))||0;
  const history=[...rows].reverse().slice(0,8).map((r,i,a)=>{const older=rows[rows.indexOf(r)-1],d=older?Number(r.thp_m)-Number(older.thp_m):null;return '<div class="history-row"><span>'+fmtDate(r.recorded_at)+'</span><b>'+fmt(r.thp_m)+'</b><span class="delta '+(d>0?'up':'')+'">'+(d==null?'Inicio':(d>=0?'+':'')+d.toFixed(2)+'M')+'</span></div>'}).join('');
  $('content').innerHTML='<div class="player"><img class="avatar" src="'+esc(avatar(p))+'" alt=""><div><strong>'+esc(name)+'</strong><span>'+rows.length+' medición'+(rows.length===1?'':'es')+' registrada'+(rows.length===1?'':'s')+'</span></div></div>'+
