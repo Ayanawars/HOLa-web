@@ -57,6 +57,7 @@ async function load(){
   const params=new URLSearchParams({select:'name,thp',order:'name.asc'});
   players=(await api('thp_history',new URLSearchParams({select:'player_name,thp_m',order:'player_name.asc'}))).map(r=>({name:r.player_name,thp:String(r.thp_m)}));
   if(!players.length)throw new Error('La lista de miembros está vacía.');
+  players=[...new Map(players.map(p=>[p.name,p])).values()];
   const preferred=players.find(p=>p.name==='Ayana wars')||players.find(p=>p.thp)||players[0];
   await selectPlayer(preferred.name);
  }catch(error){
@@ -95,7 +96,7 @@ function svgChart(rows){
 async function selectPlayer(name){
  $('suggestions').hidden=true;$('search').value=name;$('content').innerHTML='<div class="empty">Cargando historial…</div>';
  const p=players.find(x=>x.name===name);if(!p)return;
- await loadAvatar(p);
+ /* avatar deferred */
  let rows=[];
  try{
   const params=new URLSearchParams({select:'thp_m,recorded_at,source',player_name:'eq.'+name,order:'recorded_at.asc'});
