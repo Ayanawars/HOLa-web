@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7edcf">
+<title>HOLa — Gráficas</title>
+<style>
+:root{--ink:#174b70;--sky:#168fc5;--gold:#d3a743;--paper:#fffdf7;--cream:#f7edcf;--muted:#718894;--line:#e3c98e;--good:#278b69}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:linear-gradient(180deg,#e9f8fc 0,#fffaf0 38%,#f3e1bb 100%);padding:0 11px 50px}
+body:before{content:"";position:fixed;inset:0;z-index:-2;background:url('hola-s3-background-square.webp') center top/cover fixed no-repeat;opacity:.16}
+.shell{width:min(100%,900px);margin:auto;padding-top:max(10px,env(safe-area-inset-top))}
+.top{display:flex;align-items:center;justify-content:space-between;height:54px;position:relative;z-index:5}.round{width:42px;height:42px;display:grid;place-items:center;text-decoration:none;border:1px solid #d9bb78;border-radius:14px;background:#fffdf7;color:var(--ink);font-size:25px;box-shadow:0 5px 15px #795b2520}.logo{width:66px}
+.hero{position:relative;overflow:hidden;margin-top:-54px;padding:78px 18px 24px;border:1px solid #d9b96d;border-top:0;border-radius:0 0 30px 30px;background:linear-gradient(105deg,rgba(15,143,208,.86),rgba(65,187,220,.68),rgba(244,208,126,.62)),url('hola-s3-header.png') center/cover;box-shadow:0 14px 30px #795b2525}
+.hero h1{margin:6px 0 4px;color:#fff9e8;font:900 clamp(34px,9vw,60px)/1 Georgia,serif;text-shadow:0 3px 12px #075b8b55}.hero p{margin:8px 0 0;color:white;font-size:12px;line-height:1.5;max-width:600px}.eyebrow{font-size:9px;font-weight:950;letter-spacing:.22em;color:#fff0b0}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}.tab{min-height:44px;display:grid;place-items:center;text-align:center;text-decoration:none;border:1px solid #e2cfa6;border-radius:13px;background:#fffaf0;color:#78909b;font-size:10px;font-weight:900}.tab.active{color:#164d75;background:linear-gradient(135deg,#fff6cf,#efca72);border-color:#d5aa45}
+.panel{margin-top:12px;padding:15px;border:1px solid #e0c894;border-radius:22px;background:linear-gradient(155deg,#fffef9,#f8efdf);box-shadow:0 8px 18px #674f2818}
+.panel h2{margin:0 0 5px;font:900 23px Georgia,serif}.sub{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+.search{position:relative;margin-top:14px}.search input{width:100%;height:48px;border:1.5px solid #cda858;border-radius:15px;background:#fffdf8;padding:0 15px;color:var(--ink);font-size:15px;outline:none}.search input:focus{box-shadow:0 0 0 3px #73cce633}
+.suggestions{position:absolute;z-index:20;left:0;right:0;top:52px;max-height:260px;overflow:auto;border:1px solid #dbc58f;border-radius:14px;background:#fffdf8;box-shadow:0 12px 25px #6c542633}.suggestions[hidden]{display:none}.suggestions button{width:100%;border:0;border-bottom:1px solid #eee2c7;background:none;padding:10px 12px;text-align:left;color:var(--ink);font-weight:800}
+.player{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px;border:1px solid #e7d5ad;border-radius:17px;background:#fffdf8}.avatar{width:58px;height:58px;object-fit:cover;border-radius:14px;border:2px solid #d5ad50;background:#e9f6fa}.player strong{display:block;font-size:17px}.player span{display:block;margin-top:3px;color:#6d8794;font-size:11px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.kpi{min-width:0;padding:12px 8px;border:1px solid #e5d2aa;border-radius:16px;background:#fffdf8;text-align:center}.kpi small{display:block;color:#7b919c;font-size:8px;font-weight:900;letter-spacing:.08em}.kpi b{display:block;margin-top:5px;color:var(--ink);font:900 clamp(17px,5vw,25px) Georgia,serif}.kpi b.good{color:var(--good)}
+.chart-card{margin-top:12px;padding:12px 8px 8px;border:1px solid #e3c98e;border-radius:19px;background:#fffdf9}.chart-head{display:flex;justify-content:space-between;align-items:end;padding:2px 8px 8px;gap:8px}.chart-head strong{font:900 17px Georgia,serif}.chart-head span{font-size:9px;color:#78909b}.chart-wrap{width:100%;height:280px;position:relative}.chart-wrap svg{width:100%;height:100%;overflow:visible}.gridline{stroke:#e8dcc4;stroke-width:1}.axis{fill:#82949b;font-size:9px}.line{fill:none;stroke:#138fc6;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.area{fill:url(#area)}.dot{fill:#fff8df;stroke:#c99d35;stroke-width:3}.empty{min-height:180px;display:grid;place-items:center;text-align:center;color:#718894;font-size:12px;padding:25px}.history{display:grid;gap:7px;margin-top:12px}.history-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 11px;border:1px solid #eadbbd;border-radius:12px;background:#fffdf9;font-size:11px}.history-row b{font-size:13px}.up{color:var(--good);font-weight:900}.note{margin:12px 2px 0;color:#718894;font-size:10px;line-height:1.45}
+@media(max-width:560px){.tabs{grid-template-columns:repeat(5,1fr);gap:4px}.tab{font-size:8px;min-height:41px}.panel{padding:12px}.chart-wrap{height:245px}.kpi{padding:11px 4px}.history-row{grid-template-columns:1fr auto}.history-row .delta{grid-column:2}}
+</style>
+</head>
+<body>
+<main class="shell">
+<div class="top"><a class="round" href="stats.html" aria-label="Volver">‹</a><img class="logo" src="hola-s3-logo.webp" alt="HOLa"><span style="width:42px"></span></div>
+<section class="hero"><div class="eyebrow">HOLa · CENTRO DE INTELIGENCIA</div><h1>GRÁFICAS</h1><p>Evolución real de la alianza a partir de los datos guardados en HOLa.</p></section>
+<nav class="tabs" aria-label="Tipos de estadísticas">
+<a class="tab" href="stats.html">🚂 TREN</a><span class="tab">⚔ VS</span><span class="tab">🛡 DS</span><span class="tab">✦ DON.</span><span class="tab active">⌁ GRÁFICAS</span>
+</nav>
+<section class="panel">
+<h2>Evolución THP</h2><p class="sub">Busca un jugador para ver cómo cambia su Poder Total del Héroe en cada actualización.</p>
+<div class="search"><input id="search" type="search" autocomplete="off" placeholder="Buscar jugador…" aria-label="Buscar jugador"><div class="suggestions" id="suggestions" hidden></div></div>
+<div id="content"><div class="empty">Selecciona un jugador de HOLa para abrir su gráfica.</div></div>
+</section>
+<p class="note">El historial empieza con la primera medición disponible. A partir de ahora, cada cambio real de THP guardado en HOLa añade automáticamente un nuevo punto.</p>
+</main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const fmt=n=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+'M';
+const fmtDate=s=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'2-digit'}).format(new Date(s));
+let players=[];
+async function load(){
+ const {data,error}=await sb.from('players').select('name,thp,avatar,hola_avatar,uploaded_avatar,default_avatar').order('name');
+ if(error){$('content').innerHTML='<div class="empty">No se pudieron cargar los miembros.</div>';return}
+ players=data||[];
+}
+function avatar(p){return p.default_avatar==='hola'?(p.hola_avatar||p.avatar||'assets/icon-user-card.webp'):(p.uploaded_avatar||p.avatar||p.hola_avatar||'assets/icon-user-card.webp')}
+function suggest(){
+ const q=norm($('search').value.trim()),box=$('suggestions');
+ if(!q){box.hidden=true;return}
+ const rows=players.filter(p=>norm(p.name).includes(q)).slice(0,12);
+ box.innerHTML=rows.map(p=>'<button type="button" data-name="'+esc(p.name)+'">'+esc(p.name)+'</button>').join('');
+ box.hidden=!rows.length;
+}
+function svgChart(rows){
+ if(!rows.length)return '<div class="empty">Todavía no hay mediciones de THP para este jugador.</div>';
+ const W=720,H=250,L=52,R=18,T=18,B=38,vals=rows.map(r=>Number(r.thp_m)),min=Math.min(...vals),max=Math.max(...vals),pad=Math.max((max-min)*.18,.5),lo=Math.max(0,min-pad),hi=max+pad;
+ const x=i=>rows.length===1?(L+W-R)/2:L+i*(W-L-R)/(rows.length-1),y=v=>T+(hi-v)*(H-T-B)/(hi-lo||1);
+ const points=rows.map((r,i)=>x(i)+','+y(Number(r.thp_m))).join(' ');
+ const area=rows.length>1?'M '+x(0)+' '+(H-B)+' L '+rows.map((r,i)=>x(i)+' '+y(Number(r.thp_m))).join(' L ')+' L '+x(rows.length-1)+' '+(H-B)+' Z':'';
+ let grid='',labels='';
+ for(let i=0;i<4;i++){const yy=T+i*(H-T-B)/3,v=hi-i*(hi-lo)/3;grid+='<line class="gridline" x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'"/><text class="axis" x="'+(L-6)+'" y="'+(yy+3)+'" text-anchor="end">'+v.toFixed(1)+'M</text>'}
+ const labelIndexes=[...new Set([0,Math.floor((rows.length-1)/2),rows.length-1])];
+ for(const i of labelIndexes)labels+='<text class="axis" x="'+x(i)+'" y="'+(H-12)+'" text-anchor="middle">'+fmtDate(rows[i].recorded_at)+'</text>';
+ const dots=rows.map((r,i)=>'<circle class="dot" cx="'+x(i)+'" cy="'+y(Number(r.thp_m))+'" r="5"><title>'+fmtDate(r.recorded_at)+' · '+fmt(r.thp_m)+'</title></circle>').join('');
+ return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfica de evolución THP"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#38b6df" stop-opacity=".28"/><stop offset="100%" stop-color="#38b6df" stop-opacity=".02"/></linearGradient></defs>'+grid+(area?'<path class="area" d="'+area+'"/>':'')+(rows.length>1?'<polyline class="line" points="'+points+'"/>':'')+dots+labels+'</svg>';
+}
+async function selectPlayer(name){
+ $('suggestions').hidden=true;$('search').value=name;$('content').innerHTML='<div class="empty">Cargando historial…</div>';
+ const p=players.find(x=>x.name===name);if(!p)return;
+ const {data,error}=await sb.from('thp_history').select('thp_m,recorded_at,source').eq('player_name',name).order('recorded_at',{ascending:true});
+ if(error){$('content').innerHTML='<div class="empty">No se pudo cargar el historial THP.</div>';return}
+ const rows=data||[],first=rows[0],last=rows[rows.length-1],growth=first&&last?Number(last.thp_m)-Number(first.thp_m):0,pct=first&&Number(first.thp_m)>0?growth/Number(first.thp_m)*100:0;
+ const current=last?Number(last.thp_m):parseFloat(String(p.thp||'').replace(',','.'))||0;
+ const history=[...rows].reverse().slice(0,8).map((r,i,a)=>{const older=rows[rows.indexOf(r)-1],d=older?Number(r.thp_m)-Number(older.thp_m):null;return '<div class="history-row"><span>'+fmtDate(r.recorded_at)+'</span><b>'+fmt(r.thp_m)+'</b><span class="delta '+(d>0?'up':'')+'">'+(d==null?'Inicio':(d>=0?'+':'')+d.toFixed(2)+'M')+'</span></div>'}).join('');
+ $('content').innerHTML='<div class="player"><img class="avatar" src="'+esc(avatar(p))+'" alt=""><div><strong>'+esc(name)+'</strong><span>'+rows.length+' medición'+(rows.length===1?'':'es')+' registrada'+(rows.length===1?'':'s')+'</span></div></div>'+
+ '<div class="kpis"><div class="kpi"><small>THP ACTUAL</small><b>'+fmt(current)+'</b></div><div class="kpi"><small>CRECIMIENTO</small><b class="good">'+(growth>=0?'+':'')+growth.toFixed(2)+'M</b></div><div class="kpi"><small>VARIACIÓN</small><b class="good">'+(pct>=0?'+':'')+pct.toFixed(2)+'%</b></div></div>'+
+ '<div class="chart-card"><div class="chart-head"><strong>THP por fecha</strong><span>'+ (rows.length<2?'Primer registro':'Evolución acumulada') +'</span></div><div class="chart-wrap">'+svgChart(rows)+'</div></div>'+
+ (rows.length?'<div class="history">'+history+'</div>':'');
+}
+$('search').addEventListener('input',suggest);$('search').addEventListener('focus',suggest);
+$('suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-name]');if(b)selectPlayer(b.dataset.name)});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('suggestions').hidden=true});
+await load();
+</script>
+</body></html>
