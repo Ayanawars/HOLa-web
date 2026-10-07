@@ -55,7 +55,7 @@ async function load(){
  $('content').innerHTML='<div class="empty">Cargando miembros de HOLa…</div>';
  try{
   const params=new URLSearchParams({select:'name,thp',order:'name.asc'});
-  players=await api('players',params);
+  players=(await api('thp_history',new URLSearchParams({select:'player_name,thp_m',order:'player_name.asc'}))).map(r=>({name:r.player_name,thp:String(r.thp_m)}));
   if(!players.length)throw new Error('La lista de miembros está vacía.');
   const preferred=players.find(p=>p.name==='Ayana wars')||players.find(p=>p.thp)||players[0];
   await selectPlayer(preferred.name);
