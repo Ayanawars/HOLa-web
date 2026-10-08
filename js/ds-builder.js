@@ -282,9 +282,44 @@ function renderRoster(){if(!state)return;const list=$("rosterList");const roster
  '<button type="button" class="remove" title="Quitar participante" aria-label="Quitar '+esc(r.name)+'">×</button></article>').join(""):'<p class="muted">Todavía no hay participantes. Sube capturas o añádelos manualmente.</p>';
  renderStats();renderTeamAAudit();
 }
+function exchangeRosterRoles(player,other){
+ if(!other||player===other||player.role===other.role)return false;
+ const first=player.name,second=other.name;
+ // Exchange tactical places together with the roster roles.
+ for(const field of ["phase1","phase2","missions","subs"])
+  for(const key of Object.keys(state[field]))
+   state[field][key]=state[field][key].map(name=>name===first?second:name===second?first:name);
+ for(const key of ["leader","alternate"])
+  if(state[key]===first)state[key]=second;else if(state[key]===second)state[key]=first;
+ const previous=player.role;player.role=other.role;other.role=previous;
+ return true;
+}
+function showRoleExchange(card,player,next){
+ card.querySelector(".role-exchange")?.remove();
+ const panel=document.createElement("div");
+ panel.className="role-exchange field";panel.style.gridColumn="1 / -1";
+ panel.innerHTML='<label>Grupo completo · Elige con quién intercambiar la plaza</label>'+
+  '<select class="roster-exchange" aria-label="Jugador para intercambiar la plaza"><option value="">Elegir '+(next==="starter"?"titular":"suplente")+'</option>'+
+  state.roster.filter(r=>r.role===next).map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join("")+'</select>'+
+  '<button type="button" class="btn outline small roster-exchange-cancel">Cancelar intercambio</button>';
+ card.append(panel);
+ notice("Ya hay "+(next==="starter"?"20 titulares":"10 suplentes")+". Elige en la tarjeta con quién intercambiar la plaza; se conservarán sus puestos en el mapa.","info");
+}
 async function rosterChange(e){
  const card=e.target.closest(".roster-card");if(!card)return;
  const r=state.roster.find(x=>x.name===card.dataset.name);if(!r)return;
+ if(e.target.classList.contains("roster-exchange-cancel")){
+  if(e.type!=="click")return;
+  card.querySelector(".roster-role").value=r.role;card.querySelector(".role-exchange")?.remove();return;
+ }
+ if(e.target.classList.contains("roster-exchange")){
+  if(e.type!=="change"||!e.target.value)return;
+  const other=state.roster.find(x=>x.name===e.target.value);
+  if(!exchangeRosterRoles(r,other)){renderRoster();return;}
+  renderRoster();mutate();
+  notice("✓ Plazas intercambiadas: "+r.name+" · "+(r.role==="starter"?"Titular":"Suplente")+"; "+other.name+" · "+(other.role==="starter"?"Titular":"Suplente")+". Puestos del mapa conservados. Guarda el borrador para conservar el cambio.","success");
+  return;
+ }
  if(e.target.classList.contains("remove")){
   if(e.type!=="click")return;
   removeAssignments(r.name);state.roster=state.roster.filter(x=>x!==r);renderRoster();mutate();return;
@@ -295,9 +330,12 @@ async function rosterChange(e){
   if(next!==r.role){
    const count=counts();
    if(next==="starter"&&count.starter>=20||next==="sub"&&count.sub>=10){
-    notice("No puedes superar 20 titulares o 10 suplentes.","error");e.target.value=r.role;return;
+    e.target.value=r.role;showRoleExchange(card,r,next);return;
    }
-   removeAssignments(r.name);r.role=next;renderRoster();mutate();
+   removeAssignments(r.name);r.role=next;
+   if(next==="sub"){if(state.leader===r.name)state.leader="";if(state.alternate===r.name)state.alternate="";}
+   renderRoster();mutate();
+   notice("✓ "+r.name+" ahora es "+(next==="starter"?"titular":"suplente")+". Revisa sus asignaciones y guarda el borrador.","success");
   }
   return;
  }
