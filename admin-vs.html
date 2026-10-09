@@ -929,6 +929,7 @@
           [normName("Sinsiflex"), "sinsifeX ᓚᘏᗢ"],
           [normName("sinsifeX"), "sinsifeX ᓚᘏᗢ"],
           [normName("JEBRAW"), "JEBRAW ᓚᘏᗢ"],
+          [normName("elara"), "elarâ ᓚᘏᗢ"],
           [normName("Apocalipto"), "Apocallipto"],
         ]);
 
@@ -1009,6 +1010,7 @@
       // se usa como identidad oficial al asociar los puntos y guardarlos.
       function ocrMatchKey(memberName) {
         const key = normName(memberName);
+        if(key === normName("elarâ ᓚᘏᗢ"))return normName("elara");
         return key === normName("JEBRAW ᓚᘏᗢ")
           ? normName("JEBRAW")
           : key;
@@ -1017,6 +1019,7 @@
       // El campo "Nombre detectado por OCR" muestra el nombre que aparece
       // en la captura; el selector conserva la identidad oficial de Supabase.
       function ocrDisplayName(name) {
+        if(normName(name) === normName("elarâ ᓚᘏᗢ"))return "elarâ";
         return normName(name) === normName("JEBRAW ᓚᘏᗢ")
           ? "JEBRAW"
           : name;
@@ -1387,6 +1390,7 @@
         [normName("sinsifeX"), normName("sinsifeX ᓚᘏᗢ")],
         // La captura muestra JEBRAW; el nombre oficial mantiene el adorno.
         [normName("JEBRAW"), normName("JEBRAW ᓚᘏᗢ")],
+        [normName("elara"), normName("elarâ ᓚᘏᗢ")],
         [normName("Apocalipto"), normName("Apocallipto")],
         // OCR árabe puede invertir la parte numérica y la textual.
         [normName("25مثالي"), normName("مثالـي25")],
@@ -1401,6 +1405,7 @@
         { base: "Ophicat", official: "Ophicat ᓚᘏᗢ" },
         { base: "sinsifeX", official: "sinsifeX ᓚᘏᗢ" },
         { base: "JEBRAW", official: "JEBRAW ᓚᘏᗢ" },
+        { base: "elarâ", official: "elarâ ᓚᘏᗢ" },
       ];
 
       function matchDecoratedMemberVariant(key) {
@@ -2198,34 +2203,23 @@
 
           if (!text) continue;
 
-          // Si la línea OCR mezcla JEBRAW con el gato o el texto de la alianza,
-          // recuperamos SOLO la palabra JEBRAW (sin buscar el nombre con gato).
-          const jebrawWord = (line.Words || []).find(
-            (word) => normName(word.WordText) === normName("JEBRAW"),
-          );
-          const officialJebraw = jebrawWord
-            ? memberNames.find(
-                (name) => normName(name) === normName("JEBRAW ᓚᘏᗢ"),
-              )
+          // Use the name word's coordinates when OCR merges the cat or alliance text.
+          const decoratedWord = (line.Words || []).find(word =>
+            ["JEBRAW","elara"].some(base=>normName(word.WordText)===normName(base)));
+          const officialDecorated = decoratedWord
+            ? memberNames.find(name =>
+                ["JEBRAW ᓚᘏᗢ","elarâ ᓚᘏᗢ"].includes(name) &&
+                ocrMatchKey(name)===normName(decoratedWord.WordText))
             : null;
-          const match = officialJebraw
-            ? { name: officialJebraw, score: 1 }
-            : !isBadName(text)
-              ? matchMemberName(text)
-              : null;
-          if (!match) continue;
-
-          const key = normName(match.name);
-          const top = Number(
-            officialJebraw
-              ? (jebrawWord.Top ?? line.MinTop ?? 0)
-              : (line.MinTop || 0),
-          );
-          const height = Number(
-            officialJebraw
-              ? (jebrawWord.Height ?? line.MaxHeight ?? 0)
-              : (line.MaxHeight || 0),
-          );
+          const match = officialDecorated
+            ? {name:officialDecorated,score:1}
+            : !isBadName(text) ? matchMemberName(text) : null;
+          if(!match)continue;
+          const key=normName(match.name);
+          const top=Number(officialDecorated
+            ? (decoratedWord.Top ?? line.MinTop ?? 0) : (line.MinTop || 0));
+          const height=Number(officialDecorated
+            ? (decoratedWord.Height ?? line.MaxHeight ?? 0) : (line.MaxHeight || 0));
           const center = top + height / 2;
 
           // Una misma fila puede salir duplicada en el overlay.
