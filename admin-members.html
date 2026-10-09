@@ -20,6 +20,7 @@
     .actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px}.save{min-height:50px;border:0;border-radius:14px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 20px rgba(10,143,199,.2)}.secondary{min-height:50px;padding:0 15px;border:1px solid rgba(25,126,177,.25);border-radius:14px;background:#fff;color:var(--navy);font-weight:900;cursor:pointer}.save:disabled,.secondary:disabled{opacity:.55;cursor:wait}.status{min-height:23px;margin:10px 2px 0;text-align:center;color:var(--muted);font-size:11px;font-weight:800}.status.ok{color:var(--ok)}.status.error{color:var(--danger)}.who{margin-top:14px;padding:10px 12px;border-radius:14px;background:#f1fbff;border:1px solid rgba(25,168,219,.28);display:flex;justify-content:space-between;gap:10px;align-items:center}.who strong{color:var(--navy);font-size:13px}.rank{padding:6px 9px;border-radius:999px;background:linear-gradient(100deg,#0d91c9,#48c6e9);color:#fff;font-size:10px;font-weight:900}
     .guard{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:linear-gradient(180deg,#9bdbef,#f0d69e);color:var(--navy);text-align:center;padding:25px}.guard[hidden]{display:none}.spinner{width:48px;height:48px;margin:0 auto 12px;border:5px solid rgba(16,63,105,.16);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
     @media(max-width:600px){.grid,.grid.three{grid-template-columns:1fr}.squad-fields{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.title{font-size:25px}.avatar-tools{grid-template-columns:1fr}.tiny{width:100%}}
+    .delete-member{width:100%;min-height:48px;margin-top:12px;border:1px solid #a83e43;border-radius:14px;background:#fff0ef;color:#a83e43;font-weight:900;cursor:pointer}.delete-member:disabled{opacity:.55;cursor:wait}
   </style>
 </head>
 <body>
@@ -91,8 +92,10 @@
         </section>
 
         <div class="actions"><button class="save" id="saveMember" type="button">GUARDAR CAMBIOS</button><button class="secondary" id="reloadMember" type="button">RECARGAR</button></div>
+        <button class="delete-member" id="deleteMember" type="button" hidden>ELIMINAR JUGADOR</button>
         <div class="status" id="memberStatus" role="status" aria-live="polite"></div>
       </div>
+      <div class="status" id="deleteStatus" role="status" aria-live="polite" hidden></div>
       <div class="who"><strong id="adminName">—</strong><span class="rank" id="adminRank">—</span></div>
     </section>
   </main>
@@ -103,7 +106,7 @@
     const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id);
     const fields=['name','rank','hq_level','profession','thp','squad1_type','squad1_power','squad2_type','squad2_power','squad3_type','squad3_power','city','community','country','flag','about_me','epic_quote','survey_completed_at','ai_detection_week'];
-    let players=[], selected=null, avatarValue='', creatingMember=false;
+    let players=[], selected=null, avatarValue='', creatingMember=false, deletingMember=false;
     const fallbackAvatar='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" rx="80" fill="#eaf8fd"/><circle cx="80" cy="59" r="28" fill="#8ccce5"/><path d="M30 145c5-35 25-52 50-52s45 17 50 52" fill="#8ccce5"/></svg>`);
     function normalizeName(v){return String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
     function setStatus(text,type=''){const el=$('memberStatus');el.textContent=text;el.className='status'+(type?' '+type:'');}
@@ -129,19 +132,20 @@
       const {data,error}=await sb.from('players').select('name,rank,thp').order('name',{ascending:true}); if(error)throw error; players=Array.isArray(data)?data:[];
     }
     function fill(row){
-      selected=row; creatingMember=false; avatarValue=row.avatar||'';
+      selected=row; creatingMember=false; $('deleteMember').hidden=false; $('deleteStatus').hidden=true; avatarValue=row.avatar||'';
       $('memberSearch').value=row.name||'';$('searchResults').hidden=true;$('editor').hidden=false;
       for(const id of fields){const el=$(id);if(!el)continue;el.value=id==='survey_completed_at'?formatDate(row[id]):(row[id]??'')}
       $('t10').checked=row.t10===true;$('supreme_lord_unlocked').checked=row.supreme_lord_unlocked===true;$('survey_completed').checked=row.survey_completed===true;
       $('avatarPreview').src=avatarValue||fallbackAvatar;$('selectedName').textContent=row.name||'—';$('selectedRank').textContent=row.rank||'—';$('selectedSummary').textContent=[row.thp||'Sin THP',row.country||row.community||'Sin ubicación'].join(' · ');setStatus('');
     }
     async function selectPlayer(name){
+      if(deletingMember)return;
       setStatus('Cargando datos del jugador…');try{const {data,error}=await sb.from('players').select('*').eq('name',name).single();if(error)throw error;fill(data);}catch(error){setStatus('No se pudo cargar el jugador: '+(error?.message||error),'error');}
     }
     function cleanText(id){const v=$(id).value.trim();return v||null}
     function cleanPower(id){const raw=$(id).value.trim().replace(',','.');if(!raw)return null;const m=raw.match(/^([0-9]+(?:\.[0-9]+)?)\s*M?$/i);if(!m)return raw;return Number(m[1]).toFixed(2)+'M';}
     async function saveMember(){
-      if(!selected&&!creatingMember)return; const b=$('saveMember');b.disabled=true;$('reloadMember').disabled=true;setStatus('Guardando…');
+      if(deletingMember||(!selected&&!creatingMember))return; const b=$('saveMember');b.disabled=true;$('reloadMember').disabled=true;setStatus('Guardando…');
       try{
         const wasCompleted=selected?.survey_completed===true, nowCompleted=$('survey_completed').checked;
         const payload={
@@ -179,10 +183,39 @@
         const wasNew=creatingMember;fill(data);setStatus(wasNew?'✓ Nuevo miembro creado correctamente.':newName!==originalName?'✓ Nombre e historial actualizados; datos guardados.':'✓ Datos del miembro actualizados.','ok');
       }catch(e){setStatus('No se pudieron guardar los cambios: '+(e?.message||e),'error')}finally{b.disabled=false;$('reloadMember').disabled=false}
     }
+    const deleteLabels={es:'ELIMINAR JUGADOR',en:'DELETE PLAYER',fr:'SUPPRIMER LE JOUEUR',de:'SPIELER LÖSCHEN',ro:'ȘTERGE JUCĂTORUL',pt:'ELIMINAR JOGADOR',uk:'ВИДАЛИТИ ГРАВЦЯ',it:'ELIMINA GIOCATORE',pl:'USUŃ GRACZA',tr:'OYUNCUYU SİL',ru:'УДАЛИТЬ ИГРОКА'};
+    async function deleteMember(){
+      if(!selected||creatingMember||deletingMember||$('saveMember').disabled)return;
+      const name=selected.name;
+      const question=$('memberLanguage').value==='es'
+        ?'¿Eliminar a '+name+'? Se borrarán su ficha y los datos asociados de THP, donaciones y pasajeros. Esta acción no se puede deshacer.'
+        :'Delete '+name+'? Their profile and linked THP, donation and passenger data will be removed. This cannot be undone.';
+      if(!confirm(question))return;
+      deletingMember=true;
+      const controls=['deleteMember','saveMember','reloadMember','newMember','memberSearch'];
+      controls.forEach(id=>$(id).disabled=true);
+      setStatus('Eliminando a '+name+'…');
+      try{
+        const {data,error}=await sb.from('players').delete().eq('name',name).select('name');
+        if(error){
+          if(error.code==='23503')throw new Error('Este jugador tiene registros vinculados que impiden eliminarlo (por ejemplo, conductor del tren o una sesión de encuesta). Su ficha se ha conservado.');
+          throw error;
+        }
+        if(!data?.some(row=>row.name===name))throw new Error('No se confirmó el borrado. Comprueba tu acceso R4/R5 y recarga la ficha.');
+        players=players.filter(row=>row.name!==name);
+        selected=null;creatingMember=false;avatarValue='';
+        for(const id of fields)if($(id))$(id).value='';
+        $('memberSearch').value='';$('searchResults').innerHTML='';$('searchResults').hidden=true;
+        $('editor').hidden=true;$('deleteMember').hidden=true;
+        $('deleteStatus').textContent='✓ '+name+' eliminado correctamente.';$('deleteStatus').className='status ok';$('deleteStatus').hidden=false;
+      }catch(error){setStatus('No se pudo eliminar el jugador: '+(error?.message||error),'error');}
+      finally{deletingMember=false;controls.forEach(id=>$(id).disabled=false);}
+    }
+    $('deleteMember').addEventListener('click',deleteMember);
     async function resizeAvatar(file){
       const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});const size=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-size)/2,sy=(img.naturalHeight-size)/2,canvas=document.createElement('canvas');canvas.width=480;canvas.height=480;const ctx=canvas.getContext('2d');ctx.drawImage(img,sx,sy,size,size,0,0,480,480);return canvas.toDataURL('image/jpeg',.84)}finally{URL.revokeObjectURL(url)}
     }
-    $('newMember').addEventListener('click',()=>{creatingMember=true;selected=null;avatarValue='';$('editor').hidden=false;$('memberSearch').value='';$('searchResults').hidden=true;for(const id of fields){const el=$(id);if(el)el.value='';}for(const id of ['t10','supreme_lord_unlocked','survey_completed'])$(id).checked=false;$('avatarPreview').src=fallbackAvatar;$('selectedName').textContent='Nuevo miembro';$('selectedSummary').textContent='Completa los datos y guarda';$('selectedRank').textContent='—';setStatus('');$('name').focus();});
+    $('newMember').addEventListener('click',()=>{if(deletingMember)return;$('deleteMember').hidden=true;creatingMember=true;selected=null;avatarValue='';$('editor').hidden=false;$('memberSearch').value='';$('searchResults').hidden=true;for(const id of fields){const el=$(id);if(el)el.value='';}for(const id of ['t10','supreme_lord_unlocked','survey_completed'])$(id).checked=false;$('avatarPreview').src=fallbackAvatar;$('selectedName').textContent='Nuevo miembro';$('selectedSummary').textContent='Completa los datos y guarda';$('selectedRank').textContent='—';setStatus('');$('name').focus();});
     $('memberSearch').addEventListener('focus',()=>renderResults($('memberSearch').value));$('memberSearch').addEventListener('input',()=>renderResults($('memberSearch').value));document.addEventListener('click',e=>{if(!e.target.closest('.searchbox'))$('searchResults').hidden=true});
     $('avatarFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{avatarValue=await resizeAvatar(f);$('avatarPreview').src=avatarValue;setStatus('Avatar preparado. Pulsa Guardar cambios para aplicarlo.')}catch{setStatus('No se pudo procesar la imagen.','error')}});
     $('clearAvatar').addEventListener('click',()=>{avatarValue='';$('avatarPreview').src=fallbackAvatar;setStatus('Avatar marcado para eliminar. Pulsa Guardar cambios.')});
@@ -205,6 +238,7 @@
     const memberTranslatable=[...document.querySelectorAll('h1,h2,label,button,.check span')].map(el=>({el,txt:el.childNodes[0]?.nodeType===Node.TEXT_NODE?el.childNodes[0]:null})).filter(x=>x.txt&&originalMemberLabels.includes(x.txt.textContent.trim()));
     function applyMemberLanguage(lang){
       const words=memberI18n[lang]||memberI18n.es;
+      $('deleteMember').textContent=deleteLabels[lang]||deleteLabels.en;
       for(const {txt} of memberTranslatable){const idx=originalMemberLabels.indexOf(txt.__originalMemberText||txt.textContent.trim());if(idx>=0){txt.__originalMemberText=originalMemberLabels[idx];txt.textContent=words[idx];}}
       $('memberSearch').placeholder=words[2];$('newMember').textContent='＋ '+words[1];
       document.documentElement.lang=lang;localStorage.setItem('hola-language',lang);
