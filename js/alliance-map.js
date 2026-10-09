@@ -14,9 +14,35 @@ function translate(){document.documentElement.lang=en()?'en':'es';$('title').tex
 function fit(){zoom=Math.min($('viewport').clientWidth/W,$('viewport').clientHeight/H,1);size();$('viewport').scrollTo({left:0,top:0})}
 function size(){canvas.style.width=W*zoom+'px';canvas.style.height=H*zoom+'px'}
 function box(x1,y1,x2,y2,fill,stroke){ctx.fillStyle=fill;ctx.fillRect(px(x1),py(y2),(x2-x1)*S,(y2-y1)*S);ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.strokeRect(px(x1),py(y2),(x2-x1)*S,(y2-y1)*S)}
-function text(s,x,y,size=18,color='#163f58'){ctx.fillStyle=color;ctx.font=`600 ${size}px system-ui`;ctx.textAlign='center';ctx.fillText(s,x,y)}
+function text(s,x,y,size=18,color='#163f58'){ctx.fillStyle=color;ctx.font=`700 ${size}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s,x,y)}
 function building(name,x1,y1,x2,y2,title){box(x1,y1,x2,y2,'#c7a366','#9b743f');const im=images[name];if(im){const w=(x2-x1)*S,h=(y2-y1)*S,ratio=Math.min(w/im.width,(h-48)/im.height);ctx.drawImage(im,px(x1)+(w-im.width*ratio)/2,py(y2)+10,im.width*ratio,im.height*ratio)}text(title,(px(x1)+px(x2))/2,py(y1)-15,22)}
-function draw(){ctx.fillStyle='#d4b477';ctx.fillRect(0,0,W,H);text('HOLa · '+say('MAPA DE LA ALIANZA','ALLIANCE MAP'),W/2,55,38);text(say('Nombre · coordenadas del centro · bases 3 × 3','Name · centre coordinates · 3 × 3 bases'),W/2,95,21);ctx.strokeStyle='#a58c61';ctx.lineWidth=1;for(let x=193;x<=256;x++){ctx.beginPath();ctx.moveTo(px(x-.5),py(999.5));ctx.lineTo(px(x-.5),py(956.5));ctx.stroke();if((x-195)%5===0)text(x,px(x),132,18)}for(let y=957;y<=1000;y++){ctx.beginPath();ctx.moveTo(px(192.5),py(y-.5));ctx.lineTo(px(256),py(y-.5));ctx.stroke();if(y%5===0)text(y,75,py(y)+6,18)}ctx.strokeStyle='#655132';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(px(192.5),py(999.5));ctx.lineTo(px(256),py(999.5));ctx.stroke();building('center',220.5,986.5,229.5,995.5,say('CENTRO DE ALIANZA','ALLIANCE CENTRE'));building('mountain',218.5,971.5,234.5,986.5,say('MONTAÑA','MOUNTAIN'));building('building',193.5,957.5,196.5,960.5,'X195 · Y959');for(const s of slots){const active=s.id===selected?.id;box(s.x-1.5,s.y-1.5,s.x+1.5,s.y+1.5,active?'#ffe17e':'#c4ecf5',active?'#ba6f00':'#439ab5');text(String(s.id).padStart(3,'0'),px(s.x)-48,py(s.y)-48,16);let name=s.name||say('Libre','Available');ctx.font='600 19px system-ui';const words=[];while(name.length){let n=name.length;while(n>1&&ctx.measureText(name.slice(0,n)).width>132)n--;words.push(name.slice(0,n));name=name.slice(n)}for(let i=0;i<Math.min(words.length,3);i++)text(words[i],px(s.x),py(s.y)-20+i*23,19);text(`X${s.x} Y${s.y}`,px(s.x),py(s.y)+55,17)}text(say('Contorno aproximado · comprueba las posiciones en el juego','Approximate terrain · verify positions in game'),W/2,H-90,22);}
+
+function drawBaseLabel(s,active){
+ const name=(s.name||say('Libre','Available')).replace(/ᓚᘏᗢ|ツ/g,'').trim();
+ let fontSize=25;
+ if(!name.includes(' ')){
+  while(fontSize>17){ctx.font=`700 ${fontSize}px system-ui`;if(ctx.measureText(name).width<=132)break;fontSize--}
+ }
+ let lines=[];
+ do{
+  ctx.font=`700 ${fontSize}px system-ui`;lines=[];let line='';
+  for(const char of Array.from(name)){
+   if(line&&ctx.measureText(line+char).width>132){lines.push(line);line=''}
+   line+=char;
+  }
+  if(line)lines.push(line);
+  if(lines.length<=3)break;
+  fontSize--;
+ }while(fontSize>8);
+ const total=lines.length*fontSize;
+ for(let i=0;i<lines.length;i++)text(lines[i],px(s.x),py(s.y)-32.5-total/2+(i+.5)*fontSize,fontSize,'#082e43');
+ ctx.fillStyle=active?'#fff1bf':'#effbff';
+ ctx.fillRect(px(s.x)-68.5,py(s.y)+9,137,59.5);
+ text(`X:${s.x}`,px(s.x),py(s.y)+24.5,29,'#082e43');
+ text(`Y:${s.y}`,px(s.x),py(s.y)+53.5,29,'#082e43');
+}
+
+function draw(){ctx.fillStyle='#d4b477';ctx.fillRect(0,0,W,H);text('HOLa · '+say('MAPA DE LA ALIANZA','ALLIANCE MAP'),W/2,55,38);text(say('Nombre · coordenadas del centro · bases 3 × 3','Name · centre coordinates · 3 × 3 bases'),W/2,95,21);ctx.strokeStyle='#a58c61';ctx.lineWidth=1;for(let x=193;x<=256;x++){ctx.beginPath();ctx.moveTo(px(x-.5),py(999.5));ctx.lineTo(px(x-.5),py(956.5));ctx.stroke();if((x-195)%5===0)text(x,px(x),132,18)}for(let y=957;y<=1000;y++){ctx.beginPath();ctx.moveTo(px(192.5),py(y-.5));ctx.lineTo(px(256),py(y-.5));ctx.stroke();if(y%5===0)text(y,75,py(y)+6,18)}ctx.strokeStyle='#655132';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(px(192.5),py(999.5));ctx.lineTo(px(256),py(999.5));ctx.stroke();building('center',220.5,986.5,229.5,995.5,say('CENTRO DE ALIANZA','ALLIANCE CENTRE'));building('mountain',218.5,971.5,234.5,986.5,say('MONTAÑA','MOUNTAIN'));building('building',193.5,957.5,196.5,960.5,'X:195 Y:959');for(const s of slots){const active=s.id===selected?.id;box(s.x-1.5,s.y-1.5,s.x+1.5,s.y+1.5,active?'#ffe17e':'#c4ecf5',active?'#ba6f00':'#439ab5');drawBaseLabel(s,active);}text(say('Contorno aproximado · comprueba las posiciones en el juego','Approximate terrain · verify positions in game'),W/2,H-90,22);}
 function show(s,focus=true){selected=s;$('selected').textContent=label(s);if(admin){$('slot').value=s.id;$('player').value=s.name||''}draw();if(focus){zoom=Math.max(zoom,.65);size();$('viewport').scrollTo({left:px(s.x)*zoom-$('viewport').clientWidth/2,top:py(s.y)*zoom-$('viewport').clientHeight/2,behavior:'smooth'})}}
 const recordedSearches=new Map();
 async function recordSearch(s){
