@@ -2,7 +2,7 @@ export function normalizePositionName(value){return String(value||'').normalize(
 export function applyPositionReviews(results,reviews,sourceQueriedAt=null){
  const sameDate=(a,b)=>!a&&!b||!!a&&!!b&&Number.isFinite(Date.parse(a))&&Date.parse(a)===Date.parse(b);
  const updated=new Map(results);
- for(const [id,result] of updated){const matching=reviews.filter(r=>r.player_name===result.slot.name&&r.assigned_x===result.slot.x&&r.assigned_y===result.slot.y&&sameDate(r.source_queried_at,sourceQueriedAt));if(matching.length===1)updated.set(id,{...result,sourceStatus:result.status,status:'verified',review:matching[0]});}
+ for(const [id,result] of updated){const matching=reviews.filter(r=>r.player_name===result.slot.name&&r.assigned_x===result.slot.x&&r.assigned_y===result.slot.y&&sameDate(r.source_queried_at,sourceQueriedAt));if(matching.length===1)updated.set(id,{...result,sourceStatus:result.status,status:matching[0].status==='misplaced'?'manual-misplaced':'verified',review:matching[0]});}
  return updated;
 }
 export function comparePositions(slots,positions,margin=10){
