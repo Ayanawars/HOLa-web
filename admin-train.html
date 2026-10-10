@@ -103,7 +103,8 @@
     function passengerKey(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[ᓚᘏᗢ]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,'')}
     function editDistance(a,b){a=String(a||'');b=String(b||'');const dp=Array(b.length+1).fill(0).map((_,i)=>i);for(let i=1;i<=a.length;i++){let prev=dp[0];dp[0]=i;for(let j=1;j<=b.length;j++){const old=dp[j];dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=old}}return dp[b.length]}
     function memberFromOcrLine(raw){
-      const key=passengerKey(String(raw||'').replace(/\[?HOLa\]?/gi,' ').replace(/Heroes of Last Area/gi,' '));
+      const rawKey=passengerKey(String(raw||'').replace(/\[?HOLa\]?/gi,' ').replace(/Heroes of Last Area/gi,' '));
+      const key=rawKey==='mirliva'?'mirrliva':rawKey;
       if(key.length<3)return null;
       let best=null,bestScore=0;
       for(const p of players){

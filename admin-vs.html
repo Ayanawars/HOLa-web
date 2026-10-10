@@ -1377,6 +1377,8 @@
       // Lecturas conocidas de OCR para nombres con adornos del juego.
       // El destino siempre se resuelve en la lista actual de la alianza.
       const ocrNameAliases = new Map([
+        [normName("Mirliva"), normName("Mirrliva")],
+        [normName("Mirliva ᓚᘏᗢ"), normName("Mirrliva")],
         // Grupo de nombres con el adorno ᓚᘏᗢ.
         // cleanName() retira el adorno de la captura para que el OCR sea estable,
         // y estos alias lo vuelven a enlazar con el nombre oficial de Supabase.
@@ -1399,6 +1401,7 @@
       ]);
 
       const decoratedMemberBases = [
+        { base: "Mirliva", official: "Mirrliva" },
         { base: "Memofex042", official: "Memofex042 ᓚᘏᗢ" },
         { base: "Laz Ziyaaa", official: "Laz Ziyaaa ᓚᘏᗢ" },
         { base: "Judéx", official: "Judéx ᓚᘏᗢ" },

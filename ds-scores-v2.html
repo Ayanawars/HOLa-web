@@ -537,6 +537,7 @@ const dsRegisteredPlayerNames=["Alfonzo04","Álvaro97","Apocallipto","Arturlion"
 function canonicalDSPlayerName(value){
   const raw=String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
   const key=norm(raw);
+  if(key==="mirliva"||key==="mirrliva")return "Mirrliva";
   if(/^jebraw{1,6}$/.test(key))return "JEBRAW ᓚᘏᗢ";
   if(key==="bumblebee22")return "Bumblebee222";
   const exact=dsRegisteredPlayerNames.filter(name=>norm(name)===key);
@@ -742,7 +743,7 @@ function norm(s){
 // Participant normalization is defined once above; do not override it.
 function matchPlayer(ocrName){
   const list=participants();
-  const n=norm(ocrName);
+  const n=norm(canonicalDSPlayerName(ocrName));
   if(!n) return null;
   let exact=list.find(x=>norm(x)===n);
   if(exact) return exact;
@@ -960,7 +961,7 @@ function parseSimpleNamePoints(text){
   if(!registered.length)return [];
   const lines=String(text||"").split(/\r?\n/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
   const out=[],used=new Set();
-  const nameKey=x=>norm(String(x||"").replace(/\[?HOLa\]?/ig,"").replace(/ᓚᘏᗢ/g,"").replace(/^[^\p{L}\p{N}]+/gu,""));
+  const nameKey=x=>norm(canonicalDSPlayerName(String(x||"").replace(/\[?HOLa\]?/ig,"").replace(/ᓚᘏᗢ/g,"").replace(/^[^\p{L}\p{N}]+/gu,"")));
   // The cat symbol is decorative; JEBRAW and JEBRAWww are OCR aliases for
   // the registered member JEBRAW ᓚᘏᗢ, never separate players.
   const jebrawAlias=x=>/^jebraw{1,6}$/.test(x);
@@ -985,7 +986,7 @@ function parseSimpleNamePoints(text){
   for(let i=0;i<lines.length-1;i++){
     const raw=lines[i];
     const actual=nameKey(raw);
-    if(!/\[?HOLa\]?/i.test(raw)&&!jebrawAlias(actual)&&!jebrawInLine(raw))continue;
+    if(!/\[?HOLa\]?/i.test(raw)&&!jebrawAlias(actual)&&!jebrawInLine(raw)&&actual!=="mirrliva")continue;
     if(actual.length<3)continue;
     const candidates=registered.map(wanted=>{
       const key=nameKey(wanted);
@@ -1066,8 +1067,8 @@ async function fileAsDataUrl(file){
 
 // V2: geometry-first score reader. No legacy free-text name/score parser is used.
 function dsV2Name(text){
-  return norm(String(text||"").replace(/\[?HOLa\]?/ig,"").replace(/ᓚᘏᗢ/g," ")
-    .replace(/^[^a-zA-ZÀ-ÿ0-9]+/,""));
+  return norm(canonicalDSPlayerName(String(text||"").replace(/\[?HOLa\]?/ig,"").replace(/ᓚᘏᗢ/g," ")
+    .replace(/^[^a-zA-ZÀ-ÿ0-9]+/,"")));
 }
 function dsV2Match(raw,registered){
   const clean=dsV2Name(raw);

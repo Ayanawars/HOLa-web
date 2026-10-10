@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id);
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[ᓚᘏᗢ]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const format=value=>Number(value||0).toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+"M";
-const aliases={"jebraw":"JEBRAWW","jebrawuu":"JEBRAWW","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ"};
+const aliases={"mirliva":"Mirrliva","jebraw":"JEBRAWW","jebrawuu":"JEBRAWW","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ"};
 let profiles=[],byName=new Map(),results=[],worker=null,busy=false,scanned=false,session=null,report=null;
 let thpReportText="";
 function message(value,kind="info",id="scanStatus"){const el=$(id);el.textContent=value;el.className="notice "+(kind==="info"?"":kind);}
