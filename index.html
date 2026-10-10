@@ -445,6 +445,7 @@
       font-size:clamp(20px,5.8vw,29px);
     }
 
+    .events[hidden] { display:none !important; }
     .events {
       margin-top:18px;
       padding:14px 10px 12px;
@@ -1224,7 +1225,7 @@
         </div>
       </section>
 
-      <section class="events" aria-labelledby="eventsTitle">
+      <section class="events" aria-labelledby="eventsTitle" hidden>
         <div class="events__heading">
           <h2 id="eventsTitle" data-i18n="eventsTitle">Próximos eventos</h2>
           <span class="events__all" data-i18n="viewAll">Ver todos →</span>
@@ -1370,6 +1371,8 @@
     }
 
     function renderUpcomingEvents(language){
+      const section=document.querySelector('.events');
+      if(section)section.hidden=window.__holaEventsEnabled!==true;
       const rows=window.__holaUpcomingEvents||[];
       const byKey=Object.fromEntries(rows.map(row=>[row.event_key,row]));
       document.querySelectorAll('.event-card__schedule[data-event-key]').forEach(el=>{
@@ -1380,7 +1383,15 @@
 
     async function loadUpcomingEvents(){
       try{
-        const response=await fetch(`${SUPABASE_URL}/rest/v1/upcoming_events?select=event_key,event_date,event_time&order=event_key.asc`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}});
+        const headers={apikey:SUPABASE_PUBLISHABLE_KEY};
+        const [response,visibilityResponse]=await Promise.all([
+          fetch(`${SUPABASE_URL}/rest/v1/upcoming_events?select=event_key,event_date,event_time&order=event_key.asc`,{headers,cache:'no-store'}),
+          fetch(`${SUPABASE_URL}/rest/v1/upcoming_events_visibility?id=eq.1&select=enabled`,{headers,cache:'no-store'})
+        ]);
+        if(!visibilityResponse.ok)throw new Error('Event visibility unavailable');
+        const visibility=await visibilityResponse.json();
+        if(visibility.length!==1||typeof visibility[0].enabled!=='boolean')throw new Error('Invalid event visibility');
+        window.__holaEventsEnabled=visibility[0].enabled;
         if(!response.ok)throw new Error(`Supabase events: ${response.status}`);
         const rows=await response.json();
         window.__holaUpcomingEvents=Array.isArray(rows)?rows:[];

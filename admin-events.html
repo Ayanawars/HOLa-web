@@ -34,6 +34,11 @@
       <div class="kicker">ADMINISTRACIÓN · S3</div>
       <h1 class="title">Próximos eventos</h1>
       <p class="sub">Configura la <strong>fecha</strong> y la <strong>hora del servidor</strong> de los cuatro banners del index. El día de la semana se calcula automáticamente y nunca se convierte a la hora local del jugador.</p>
+      <div class="who" style="flex-wrap:wrap;margin:0 0 16px">
+        <div><strong>Visibilidad en el index</strong><p class="sub" style="margin:5px 0 0">Oculta o muestra juntos los cuatro eventos. Las fechas y horas se conservan.</p></div>
+        <button class="save" id="toggleEventsVisibility" type="button" style="margin-top:0" disabled>Cargando visibilidad…</button>
+        <div class="status" id="visibilityStatus" role="status" aria-live="polite" style="width:100%"></div>
+      </div>
       <div class="event-grid">
         <div class="event" data-event="alliance_exercise"><strong>Ejercicio de alianza</strong><div class="fields"><label>Fecha<input type="date" data-field="date"></label><label>Server time<input type="time" data-field="time"></label></div><span class="server-note">⏱ SERVER TIME · sin conversión local</span><div class="preview" data-preview>Sin fecha programada</div></div>
         <div class="event" data-event="zombie_siege"><strong>Asedio zombi</strong><div class="fields"><label>Fecha<input type="date" data-field="date"></label><label>Server time<input type="time" data-field="time"></label></div><span class="server-note">⏱ SERVER TIME · sin conversión local</span><div class="preview" data-preview>Sin fecha programada</div></div>
@@ -67,6 +72,33 @@
       const d=new Date(date+'T12:00:00Z'); const day=new Intl.DateTimeFormat(eventLocale(),{weekday:'short',timeZone:'UTC'}).format(d).replace('.','').toLocaleUpperCase(eventLocale()); const dp=new Intl.DateTimeFormat(eventLocale(),{day:'2-digit',month:'short',timeZone:'UTC'}).format(d).replace('.','').toLocaleUpperCase(eventLocale()); out.textContent=`${day} · ${dp} · ${time} ${eventLocale()==='tr-TR'?'SUNUCU SAATİ':'SERVER TIME'}`;
     }
     document.querySelectorAll('.event').forEach(card=>card.querySelectorAll('input').forEach(input=>input.addEventListener('input',()=>renderPreview(card))));
+    let eventsEnabled=null,visibilityBusy=false;
+    function renderVisibility(){
+      const b=$('toggleEventsVisibility');
+      b.disabled=visibilityBusy||eventsEnabled===null;
+      b.textContent=eventsEnabled===null?'REINTENTAR CARGA':eventsEnabled?'OCULTAR TODOS LOS EVENTOS DEL INDEX':'MOSTRAR TODOS LOS EVENTOS EN EL INDEX';
+      b.style.background=eventsEnabled?'var(--danger)':'var(--ok)';
+      b.setAttribute('aria-pressed',String(eventsEnabled===false));
+    }
+    async function loadVisibility(){
+      const {data,error}=await sb.from('upcoming_events_visibility').select('enabled').eq('id',1).single();
+      if(error||typeof data?.enabled!=='boolean'){eventsEnabled=null;renderVisibility();$('toggleEventsVisibility').disabled=false;$('visibilityStatus').className='status error';$('visibilityStatus').textContent='No se pudo cargar la visibilidad. Pulsa el botón para reintentar.';return;}
+      eventsEnabled=data.enabled;renderVisibility();$('visibilityStatus').className='status';
+      $('visibilityStatus').textContent=eventsEnabled?'Los cuatro eventos están visibles en el index.':'Todos los eventos están ocultos del index.';
+    }
+    async function toggleVisibility(){
+      if(visibilityBusy)return;
+      if(eventsEnabled===null){await loadVisibility();return;}
+      const expected=eventsEnabled,next=!expected;visibilityBusy=true;renderVisibility();const s=$('visibilityStatus');s.className='status';s.textContent='Guardando visibilidad…';
+      try{
+        const {data,error}=await sb.from('upcoming_events_visibility').update({enabled:next,updated_at:new Date().toISOString()}).eq('id',1).eq('enabled',expected).select('enabled').maybeSingle();
+        if(error)throw error;
+        if(!data){await loadVisibility();throw Error('La visibilidad cambió desde otro administrador. Revisa el estado actual.');}
+        eventsEnabled=data.enabled;s.className='status ok';s.textContent=eventsEnabled?'✓ Todos los eventos vuelven a mostrarse en el index.':'✓ Todos los eventos se han ocultado del index.';
+      }catch(e){s.className='status error';s.textContent='No se pudo cambiar la visibilidad: '+(e?.message||e);}
+      finally{visibilityBusy=false;renderVisibility();}
+    }
+    $('toggleEventsVisibility').addEventListener('click',toggleVisibility);
     async function load(){
       const {data,error}=await sb.from('upcoming_events').select('event_key,event_date,event_time');
       if(error){$('eventsStatus').textContent='No se pudieron cargar los eventos.';$('eventsStatus').className='status error';return;}
@@ -80,7 +112,7 @@
     async function logout(){await sb.auth.signOut();sessionStorage.removeItem('hola-admin-display-name');sessionStorage.removeItem('hola-admin-rank');location.replace('admin-login.html');}
     $('saveEvents').addEventListener('click',save);$('logoutTop').addEventListener('click',logout);
     document.addEventListener('hola:languagechange',()=>document.querySelectorAll('.event[data-event]').forEach(renderPreview));
-    const ok=await verify();if(!ok){await deny();}else{await load();$('guard').hidden=true;$('app').hidden=false;}
+    const ok=await verify();if(!ok){await deny();}else{await Promise.all([load(),loadVisibility()]);$('guard').hidden=true;$('app').hidden=false;}
   </script>
 <script src="js/hola-tr-ui.js"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
