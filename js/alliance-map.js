@@ -1,5 +1,5 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-import {comparePositions} from './map-position-compare.js?v=20261010-1';
+import {comparePositions,applyPositionReviews} from './map-position-compare.js?v=20261010-reviews';
 const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV');
 const $=id=>document.getElementById(id),admin=document.body.classList.contains('admin');
 let slots=[],revision,selected=null,zoom=1,busy=false,lang=localStorage.getItem('hola-language')||'es';
@@ -44,7 +44,7 @@ function drawBaseLabel(s,active){
  text(`Y:${s.y}`,px(s.x),py(s.y)+53.5,29,'#082e43');
 }
 
-function draw(){ctx.fillStyle='#d4b477';ctx.fillRect(0,0,W,H);text('HOLa · '+say('MAPA DE LA ALIANZA','ALLIANCE MAP'),W/2,55,38);text(say('Nombre · coordenadas del centro · bases 3 × 3','Name · centre coordinates · 3 × 3 bases'),W/2,95,21);ctx.strokeStyle='#a58c61';ctx.lineWidth=1;for(let x=193;x<=256;x++){ctx.beginPath();ctx.moveTo(px(x-.5),py(999.5));ctx.lineTo(px(x-.5),py(956.5));ctx.stroke();if((x-195)%5===0)text(x,px(x),132,18)}for(let y=957;y<=1000;y++){ctx.beginPath();ctx.moveTo(px(192.5),py(y-.5));ctx.lineTo(px(256),py(y-.5));ctx.stroke();if(y%5===0)text(y,75,py(y)+6,18)}ctx.strokeStyle='#655132';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(px(192.5),py(999.5));ctx.lineTo(px(256),py(999.5));ctx.stroke();building('center',220.5,986.5,229.5,995.5,say('CENTRO DE ALIANZA','ALLIANCE CENTRE'));building('mountain',218.5,971.5,234.5,986.5,say('MONTAÑA','MOUNTAIN'));building('building',193.5,957.5,196.5,960.5,'X:195 Y:959');for(const s of slots){const active=s.id===selected?.id,misplaced=isMisplaced(s);box(s.x-1.5,s.y-1.5,s.x+1.5,s.y+1.5,misplaced?'#ffb5b5':active?'#ffe17e':'#c4ecf5',misplaced?'#b51d35':active?'#ba6f00':'#439ab5');drawBaseLabel(s,active);}if(admin&&positionScan&&$('scan-show').checked){const wrong=[...positionResults.values()].filter(r=>r.status==='misplaced').length;text(say('Rojo: posición distinta cerca de la colmena','Red: misplaced near hive')+' · '+wrong+' · '+say('Datos LWAtlas','LWAtlas data')+' '+String(positionScan.observed_at||'').replace('T',' ').replace(/\.\d+$/,''),W/2,H-130,23,'#8f2235');}text(say('Contorno aproximado · comprueba las posiciones en el juego','Approximate terrain · verify positions in game'),W/2,H-90,22);}
+function draw(){ctx.fillStyle='#d4b477';ctx.fillRect(0,0,W,H);text('HOLa · '+say('MAPA DE LA ALIANZA','ALLIANCE MAP'),W/2,55,38);text(say('Nombre · coordenadas del centro · bases 3 × 3','Name · centre coordinates · 3 × 3 bases'),W/2,95,21);ctx.strokeStyle='#a58c61';ctx.lineWidth=1;for(let x=193;x<=256;x++){ctx.beginPath();ctx.moveTo(px(x-.5),py(999.5));ctx.lineTo(px(x-.5),py(956.5));ctx.stroke();if((x-195)%5===0)text(x,px(x),132,18)}for(let y=957;y<=1000;y++){ctx.beginPath();ctx.moveTo(px(192.5),py(y-.5));ctx.lineTo(px(256),py(y-.5));ctx.stroke();if(y%5===0)text(y,75,py(y)+6,18)}ctx.strokeStyle='#655132';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(px(192.5),py(999.5));ctx.lineTo(px(256),py(999.5));ctx.stroke();building('center',220.5,986.5,229.5,995.5,say('CENTRO DE ALIANZA','ALLIANCE CENTRE'));building('mountain',218.5,971.5,234.5,986.5,say('MONTAÑA','MOUNTAIN'));building('building',193.5,957.5,196.5,960.5,'X:195 Y:959');for(const s of slots){const active=s.id===selected?.id,misplaced=isMisplaced(s);box(s.x-1.5,s.y-1.5,s.x+1.5,s.y+1.5,misplaced?'#ffb5b5':isVerified(s)?'#c9eed8':active?'#ffe17e':'#c4ecf5',misplaced?'#b51d35':isVerified(s)?'#27845b':active?'#ba6f00':'#439ab5');drawBaseLabel(s,active);}if(admin&&positionScan&&$('scan-show').checked){const wrong=[...positionResults.values()].filter(r=>r.status==='misplaced').length;text(say('Rojo: posición distinta cerca de la colmena','Red: misplaced near hive')+' · '+wrong+' · '+say('Verde: verificado manualmente','Green: manually verified')+' · '+say('Datos LWAtlas','LWAtlas data')+' '+String(positionScan.observed_at||'').replace('T',' ').replace(/\.\d+$/,''),W/2,H-130,23,'#8f2235');}text(say('Contorno aproximado · comprueba las posiciones en el juego','Approximate terrain · verify positions in game'),W/2,H-90,22);}
 function show(s,focus=true){selected=s;$('selected').textContent=label(s);scanSelection(s);if(admin){$('slot').value=s.id;$('player').value=s.name||''}draw();if(focus){zoom=Math.max(zoom,.65);size();$('viewport').scrollTo({left:px(s.x)*zoom-$('viewport').clientWidth/2,top:py(s.y)*zoom-$('viewport').clientHeight/2,behavior:'smooth'})}}
 const recordedSearches=new Map();
 async function recordSearch(s){
@@ -77,19 +77,20 @@ async function save(remove=false){if(busy)return;const target=slots.find(s=>s.id
 $('language').onclick=()=>{lang=en()?'es':'en';translate()};$('search').oninput=()=>search();$('find').onclick=()=>search(true);$('search').onkeydown=e=>{if(e.key==='Enter')search(true)};$('fit').onclick=fit;$('zoom-in').onclick=()=>{zoom=Math.min(2,zoom*1.3);size()};$('zoom-out').onclick=()=>{zoom=Math.max(.15,zoom/1.3);size()};canvas.onclick=e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;const s=slots.find(s=>Math.abs(x-px(s.x))<1.5*S&&Math.abs(y-py(s.y))<1.5*S);if(s)show(s,false)};
 $('copy').onclick=async()=>{if(!selected)return status(say('Selecciona primero un puesto.','Select a position first.'));const coordinate=`${selected.name||say('Libre','Available')} — X:${selected.x} Y:${selected.y}`;try{await navigator.clipboard.writeText(coordinate);status(say(`Copiado: ${coordinate}`,`Copied: ${coordinate}`))}catch{status(say(`Copia este texto: ${coordinate}`,`Copy this text: ${coordinate}`))}};
 $('download').onclick=async()=>{if(!slots.length)return;try{await refresh()}catch{status(say('No se pudo comprobar la versión actual. Inténtalo de nuevo.','Could not check the latest version. Please retry.'));return}canvas.toBlob(blob=>{if(!blob)return status('No se pudo generar la descarga.');const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='HOLa-mapa-coordenadas-HD.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000)},'image/png')};
-async function init(){try{if(admin){const {data:{session}}=await sb.auth.getSession();if(!session){location.href='admin-login.html';return}const {data,error}=await sb.rpc('is_hola_r4_r5_admin');if(error||!data){status('Acceso reservado a R4/R5.');return}$('content').hidden=false;$('refresh-searches').onclick=loadSearchHistory;loadSearchHistory();$('assign').onclick=()=>save();$('remove').onclick=()=>save(true);$('slot').onchange=()=>show(slots.find(s=>s.id===Number($('slot').value)));const {data:members}=await sb.from('players').select('name').order('name');if(members)$('members').replaceChildren(...members.map(p=>{const o=document.createElement('option');o.value=p.name;return o}))}await Promise.all(['center','mountain','building'].map(name=>new Promise(resolve=>{const im=new Image;im.onload=()=>{images[name]=im;resolve()};im.onerror=resolve;im.src=`assets/map/${name}.${name==='building'?'png':'jpg'}`})));await refresh();translate();fit();if(admin){setupPositionScan();await loadPositionScan();show(slots[0],false);}status('')}catch(e){status(say('No se pudo cargar el mapa. Recarga para intentarlo de nuevo.','Map could not load. Reload to try again.'));console.error(e)}}
-let positionScan=null,positionResults=new Map();
+async function init(){try{if(admin){const {data:{session}}=await sb.auth.getSession();if(!session){location.href='admin-login.html';return}const {data,error}=await sb.rpc('is_hola_r4_r5_admin');if(error||!data){status('Acceso reservado a R4/R5.');return}$('content').hidden=false;$('refresh-searches').onclick=loadSearchHistory;loadSearchHistory();$('assign').onclick=()=>save();$('remove').onclick=()=>save(true);$('slot').onchange=()=>show(slots.find(s=>s.id===Number($('slot').value)));const {data:members}=await sb.from('players').select('name').order('name');if(members)$('members').replaceChildren(...members.map(p=>{const o=document.createElement('option');o.value=p.name;return o}))}await Promise.all(['center','mountain','building'].map(name=>new Promise(resolve=>{const im=new Image;im.onload=()=>{images[name]=im;resolve()};im.onerror=resolve;im.src=`assets/map/${name}.${name==='building'?'png':'jpg'}`})));await refresh();translate();fit();if(admin){setupPositionScan();await Promise.all([loadPositionScan(),loadPositionReviews()]);show(slots[0],false);}status('')}catch(e){status(say('No se pudo cargar el mapa. Recarga para intentarlo de nuevo.','Map could not load. Reload to try again.'));console.error(e)}}
+let positionScan=null,positionResults=new Map(),positionReviews=[],reviewsLoaded=false;
 const scanMargin=()=>Number($('scan-margin')?.value||10);
 const isMisplaced=s=>admin&&$('scan-show')?.checked&&positionResults.get(s.id)?.status==='misplaced';
-function scanLabel(state){return ({correct:say('Correcto','Correct'),misplaced:say('Mal colocado','Misplaced'),away:say('Lejos de la colmena · sin rojo','Away from hive · no red'),unknown:say('Sin datos fiables · sin rojo','No reliable data · no red'),'other-server':say('Otro servidor · sin rojo','Other server · no red')})[state];}
+const isVerified=s=>admin&&positionResults.get(s.id)?.status==='verified';
+function scanLabel(state){return ({verified:say('Verificado manualmente','Manually verified'),correct:say('Correcto','Correct'),misplaced:say('Mal colocado','Misplaced'),away:say('Lejos de la colmena · sin rojo','Away from hive · no red'),unknown:say('Sin datos fiables · sin rojo','No reliable data · no red'),'other-server':say('Otro servidor · sin rojo','Other server · no red')})[state];}
 function scanSelection(s){
- const r=positionResults.get(s.id);if(!admin||!r)return;
+ if(!admin)return;reviewControls(s);const r=positionResults.get(s.id);if(!r)return;
  const actual=r.position?(' · '+say('Detectado','Detected')+' #'+r.position.server+' X'+r.position.x+' Y'+r.position.y):'';
  $('selected').textContent=label(s)+actual+' · '+scanLabel(r.status);
 }
 function compareScan(render=true){
  if(!admin)return;
- positionResults=positionScan?comparePositions(slots,positionScan.positions,scanMargin()).results:new Map();
+ positionResults=applyPositionReviews(comparePositions(slots,positionScan?.positions||[],scanMargin()).results,positionReviews,positionScan?.queried_at||null);
  if(render)renderScan();
 }
 function renderScan(){
@@ -101,12 +102,12 @@ function renderScan(){
  $('scan-help').textContent=say('Solo se marcan errores en el servidor 1834 dentro del área de los puestos asignados más el margen. Se compara el centro exacto de la base. Fuera de la zona, sin datos o en otro servidor: sin rojo.','Only mismatches on server 1834 inside the assigned area plus the margin are marked. Exact base centres are compared. Outside the area, missing data or another server: no red.');
  $('scan-freshness').textContent=say('Datos del último escaneo de LWAtlas; no es un escaneo en tiempo real. LWAtlas anuncia su cierre para el 30 oct 2026.','Latest LWAtlas scan; not a live game scan. LWAtlas announces closure on 30 Oct 2026.');
  $('scan-report').replaceChildren();$('scan-counts').replaceChildren();
- if(!positionScan){$('scan-date').textContent=say('Todavía no se han consultado posiciones.','No positions checked yet.');draw();return;}
+ if(!positionScan){$('scan-date').textContent=say('Todavía no se han consultado posiciones.','No positions checked yet.');if(selected)scanSelection(selected);draw();return;}
  const {bounds}=comparePositions(slots,positionScan.positions,scanMargin());
  const observed=String(positionScan.observed_at||say('no disponible','not available')).replace('T',' ').replace(/\.\d+$/,'');
  $('scan-date').textContent=say('Escaneo de la fuente: ','Source scan: ')+observed+' · '+say('Zona: ','Area: ')+(bounds?'X'+bounds.minX+'–'+bounds.maxX+' · Y'+bounds.minY+'–'+bounds.maxY:'—')+' · '+say('Las fechas de LWAtlas no indican zona horaria.','LWAtlas dates have no published timezone.');
  const values=[...positionResults.values()];
- for(const state of ['misplaced','correct','away','other-server','unknown']){
+ for(const state of ['misplaced','correct','verified','away','other-server','unknown']){
   const n=values.filter(r=>r.status===state).length;if(!n&&state==='other-server')continue;
   const badge=document.createElement('span');badge.className='scan-count '+state;badge.textContent=n+' · '+scanLabel(state);$('scan-counts').append(badge);
  }
@@ -118,7 +119,7 @@ function renderScan(){
   b.onclick=()=>show(r.slot);return b;
  }
  wrong.forEach(r=>$('scan-report').append(row(r)));
- for(const state of ['away','other-server','unknown']){
+ for(const state of ['verified','away','other-server','unknown']){
   const items=values.filter(r=>r.status===state);if(!items.length)continue;
   const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=items.length+' · '+scanLabel(state);details.append(summary);items.forEach(r=>details.append(row(r)));$('scan-report').append(details);
  }
@@ -143,9 +144,34 @@ async function scanPositions(){
 function setupPositionScan(){
  const value=localStorage.getItem('hola-map-scan-margin');if(['0','5','10','20','30'].includes(value))$('scan-margin').value=value;
  $('scan-button').onclick=scanPositions;
+ $('position-verify').onclick=()=>savePositionReview(false);
+ $('position-unverify').onclick=()=>savePositionReview(true);
  $('scan-margin').onchange=()=>{localStorage.setItem('hola-map-scan-margin',$('scan-margin').value);compareScan();};
  $('scan-show').onchange=()=>draw();
  renderScan();
 }
 
+function reviewControls(s){
+ if(!admin||!$('position-verify'))return;const r=s&&positionResults.get(s.id),verified=r?.status==='verified';
+ $('position-verify').textContent=say('Marcar como bien colocado','Mark as correctly placed');$('position-unverify').textContent=say('Quitar confirmación','Remove confirmation');
+ $('position-verify').disabled=busy||!reviewsLoaded||!s?.name||verified;
+ $('position-unverify').disabled=busy||!reviewsLoaded||!s?.name;$('position-unverify').hidden=!s?.name||!positionReviews.some(review=>review.player_name===s.name);
+ $('position-review-state').textContent=verified?say('Confirmado manualmente para este puesto: ','Manually confirmed for this position: ')+new Intl.DateTimeFormat(en()?'en-GB':'es-ES',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Madrid'}).format(new Date(r.review.verified_at)):say('Selecciona una base en este mapa para reorganizarla. Cuando compruebes su colocación en el juego, puedes confirmarla aquí.','Select a base on this map to reorganize it. After checking its position in game, confirm it here.');
+}
+async function loadPositionReviews(){
+ try{const {data,error}=await sb.from('alliance_map_position_reviews').select('player_name,assigned_x,assigned_y,source_queried_at,verified_at').order('player_name');if(error)throw error;positionReviews=data||[];reviewsLoaded=true;compareScan();}
+ catch(e){reviewsLoaded=false;$('position-review-status').textContent=say('No se pudieron cargar las confirmaciones. Recarga para reintentar.','Could not load confirmations. Reload to retry.');if(selected)reviewControls(selected);}
+}
+async function savePositionReview(remove){
+ if(busy||!reviewsLoaded||!selected?.name)return;const slot=slots.find(s=>s.id===selected.id);if(!slot?.name)return;
+ busy=true;reviewControls(slot);$('assign').disabled=$('remove').disabled=true;$('position-review-status').textContent=say('Guardando confirmación…','Saving confirmation…');
+ try{let result;if(remove){result=await sb.from('alliance_map_position_reviews').delete().eq('player_name',slot.name).select('player_name');}else{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.user)throw Error(say('Inicia sesión de nuevo.','Sign in again.'));
+  result=await sb.from('alliance_map_position_reviews').upsert({player_name:slot.name,assigned_x:slot.x,assigned_y:slot.y,source_queried_at:positionScan?.queried_at||null,verified_at:new Date().toISOString(),verified_by:session.user.id},{onConflict:'player_name'}).select('player_name');
+ }if(result.error)throw result.error;if(!remove&&!result.data?.length)throw Error(say('No se confirmó el guardado.','Save was not confirmed.'));
+ await refresh();await loadPositionReviews();show(slots.find(s=>s.id===slot.id),false);if(!reviewsLoaded){$('position-review-status').textContent=say('Guardado, pero no se pudieron recargar las confirmaciones. Recarga el mapa.','Saved, but confirmations could not be reloaded. Reload the map.');return;}$('position-review-status').textContent=remove?say('Confirmación retirada. Se vuelve a mostrar el resultado del escaneo.','Confirmation removed. The scan result is shown again.'):say('Bien colocado: confirmado y guardado para los administradores.','Correct placement confirmed and saved for administrators.');
+ }catch(e){$('position-review-status').textContent=say('No se pudo guardar: ','Could not save: ')+(e.message||e);}finally{busy=false;$('assign').disabled=$('remove').disabled=false;if(selected)reviewControls(selected);}
+}
+
 init();
+

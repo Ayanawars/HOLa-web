@@ -1,4 +1,10 @@
 export function normalizePositionName(value){return String(value||'').normalize('NFKD').replace(/[\p{M}\u0640ᓚᘏᗢ]/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');}
+export function applyPositionReviews(results,reviews,sourceQueriedAt=null){
+ const sameDate=(a,b)=>!a&&!b||!!a&&!!b&&Number.isFinite(Date.parse(a))&&Date.parse(a)===Date.parse(b);
+ const updated=new Map(results);
+ for(const [id,result] of updated){const matching=reviews.filter(r=>r.player_name===result.slot.name&&r.assigned_x===result.slot.x&&r.assigned_y===result.slot.y&&sameDate(r.source_queried_at,sourceQueriedAt));if(matching.length===1)updated.set(id,{...result,sourceStatus:result.status,status:'verified',review:matching[0]});}
+ return updated;
+}
 export function comparePositions(slots,positions,margin=10){
  const occupied=slots.filter(s=>s.name),layout=slots.filter(s=>Number.isFinite(s.x)&&Number.isFinite(s.y)),m=Math.max(0,Math.min(50,Number(margin)||0));
  const bounds=layout.length?{minX:Math.max(0,Math.min(...layout.map(s=>s.x))-m),maxX:Math.min(999,Math.max(...layout.map(s=>s.x))+m),minY:Math.max(0,Math.min(...layout.map(s=>s.y))-m),maxY:Math.min(999,Math.max(...layout.map(s=>s.y))+m)}:null;
@@ -15,3 +21,4 @@ export function comparePositions(slots,positions,margin=10){
  }
  return {results:result,bounds};
 }
+
