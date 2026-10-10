@@ -50,7 +50,7 @@
         <details style="margin-top:12px"><summary data-summary-word="5">Pegar lista de nombres</summary><p data-summary-word="6">Separados por comas, punto y coma o saltos de línea.</p><textarea id="memberSummaryNames" aria-label="Lista de nombres" placeholder="Davdix, Tariix, MUSLOO"></textarea><div class="summary-actions"><button id="memberSummaryPasteApply" class="secondary" type="button" data-summary-word="7">Seleccionar lista</button></div></details>
         <div class="summary-actions"><button id="memberSummaryGenerate" class="save" type="button" data-summary-word="8" disabled>Generar resumen</button></div>
         <div id="memberSummaryNotice" class="status" role="status" aria-live="polite"></div>
-        <div id="memberSummaryOutput" class="summary-output" hidden><div id="memberSummaryStats" class="summary-stats"></div><div id="memberSummaryCards" class="summary-cards"></div><div class="summary-actions"><button id="memberSummaryCopy" class="secondary" type="button" data-summary-word="9">Copiar resumen</button></div><details><summary data-summary-word="0">Resumen de miembros</summary><textarea id="memberSummaryText" readonly aria-label="Texto del resumen"></textarea></details></div>
+        <div id="memberSummaryOutput" class="summary-output" hidden><div id="memberSummaryStats" class="summary-stats"></div><div id="memberSummaryCards" class="summary-cards"></div><div class="summary-actions"><select id="memberSummaryImagePage" aria-label="Página de imagen" hidden style="max-width:180px"></select><button id="memberSummaryDownload" class="save" type="button">Descargar imagen PNG</button><button id="memberSummaryCopy" class="secondary" type="button" data-summary-word="9">Copiar resumen</button></div><details><summary data-summary-word="0">Resumen de miembros</summary><textarea id="memberSummaryText" readonly aria-label="Texto del resumen"></textarea></details></div>
       </details>
       <div class="editor" id="editor" hidden>
         <div class="member-head">
@@ -116,7 +116,7 @@
   </main>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { mountMemberSummary } from './js/member-summary.js?v=20261010-1';
+    import { mountMemberSummary } from './js/member-summary.js?v=20261010-2';
     const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
     const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
     const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});

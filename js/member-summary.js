@@ -28,11 +28,36 @@ export function buildMemberSummary(rows,lang='es'){
  if(lang!=='es')for(const card of cards)card.fields.find(f=>f[0]==='Rango')[0]='Rank';
  return {stats,cards,text:['HOLa · '+w[0],stats.join('\n'),...cards.map(card=>[card.name,...card.fields.map(([key,value])=>`${key}: ${value}`)].join('\n'))].join('\n\n')};
 }
+// Each PNG holds at most twelve profiles, keeping text readable on phones.
+export function renderSummaryImage(result,{page=0,lang='es',date=new Date(),createCanvas=()=>document.createElement('canvas')}={}){
+ const pages=Math.max(1,Math.ceil(result.cards.length/12));page=Math.max(0,Math.min(pages-1,Math.floor(page)||0));
+ const cards=result.cards.slice(page*12,(page+1)*12),canvas=createCanvas();canvas.width=1600;canvas.height=1;
+ const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');
+ const font=(size,bold=false)=>`${bold?'700':'500'} ${size}px Arial, sans-serif`;
+ function wrap(text,width,size,bold=false){ctx.font=font(size,bold);const lines=[];let line='';for(const word of String(text).split(/\s+/)){const candidate=line?line+' '+word:word;if(ctx.measureText(candidate).width<=width){line=candidate;continue;}if(line){lines.push(line);line='';}for(const ch of word){if(line&&ctx.measureText(line+ch).width>width){lines.push(line);line='';}line+=ch;}}if(line)lines.push(line);return lines.length?lines:[''];}
+ const margin=48,gap=24,width=(1600-margin*2-gap)/2;
+ const layouts=cards.map(card=>{const names=wrap(card.name,width-56,34,true),fields=card.fields.map(([key,value])=>({key,lines:wrap(value,width-290,25,true)}));return {names,fields,height:46+names.length*42+18+fields.reduce((sum,f)=>sum+Math.max(1,f.lines.length)*34+9,0)+22};});
+ const rowHeights=[];for(let i=0;i<layouts.length;i+=2)rowHeights.push(Math.max(layouts[i].height,layouts[i+1]?.height||0));
+ const stats=result.stats.flatMap(s=>wrap(s,1504,27)),header=164+stats.length*38,footer=90;
+ canvas.height=header+rowHeights.reduce((sum,h)=>sum+h+gap,0)+footer;
+ ctx.fillStyle='#f7e8c7';ctx.fillRect(0,0,canvas.width,canvas.height);
+ const gradient=ctx.createLinearGradient(0,0,1600,header);gradient.addColorStop(0,'#103f69');gradient.addColorStop(1,'#167fa2');ctx.fillStyle=gradient;ctx.fillRect(0,0,1600,header-24);
+ ctx.textBaseline='top';ctx.textAlign='left';ctx.fillStyle='#fff7df';ctx.font=font(48,true);ctx.fillText('HOLa · '+(lang==='es'?'Resumen de miembros':'Member summary'),margin,36);
+ ctx.font=font(27);ctx.fillStyle='#ddf5fc';stats.forEach((s,i)=>ctx.fillText(s,margin,106+i*38));
+ let y=header;
+ for(let i=0;i<layouts.length;i+=2){for(let col=0;col<2&&i+col<layouts.length;col++){
+  const card=layouts[i+col],x=margin+col*(width+gap),h=rowHeights[i/2];ctx.fillStyle='#fffdf7';ctx.strokeStyle='#ceb16c';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(x,y,width,h,22);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#103f69';ctx.font=font(34,true);card.names.forEach((line,j)=>ctx.fillText(line,x+28,y+26+j*42));let fy=y+46+card.names.length*42;
+  for(const field of card.fields){ctx.font=font(24);ctx.fillStyle='#627a88';ctx.textAlign='left';ctx.fillText(field.key,x+28,fy);ctx.font=font(25,true);ctx.fillStyle='#183b5c';ctx.textAlign='right';field.lines.forEach((line,j)=>ctx.fillText(line,x+width-28,fy+j*34));fy+=field.lines.length*34+9;}
+  ctx.textAlign='left';
+ }y+=rowHeights[i/2]+gap;}
+ ctx.font=font(23);ctx.fillStyle='#536d7b';const stamp=new Intl.DateTimeFormat(lang==='es'?'es-ES':'en-GB',{dateStyle:'medium',timeStyle:'short'}).format(date);ctx.fillText(stamp,margin,canvas.height-58);ctx.textAlign='right';ctx.fillText(`${page+1} / ${pages}`,1600-margin,canvas.height-58);return canvas;
+}
 export function mountMemberSummary({sb,getPlayers,getLanguage}){
  const $=id=>document.getElementById(id),picked=new Set();let version=0,lastRows=null,summaryText='';
  const words=()=>copy[getLanguage()]||copy.en;
  function invalidate(){version++;lastRows=null;summaryText='';$('memberSummaryOutput').hidden=true;$('memberSummaryNotice').textContent='';}
- function applyLanguage(){const w=words();document.querySelectorAll('[data-summary-word]').forEach(el=>{el.textContent=w[Number(el.dataset.summaryWord)]});$('memberSummarySearch').placeholder=w[2];render();if(lastRows)show(lastRows);}
+ function applyLanguage(){const w=words();document.querySelectorAll('[data-summary-word]').forEach(el=>{el.textContent=w[Number(el.dataset.summaryWord)]});$('memberSummarySearch').placeholder=w[2];$('memberSummaryDownload').textContent=getLanguage()==='es'?'Descargar imagen PNG':'Download PNG image';render();if(lastRows)show(lastRows);}
  function render(){
   const w=words(),list=$('memberSummaryList'),query=summaryKey($('memberSummarySearch').value),visible=getPlayers().filter(p=>!query||summaryKey(p.name).includes(query));list.replaceChildren();
   for(const p of visible){const row=document.createElement('label');row.className='summary-choice';const box=document.createElement('input');box.type='checkbox';box.checked=picked.has(p.name);box.addEventListener('change',()=>{if(box.checked)picked.add(p.name);else picked.delete(p.name);invalidate();render();});const name=document.createElement('span');name.textContent=p.name;const meta=document.createElement('small');meta.textContent=[p.rank,p.thp].filter(Boolean).join(' · ');row.append(box,name,meta);list.append(row);}
@@ -41,6 +66,7 @@ export function mountMemberSummary({sb,getPlayers,getLanguage}){
  }
  function show(rows){const result=buildMemberSummary(rows,getLanguage());summaryText=result.text;$('memberSummaryStats').textContent=result.stats.join(' · ');const box=$('memberSummaryCards');box.replaceChildren();
   for(const card of result.cards){const article=document.createElement('article');article.className='summary-card';const title=document.createElement('h3');title.textContent=card.name;const dl=document.createElement('dl');for(const [key,value] of card.fields){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=value;dl.append(dt,dd);}article.append(title,dl);box.append(article);}
+  const pages=Math.ceil(result.cards.length/12),pageSelect=$('memberSummaryImagePage');pageSelect.replaceChildren();for(let i=0;i<pages;i++){const option=document.createElement('option');option.value=String(i);option.textContent=(getLanguage()==='es'?'Imagen':'Image')+` ${i+1} / ${pages}`;pageSelect.append(option);}pageSelect.value='0';pageSelect.hidden=pages<=1;
   $('memberSummaryText').value=summaryText;$('memberSummaryOutput').hidden=false;
  }
  $('memberSummarySearch').addEventListener('input',render);
@@ -54,6 +80,11 @@ export function mountMemberSummary({sb,getPlayers,getLanguage}){
   }catch(e){if(stamp===version){lastRows=null;summaryText='';$('memberSummaryNotice').textContent=words()[14]+': '+(e.message||e);}}finally{if(stamp===version)render();}
  });
  $('memberSummaryCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(summaryText);$('memberSummaryNotice').textContent=words()[15];}catch{$('memberSummaryText').focus();$('memberSummaryText').select();$('memberSummaryNotice').textContent=words()[16];}});
+ $('memberSummaryDownload').addEventListener('click',async()=>{
+  if(!lastRows?.length)return;const button=$('memberSummaryDownload'),lang=getLanguage(),page=Number($('memberSummaryImagePage').value)||0,rows=lastRows;button.disabled=true;
+  try{const canvas=renderSummaryImage(buildMemberSummary(rows,lang),{page,lang});const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('PNG unavailable')),'image/png'));const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`HOLa-resumen-miembros-${new Date().toISOString().slice(0,10)}-${page+1}.png`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);$('memberSummaryNotice').textContent=lang==='es'?'Imagen PNG preparada.':'PNG image ready.';
+  }catch(e){$('memberSummaryNotice').textContent=(lang==='es'?'No se pudo descargar la imagen: ':'Could not download image: ')+(e.message||e);}finally{button.disabled=false;}
+ });
  applyLanguage();
  return {sync(rename){if(rename&&picked.delete(rename.from))picked.add(rename.to);const available=new Set(getPlayers().map(p=>p.name));for(const name of picked)if(!available.has(name))picked.delete(name);invalidate();render();},applyLanguage};
 }
