@@ -22,6 +22,9 @@
     @media(max-width:600px){.grid,.grid.three{grid-template-columns:1fr}.squad-fields{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.title{font-size:25px}.avatar-tools{grid-template-columns:1fr}.tiny{width:100%}}
     .delete-member{width:100%;min-height:48px;margin-top:12px;border:1px solid #a83e43;border-radius:14px;background:#fff0ef;color:#a83e43;font-weight:900;cursor:pointer}.delete-member:disabled{opacity:.55;cursor:wait}
   </style>
+  <style>
+    .summary-panel{margin:16px 0;border:1px solid var(--line);border-radius:16px;background:#fffaf0;padding:13px}.summary-panel>summary{cursor:pointer;font-weight:900;color:var(--navy);font-size:16px;min-height:32px}.summary-panel p{font-size:12px;color:var(--muted);line-height:1.5}.summary-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.summary-actions button{min-height:42px;flex:1;padding:9px 12px}.summary-choices{max-height:290px;overflow:auto;border:1px solid #b5d4df;border-radius:12px;background:#fff;margin:10px 0}.summary-choice{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:3px 9px;padding:11px;border-bottom:1px solid #e8edf0;min-height:53px;letter-spacing:0;text-transform:none;cursor:pointer}.summary-choice input{width:19px;height:19px;min-height:0;margin:0;grid-row:span 2;accent-color:#169bcf}.summary-choice span{font-size:13px;color:var(--ink);overflow-wrap:anywhere}.summary-choice small{font-size:10px;font-weight:600}.summary-choice:has(input:checked){background:#eaf8fd}.summary-count{font-weight:850;color:var(--navy);font-size:12px}.summary-stats{padding:12px;border-radius:12px;background:#eaf8fd;color:var(--navy);font-size:12px;font-weight:800;line-height:1.8;margin:12px 0}.summary-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.summary-card{min-width:0;padding:12px;border:1px solid #d7c79e;border-radius:13px;background:white}.summary-card h3{margin:0 0 10px;font-size:15px;color:var(--navy);overflow-wrap:anywhere}.summary-card dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 10px;font-size:11px}.summary-card dt{color:var(--muted)}.summary-card dd{margin:0;text-align:right;overflow-wrap:anywhere;font-weight:800}.summary-output textarea{min-height:190px;font-size:12px}.summary-output details{margin-top:12px}.summary-output[hidden]{display:none!important}@media(max-width:500px){.summary-cards{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
   <div class="guard" id="guard"><div><div class="spinner"></div><strong>Comprobando acceso R4/R5…</strong></div></div>
@@ -37,6 +40,18 @@
         <div class="results" id="searchResults" hidden></div>
       </div>
 
+      <details class="summary-panel" id="memberSummaryPanel">
+        <summary data-summary-word="0">Resumen de miembros</summary>
+        <p data-summary-word="1">Selecciona jugadores o pega una lista de nombres.</p>
+        <input id="memberSummarySearch" type="search" aria-label="Buscar en la lista del resumen" placeholder="Buscar en la lista…">
+        <div class="summary-actions"><button class="secondary" id="memberSummarySelectVisible" type="button" data-summary-word="3">Seleccionar visibles</button><button class="secondary" id="memberSummaryClear" type="button" data-summary-word="4">Limpiar selección</button></div>
+        <div id="memberSummaryList" class="summary-choices"></div>
+        <div id="memberSummaryCount" class="summary-count" aria-live="polite"></div>
+        <details style="margin-top:12px"><summary data-summary-word="5">Pegar lista de nombres</summary><p data-summary-word="6">Separados por comas, punto y coma o saltos de línea.</p><textarea id="memberSummaryNames" aria-label="Lista de nombres" placeholder="Davdix, Tariix, MUSLOO"></textarea><div class="summary-actions"><button id="memberSummaryPasteApply" class="secondary" type="button" data-summary-word="7">Seleccionar lista</button></div></details>
+        <div class="summary-actions"><button id="memberSummaryGenerate" class="save" type="button" data-summary-word="8" disabled>Generar resumen</button></div>
+        <div id="memberSummaryNotice" class="status" role="status" aria-live="polite"></div>
+        <div id="memberSummaryOutput" class="summary-output" hidden><div id="memberSummaryStats" class="summary-stats"></div><div id="memberSummaryCards" class="summary-cards"></div><div class="summary-actions"><button id="memberSummaryCopy" class="secondary" type="button" data-summary-word="9">Copiar resumen</button></div><details><summary data-summary-word="0">Resumen de miembros</summary><textarea id="memberSummaryText" readonly aria-label="Texto del resumen"></textarea></details></div>
+      </details>
       <div class="editor" id="editor" hidden>
         <div class="member-head">
           <img class="avatar" id="avatarPreview" alt="Avatar del miembro">
@@ -101,12 +116,14 @@
   </main>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { mountMemberSummary } from './js/member-summary.js?v=20261010-1';
     const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
     const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
     const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const $=id=>document.getElementById(id);
     const fields=['name','rank','hq_level','profession','thp','squad1_type','squad1_power','squad2_type','squad2_power','squad3_type','squad3_power','city','community','country','flag','about_me','epic_quote','survey_completed_at','ai_detection_week'];
     let players=[], selected=null, avatarValue='', creatingMember=false, deletingMember=false;
+    const summaryPanel=mountMemberSummary({sb,getPlayers:()=>players,getLanguage:()=>$('memberLanguage').value});
     const fallbackAvatar='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" rx="80" fill="#eaf8fd"/><circle cx="80" cy="59" r="28" fill="#8ccce5"/><path d="M30 145c5-35 25-52 50-52s45 17 50 52" fill="#8ccce5"/></svg>`);
     function normalizeName(v){return String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
     function setStatus(text,type=''){const el=$('memberStatus');el.textContent=text;el.className='status'+(type?' '+type:'');}
@@ -130,6 +147,7 @@
     function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
     async function loadPlayers(){
       const {data,error}=await sb.from('players').select('name,rank,thp').order('name',{ascending:true}); if(error)throw error; players=Array.isArray(data)?data:[];
+      summaryPanel.sync();
     }
     function fill(row){
       selected=row; creatingMember=false; $('deleteMember').hidden=false; $('deleteStatus').hidden=true; avatarValue=row.avatar||'';
@@ -180,6 +198,7 @@
         const i=players.findIndex(p=>p.name===originalName||p.name===data.name);
         if(i>=0)players[i]=data;else players.push(data);
         players=players.filter((p,index)=>players.findIndex(x=>x.name===p.name)===index);
+        summaryPanel.sync({from:originalName,to:data.name});
         const wasNew=creatingMember;fill(data);setStatus(wasNew?'✓ Nuevo miembro creado correctamente.':newName!==originalName?'✓ Nombre e historial actualizados; datos guardados.':'✓ Datos del miembro actualizados.','ok');
       }catch(e){setStatus('No se pudieron guardar los cambios: '+(e?.message||e),'error')}finally{b.disabled=false;$('reloadMember').disabled=false}
     }
@@ -203,6 +222,7 @@
         }
         if(!data?.some(row=>row.name===name))throw new Error('No se confirmó el borrado. Comprueba tu acceso R4/R5 y recarga la ficha.');
         players=players.filter(row=>row.name!==name);
+        summaryPanel.sync();
         selected=null;creatingMember=false;avatarValue='';
         for(const id of fields)if($(id))$(id).value='';
         $('memberSearch').value='';$('searchResults').innerHTML='';$('searchResults').hidden=true;
@@ -242,6 +262,7 @@
       for(const {txt} of memberTranslatable){const idx=originalMemberLabels.indexOf(txt.__originalMemberText||txt.textContent.trim());if(idx>=0){txt.__originalMemberText=originalMemberLabels[idx];txt.textContent=words[idx];}}
       $('memberSearch').placeholder=words[2];$('newMember').textContent='＋ '+words[1];
       document.documentElement.lang=lang;localStorage.setItem('hola-language',lang);
+      summaryPanel.applyLanguage();
     }
     $('memberLanguage').value=memberI18n[localStorage.getItem('hola-language')]?localStorage.getItem('hola-language'):'es';
     $('memberLanguage').addEventListener('change',e=>applyMemberLanguage(e.target.value));
@@ -252,3 +273,4 @@
 
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
 </html>
+
