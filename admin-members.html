@@ -207,8 +207,8 @@
       if(!selected||creatingMember||deletingMember||$('saveMember').disabled)return;
       const name=selected.name;
       const question=$('memberLanguage').value==='es'
-        ?'¿Eliminar a '+name+'? Se borrarán su ficha y los datos asociados de THP, donaciones y pasajeros. Esta acción no se puede deshacer.'
-        :'Delete '+name+'? Their profile and linked THP, donation and passenger data will be removed. This cannot be undone.';
+        ?'¿Eliminar a '+name+'? Se borrarán su ficha y los datos asociados de THP y donaciones. Las estadísticas de pasajeros se conservarán. Esta acción no se puede deshacer.'
+        :'Delete '+name+'? Their profile and linked THP and donation data will be removed. Passenger statistics will be kept. This cannot be undone.';
       if(!confirm(question))return;
       deletingMember=true;
       const controls=['deleteMember','saveMember','reloadMember','newMember','memberSearch'];
