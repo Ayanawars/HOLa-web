@@ -353,7 +353,7 @@
     return p.supreme_lord_unlocked===true?'gold':'sky';
   }
   function memberFrameMarkup(p){
-    return '<img class="member-avatar-frame" src="assets/member-frame-'+memberFrame(p)+'.svg" alt="" aria-hidden="true">';
+    return '<img class="member-avatar-frame" src="assets/member-frame-'+memberFrame(p)+'.svg?v=20261012-bold-1" alt="" aria-hidden="true">';
   }
 
   function cardHtml(p,index){
@@ -716,7 +716,7 @@
 
     document.getElementById('profileName').textContent=p.name||'—';
     const profileImg=document.getElementById('profileImg');
-    document.getElementById('profileAvatarFrame').src='assets/member-frame-'+memberFrame(p)+'.svg';
+    document.getElementById('profileAvatarFrame').src='assets/member-frame-'+memberFrame(p)+'.svg?v=20261012-bold-1';
     const playerIndex=players.indexOf(p);
     profileImg.dataset.playerIndex = String(playerIndex);
     profileImg.src=p.avatar?avatarSrc(p):FALLBACK_AVATAR;
