@@ -1269,7 +1269,7 @@
       <section class="quick-access" aria-labelledby="quickAccessTitle">
         <h2 class="quick-access__heading" id="quickAccessTitle" data-i18n="quickAccess">Acceso rápido</h2>
         <a class="quick-access__card" href="alliance-map.html">
-<span class="quick-access__icon" aria-hidden="true">🗺️</span><span class="quick-access__copy"><strong class="quick-access__title">Mapa de la alianza · Alliance map</strong><span class="quick-access__subtitle">Busca tu nombre y tus coordenadas · Find your position</span></span><span class="quick-access__arrow" aria-hidden="true">›</span></a>
+<span class="quick-access__icon" aria-hidden="true">🗺️</span><span class="quick-access__copy"><strong class="quick-access__title" data-hive-home="0">Colmena</strong><span class="quick-access__subtitle" data-hive-home="1">Mira tu posición en el mapa</span></span><span class="quick-access__arrow" aria-hidden="true">›</span></a>
         <a class="quick-access__card" href="statistics.html" aria-labelledby="homeStatisticsTitle">
           <span class="quick-access__icon" aria-hidden="true"><svg viewBox="0 0 48 48" focusable="false"><path d="M8 8v32h33M15 33V23h6v10M25 33V15h6v18M35 33V7h6v26"></path></svg></span>
           <span class="quick-access__copy"><strong class="quick-access__title" id="homeStatisticsTitle" data-hub-home="0">Estadísticas</strong><span class="quick-access__subtitle" data-hub-home="1">Resumen y rankings de HOLa</span></span>
@@ -1643,6 +1643,9 @@ document.addEventListener('click',function(event){
 </script>
 <script id="hola-home-statistics">
 (()=>{const labels={"es":["Estadísticas","Resumen y rankings de HOLa"],"en":["Statistics","HOLa overview and rankings"],"fr":["Statistiques","Résumé et classements HOLa"],"de":["Statistiken","HOLa-Überblick und Ranglisten"],"ro":["Statistici","Rezumat și clasamente HOLa"],"pt":["Estatísticas","Resumo e rankings HOLa"],"uk":["Статистика","Огляд і рейтинги HOLa"],"it":["Statistiche","Riepilogo e classifiche HOLa"],"pl":["Statystyki","Podsumowanie i rankingi HOLa"],"tr":["İstatistikler","HOLa özeti ve sıralamalar"],"ru":["Статистика","Обзор и рейтинги HOLa"]};function update(){const lang=document.documentElement.lang||localStorage.getItem('hola-language')||'en',text=labels[lang]||labels.en;document.querySelectorAll('[data-hub-home]').forEach(el=>el.textContent=text[Number(el.dataset.hubHome)]);}new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});update();})();
+</script>
+<script id="hola-home-hive">
+(()=>{const labels={"es":["Colmena","Mira tu posición en el mapa"],"en":["Hive","See your position on the map"],"fr":["Ruche","Consulte ta position sur la carte"],"de":["Allianznest","Sieh dir deine Position auf der Karte an"],"ro":["Stup","Vezi poziția ta pe hartă"],"pt":["Colmeia","Veja sua posição no mapa"],"uk":["Вулик","Переглянь свою позицію на карті"],"it":["Alveare","Guarda la tua posizione sulla mappa"],"pl":["Ul","Sprawdź swoją pozycję na mapie"],"tr":["Kovan","Haritadaki konumunu gör"],"ru":["Улей","Посмотри свою позицию на карте"]};function update(){const lang=document.documentElement.lang||localStorage.getItem('hola-language')||'en',text=labels[lang]||labels.en;document.querySelectorAll('[data-hive-home]').forEach(el=>el.textContent=text[Number(el.dataset.hiveHome)]);}new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});update();})();
 </script>
 </body>
 </html>
