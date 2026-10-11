@@ -12,15 +12,17 @@
   const FALLBACK_AVATAR = 'assets/icon-user-card.webp';
   let players = [];
   let activeFilter = 'all';
+  let onlyT10=false,onlyOverlord=false,professionFilter='',sortMode='thp',profileReturnFocus=null;
+  let pageOverflow='';
 
-  const INITIAL_BATCH = 10;
-  const NEXT_BATCH = 10;
+  const INITIAL_BATCH = 12;
+  const NEXT_BATCH = 12;
   let visibleLimit = INITIAL_BATCH;
 
   const avatarQueue = [];
   const avatarQueued = new Set();
   let avatarWorkerRunning = false;
-  let currentLang = localStorage.getItem('hola-language') || localStorage.getItem('hola-lang') || ((navigator.language||'').slice(0,2)==='tr'?'tr':'es');
+  let currentLang = localStorage.getItem('hola-language') || localStorage.getItem('hola-lang') || (navigator.language||'en').slice(0,2);
   let currentProfilePlayer = null;
   let currentProfileTab = 'about';
   const profileTextCache = new Map();
@@ -57,6 +59,9 @@
     pl:{membersTitle:'CZŁONKOWIE',roster:'Alliance roster',members:'członkowie',surveys:'ankiety',search:'Szukaj gracza...',all:'Wszyscy',tank:'Czołg',air:'Lotnictwo',missile:'Rakieta',loading:'Ładowanie członków...',loadError:'Nie udało się załadować członków.',noResults:'Brak pasujących graczy.',noLocation:'Lokalizacja niepodana',surveyDone:'✓ Ankieta ukończona',surveyPending:'○ Ankieta oczekuje',squads:'⚔ Oddziały',about:'▣ O mnie',aboutEmpty:'Ten członek nie dodał jeszcze swojej historii.',profession:'Profesja',engineer:'Inżynier',warlord:'Warlord',unknown:'—',tankSquad:'Oddział Czołgów',airSquad:'Oddział Lotniczy',missileSquad:'Oddział Rakietowy',hasOverlord:'♛ Overlord',noOverlord:'Bez Overlorda',myQuote:'Moje hasło',quoteEmpty:'Tutaj pojawi się epickie hasło tego gracza.',tabAbout:'O mnie',tabSquads:'Oddziały',tabProgress:'Postęp',progressSurvey:'Ankieta',progressHQ:'HQ',progressTHP:'THP',progressProfession:'Profesja',progressT10:'T10',progressOverlord:'Overlord',progressRank:'Ranga',showMore:'Pokaż więcej',footerTagline:"RAZEM ZAJDZIEMY DALEJ"}
   };
 
+  translations.ru={"membersTitle":"УЧАСТНИКИ","roster":"Состав альянса","members":"участников","surveys":"анкеты","search":"Поиск игрока…","all":"Все","tank":"Танки","air":"Авиация","missile":"Ракеты","loading":"Загрузка участников…","loadError":"Не удалось загрузить участников.","noResults":"Игроки не найдены.","noLocation":"Местоположение не указано","surveyDone":"✓ Анкета заполнена","surveyPending":"○ Анкета не заполнена","squads":"Отряды","about":"Обо мне","aboutEmpty":"Участник ещё не добавил свою историю.","profession":"Профессия","engineer":"Инженер","warlord":"Военачальник","unknown":"—","tankSquad":"Танковый отряд","airSquad":"Авиационный отряд","missileSquad":"Ракетный отряд","hasOverlord":"Overlord","noOverlord":"Без Overlord","myQuote":"Моя фраза","quoteEmpty":"Здесь появится фраза игрока.","tabAbout":"Обо мне","tabSquads":"Отряды","tabProgress":"Прогресс","progressSurvey":"Анкета","progressHQ":"HQ","progressTHP":"THP","progressProfession":"Профессия","progressT10":"T10","progressOverlord":"Overlord","progressRank":"Ранг","showMore":"Показать ещё","footerTagline":"ВМЕСТЕ МЫ ДОСТИГНЕМ БОЛЬШЕГО"};
+  const rosterLabels={"es":["THP de la alianza","Ordenar","Nombre","Escuadrón","resultados","Cerrar ficha","Cambiar idioma","Volver","Guerrero"],"en":["Alliance THP","Sort by","Name","Squad","results","Close profile","Change language","Back","Warlord"],"fr":["THP de l’alliance","Trier","Nom","Escouade","résultats","Fermer la fiche","Changer de langue","Retour","Guerrier"],"de":["Allianz-THP","Sortieren","Name","Trupp","Ergebnisse","Profil schließen","Sprache ändern","Zurück","Kriegsherr"],"ro":["THP al alianței","Sortează","Nume","Echipă","rezultate","Închide profilul","Schimbă limba","Înapoi","Războinic"],"pt":["THP da aliança","Ordenar","Nome","Esquadrão","resultados","Fechar perfil","Mudar idioma","Voltar","Guerreiro"],"uk":["THP альянсу","Сортувати","Ім’я","Загін","результатів","Закрити профіль","Змінити мову","Назад","Воєначальник"],"it":["THP dell’alleanza","Ordina","Nome","Squadra","risultati","Chiudi profilo","Cambia lingua","Indietro","Guerriero"],"pl":["THP sojuszu","Sortuj","Nazwa","Oddział","wyników","Zamknij profil","Zmień język","Wstecz","Wódz"],"tr":["İttifak THP","Sırala","Ad","Birlik","sonuç","Profili kapat","Dili değiştir","Geri","Savaş Lordu"],"ru":["THP альянса","Сортировка","Имя","Отряд","результатов","Закрыть профиль","Сменить язык","Назад","Военачальник"]};
+  for(const [code,labels] of Object.entries(rosterLabels))Object.assign(translations[code],{allianceThp:labels[0],sortBy:labels[1],sortName:labels[2],sortSquad:labels[3],results:labels[4],closeProfile:labels[5],changeLanguage:labels[6],back:labels[7],warlord:labels[8],sortThp:'THP',sortHq:'HQ'});
   const COUNTRY_CODES = {
     'españa':'es','spain':'es','rumanía':'ro','romania':'ro','francia':'fr','france':'fr','alemania':'de','germany':'de',
     'reino unido':'gb','united kingdom':'gb','uk':'gb','portugal':'pt','italia':'it','italy':'it','polonia':'pl','poland':'pl',
@@ -123,7 +128,7 @@
     'melilla':'assets/flag-melilla.svg'
   };
 
-  function t(){ return translations[currentLang] || translations.es; }
+  function t(){ return translations[currentLang] || translations.en; }
   function escapeHtml(value=''){
     return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   }
@@ -245,8 +250,8 @@
   function compactSquadPower(squad){
     if(!squad||squad.score<=0)return t().unknown;
     const locale={es:'es-ES',en:'en-GB',tr:'tr-TR',fr:'fr-FR',de:'de-DE',
-      ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL'}[currentLang]||'es-ES';
-    return new Intl.NumberFormat(locale,{minimumFractionDigits:1,maximumFractionDigits:2})
+      ro:'ro-RO',pt:'pt-PT',uk:'uk-UA',it:'it-IT',pl:'pl-PL',ru:'ru-RU'}[currentLang]||'es-ES';
+    return new Intl.NumberFormat(locale,{minimumFractionDigits:1,maximumFractionDigits:1})
       .format(squad.score/1000000)+'M';
   }
 
@@ -260,7 +265,7 @@
     if(type==='tank') return '<img class="vehicle-img" src="assets/icon-tank-custom.png" alt="">';
     if(type==='air') return '<img class="vehicle-img" src="assets/icon-air-custom.png" alt="">';
     if(type==='missile') return '<img class="vehicle-img" src="assets/icon-missile-custom.png" alt="">';
-    return '<span class="vehicle">⚔</span>';
+    return '<span class="vehicle">—</span>';
   }
   function squadClass(type){ return type==='air'?'air':type==='missile'?'missile':''; }
   function squadLabel(type){ return type==='tank'?t().tankSquad:type==='air'?t().airSquad:type==='missile'?t().missileSquad:'Squad'; }
@@ -305,18 +310,15 @@
     return Number.isFinite(n) ? n*multiplier : -1;
   }
 
+  function memberPower(p){const n=thpNumber(p.thp);return n<0?-1:n>=1000?n:n*1000000;}
+  function displayedThp(p){const n=memberPower(p);return n<0?t().unknown:new Intl.NumberFormat(currentLang,{minimumFractionDigits:1,maximumFractionDigits:1}).format(n/1000000)+'M';}
   function sortMembers(list){
     return [...list].sort((a,b)=>{
-      // Survey completed members first.
-      const surveyDiff=Number(Boolean(b.survey_completed))-Number(Boolean(a.survey_completed));
-      if(surveyDiff!==0) return surveyDiff;
-
-      // Then highest THP first.
-      const thpDiff=thpNumber(b.thp)-thpNumber(a.thp);
-      if(thpDiff!==0) return thpDiff;
-
-      // Stable-looking fallback by name.
-      return String(a.name||'').localeCompare(String(b.name||''), currentLang, {sensitivity:'base'});
+      let difference=0;
+      if(sortMode==='thp')difference=memberPower(b)-memberPower(a);
+      else if(sortMode==='hq')difference=(Number(b.hq_level)||-1)-(Number(a.hq_level)||-1);
+      else if(sortMode==='squad')difference=strongestSquad(b).score-strongestSquad(a).score;
+      return difference||String(a.name||'').localeCompare(String(b.name||''),currentLang,{sensitivity:'base'});
     });
   }
   function formatProfession(value){
@@ -335,55 +337,32 @@
 
   function updateStats(){
     document.getElementById('totalMembers').textContent=players.length;
+    const known=players.map(memberPower).filter(n=>n>=0),sum=known.reduce((a,b)=>a+b,0);
+    const divisor=sum>=1e9?1e9:1e6,suffix=sum>=1e9?'B':'M';
+    const total=document.getElementById('totalThp');total.textContent=known.length?new Intl.NumberFormat(currentLang,{maximumFractionDigits:2}).format(sum/divisor)+suffix:t().unknown;
+    total.title=known.length+'/'+players.length+' · THP';
     document.getElementById('totalT10').textContent=players.filter(p=>p.t10===true).length;
     document.getElementById('totalOverlord').textContent=players.filter(p=>p.supreme_lord_unlocked===true).length;
     document.getElementById('totalSurveys').textContent=players.filter(p=>p.survey_completed===true).length;
   }
 
   function cardHtml(p,index){
-    const loc=locationInfo(p);
-    const types=playerTypes(p);
-    const strongest=strongestSquad(p);
-    const rank=playerRank(p);
-    const fullLocation=[loc.country,loc.city].filter(Boolean).join(' · ');
-    const location=loc.city||String(loc.country||'').split(',')[0].trim()||t().noLocation;
+    const loc=locationInfo(p),strongest=strongestSquad(p),power=compactSquadPower(strongest);
     const label=strongest.type?(t()[strongest.type]||squadLabel(strongest.type)):t().unknown;
-    const power=compactSquadPower(strongest);
-    const icon=strongest.type?squadIconMarkup(strongest.type):
-      '<span class="member-main-fallback" aria-hidden="true">◇</span>';
-    const rankHTML=rank?'<span class="rank-badge">'+escapeHtml(rank)+'</span>':'';
-    return '<article class="member member--compact" tabindex="0" role="button" data-index="'+index+
-      '" data-name="'+escapeHtml(String(p.name||'').toLowerCase())+
-      '" data-main="'+escapeHtml(strongest.type)+'" data-types="'+escapeHtml(types.join(' '))+
-      '" aria-label="'+escapeHtml([p.name,rank,location,label,power].filter(Boolean).join(' · '))+'">'+
-      '<div class="member-top">'+
-        '<div class="avatar-shell"><img class="avatar'+(p.avatar?'':' avatar-fallback')+
-          '" src="'+escapeHtml(p.avatar?avatarSrc(p):FALLBACK_AVATAR)+
-          '" alt="'+escapeHtml(p.name||'Jugador')+
-          '" loading="lazy" decoding="async" data-player-index="'+index+'"></div>'+
-        '<div class="member-copy">'+
-          '<div class="member-headline"><h3 title="'+escapeHtml(p.name||'—')+'">'+
-            escapeHtml(p.name||'—')+'</h3>'+rankHTML+'</div>'+
-          '<div class="line country-line" title="'+escapeHtml(fullLocation||location)+'">'+
-            flagMarkup(loc.code,loc.regionFlag)+'<span>'+escapeHtml(location)+'</span></div>'+
-        '</div>'+
-        '<span class="dot'+(p.survey_completed?'':' off')+
-          '" title="'+escapeHtml(p.survey_completed?t().surveyDone:t().surveyPending)+'"></span>'+
-      '</div>'+
-      '<div class="member-main-squad'+(strongest.type?'':' is-empty')+
-        '" title="'+escapeHtml(label+' · '+power)+'">'+
-        '<span class="member-main-icon">'+icon+'</span>'+
-        '<span class="member-main-label">'+escapeHtml(label)+'</span>'+
-        '<strong class="member-main-power">'+escapeHtml(power)+'</strong>'+
-        '<span class="member-main-arrow" aria-hidden="true">›</span>'+
-      '</div>'+
-    '</article>';
+    return '<article class="member member--hive'+(p.supreme_lord_unlocked?' member--overlord':'')+'" tabindex="0" role="button" data-index="'+index+'" aria-haspopup="dialog" aria-label="'+escapeHtml([p.name,'THP '+displayedThp(p),'HQ '+(p.hq_level||t().unknown),label,power].join(' · '))+'">'+
+      '<div class="member-top"><div class="avatar-shell"><img class="avatar'+(!p.avatar?' avatar-fallback':'')+(p.default_avatar==='hola'&&p.avatar?' avatar-hola':'')+'" src="'+escapeHtml(p.avatar?avatarSrc(p):FALLBACK_AVATAR)+'" alt="'+escapeHtml(p.name||'')+'" loading="lazy" decoding="async" data-player-index="'+index+'">'+
+      '<span class="member-country" title="'+escapeHtml(loc.country||t().noLocation)+'">'+flagMarkup(loc.code,loc.regionFlag)+'</span>'+
+      (p.supreme_lord_unlocked?'<span class="overlord-ribbon">Overlord</span>':'')+'</div>'+
+      '<div class="member-copy"><h3>'+escapeHtml(p.name||'—')+'</h3><div class="member-profession">'+escapeHtml(formatProfession(p.profession))+'</div><strong class="member-thp"><small>THP</small>'+escapeHtml(displayedThp(p))+'</strong></div></div>'+
+      '<div class="member-badges"><span class="hq-chip">HQ '+escapeHtml(p.hq_level||t().unknown)+'</span><span class="t10-chip'+(p.t10?'':' is-pending')+'">'+(p.t10?'T10':'T10 '+t().unknown)+'</span></div>'+
+      '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div></article>';
   }
 
   function getFilteredPlayers(){
-    const q=(search.value||'').trim().toLocaleLowerCase();
+    const key=value=>String(value||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+    const q=key(search.value);
     const filtered=players.filter(p=>{
-      const matchesName=String(p.name||'').toLocaleLowerCase().includes(q);
+      const matchesName=key(p.name).includes(q);
       const mainType=mainSquadType(p);
 
       let matchesFilter=true;
@@ -393,7 +372,7 @@
         matchesFilter=p.supreme_lord_unlocked===true;
       }
 
-      return matchesName&&matchesFilter;
+      return matchesName&&matchesFilter&&(!onlyT10||p.t10===true)&&(!onlyOverlord||p.supreme_lord_unlocked===true)&&(!professionFilter||professionKind(p.profession)===professionFilter);
     });
     return sortMembers(filtered);
   }
@@ -402,6 +381,7 @@
     if(resetLimit) visibleLimit=INITIAL_BATCH;
 
     const filtered=getFilteredPlayers();
+    document.getElementById('rosterResults').textContent=filtered.length+' / '+players.length+' · '+t().results;
     if(!filtered.length){
       roster.innerHTML=`<div class="members-message">${escapeHtml(t().noResults)}</div>`;
       return;
@@ -419,6 +399,12 @@
     queueVisibleCardAvatars();
   }
 
+  document.addEventListener('error',e=>{
+    const img=e.target;
+    if(img?.tagName==='IMG'&&(img.classList.contains('avatar')||img.id==='profileImg')&&!img.dataset.fallbackApplied){
+      img.dataset.fallbackApplied='1';img.src=FALLBACK_AVATAR;img.classList.add('avatar-fallback');img.classList.remove('avatar-hola');
+    }
+  },true);
   roster.addEventListener('click',e=>{
     const more=e.target.closest('#membersMore');
     if(more){
@@ -461,12 +447,12 @@
   function applyAvatarToCards(index){
     const p = players[index];
     if(!p) return;
-    currentProfilePlayer = p;
     const src = (p.avatar && (p.avatar.startsWith('data:image/') || /^https?:\/\//i.test(p.avatar)))
       ? p.avatar
       : FALLBACK_AVATAR;
 
     document.querySelectorAll(`img[data-player-index="${index}"]`).forEach(img=>{
+      delete img.dataset.fallbackApplied;
       img.src = src;
       img.classList.toggle('avatar-fallback', src === FALLBACK_AVATAR);
       img.classList.toggle('avatar-hola', p.default_avatar==='hola' && src!==FALLBACK_AVATAR);
@@ -527,7 +513,6 @@
 
       const p = players[index];
       if(!p) return;
-    currentProfilePlayer = p;
 
       if(p._avatarLoaded){
         applyAvatarToCards(index);
@@ -741,7 +726,7 @@
     status.textContent=p.survey_completed?t().surveyDone:t().surveyPending;
     status.classList.toggle('pending',!p.survey_completed);
 
-    document.getElementById('profileThp').textContent=p.thp||t().unknown;
+    document.getElementById('profileThp').textContent=displayedThp(p);
     document.getElementById('profileHq').textContent=p.hq_level?`Lv. ${p.hq_level}`:t().unknown;
     document.getElementById('profileProfession').textContent=formatProfession(p.profession);
     const professionIcon=document.getElementById('profileProfessionIcon');
@@ -757,13 +742,20 @@
     setProfileTab(currentProfileTab);
 
     renderAvatarManager(p);
+    if(profile.hidden){profileReturnFocus=document.activeElement;pageOverflow=document.body.style.overflow;document.body.style.overflow='hidden';}
     profile.hidden=false;
-    if(options.scroll!==false) window.setTimeout(()=>profile.scrollIntoView({block:'start'}),0);
+    if(options.scroll!==false)document.getElementById('closeProfile').focus();
   }
 
   function applyLanguage(lang){
-    currentLang=translations[lang]?lang:'es';
+    currentLang=translations[lang]?lang:'en';
     const tx=t();
+    document.title='HOLa · '+tx.membersTitle;
+    document.getElementById('closeProfile').setAttribute('aria-label',tx.closeProfile);
+    document.getElementById('languageToggle').setAttribute('aria-label',tx.changeLanguage);
+    document.getElementById('backBtn').setAttribute('aria-label',tx.back);
+    document.getElementById('filters').setAttribute('aria-label',tx.sortSquad);
+    document.getElementById('search').setAttribute('aria-label',tx.search);
     document.documentElement.lang=currentLang;
     document.querySelectorAll('[data-i18n]').forEach(el=>{
       const key=el.dataset.i18n;
@@ -775,7 +767,7 @@
     });
     localStorage.setItem('hola-lang',currentLang);
     localStorage.setItem('hola-language',currentLang);
-    if(players.length) renderRoster(false);
+    if(players.length){updateStats();renderRoster(false);}
     if(!profile.hidden){
       const name=document.getElementById('profileName').textContent;
       const p=players.find(x=>x.name===name);
@@ -785,11 +777,35 @@
 
   search.addEventListener('input',()=>renderRoster(true));
   filters.forEach(btn=>btn.addEventListener('click',()=>{
-    filters.forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+    filters.forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false')});
+    btn.classList.add('active');btn.setAttribute('aria-pressed','true');
     activeFilter=btn.dataset.filter;
     renderRoster(true);
   }));
+
+  document.getElementById('sortMembers').addEventListener('change',e=>{sortMode=e.target.value;renderRoster(true)});
+  document.getElementById('filterProfession').addEventListener('change',e=>{professionFilter=e.target.value;renderRoster(true)});
+  for(const [id,key] of [['filterT10','t10'],['filterOverlord','overlord']])document.getElementById(id).addEventListener('click',e=>{
+    if(key==='t10')onlyT10=!onlyT10;else onlyOverlord=!onlyOverlord;
+    e.currentTarget.setAttribute('aria-pressed',String(key==='t10'?onlyT10:onlyOverlord));renderRoster(true);
+  });
+  function closeProfile(){
+    profile.hidden=true;document.body.style.overflow=pageOverflow;profileTextRequestId++;
+    if(profileReturnFocus?.isConnected)profileReturnFocus.focus();
+    else document.getElementById('search').focus();
+  }
+  document.getElementById('closeProfile').addEventListener('click',closeProfile);
+  profile.addEventListener('click',e=>{if(e.target===profile)closeProfile()});
+  document.addEventListener('keydown',e=>{
+    if(profile.hidden)return;
+    if(e.key==='Escape'){e.preventDefault();closeProfile();return;}
+    if(e.key==='Tab'){
+      const controls=[...profile.querySelectorAll('button:not([disabled]),a[href],input,select,textarea,[tabindex="0"]')].filter(el=>el.getClientRects().length);
+      const first=controls[0],last=controls[controls.length-1];if(!first)return;
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
 
   document.getElementById('profileTabs')?.addEventListener('click',event=>{
     const btn=event.target.closest('.profile-tab');
@@ -820,7 +836,8 @@
     applyLanguage(option.dataset.html);
     closeLanguages();
   });
-  document.addEventListener('click',event=>{ if(!event.target.closest('.language')) closeLanguages(); });
+  document.addEventListener('click',event=>{ if(!event.target.closest('.language')&&!list.contains(event.target)) closeLanguages(); });
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeLanguages()});
 
   applyLanguage(currentLang);
   const savedOption=[...document.querySelectorAll('.language__option')].find(option=>option.dataset.html===currentLang);

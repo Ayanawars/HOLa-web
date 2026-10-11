@@ -965,6 +965,7 @@ button,input{font:inherit}
   .roster .member--compact .member-main-power{font-size:12px}
 }
 </style>
+<link rel="stylesheet" href="members-refresh.css?v=20261011-1">
 </head>
 <body>
 <div class="page">
@@ -992,6 +993,7 @@ button,input{font:inherit}
         <li><button class="language__option" data-code="pt" data-html="pt" data-name="Português"><img src="https://flagcdn.com/w40/pt.png" alt="">Português</button></li>
         <li><button class="language__option" data-code="ua" data-html="uk" data-name="Українська"><img src="https://flagcdn.com/w40/ua.png" alt="">Українська</button></li>
         <li><button class="language__option" data-code="it" data-html="it" data-name="Italiano"><img src="https://flagcdn.com/w40/it.png" alt="">Italiano</button></li>
+        <li><button class="language__option" data-code="ru" data-html="ru" data-name="Русский"><img src="https://flagcdn.com/w40/ru.png" alt="">Русский</button></li>
         <li><button class="language__option" data-code="pl" data-html="pl" data-name="Polski"><img src="https://flagcdn.com/w40/pl.png" alt="">Polski</button></li>
         
       </ul>
@@ -1004,33 +1006,39 @@ button,input{font:inherit}
 
   <section class="title-plaque">
     <h1 data-i18n="membersTitle">MIEMBROS</h1>
-    <p data-i18n="roster">Alliance roster</p>
+    <p>Heroes of Last Area</p>
   </section>
 
-  <section class="stats">
+  <section class="stats" aria-label="HOLa">
     <div class="stat"><div class="ico"><img src="assets/icon-user-custom.png" alt=""></div><div><strong id="totalMembers">—</strong><span data-i18n="members">miembros</span></div></div>
-    <div class="stat"><div class="ico"><img src="assets/icon-t10.png" alt=""></div><div><strong id="totalT10">—</strong><span>T10</span></div></div>
-    <div class="stat"><div class="ico"><img src="assets/icon-overlord.png" alt=""></div><div><strong id="totalOverlord">—</strong><span>Overlord</span></div></div>
-    <div class="stat"><div class="ico"><img src="assets/icon-survey-custom.png" alt=""></div><div><strong id="totalSurveys">—</strong><span data-i18n="surveys">encuestas</span></div></div>
+    <div class="stat"><div class="ico"><img src="assets/icon-overlord.png" alt=""></div><div><strong id="totalThp">—</strong><span data-i18n="allianceThp">THP de la alianza</span></div></div>
   </section>
-
+  <div class="roster-meta"><span>T10 <b id="totalT10">—</b></span><span>Overlord <b id="totalOverlord">—</b></span><span id="totalSurveys" hidden></span></div>
   <div class="search-row">
     <label class="search"><span class="glass">⌕</span><input id="search" placeholder="Buscar jugador..." data-i18n-placeholder="search"><span class="ankh">☥</span></label>
   </div>
 
-  <div class="filters" id="filters">
-    <button class="filter active" data-filter="all"><span class="filter-label" data-i18n="all">Todos</span></button>
-    <button class="filter" data-filter="tank"><img class="filter-icon-img" src="assets/icon-tank-custom.png" alt=""><span class="filter-label" data-i18n="tank">Tanque</span></button>
-    <button class="filter" data-filter="air"><img class="filter-icon-img" src="assets/icon-air-custom.png" alt=""><span class="filter-label" data-i18n="air">Aéreo</span></button>
-    <button class="filter" data-filter="missile"><img class="filter-icon-img" src="assets/icon-missile-custom.png" alt=""><span class="filter-label" data-i18n="missile">Misil</span></button>
-    <button class="filter" data-filter="overlord"><img class="filter-icon-img" src="assets/icon-overlord.png" alt=""><span class="filter-label">Overlord</span></button>
+  <div class="filters" id="filters" role="group" aria-label="Escuadrón principal">
+    <button class="filter active" data-filter="all" aria-pressed="true"><span class="filter-label" data-i18n="all">Todos</span></button>
+    <button class="filter" data-filter="tank" aria-pressed="false"><img class="filter-icon-img" src="assets/icon-tank-custom.png" alt=""><span class="filter-label" data-i18n="tank">Tanque</span></button>
+    <button class="filter" data-filter="missile" aria-pressed="false"><img class="filter-icon-img" src="assets/icon-missile-custom.png" alt=""><span class="filter-label" data-i18n="missile">Misil</span></button>
+    <button class="filter" data-filter="air" aria-pressed="false"><img class="filter-icon-img" src="assets/icon-air-custom.png" alt=""><span class="filter-label" data-i18n="air">Aéreo</span></button>
   </div>
-
+  <div class="roster-controls">
+    <label class="sort-control"><span data-i18n="sortBy">Ordenar</span><select id="sortMembers">
+      <option value="thp" data-i18n="sortThp">THP</option><option value="name" data-i18n="sortName">Nombre</option><option value="hq" data-i18n="sortHq">HQ</option><option value="squad" data-i18n="sortSquad">Escuadrón</option>
+    </select></label>
+    <button class="refine" id="filterT10" type="button" aria-pressed="false">T10</button>
+    <button class="refine" id="filterOverlord" type="button" aria-pressed="false">Overlord</button>
+    <label class="profession-control"><span data-i18n="profession">Profesión</span><select id="filterProfession"><option value="" data-i18n="all">Todos</option><option value="engineer" data-i18n="engineer">Ingeniero</option><option value="warlord" data-i18n="warlord">Guerrero</option></select></label>
+  </div>
+  <p id="rosterResults" class="roster-results" role="status" aria-live="polite"></p>
   <section class="roster" id="roster">
     <div class="members-message members-loading">Cargando miembros...</div>
   </section>
 
-  <section class="profile" id="profile" hidden>
+  <section class="profile" id="profile" hidden role="dialog" aria-modal="true" aria-labelledby="profileName" tabindex="-1">
+    <div class="profile-dialog"><button id="closeProfile" type="button" class="profile-close" aria-label="Cerrar ficha">×</button>
     <div class="profile-grid">
       <div class="profile-left">
         <div class="portrait-shell portrait-shell--square">
@@ -1082,6 +1090,7 @@ button,input{font:inherit}
         </div>
       </div>
     </div>
+    </div>
   </section>
 
   <footer class="footer">
@@ -1091,7 +1100,7 @@ button,input{font:inherit}
   </footer>
 </div>
 
-<script src="js/members.js?v=20260924-compact-squad-v1"></script>
+<script src="js/members.js?v=20261011-refresh-1"></script>
   <script src="js/hola-language-portal.js"></script>
-<script src="js/hola-russian.js?v=20260927-8"></script>\n</body>
+</body>
 </html>
