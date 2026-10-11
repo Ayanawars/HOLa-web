@@ -34,3 +34,12 @@ body{background:linear-gradient(180deg,rgba(220,245,255,.12),rgba(255,249,231,.8
 @media(max-width:480px){.page{padding:0 12px 26px}.hero{margin:0 -12px}.roster .member.member--hive{padding:10px;gap:10px;border-radius:18px}.member--hive .member-top{grid-template-columns:64px minmax(0,1fr);gap:6px}.member--hive .avatar-shell{width:64px;height:64px;padding:3px}.member--hive h3{font-size:14px;line-height:1.13}.member-profession{font-size:9px}.member-thp{font-size:16px;margin-top:7px}.member-main-icon{width:66px;flex-basis:66px;height:48px}.member--hive .member-main-power{font-size:15px}.member--hive .member-main-label{font-size:8px}.filter{font-size:11px}.filter-icon-img{width:20px}.profile-dialog{padding:42px 14px 16px}.profile-grid{grid-template-columns:1fr}.profile-left{max-width:150px;margin:auto}.profile-head{text-align:center;display:grid;justify-content:center}.profile-head h2{font-size:25px}.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:360px){.page{padding-inline:9px}.roster{gap:8px}.roster .member.member--hive{padding:8px}.member--hive .member-top{grid-template-columns:55px minmax(0,1fr);gap:5px}.member--hive .avatar-shell{width:55px;height:55px}.member--hive h3{font-size:12px}.member--hive .member-main-power{font-size:13px}.member-main-icon{width:56px;flex-basis:56px}.refine{padding-inline:8px}.sort-control{padding-inline:6px}.sort-control select{font-size:11px}.hq-chip,.t10-chip{font-size:9px;padding:4px 6px}}
 @media(prefers-reduced-motion:reduce){.member{transition:none}.member:hover{transform:none}}
+
+/* Transparent vector frames keep the avatar visible, including at mobile sizes. */
+.member--hive .avatar-shell,.member--overlord .avatar-shell{padding:0;background:transparent;box-shadow:none;isolation:isolate}
+.member--hive .avatar{border:0;width:80%;height:80%;margin:10%}
+.member-avatar-frame{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:1}
+.member-country,.overlord-ribbon{z-index:2}
+.member-portrait-framed.portrait-shell--square{position:relative;isolation:isolate;aspect-ratio:1;width:100%;padding:10%;border:0;border-radius:50%;background:transparent;box-shadow:none}
+.member-portrait-framed:before,.member-portrait-framed:after{display:none}
+.member-portrait-framed .big-portrait{display:block;width:100%;height:100%;aspect-ratio:1;border:0;border-radius:50%;object-fit:cover;box-shadow:none}

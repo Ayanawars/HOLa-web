@@ -346,12 +346,22 @@
     document.getElementById('totalSurveys').textContent=players.filter(p=>p.survey_completed===true).length;
   }
 
+  // Explicit visual preference confirmed by the member; never infer from avatars.
+  const HEART_FRAME_MEMBERS = new Set(['ayana wars']);
+  function memberFrame(p){
+    if(HEART_FRAME_MEMBERS.has(String(p.name||'').trim().toLowerCase().replace(/\s+/g,' ')))return 'hearts';
+    return p.supreme_lord_unlocked===true?'gold':'sky';
+  }
+  function memberFrameMarkup(p){
+    return '<img class="member-avatar-frame" src="assets/member-frame-'+memberFrame(p)+'.svg" alt="" aria-hidden="true">';
+  }
+
   function cardHtml(p,index){
     const loc=locationInfo(p),strongest=strongestSquad(p),power=compactSquadPower(strongest);
     const label=strongest.type?(t()[strongest.type]||squadLabel(strongest.type)):t().unknown;
     return '<article class="member member--hive'+(p.supreme_lord_unlocked?' member--overlord':'')+'" tabindex="0" role="button" data-index="'+index+'" aria-haspopup="dialog" aria-label="'+escapeHtml([p.name,'THP '+displayedThp(p),'HQ '+(p.hq_level||t().unknown),label,power].join(' · '))+'">'+
       '<div class="member-top"><div class="avatar-shell"><img class="avatar'+(!p.avatar?' avatar-fallback':'')+(p.default_avatar==='hola'&&p.avatar?' avatar-hola':'')+'" src="'+escapeHtml(p.avatar?avatarSrc(p):FALLBACK_AVATAR)+'" alt="'+escapeHtml(p.name||'')+'" loading="lazy" decoding="async" data-player-index="'+index+'">'+
-      '<span class="member-country" title="'+escapeHtml(loc.country||t().noLocation)+'">'+flagMarkup(loc.code,loc.regionFlag)+'</span>'+
+      memberFrameMarkup(p)+'<span class="member-country" title="'+escapeHtml(loc.country||t().noLocation)+'">'+flagMarkup(loc.code,loc.regionFlag)+'</span>'+
       (p.supreme_lord_unlocked?'<span class="overlord-ribbon">Overlord</span>':'')+'</div>'+
       '<div class="member-copy"><h3>'+escapeHtml(p.name||'—')+'</h3><div class="member-profession">'+escapeHtml(formatProfession(p.profession))+'</div><strong class="member-thp"><small>THP</small>'+escapeHtml(displayedThp(p))+'</strong></div></div>'+
       '<div class="member-badges"><span class="hq-chip">HQ '+escapeHtml(p.hq_level||t().unknown)+'</span><span class="t10-chip'+(p.t10?'':' is-pending')+'">'+(p.t10?'T10':'T10 '+t().unknown)+'</span></div>'+
@@ -706,6 +716,7 @@
 
     document.getElementById('profileName').textContent=p.name||'—';
     const profileImg=document.getElementById('profileImg');
+    document.getElementById('profileAvatarFrame').src='assets/member-frame-'+memberFrame(p)+'.svg';
     const playerIndex=players.indexOf(p);
     profileImg.dataset.playerIndex = String(playerIndex);
     profileImg.src=p.avatar?avatarSrc(p):FALLBACK_AVATAR;
