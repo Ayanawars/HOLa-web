@@ -66,6 +66,7 @@
     'españa':'es','spain':'es','rumanía':'ro','romania':'ro','francia':'fr','france':'fr','alemania':'de','germany':'de',
     'reino unido':'gb','united kingdom':'gb','uk':'gb','portugal':'pt','italia':'it','italy':'it','polonia':'pl','poland':'pl',
     'ucrania':'ua','ukraine':'ua','bulgaria':'bg','bulgaria':'bg','australia':'au','filipinas':'ph','philippines':'ph',
+    'turquía':'tr','turquia':'tr','turkey':'tr','türkiye':'tr','turkiye':'tr','türkei':'tr','turquie':'tr','turchia':'tr','turcja':'tr','turcia':'tr','турция':'tr','туреччина':'tr','tr':'tr',
     'colombia':'co','méxico':'mx','mexico':'mx','argentina':'ar','brasil':'br','brazil':'br'
   };
   const SPANISH_REGION_FLAGS = {
