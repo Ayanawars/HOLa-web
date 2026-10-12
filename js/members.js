@@ -357,6 +357,55 @@
     return '<img class="member-avatar-frame" src="assets/member-frame-'+memberFrame(p)+'.svg?v=20261012-bold-1" alt="" aria-hidden="true">';
   }
 
+
+  let memberActivity=null,memberActivityStarted=false;
+  const activityLabels={
+    es:['Última semana VS','Tren','Último DS','días registrados','Sin datos','No disponible','Conducidos'],
+    en:['Latest VS week','Train','Latest DS','days recorded','No data','Unavailable','Times driven'],
+    fr:['Dernière semaine VS','Train','Dernier DS','jours enregistrés','Aucune donnée','Indisponible','Conduites'],
+    de:['Letzte VS-Woche','Zug','Letzter DS','erfasste Tage','Keine Daten','Nicht verfügbar','Gefahren'],
+    ro:['Ultima săptămână VS','Tren','Ultimul DS','zile înregistrate','Fără date','Indisponibil','Conduceri'],
+    pt:['Última semana VS','Trem','Último DS','dias registrados','Sem dados','Indisponível','Conduções'],
+    uk:['Останній тиждень VS','Потяг','Останній DS','записаних днів','Немає даних','Недоступно','Керувань'],
+    it:['Ultima settimana VS','Treno','Ultimo DS','giorni registrati','Nessun dato','Non disponibile','Conduzioni'],
+    pl:['Ostatni tydzień VS','Pociąg','Ostatni DS','zapisanych dni','Brak danych','Niedostępne','Prowadzenia'],
+    tr:['Son VS haftası','Tren','Son DS','kayıtlı gün','Veri yok','Kullanılamıyor','Sürüşler'],
+    ru:['Последняя неделя VS','Поезд','Последний DS','дней записано','Нет данных','Недоступно','Поездок']
+  };
+  function activityDate(value){return new Intl.DateTimeFormat(currentLang,{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))}
+  function memberActivityHtml(p){
+    const labels=activityLabels[currentLang]||activityLabels.en;
+    const member=memberActivity?.members.get(window.HolaMemberActivity?.key(p.name)),available=memberActivity?.available;
+    let vsValue='…',vsNote='',trainValue='…',trainNote=labels[6],dsValue='…',dsNote=labels[2];
+    if(memberActivity){
+      const recorded=member?.vsDays.size||0;
+      vsValue=!available.vs?'—':recorded?new Intl.NumberFormat(currentLang,{minimumFractionDigits:1,maximumFractionDigits:1}).format([...member.vsDays.values()].reduce((a,b)=>a+b,0)/1e6)+'M':'—';
+      if(!available.vs)vsNote=labels[5];
+      else if(memberActivity.week){
+        const end=new Date(memberActivity.week+'T12:00:00Z');end.setUTCDate(end.getUTCDate()+4);
+        vsNote=activityDate(memberActivity.week)+'–'+activityDate(end.toISOString().slice(0,10))+' · '+recorded+'/5';
+      }else vsNote=labels[4];
+      trainValue=available.drivers?String(member?.drivenDates.size||0):'—';
+      if(!available.drivers)trainNote=labels[5];
+      dsValue=available.ds&&member?.ds?new Intl.NumberFormat(currentLang).format(member.ds.points):'—';
+      dsNote=!available.ds?labels[5]:member?.ds?activityDate(member.ds.date)+' · '+String(member.ds.team||''):labels[4];
+    }
+    const row=(label,value,note,title)=>'<div class="activity-row" title="'+escapeHtml(title)+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
+    return row('VS',vsValue,vsNote,labels[0]+' · '+labels[3])+row(labels[1],trainValue,trainNote,labels[6])+row('DS',dsValue,dsNote,labels[2]);
+  }
+  async function loadMemberActivity(){
+    if(memberActivityStarted)return;memberActivityStarted=true;
+    try{
+      if(!window.HolaMemberActivity)throw Error('Activity module unavailable');
+      memberActivity=await window.HolaMemberActivity.load({url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY});
+    }catch{
+      memberActivity={members:new Map(),week:null,available:{vs:false,drivers:false,ds:false}};
+    }
+    for(const element of roster.querySelectorAll('.member-activity')){
+      const p=players[Number(element.dataset.activityIndex)];if(p)element.innerHTML=memberActivityHtml(p);
+    }
+  }
+
   function cardHtml(p,index){
     const loc=locationInfo(p),strongest=strongestSquad(p),power=compactSquadPower(strongest);
     const label=strongest.type?(t()[strongest.type]||squadLabel(strongest.type)):t().unknown;
@@ -366,7 +415,7 @@
       (p.supreme_lord_unlocked?'<span class="overlord-ribbon">Overlord</span>':'')+'</div>'+
       '<div class="member-copy"><h3>'+escapeHtml(p.name||'—')+'</h3><div class="member-profession">'+escapeHtml(formatProfession(p.profession))+'</div><strong class="member-thp"><small>THP</small>'+escapeHtml(displayedThp(p))+'</strong></div></div>'+
       '<div class="member-badges"><span class="hq-chip">HQ '+escapeHtml(p.hq_level||t().unknown)+'</span><span class="t10-chip'+(p.t10?'':' is-pending')+'">'+(p.t10?'T10':'T10 '+t().unknown)+'</span></div>'+
-      '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div></article>';
+      '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div><div class="member-activity" data-activity-index="'+index+'">'+memberActivityHtml(p)+'</div></article>';
   }
 
   function getFilteredPlayers(){
@@ -888,6 +937,7 @@
 
       updateStats();
       renderRoster(true);
+      loadMemberActivity();
     }catch(err){
       console.error('HOLa members · Supabase:',err);
       roster.innerHTML=`<div class="members-message members-error">${escapeHtml(t().loadError)}<br><small>${escapeHtml(err?.message||'')}</small></div>`;
