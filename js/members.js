@@ -393,6 +393,13 @@
     const row=(label,value,note,title)=>'<div class="activity-row" title="'+escapeHtml(title)+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
     return row('VS',vsValue,vsNote,labels[0]+' · '+labels[3])+row(labels[1],trainValue,trainNote,labels[6])+row('DS',dsValue,dsNote,labels[2]);
   }
+
+  function renderProfileActivity(p){
+    const titles={es:'Estadísticas',en:'Statistics',fr:'Statistiques',de:'Statistiken',ro:'Statistici',pt:'Estatísticas',uk:'Статистика',it:'Statistiche',pl:'Statystyki',tr:'İstatistikler',ru:'Статистика'};
+    document.getElementById('profileActivityTitle').textContent=titles[currentLang]||titles.en;
+    document.getElementById('profileActivity').innerHTML=memberActivityHtml(p);
+  }
+
   async function loadMemberActivity(){
     if(memberActivityStarted)return;memberActivityStarted=true;
     try{
@@ -401,9 +408,7 @@
     }catch{
       memberActivity={members:new Map(),week:null,available:{vs:false,drivers:false,ds:false}};
     }
-    for(const element of roster.querySelectorAll('.member-activity')){
-      const p=players[Number(element.dataset.activityIndex)];if(p)element.innerHTML=memberActivityHtml(p);
-    }
+    if(currentProfilePlayer&&!profile.hidden)renderProfileActivity(currentProfilePlayer);
   }
 
   function cardHtml(p,index){
@@ -415,7 +420,7 @@
       (p.supreme_lord_unlocked?'<span class="overlord-ribbon">Overlord</span>':'')+'</div>'+
       '<div class="member-copy"><h3>'+escapeHtml(p.name||'—')+'</h3><div class="member-profession">'+escapeHtml(formatProfession(p.profession))+'</div><strong class="member-thp"><small>THP</small>'+escapeHtml(displayedThp(p))+'</strong></div></div>'+
       '<div class="member-badges"><span class="hq-chip">HQ '+escapeHtml(p.hq_level||t().unknown)+'</span><span class="t10-chip'+(p.t10?'':' is-pending')+'">'+(p.t10?'T10':'T10 '+t().unknown)+'</span></div>'+
-      '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div><div class="member-activity" data-activity-index="'+index+'">'+memberActivityHtml(p)+'</div></article>';
+      '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div></article>';
   }
 
   function getFilteredPlayers(){
@@ -800,6 +805,8 @@
     translateProfileText(p);
     renderSquads(p);
     renderProgress(p);
+    renderProfileActivity(p);
+    loadMemberActivity();
     setProfileTab(currentProfileTab);
 
     renderAvatarManager(p);
@@ -937,7 +944,6 @@
 
       updateStats();
       renderRoster(true);
-      loadMemberActivity();
     }catch(err){
       console.error('HOLa members · Supabase:',err);
       roster.innerHTML=`<div class="members-message members-error">${escapeHtml(t().loadError)}<br><small>${escapeHtml(err?.message||'')}</small></div>`;

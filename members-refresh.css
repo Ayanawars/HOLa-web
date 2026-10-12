@@ -56,9 +56,11 @@ body{background:linear-gradient(180deg,rgba(220,245,255,.12),rgba(255,249,231,.8
 .hq-chip,.t10-chip,.overlord-ribbon{border-radius:4px}
 .profile-dialog{border-radius:10px}
 
-.member--hive .member-main-squad{margin-top:0}
-.member-activity{margin-top:auto;display:grid;gap:5px;border-top:1px solid #dccba0;padding-top:8px}
-.activity-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 5px;color:#244e65;font:700 11px/1.3 system-ui}
-.activity-row strong{text-align:right;color:#153e59;font-size:12px}
-.activity-row small{grid-column:1/-1;color:#697984;font:500 9px/1.3 system-ui;overflow-wrap:anywhere}
-@media(max-width:360px){.activity-row{font-size:10px}.activity-row strong{font-size:11px}.activity-row small{font-size:8px}}
+
+.profile-activity-section{margin:16px 0}
+.profile-activity-section h3{font:800 17px/1.3 system-ui;color:#153e59;margin:0 0 9px}
+.profile-activity{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.profile-activity .activity-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:12px;background:#fffaf0;border:1px solid #d4ba7d;border-radius:6px;color:#244e65;font:700 13px/1.3 system-ui}
+.profile-activity .activity-row strong{text-align:right;color:#153e59;font-size:16px}
+.profile-activity .activity-row small{grid-column:1/-1;color:#697984;font:500 11px/1.4 system-ui;overflow-wrap:anywhere}
+@media(max-width:600px){.profile-activity{grid-template-columns:1fr}.profile-activity .activity-row{padding:10px 12px}}
