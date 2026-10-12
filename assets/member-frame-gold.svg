@@ -1,10 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
 <defs>
-<linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9c5000"/><stop offset=".3" stop-color="#df991f"/><stop offset=".5" stop-color="#ffe398"/><stop offset=".75" stop-color="#c07209"/><stop offset="1" stop-color="#9c5000"/></linearGradient>
-<linearGradient id="bevel" x1=".1" y1=".05" x2=".85" y2="1"><stop stop-color="#ffdc80"/><stop offset=".3" stop-color="#ffdc80"/><stop offset=".52" stop-color="#c37914"/><stop offset=".76" stop-color="#ffe39c"/><stop offset="1" stop-color="#cb7c12"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+<stop stop-color="#b77d00"/><stop offset=".13" stop-color="#ffe578"/><stop offset=".28" stop-color="#fff8d3"/><stop offset=".41" stop-color="#efb91c"/><stop offset=".57" stop-color="#d99b00"/><stop offset=".72" stop-color="#ffdf55"/><stop offset=".86" stop-color="#fff4b6"/><stop offset="1" stop-color="#d99c09"/>
+</linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffceb"/><stop offset=".35" stop-color="#fff09c"/><stop offset=".55" stop-color="#f4c337"/><stop offset=".82" stop-color="#fff6ba"/><stop offset="1" stop-color="#fffef0"/></linearGradient>
+<linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8f650a"/><stop offset=".3" stop-color="#e7b731"/><stop offset=".55" stop-color="#ae7300"/><stop offset=".85" stop-color="#ffec8c"/><stop offset="1" stop-color="#a87809"/></linearGradient>
 </defs>
-<circle cx="100" cy="100" r="95" fill="none" stroke="url(#rim)" stroke-width="1.8"/>
-<circle cx="100" cy="100" r="88" fill="none" stroke="url(#rim)" stroke-width="16"/>
-<circle cx="100" cy="100" r="87.8" fill="none" stroke="url(#bevel)" stroke-width="5"/>
-<circle cx="100" cy="100" r="81.8" fill="none" stroke="#e8ad41" stroke-width=".6"/>
+<circle cx="100" cy="100" r="95" fill="none" stroke="url(#edge)" stroke-width="2.5"/>
+<circle cx="100" cy="100" r="88" fill="none" stroke="url(#metal)" stroke-width="16"/>
+<circle cx="100" cy="100" r="93.1" fill="none" stroke="url(#shine)" stroke-width="2.2"/>
+<circle cx="100" cy="100" r="85.5" fill="none" stroke="url(#shine)" stroke-width="2.8"/>
+<circle cx="100" cy="100" r="80.5" fill="none" stroke="url(#edge)" stroke-width="1.5"/>
+<circle cx="100" cy="100" r="82" fill="none" stroke="#fff2a0" stroke-width="1"/>
+<path d="M22 41l2.5 5.5 5.5 2.5-5.5 2.5L22 57l-2.5-5.5L14 49l5.5-2.5z" fill="#fffdf1" stroke="#e9c85c" stroke-width=".6"/>
+<path d="M170 150l2 4.5 4.5 2-4.5 2-2 4.5-2-4.5-4.5-2 4.5-2z" fill="#fff9cd" stroke="#d5a632" stroke-width=".5"/>
 </svg>
