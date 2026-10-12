@@ -48,3 +48,10 @@ body{background:linear-gradient(180deg,rgba(220,245,255,.12),rgba(255,249,231,.8
 .member--hive .member-country{width:28px;height:20px;right:-2px;top:0;border:2px solid #fff7e1;border-radius:3px;background:#fffaf1;box-sizing:border-box}
 .member--hive .member-country .flag-img{display:block;width:100%;height:100%;object-fit:contain;border-radius:0;margin:0;vertical-align:baseline;box-shadow:none}
 .profile .meta .flag-img{object-fit:contain}
+
+/* Straighter corners for roster cards and controls. */
+.stats,.search,.sort-control,.profession-control{border-radius:8px}
+.filter,.refine,.members-more,.profile-tab{border-radius:6px}
+.roster .member.member--hive{border-radius:8px}
+.hq-chip,.t10-chip,.overlord-ribbon{border-radius:4px}
+.profile-dialog{border-radius:10px}
