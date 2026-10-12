@@ -360,17 +360,17 @@
 
   let memberActivity=null,memberActivityStarted=false;
   const activityLabels={
-    es:['Última semana VS','Tren','Último DS','días registrados','Sin datos','No disponible','Conducidos'],
-    en:['Latest VS week','Train','Latest DS','days recorded','No data','Unavailable','Times driven'],
-    fr:['Dernière semaine VS','Train','Dernier DS','jours enregistrés','Aucune donnée','Indisponible','Conduites'],
-    de:['Letzte VS-Woche','Zug','Letzter DS','erfasste Tage','Keine Daten','Nicht verfügbar','Gefahren'],
-    ro:['Ultima săptămână VS','Tren','Ultimul DS','zile înregistrate','Fără date','Indisponibil','Conduceri'],
-    pt:['Última semana VS','Trem','Último DS','dias registrados','Sem dados','Indisponível','Conduções'],
-    uk:['Останній тиждень VS','Потяг','Останній DS','записаних днів','Немає даних','Недоступно','Керувань'],
-    it:['Ultima settimana VS','Treno','Ultimo DS','giorni registrati','Nessun dato','Non disponibile','Conduzioni'],
-    pl:['Ostatni tydzień VS','Pociąg','Ostatni DS','zapisanych dni','Brak danych','Niedostępne','Prowadzenia'],
-    tr:['Son VS haftası','Tren','Son DS','kayıtlı gün','Veri yok','Kullanılamıyor','Sürüşler'],
-    ru:['Последняя неделя VS','Поезд','Последний DS','дней записано','Нет данных','Недоступно','Поездок']
+    es:['VS acumulado','Tren','Último DS','días registrados','Sin datos','No disponible','Conducidos'],
+    en:['Total VS points','Train','Latest DS','days recorded','No data','Unavailable','Times driven'],
+    fr:['Total des points VS','Train','Dernier DS','jours enregistrés','Aucune donnée','Indisponible','Conduites'],
+    de:['VS-Gesamtpunkte','Zug','Letzter DS','erfasste Tage','Keine Daten','Nicht verfügbar','Gefahren'],
+    ro:['Total puncte VS','Tren','Ultimul DS','zile înregistrate','Fără date','Indisponibil','Conduceri'],
+    pt:['Total de pontos VS','Trem','Último DS','dias registrados','Sem dados','Indisponível','Conduções'],
+    uk:['Усього очок VS','Потяг','Останній DS','записаних днів','Немає даних','Недоступно','Керувань'],
+    it:['Punti VS totali','Treno','Ultimo DS','giorni registrati','Nessun dato','Non disponibile','Conduzioni'],
+    pl:['Suma punktów VS','Pociąg','Ostatni DS','zapisanych dni','Brak danych','Niedostępne','Prowadzenia'],
+    tr:['Toplam VS puanı','Tren','Son DS','kayıtlı gün','Veri yok','Kullanılamıyor','Sürüşler'],
+    ru:['Всего очков VS','Поезд','Последний DS','дней записано','Нет данных','Недоступно','Поездок']
   };
   function activityDate(value){return new Intl.DateTimeFormat(currentLang,{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))}
   function memberActivityHtml(p){
@@ -379,19 +379,17 @@
     let vsValue='…',vsNote='',trainValue='…',trainNote=labels[6],dsValue='…',dsNote=labels[2];
     if(memberActivity){
       const recorded=member?.vsDays.size||0;
-      vsValue=!available.vs?'—':recorded?new Intl.NumberFormat(currentLang,{minimumFractionDigits:1,maximumFractionDigits:1}).format([...member.vsDays.values()].reduce((a,b)=>a+b,0)/1e6)+'M':'—';
-      if(!available.vs)vsNote=labels[5];
-      else if(memberActivity.week){
-        const end=new Date(memberActivity.week+'T12:00:00Z');end.setUTCDate(end.getUTCDate()+4);
-        vsNote=activityDate(memberActivity.week)+'–'+activityDate(end.toISOString().slice(0,10))+' · '+recorded+'/5';
-      }else vsNote=labels[4];
+      const vsTotal=recorded?[...member.vsDays.values()].reduce((a,b)=>a+b,0):0;
+      const divisor=vsTotal>=1e9?1e9:1e6,suffix=vsTotal>=1e9?'B':'M';
+      vsValue=!available.vs?'—':recorded?new Intl.NumberFormat(currentLang,{minimumFractionDigits:1,maximumFractionDigits:1}).format(vsTotal/divisor)+suffix:'—';
+      vsNote=!available.vs?labels[5]:recorded?labels[0]+' · '+recorded+' '+labels[3]:labels[4];
       trainValue=available.drivers?String(member?.drivenDates.size||0):'—';
       if(!available.drivers)trainNote=labels[5];
       dsValue=available.ds&&member?.ds?new Intl.NumberFormat(currentLang).format(member.ds.points):'—';
       dsNote=!available.ds?labels[5]:member?.ds?activityDate(member.ds.date)+' · '+String(member.ds.team||''):labels[4];
     }
     const row=(label,value,note,title)=>'<div class="activity-row" title="'+escapeHtml(title)+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
-    return row('VS',vsValue,vsNote,labels[0]+' · '+labels[3])+row(labels[1],trainValue,trainNote,labels[6])+row('DS',dsValue,dsNote,labels[2]);
+    return row('VS',vsValue,vsNote,labels[0]+(available?.vs&&member?.vsDays.size?' · '+new Intl.NumberFormat(currentLang).format([...member.vsDays.values()].reduce((a,b)=>a+b,0)):''))+row(labels[1],trainValue,trainNote,labels[6])+row('DS',dsValue,dsNote,labels[2]);
   }
 
   function renderProfileActivity(p){
