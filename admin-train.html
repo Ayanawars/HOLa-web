@@ -44,7 +44,7 @@
       <div class="summary"><span class="pill" id="type">—</span><span class="pill" id="sourceWeek">—</span></div>
       <div class="mode-box"><label for="weekType">TIPO Y NORMA DE LA SEMANA</label><div class="mode-row"><select id="weekType"><option value="push">Push</option><option value="save">Save</option></select><button class="save" id="saveWeekType" type="button">GUARDAR</button></div><p class="mode-rule" id="modeRule"></p><div class="mode-status" id="modeStatus"></div></div>
     </section>
-    <div class="days" id="days"></div><section class="card hero" style="margin-top:14px"><h2>Bolsa semanal de suplentes</h2><div id="reservePools"></div></section><section class="card hero mail-card"><div class="kicker">COMUNICACIÓN · HOLa</div><h2>Correo semanal del tren</h2><p>Se genera con la semana seleccionada. Puedes editar el texto antes de copiarlo para el correo del juego.</p><textarea id="trainMail" spellcheck="false" aria-label="Correo semanal del tren"></textarea><div class="mail-actions"><button class="save mail-button" id="mailLanguage" type="button">🇬🇧 ENGLISH · Cambiar a español</button><button class="save mail-button" id="refreshMail" type="button">ACTUALIZAR CORREO</button><button class="save mail-button" id="copyMail" type="button">COPIAR CORREO</button></div><p class="mail-status" id="mailStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">GUARDADO · HOLa</div><h2>Guardar semana</h2><p>Bloquea la planificación, los conductores reales, la composición y los resultados utilizados. Seguirás pudiendo consultar otras semanas y copiar el correo. Guarda antes todos los cambios que quieras incluir.</p><div class="mail-actions"><button class="save mail-button" id="finalizeWeek" type="button">GUARDAR SEMANA</button></div><p class="mail-status" id="finalizeStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">NORMAS · HOLa</div><h2>Copiar normas</h2><p>Textos independientes para tu correo manual. No modifican la semana seleccionada.</p><div class="mail-actions"><button class="save mail-button" id="copyPushRules" type="button">COPIAR NORMAS PUSH</button><button class="save mail-button" id="copySaveRules" type="button">COPIAR NORMAS SAVE</button></div><p class="mail-status" id="rulesCopyStatus" role="status"></p></section>
+    <div class="days" id="days"></div><section class="card hero" style="margin-top:14px"><h2>Bolsa semanal de suplentes</h2><div id="reservePools"></div></section><section class="card hero mail-card"><div class="kicker">COMUNICACIÓN · HOLa</div><h2>Correo semanal del tren</h2><p>Se genera con la semana seleccionada. Puedes editar el texto antes de copiarlo para el correo del juego.</p><textarea id="trainMail" spellcheck="false" aria-label="Correo semanal del tren"></textarea><div class="mail-actions"><button class="save mail-button" id="mailLanguage" type="button">🇬🇧 ENGLISH · Cambiar a español</button><button class="save mail-button" id="refreshMail" type="button">ACTUALIZAR CORREO</button><button class="save mail-button" id="copyMail" type="button">COPIAR CORREO</button></div><p class="mail-status" id="mailStatus" role="status"></p></section><section class="card hero mail-card announcement-card"><div class="kicker">ANUNCIO · HOLa</div><h2>Anuncio semanal del tren</h2><p>Texto independiente del correo, sin iconos y de hasta 500 caracteres. Puedes editarlo; al copiar se conservan los saltos de línea.</p><textarea id="trainAnnouncement" maxlength="500" spellcheck="false" aria-label="Anuncio semanal del tren" style="min-height:220px"></textarea><p id="announcementCount" aria-live="polite">0 / 500 caracteres</p><div class="mail-actions"><button class="save mail-button" id="announcementLanguage" type="button">INGLÉS · Cambiar a español</button><button class="save mail-button" id="refreshAnnouncement" type="button">GENERAR ANUNCIO</button><button class="save mail-button" id="copyAnnouncement" type="button" disabled>COPIAR ANUNCIO</button></div><p class="mail-status" id="announcementStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">GUARDADO · HOLa</div><h2>Guardar semana</h2><p>Bloquea la planificación, los conductores reales, la composición y los resultados utilizados. Seguirás pudiendo consultar otras semanas y copiar el correo. Guarda antes todos los cambios que quieras incluir.</p><div class="mail-actions"><button class="save mail-button" id="finalizeWeek" type="button">GUARDAR SEMANA</button></div><p class="mail-status" id="finalizeStatus" role="status"></p></section><section class="card hero mail-card"><div class="kicker">NORMAS · HOLa</div><h2>Copiar normas</h2><p>Textos independientes para tu correo manual. No modifican la semana seleccionada.</p><div class="mail-actions"><button class="save mail-button" id="copyPushRules" type="button">COPIAR NORMAS PUSH</button><button class="save mail-button" id="copySaveRules" type="button">COPIAR NORMAS SAVE</button></div><p class="mail-status" id="rulesCopyStatus" role="status"></p></section>
   </main>
   <script type="module">
     import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
@@ -289,7 +289,7 @@
         card.querySelector('.save').addEventListener('click',()=>save(item,select,card.querySelector('.save'),status));renderTripComposition(card,item);box.append(card)
       }
       const poolBox=$('reservePools');poolBox.replaceChildren();for(const [type,label,count] of [['VS','VS · lunes a jueves',4],['DS_B','Desert Storm B · viernes',2],['DS_A','Desert Storm A · sábado',2],['DONATIONS','Donaciones · domingo',3]]){const p=document.createElement('p');p.style.cssText='padding:10px 0;border-bottom:1px solid #e1c986;font-size:12px;line-height:1.7';const names=schedule.reservePools[type]||[];p.textContent=label+' ('+names.length+'/'+count+'): '+(names.map((name,i)=>(i+1)+'. '+name).join(' · ')||'Sin candidatos');poolBox.append(p)}
-      refreshTrainMail();applyWeekLock();
+      refreshTrainMail();refreshTrainAnnouncement();applyWeekLock();
     }
     const trainRulesText=mode=>{const save=mode==='save';return ['HOLa - NORMAS DEL TREN · SEMANA '+mode.toUpperCase(),'','REQUISITO VS',save?'De lunes a viernes: mínimo 7.200.000 puntos por día. No alcanzar el mínimo cualquier día significa no cumplir.':'De lunes a viernes: mínimo 7.200.000 puntos por día. No alcanzar el mínimo cualquier día significa no cumplir.','Se necesitan los cinco días registrados.',save?'Entre quienes alcanzan el mínimo los cinco días, se ordena por total semanal de menor a mayor: prioridad para quien más se aproxima a 7.200.000 diarios.':'Los jugadores que cumplen se ordenan por total semanal de mayor a menor.','','ASIGNACIÓN SEMANAL','Prioridad DS: primero se reservan los conductores de Desert Storm B y A. Si un jugador también aparece en VS, conserva el puesto de DS.','Lunes a jueves: los cuatro primeros restantes de la clasificación VS que cumplen la norma.','Viernes: clasificación por puntos de Desert Storm, equipo B.','Sábado: clasificación por puntos de Desert Storm, equipo A.','Domingo: mayor donación total a tecnología de la semana anterior, entre quienes también cumplen el requisito VS de lunes a viernes.','Los resultados utilizados corresponden a la semana anterior a la semana del tren.','','ROTACIÓN Y SUPLENTES','El ciclo dura cuatro semanas. Quien haya conducido realmente no vuelve a conducir durante el resto del ciclo.','Aparecer como titular o suplente no consume el turno si no conduce.','Bolsa semanal de suplentes: VS (4), DS B (2), DS A (2) y donaciones (3). Los suplentes de DS se reservan antes que los de VS. Las sustituciones siguen el orden de cada categoría.','El conductor decide los puestos VIP y Guardián.','','BOLETOS','Quien no done los tres boletos pasa a rango R1. Un jugador R1 no puede conducir el tren ni figurar como suplente.','El rango R1 se excluye automáticamente de la planificación según el rango registrado en miembros. La donación de boletos se comprueba manualmente y el cambio de rango debe quedar registrado en miembros.','','Consulta las normas y la planificación en https://ayanawars.github.io/HOLa-web/train.html'].join('\n')};
     let mailLanguage=localStorage.getItem('hola-train-mail-language')==='es'?'es':'en';
@@ -334,6 +334,53 @@
     }
     $('mailLanguage').addEventListener('click',()=>{mailLanguage=mailLanguage==='en'?'es':'en';localStorage.setItem('hola-train-mail-language',mailLanguage);refreshTrainMail()});
 
+
+    let announcementLanguage=localStorage.getItem('hola-train-announcement-language')==='es'?'es':'en';
+    function announcementPlain(value){
+      return String(value||'').replace(/[\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0F\u200D]/gu,'');
+    }
+    function announcementClipboard(value){return String(value).replace(/\r\n?/g,'\n').replace(/\n/g,'\r\n')}
+    function announcementLength(value){return announcementClipboard(value).length}
+    function buildTrainAnnouncement(language=announcementLanguage){
+      if(!schedule)return {text:'',compact:false};
+      const es=language==='es',say=(a,b)=>es?a:b;
+      const days=es?['','Lun','Mar','Mié','Jue','Vie','Sáb','Dom']:['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const date=value=>new Intl.DateTimeFormat(es?'es-ES':'en-GB',{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
+      const header=['HOLa - '+say('TREN','TRAIN'),date(schedule.week)+' - '+date(schedule.weekEnd),''];
+      const rows=schedule.days.map(item=>days[item.day]+': '+(announcementPlain(item.actual||item.planned).trim()||say('Pendiente','Pending')));
+      const footer=['',say('Dona 3 tickets antes de la salida.','Donate 3 tickets before departure.'),say('Suplentes y normas: consulta el correo.','Substitutes and rules: check the mail.')];
+      let text=[...header,...rows,...footer].join('\n');
+      if(announcementLength(text)<=500)return {text,compact:false};
+      // Keep names complete. An exceptionally long roster uses the full-mail reference.
+      text=[...header,say('Conductores, suplentes y normas en el correo semanal.','Drivers, substitutes and rules are in the weekly mail.'),'',footer[1],'https://ayanawars.github.io/HOLa-web/train.html'].join('\n');
+      return {text,compact:true};
+    }
+    function updateAnnouncementCount(){
+      const field=$('trainAnnouncement');
+      let value=announcementPlain(field.value);
+      if(announcementLength(value)>500){
+        const chars=[...value];while(chars.length&&announcementLength(chars.join(''))>500)chars.pop();value=chars.join('');
+      }
+      if(field.value!==value)field.value=value;
+      $('announcementCount').textContent=announcementLength(value)+' / 500 caracteres';
+      $('copyAnnouncement').disabled=!value.trim();
+    }
+    function refreshTrainAnnouncement(){
+      const result=buildTrainAnnouncement();
+      $('trainAnnouncement').value=result.text;
+      $('trainAnnouncement').lang=announcementLanguage;
+      $('announcementLanguage').textContent=announcementLanguage==='en'?'INGLÉS · Cambiar a español':'ESPAÑOL · Switch to English';
+      $('announcementStatus').textContent=result.compact?'La lista completa supera 500 caracteres. El anuncio remite al correo para conservar todos los nombres.':schedule?'Anuncio generado para la semana seleccionada. Puedes editarlo.':'Selecciona una semana para generar el anuncio.';
+      updateAnnouncementCount();
+    }
+    $('trainAnnouncement').addEventListener('input',updateAnnouncementCount);
+    $('refreshAnnouncement').addEventListener('click',refreshTrainAnnouncement);
+    $('announcementLanguage').addEventListener('click',()=>{announcementLanguage=announcementLanguage==='en'?'es':'en';localStorage.setItem('hola-train-announcement-language',announcementLanguage);refreshTrainAnnouncement()});
+    $('copyAnnouncement').addEventListener('click',async()=>{
+      updateAnnouncementCount();if($('copyAnnouncement').disabled)return;
+      await copyText($('trainAnnouncement').value,'announcementStatus','Texto copiado con saltos de línea. Ya puedes pegarlo en el anuncio del juego.');
+    });
+
     function currentSavedWeek(){return (data.savedWeeks||[]).find(w=>w.schedule_week===$('week').value)}
     function applyWeekLock(){
       const saved=currentSavedWeek(),locked=!!saved;
@@ -358,7 +405,7 @@
       }catch(error){$('finalizeStatus').textContent='No se pudo guardar: '+error.message;button.disabled=false}
     }
     $('finalizeWeek').addEventListener('click',finalizeWeek);
-    async function copyText(value,status){const clipboardText=String(value).replace(/\r\n?/g,'\n').replace(/\n/g,'\r\n');try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(clipboardText);else{const field=document.createElement('textarea');field.value=clipboardText;field.style.cssText='position:fixed;left:-9999px';document.body.append(field);field.select();const ok=document.execCommand('copy');field.remove();if(!ok)throw Error('copy failed')}$(status).textContent='Texto copiado. Ya puedes pegarlo en el correo del juego.'}catch(e){$(status).textContent='No se pudo copiar automáticamente. Selecciona el texto y cópialo manualmente.'}}
+    async function copyText(value,status,successMessage='Texto copiado. Ya puedes pegarlo en el correo del juego.'){const clipboardText=String(value).replace(/\r\n?/g,'\n').replace(/\n/g,'\r\n');try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(clipboardText);else{const field=document.createElement('textarea');field.value=clipboardText;field.style.cssText='position:fixed;left:-9999px';document.body.append(field);field.select();const ok=document.execCommand('copy');field.remove();if(!ok)throw Error('copy failed')}$(status).textContent=successMessage}catch(e){$(status).textContent='No se pudo copiar automáticamente. Selecciona el texto y cópialo manualmente.'}}
     $('refreshMail').addEventListener('click',refreshTrainMail);$('copyMail').addEventListener('click',()=>copyText($('trainMail').value,'mailStatus'));$('copyPushRules').addEventListener('click',()=>copyText(trainRulesText('push'),'rulesCopyStatus'));$('copySaveRules').addEventListener('click',()=>copyText(trainRulesText('save'),'rulesCopyStatus'));
     document.addEventListener('click',event=>{for(const picker of document.querySelectorAll('.driver-picker'))if(!picker.contains(event.target)){const menu=picker.querySelector('.driver-menu');menu.hidden=true;picker.querySelector('.driver-trigger').setAttribute('aria-expanded','false')}});
     async function save(item,select,button,status){
