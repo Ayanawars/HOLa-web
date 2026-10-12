@@ -411,6 +411,39 @@
     if(currentProfilePlayer&&!profile.hidden)renderProfileActivity(currentProfilePlayer);
   }
 
+
+  let honorMedals=new Map(),honorKillsStarted=false;
+  function honorMedalsHtml(p){
+    const helper=window.HolaHonorMedals;if(!helper)return '';
+    const medals=honorMedals.get(helper.normalize(p.name))||[];
+    const labels={Tank:t().tank,Missile:t().missile,Aircraft:t().air,THP:'THP',Kills:'Kills'};
+    const honorTitles={es:'Muro de Honor',en:'Honor Wall',fr:'Mur d’honneur',de:'Ehrenwand',ro:'Zidul de onoare',pt:'Mural de Honra',uk:'Стіна пошани',it:'Muro d’onore',pl:'Ściana chwały',tr:'Onur Duvarı',ru:'Стена славы'};
+    const icons={Tank:'assets/icon-tank-custom.png',Missile:'assets/icon-missile-custom.png',Aircraft:'assets/icon-air-custom.png',Kills:'assets/honor-kills.svg'};
+    return medals.map(m=>{
+      const label=labels[m.category],title=(honorTitles[currentLang]||honorTitles.en)+' · #'+m.rank+' · '+label;
+      return '<span class="honor-medal honor-medal--'+m.rank+'" title="'+escapeHtml(title)+'" aria-label="'+escapeHtml(title)+'"><svg viewBox="0 0 32 40" aria-hidden="true"><path d="M7 21L4 38l9-4 5 4 2-16M17 22l-1 16 7-4 6 4-5-17" fill="var(--medal-ribbon)"/><circle cx="16" cy="15" r="13" fill="var(--medal-fill)" stroke="var(--medal-edge)" stroke-width="2"/><circle cx="16" cy="15" r="9.5" fill="none" stroke="var(--medal-edge)" stroke-width=".7"/><text x="16" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="var(--medal-ink)">'+m.rank+'</text></svg><span class="honor-medal-label">'+(icons[m.category]?'<img src="'+icons[m.category]+'" alt="" aria-hidden="true">':'')+escapeHtml(label)+'</span></span>';
+    }).join('');
+  }
+  function updateHonorMedals(kills=[]){
+    if(!window.HolaHonorMedals)return;
+    honorMedals=window.HolaHonorMedals.build(players,kills);
+    for(const element of roster.querySelectorAll('.member-honor-medals')){
+      const p=players[Number(element.dataset.honorIndex)];if(p)element.innerHTML=honorMedalsHtml(p);
+    }
+  }
+  async function loadHonorKills(){
+    if(honorKillsStarted)return;honorKillsStarted=true;
+    let kills=[];
+    try{
+      const response=await fetch(SUPABASE_URL+'/rest/v1/honor_kills?select=players&id=eq.1',{headers:{apikey:SUPABASE_PUBLISHABLE_KEY},cache:'no-store'});
+      if(!response.ok)throw Error('Kills unavailable');const rows=await response.json();
+      if(!Array.isArray(rows[0]?.players))throw Error('Kills unavailable');kills=rows[0].players;
+    }catch{
+      try{const response=await fetch('assets/honor-kills.json',{cache:'no-store'});if(response.ok){const snapshot=await response.json();if(Array.isArray(snapshot.players))kills=snapshot.players}}catch{}
+    }
+    updateHonorMedals(kills);
+  }
+
   function cardHtml(p,index){
     const loc=locationInfo(p),strongest=strongestSquad(p),power=compactSquadPower(strongest);
     const label=strongest.type?(t()[strongest.type]||squadLabel(strongest.type)):t().unknown;
@@ -420,6 +453,7 @@
       (p.supreme_lord_unlocked?'<span class="overlord-ribbon">Overlord</span>':'')+'</div>'+
       '<div class="member-copy"><h3>'+escapeHtml(p.name||'—')+'</h3><div class="member-profession">'+escapeHtml(formatProfession(p.profession))+'</div><strong class="member-thp"><small>THP</small>'+escapeHtml(displayedThp(p))+'</strong></div></div>'+
       '<div class="member-badges"><span class="hq-chip">HQ '+escapeHtml(p.hq_level||t().unknown)+'</span><span class="t10-chip'+(p.t10?'':' is-pending')+'">'+(p.t10?'T10':'T10 '+t().unknown)+'</span></div>'+
+      '<div class="member-honor-medals" data-honor-index="'+index+'">'+honorMedalsHtml(p)+'</div>'+
       '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div></article>';
   }
 
@@ -943,7 +977,9 @@
       players=sortMembers(players);
 
       updateStats();
+      updateHonorMedals();
       renderRoster(true);
+      loadHonorKills();
     }catch(err){
       console.error('HOLa members · Supabase:',err);
       roster.innerHTML=`<div class="members-message members-error">${escapeHtml(t().loadError)}<br><small>${escapeHtml(err?.message||'')}</small></div>`;
