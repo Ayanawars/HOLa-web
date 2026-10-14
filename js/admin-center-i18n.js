@@ -11,6 +11,8 @@ for(const [code,[name,info]] of Object.entries(exportModuleTexts))Object.assign(
 const ticketModuleTexts={"es":["Tickets del tren","Control independiente de los 3 tickets"],"en":["Train tickets","Separate tracking of the 3 tickets"],"fr":["Tickets du train","Suivi séparé des 3 tickets"],"de":["Zugtickets","Separate Kontrolle der 3 Tickets"],"ro":["Bilete pentru tren","Control separat al celor 3 bilete"],"pt":["Bilhetes do comboio","Controlo separado dos 3 bilhetes"],"uk":["Квитки на поїзд","Окремий облік 3 квитків"],"it":["Biglietti del treno","Controllo separato dei 3 biglietti"],"pl":["Bilety kolejowe","Osobna kontrola 3 biletów"],"tr":["Tren biletleri","3 bilet için ayrı takip"]};
 for(const [code,[name,info]] of Object.entries(ticketModuleTexts))Object.assign(dictionary[code],{tickets:name,ticketsInfo:info});
 for(const [code,[name,info]] of Object.entries({"es":["Actualizar kills","Consultar LastIntel · actualizar el Top 10 kills"],"en":["Update kills","Fetch LastIntel · update the Top 10 kills"],"fr":["Actualiser les kills","Modifier les kills · publier sur le mur d’honneur"],"de":["Kills aktualisieren","Mitglieder-Kills bearbeiten · in der Ruhmeshalle veröffentlichen"],"ro":["Actualizează eliminările","Editează eliminările · publică pe Zidul Onoarei"],"pt":["Atualizar kills","Editar eliminações · publicar no Muro da Honra"],"uk":["Оновити вбивства","Змінити вбивства учасників · опублікувати на Стіні пошани"],"it":["Aggiorna kills","Modifica uccisioni · pubblica nel Muro d’Onore"],"pl":["Aktualizuj kills","Edytuj zabójstwa · publikuj na Ścianie Honoru"],"tr":["Öldürmeleri güncelle","Üye öldürmelerini düzenle · Onur Duvarında yayınla"]}))Object.assign(dictionary[code],{kills:name,killsInfo:info});
+const arenaModuleTexts={"es":["Guerras de arena","Capturas de puntaje · confirmar participación"],"en":["Arena Wars","Score screenshots · confirm participation"],"fr":["Guerres des sables","Captures de scores · confirmer la participation"],"de":["Arenakriege","Punktebilder · Teilnahme bestätigen"],"ro":["Războaiele arenei","Capturi de scor · confirmă participarea"],"pt":["Guerras da arena","Capturas de pontos · confirmar participação"],"uk":["Війни арени","Знімки очок · підтвердження участі"],"it":["Guerre dell’arena","Screenshot punteggi · conferma partecipazione"],"pl":["Wojny areny","Zrzuty wyników · potwierdź udział"],"tr":["Arena Savaşları","Puan ekran görüntüleri · katılımı doğrula"]};
+for(const [code,[name,info]] of Object.entries(arenaModuleTexts))Object.assign(dictionary[code],{arena:name,arenaInfo:info});
 const $=sel=>document.querySelector(sel);
 const languageNames=Object.keys(dictionary);
 const flagImage={es:"es",en:"gb",fr:"fr",de:"de",ro:"ro",pt:"pt",uk:"ua",it:"it",pl:"pl",tr:"tr"};
@@ -30,6 +32,7 @@ const targets={
  exportData:'.module[href="admin-export.html"] strong',exportDataInfo:'.module[href="admin-export.html"] small',
  audit:'.module[href="admin-audit.html"] strong',auditInfo:'.module[href="admin-audit.html"] small',
  train:'.module[href="admin-train.html"] strong',trainInfo:'.module[href="admin-train.html"] small',
+ arena:"#arenaModule strong",arenaInfo:"#arenaModule small",
  kills:"#killsModule strong",killsInfo:"#killsModule small",
  tickets:"#trainTicketsModule strong",ticketsInfo:"#trainTicketsModule small",signout:"#logoutBtn"
 };
