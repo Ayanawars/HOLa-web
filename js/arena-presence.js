@@ -1,11 +1,18 @@
 // Match names only. A visible name with zero points still confirms presence.
 export function arenaKey(value){return String(value||'').replace(/[ᓚᘏᗢ]/g,'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'')}
 function tokens(value){return String(value||'').replace(/[ᓚᘏᗢ]/g,'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().match(/[\p{L}\p{N}]+/gu)||[]}
+export function cleanArenaLine(value){
+  // Remove grouped score numbers even when OCR joins them to the player name.
+  return String(value||'').replace(/\d{1,3}(?:[,.]\d{3})+(?:[,.]\d+)?/g,' ');
+}
 export function arenaAliases(name){
   const key=arenaKey(name),values=new Set([key]);
   if(/^jebraw+w*$/.test(key))values.add('jebraw');
   if(key==='mirrliva'||key==='mirliva'){values.add('mirliva');values.add('mirrliva')}
   if(key==='ir4ul')values.add('ir4ul91');
+  if(key==='tariix')values.add('tariixx');
+  // The cat's leading stroke is sometimes recognized as a c attached to the name.
+  if(String(name).includes('ᓚ'))values.add(key+'c');
   if(key==='elara')values.add('elara');
   return [...values].filter(Boolean);
 }
@@ -16,7 +23,7 @@ export function detectArenaNames(text,players){
   const exact=new Map(),suggestions=new Map(),unmatched=[];
   for(const raw of String(text||'').split(/\r?\n/)){
     const line=raw.trim();if(!line)continue;
-    const parts=tokens(line),windows=new Set();
+    const parts=tokens(cleanArenaLine(line)),windows=new Set();
     for(let i=0;i<parts.length;i++)for(let n=1;n<=Math.min(6,parts.length-i);n++)windows.add(parts.slice(i,i+n).join(''));
     const matches=new Set();for(const word of windows){const names=aliases.get(word);if(names?.size===1)matches.add([...names][0])}
     // Multiple names in the same OCR line are ambiguous; require manual review.
@@ -25,9 +32,12 @@ export function detectArenaNames(text,players){
     let best=null,second=0;
     for(const name of roster){let score=0;for(const alias of arenaAliases(name)){
       if(alias.length<5)continue;
-      for(const word of windows){if(Math.abs(alias.length-word.length)>2)continue;score=Math.max(score,1-distance(alias,word)/Math.max(alias.length,word.length))}
+      for(const word of windows){if(Math.abs(alias.length-word.length)>2)continue;const length=Math.max(alias.length,word.length);score=Math.max(score,1-distance(alias,word)/length);
+        // G/6 confusion in mixed letter-number names is a suggestion only.
+        if(/\d/.test(alias))score=Math.max(score,1-distance(alias.replace(/g/g,'6'),word.replace(/g/g,'6'))/length);
+      }
     }if(!best||score>best.score){second=best?.score||0;best={name,score}}else second=Math.max(second,score)}
-    if(best&&best.score>=.82&&best.score-second>=.08){if(!suggestions.has(best.name))suggestions.set(best.name,{name:best.name,evidence:[],confidence:'suggestion'});suggestions.get(best.name).evidence.push(line)}else unmatched.push(line);
+    if(best&&best.score>=.75&&best.score-second>=.08){if(!suggestions.has(best.name))suggestions.set(best.name,{name:best.name,evidence:[],confidence:'suggestion'});suggestions.get(best.name).evidence.push(line)}else unmatched.push(line);
   }
   for(const name of exact.keys())suggestions.delete(name);
   return {exact:[...exact.values()],suggestions:[...suggestions.values()],unmatched};
