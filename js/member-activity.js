@@ -16,8 +16,9 @@
     }
     async function all(table,params){let rows=[];for(let offset=0;;offset+=1000){const page=await request(table,{...params,limit:'1000',offset:String(offset)});rows.push(...page);if(page.length<1000)return rows}}
     const vsTask=()=>all('vs_scores',{select:'player_name,day,points,vs_date',vs_date:'lte.'+today,day:'in.(1,2,3,4,5,6)',order:'id.asc'});
-    const [v,t,d]=await Promise.allSettled([vsTask(),all('train_actual_drivers',{select:'actual_driver,service_date',service_date:'lte.'+today,order:'service_date.asc'}),all('desert_storm_scores',{select:'player_name,battle_date,team,points',battle_date:'lte.'+today,order:'battle_date.desc,id.desc'})]);
-    return summarize({vs:v.status==='fulfilled'?v.value:[],drivers:t.status==='fulfilled'?t.value:[],ds:d.status==='fulfilled'?d.value:[],available:{vs:v.status==='fulfilled',drivers:t.status==='fulfilled',ds:d.status==='fulfilled'},today});
+    const [v,t,d,b,a,p]=await Promise.allSettled([vsTask(),all('train_actual_drivers',{select:'actual_driver,service_date',service_date:'lte.'+today,order:'service_date.asc'}),all('desert_storm_scores',{select:'player_name,battle_date,team,points',battle_date:'lte.'+today,order:'battle_date.desc,id.desc'}),all('arena_battles',{select:'id,battle_date',battle_date:'lte.'+today,order:'id.asc'}),all('arena_participation',{select:'battle_id,player_name',order:'battle_id.asc,player_name.asc'}),all('desert_storm_published_plans',{select:'battle_date,team,roster:published->roster',battle_date:'lte.'+today,order:'battle_date.asc,team.asc'})]);
+    const result=summarize({vs:v.status==='fulfilled'?v.value:[],drivers:t.status==='fulfilled'?t.value:[],ds:d.status==='fulfilled'?d.value:[],available:{vs:v.status==='fulfilled',drivers:t.status==='fulfilled',ds:d.status==='fulfilled'},today});
+    result.today=today;result.participation={vs:v.status==='fulfilled'?v.value:[],ds:d.status==='fulfilled'?d.value:[],battles:b.status==='fulfilled'?b.value:[],arena:a.status==='fulfilled'?a.value:[],assignments:p.status==='fulfilled'?p.value:[],available:{vs:v.status==='fulfilled',ds:d.status==='fulfilled',arena:b.status==='fulfilled'&&a.status==='fulfilled',assignments:p.status==='fulfilled'}};return result;
   }
   root.HolaMemberActivity={key,summarize,load};
 })(typeof window!=='undefined'?window:globalThis);

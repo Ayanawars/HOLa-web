@@ -372,6 +372,22 @@
     tr:['Toplam VS puanı','Tren','Son DS','kayıtlı gün','Veri yok','Kullanılamıyor','Sürüşler'],
     ru:['Всего очков VS','Поезд','Последний DS','дней записано','Нет данных','Недоступно','Поездок']
   };
+  const participationLabels={"es": ["Actividad", "Muy activo", "Activo", "Poco activo", "Ausente", "Datos insuficientes", "Cargando actividad…", "Últimos 28 días · encuesta de esta semana", "Participó", "Sin participación registrada", "Sin datos / sin plaza", "Encuesta semanal", "Arena", "Actualizada esta semana", "Pendiente esta semana", "apartados"], "en": ["Activity", "Very active", "Active", "Less active", "Absent", "Insufficient data", "Loading activity…", "Last 28 days · survey this week", "Participated", "No recorded participation", "No data / no place", "Weekly survey", "Arena", "Updated this week", "Pending this week", "categories"], "fr": ["Activité", "Très actif", "Actif", "Peu actif", "Absent", "Données insuffisantes", "Chargement…", "28 derniers jours · sondage de la semaine", "A participé", "Aucune participation enregistrée", "Sans données / sans place", "Sondage hebdomadaire", "Arène", "À jour cette semaine", "En attente cette semaine", "catégories"], "de": ["Aktivität", "Sehr aktiv", "Aktiv", "Wenig aktiv", "Abwesend", "Zu wenige Daten", "Wird geladen…", "Letzte 28 Tage · Umfrage dieser Woche", "Teilgenommen", "Keine Teilnahme erfasst", "Keine Daten / kein Platz", "Wöchentliche Umfrage", "Arena", "Diese Woche aktualisiert", "Diese Woche ausstehend", "Bereiche"], "ro": ["Activitate", "Foarte activ", "Activ", "Puțin activ", "Absent", "Date insuficiente", "Se încarcă…", "Ultimele 28 de zile · sondajul săptămânii", "A participat", "Fără participare înregistrată", "Fără date / fără loc", "Sondaj săptămânal", "Arenă", "Actualizat săptămâna aceasta", "În așteptare săptămâna aceasta", "categorii"], "pt": ["Atividade", "Muito ativo", "Ativo", "Pouco ativo", "Ausente", "Dados insuficientes", "Carregando…", "Últimos 28 dias · pesquisa desta semana", "Participou", "Sem participação registrada", "Sem dados / sem vaga", "Pesquisa semanal", "Arena", "Atualizada nesta semana", "Pendente nesta semana", "categorias"], "uk": ["Активність", "Дуже активний", "Активний", "Малоактивний", "Відсутній", "Недостатньо даних", "Завантаження…", "Останні 28 днів · опитування цього тижня", "Брав участь", "Участь не зареєстрована", "Немає даних / місця", "Щотижневе опитування", "Арена", "Оновлено цього тижня", "Очікується цього тижня", "категорій"], "it": ["Attività", "Molto attivo", "Attivo", "Poco attivo", "Assente", "Dati insufficienti", "Caricamento…", "Ultimi 28 giorni · sondaggio settimanale", "Ha partecipato", "Nessuna partecipazione registrata", "Nessun dato / posto", "Sondaggio settimanale", "Arena", "Aggiornato questa settimana", "In attesa questa settimana", "categorie"], "pl": ["Aktywność", "Bardzo aktywny", "Aktywny", "Mało aktywny", "Nieobecny", "Za mało danych", "Ładowanie…", "Ostatnie 28 dni · ankieta w tym tygodniu", "Uczestniczył", "Brak zapisanej obecności", "Brak danych / miejsca", "Ankieta tygodniowa", "Arena", "Aktualna w tym tygodniu", "Oczekuje w tym tygodniu", "kategorie"], "tr": ["Etkinlik", "Çok aktif", "Aktif", "Az aktif", "Yok", "Yetersiz veri", "Yükleniyor…", "Son 28 gün · bu haftanın anketi", "Katıldı", "Kayıtlı katılım yok", "Veri / yer yok", "Haftalık anket", "Arena", "Bu hafta güncellendi", "Bu hafta bekleniyor", "kategori"], "ru": ["Активность", "Очень активный", "Активный", "Малоактивный", "Отсутствует", "Недостаточно данных", "Загрузка…", "Последние 28 дней · опрос этой недели", "Участвовал", "Участие не зарегистрировано", "Нет данных / места", "Еженедельный опрос", "Арена", "Обновлён на этой неделе", "Ожидается на этой неделе", "категорий"]};
+
+  function participationInfo(p){return window.HolaMemberParticipation?.evaluate(p,memberActivity)||{level:'loading',checks:[],done:0,total:0}}
+  function participationBadge(p){
+    const labels=participationLabels[currentLang]||participationLabels.en,value=participationInfo(p),index={very:1,active:2,low:3,absent:4,unknown:5,loading:6}[value.level];
+    return '<span class="participation-badge participation--'+value.level+'" title="'+escapeHtml(labels[0]+' · '+labels[7]+' · '+value.done+'/'+value.total+' '+labels[15])+'"><span class="participation-dot" aria-hidden="true"></span>'+escapeHtml(labels[index])+'</span>';
+  }
+  function participationDetails(p){
+    const labels=participationLabels[currentLang]||participationLabels.en,value=participationInfo(p);
+    const rows=value.checks.map(check=>{const name=check.id==='survey'?labels[11]:check.id==='arena'?labels[12]:check.id.toUpperCase();const state=check.state===null?'unknown':check.state?'yes':'no';const text=check.state===null?labels[10]:check.id==='survey'?(check.state?labels[13]:labels[14]):check.state?labels[8]+' · '+check.count:labels[9];return '<div class="participation-check participation-check--'+state+'"><span>'+escapeHtml(name)+'</span><strong>'+escapeHtml(text)+'</strong></div>'}).join('');
+    return '<div class="participation-heading"><h3>'+escapeHtml(labels[0])+'</h3>'+participationBadge(p)+'</div><p class="participation-period">'+escapeHtml(labels[7])+' · '+value.done+'/'+value.total+' '+escapeHtml(labels[15])+'</p><div class="participation-checks">'+rows+'</div>';
+  }
+  function updateParticipationBadges(){
+    document.querySelectorAll('[data-participation-index]').forEach(el=>{const p=players[Number(el.dataset.participationIndex)];if(p)el.innerHTML=participationBadge(p)});
+  }
+
   function activityDate(value){return new Intl.DateTimeFormat(currentLang,{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))}
   function memberActivityHtml(p){
     const labels=activityLabels[currentLang]||activityLabels.en;
@@ -396,6 +412,7 @@
     const titles={es:'Estadísticas',en:'Statistics',fr:'Statistiques',de:'Statistiken',ro:'Statistici',pt:'Estatísticas',uk:'Статистика',it:'Statistiche',pl:'Statystyki',tr:'İstatistikler',ru:'Статистика'};
     document.getElementById('profileActivityTitle').textContent=titles[currentLang]||titles.en;
     document.getElementById('profileActivity').innerHTML=memberActivityHtml(p);
+    document.getElementById('profileParticipation').innerHTML=participationDetails(p);
   }
 
   async function loadMemberActivity(){
@@ -404,8 +421,9 @@
       if(!window.HolaMemberActivity)throw Error('Activity module unavailable');
       memberActivity=await window.HolaMemberActivity.load({url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY});
     }catch{
-      memberActivity={members:new Map(),week:null,available:{vs:false,drivers:false,ds:false}};
+      memberActivity={today:new Date().toISOString().slice(0,10),members:new Map(),available:{vs:false,drivers:false,ds:false}};
     }
+    updateParticipationBadges();
     if(currentProfilePlayer&&!profile.hidden)renderProfileActivity(currentProfilePlayer);
   }
 
@@ -451,6 +469,7 @@
       (p.supreme_lord_unlocked?'<span class="overlord-ribbon">Overlord</span>':'')+'</div>'+
       '<div class="member-copy"><h3>'+escapeHtml(p.name||'—')+'</h3><div class="member-profession">'+escapeHtml(formatProfession(p.profession))+'</div><strong class="member-thp"><small>THP</small>'+escapeHtml(displayedThp(p))+'</strong></div></div>'+
       '<div class="member-badges"><span class="hq-chip">HQ '+escapeHtml(p.hq_level||t().unknown)+'</span><span class="t10-chip'+(p.t10?'':' is-pending')+'">'+(p.t10?'T10':'T10 '+t().unknown)+'</span></div>'+
+      '<div class="member-participation" data-participation-index="'+index+'">'+participationBadge(p)+'</div>'+
       '<div class="member-honor-medals" data-honor-index="'+index+'">'+honorMedalsHtml(p)+'</div>'+
       '<div class="member-main-squad"><span class="member-main-icon">'+squadIconMarkup(strongest.type)+'</span><div class="member-main-info"><span class="member-main-label">'+escapeHtml(label)+'</span><strong class="member-main-power">'+escapeHtml(power)+'</strong></div></div></article>';
   }
@@ -978,6 +997,7 @@
       updateHonorMedals();
       renderRoster(true);
       loadHonorKills();
+      loadMemberActivity();
     }catch(err){
       console.error('HOLa members · Supabase:',err);
       roster.innerHTML=`<div class="members-message members-error">${escapeHtml(t().loadError)}<br><small>${escapeHtml(err?.message||'')}</small></div>`;
