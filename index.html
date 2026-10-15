@@ -1110,7 +1110,14 @@
 .donations-board .donation-row{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:9px;margin:0;padding:10px 12px;border:1px solid rgba(255,218,103,.65);border-radius:13px;background:linear-gradient(105deg,#073d70,#087fc5 75%,#0798b9);box-shadow:0 5px 11px rgba(16,70,112,.17),inset 0 0 0 1px rgba(255,255,255,.13);color:#fff}
 .donations-board .donation-row:nth-child(1){background:linear-gradient(110deg,#614015,#bd8c29 65%,#e4bb56);border-color:#e6c36a}.donations-board .donation-row:nth-child(2){background:linear-gradient(110deg,#344f6d,#7798b4 75%,#a8bfd0);border-color:#c7d7df}.donations-board .donation-row:nth-child(3){background:linear-gradient(110deg,#684331,#a97152 75%,#ce9a72);border-color:#d7ab87}
 .donations-board .donation-row span{font-size:21px;text-align:center}.donations-board .donation-row strong{min-width:0;overflow-wrap:anywhere;font-size:13px;font-weight:900;color:#fff;text-shadow:0 1px 2px #001e3e70}.donations-board .donation-row b{color:#fff0b6;font-size:13px;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #001e3e70}
-</style>
+
+    .quick-access__description{margin:-3px 3px 14px;color:#63758a;font:600 12px/1.5 system-ui,sans-serif}
+    .home-update{display:flex;align-items:center;flex-wrap:wrap;gap:3px;width:fit-content;max-width:100%;margin-top:9px;padding:4px 7px;border-radius:5px;background:#ffffff8c;color:#647786;font:650 10px/1.35 system-ui,sans-serif;letter-spacing:0;text-transform:none}
+    .home-update__dot{display:inline-block;width:6px;height:6px;flex:0 0 6px;margin-right:3px;border-radius:50%;background:#7d9ca7}
+    .home-update.has-news{background:#e7f6ed;color:#216348;border:1px solid #86b9a0}
+    .home-update.has-news .home-update__dot{background:#19ae63;box-shadow:0 0 0 2px #19ae6324}
+    .home-update time{white-space:nowrap}
+  </style>
 </head>
 <body>
   <div class="app">
@@ -1267,15 +1274,16 @@
       </section>
 
       <section class="quick-access" aria-labelledby="quickAccessTitle">
-        <h2 class="quick-access__heading" id="quickAccessTitle" data-i18n="quickAccess">Acceso rápido</h2>
-        <a class="quick-access__card" href="alliance-map.html">
-<span class="quick-access__icon" aria-hidden="true">🗺️</span><span class="quick-access__copy"><strong class="quick-access__title" data-hive-home="0">Colmena</strong><span class="quick-access__subtitle" data-hive-home="1">Mira tu posición en el mapa</span></span><span class="quick-access__arrow" aria-hidden="true">›</span></a>
-        <a class="quick-access__card" href="statistics.html" aria-labelledby="homeStatisticsTitle">
+        <h2 class="quick-access__heading" id="quickAccessTitle" data-home-nav-heading>Explora HOLa</h2>
+        <p class="quick-access__description" data-home-nav-description>Tu alianza, al día.</p>
+        <a class="quick-access__card" href="alliance-map.html" data-home-section="hive">
+<span class="quick-access__icon" aria-hidden="true">🗺️</span><span class="quick-access__copy"><strong class="quick-access__title" data-hive-home="0">Colmena</strong><span class="quick-access__subtitle" data-hive-home="1">Mira tu posición en el mapa</span><span class="home-update" data-home-update></span></span><span class="quick-access__arrow" aria-hidden="true">›</span></a>
+        <a class="quick-access__card" href="statistics.html" data-home-section="statistics" aria-labelledby="homeStatisticsTitle">
           <span class="quick-access__icon" aria-hidden="true"><svg viewBox="0 0 48 48" focusable="false"><path d="M8 8v32h33M15 33V23h6v10M25 33V15h6v18M35 33V7h6v26"></path></svg></span>
-          <span class="quick-access__copy"><strong class="quick-access__title" id="homeStatisticsTitle" data-hub-home="0">Estadísticas</strong><span class="quick-access__subtitle" data-hub-home="1">Resumen y rankings de HOLa</span></span>
+          <span class="quick-access__copy"><strong class="quick-access__title" id="homeStatisticsTitle" data-hub-home="0">Estadísticas</strong><span class="quick-access__subtitle" data-hub-home="1">Resumen y rankings de HOLa</span><span class="home-update" data-home-update></span></span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
-        <a class="quick-access__card" href="members.html" aria-label="Abrir miembros" data-i18n-aria="openMembers">
+        <a class="quick-access__card" href="members.html" data-home-section="members" aria-label="Abrir miembros" data-i18n-aria="openMembers">
           <span class="quick-access__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" focusable="false">
               <circle cx="24" cy="16" r="7"></circle>
@@ -1289,10 +1297,10 @@
           <span class="quick-access__copy">
             <strong class="quick-access__title" data-i18n="quickMembers">Miembros</strong>
             <span class="quick-access__subtitle" data-i18n="quickMembersSub">Conoce a la alianza</span>
-          </span>
+          <span class="home-update" data-home-update></span></span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
-        <a class="quick-access__card" href="vs.html" aria-label="Abrir Versus">
+        <a class="quick-access__card" href="vs.html" data-home-section="vs" aria-label="Abrir Versus">
           <span class="quick-access__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" focusable="false">
               <path d="M9 10l12 12M39 10L27 22"></path>
@@ -1304,28 +1312,28 @@
           <span class="quick-access__copy">
             <strong class="quick-access__title">Versus</strong>
             <span class="quick-access__subtitle">VS Command</span>
-          </span>
+          <span class="home-update" data-home-update></span></span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
-        <a class="quick-access__card" href="desert-storm.html" aria-label="Abrir Desert Storm" data-i18n-aria="openDesertStorm">
+        <a class="quick-access__card" href="desert-storm.html" data-home-section="ds" aria-label="Abrir Desert Storm" data-i18n-aria="openDesertStorm">
           <span class="quick-access__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" focusable="false"><path d="M8 35l8-18 8 9 8-16 8 25H8z"></path><path d="M5 40h38M18 14l5-6 5 6M24 26v12M12 29l-5-6M36 28l6-6"></path></svg>
           </span>
-          <span class="quick-access__copy"><strong class="quick-access__title" data-i18n="desertStorm">Tormenta del desierto</strong><span class="quick-access__subtitle">Desert Storm</span></span>
+          <span class="quick-access__copy"><strong class="quick-access__title" data-i18n="desertStorm">Tormenta del desierto</strong><span class="quick-access__subtitle">Desert Storm</span><span class="home-update" data-home-update></span></span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
-              <a class="quick-access__card" href="train.html" aria-label="Abrir tren" data-i18n-aria="openTrain">
+              <a class="quick-access__card" href="train.html" data-home-section="train" aria-label="Abrir tren" data-i18n-aria="openTrain">
           <span class="quick-access__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" focusable="false"><path d="M12 8h24v25H12z"></path><path d="M17 13h14v9H17z"></path><circle cx="18" cy="34" r="4"></circle><circle cx="30" cy="34" r="4"></circle><path d="M8 40h32M15 38l-4 5M33 38l4 5M8 28h4M36 28h4"></path></svg>
           </span>
-          <span class="quick-access__copy"><strong class="quick-access__title" data-i18n="quickTrain">Tren</strong><span class="quick-access__subtitle" data-i18n="quickTrainSub">Conductor semanal</span></span>
+          <span class="quick-access__copy"><strong class="quick-access__title" data-i18n="quickTrain">Tren</strong><span class="quick-access__subtitle" data-i18n="quickTrainSub">Conductor semanal</span><span class="home-update" data-home-update></span></span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
-        <a class="quick-access__card" href="honor.html" aria-label="Abrir Muro de Honor">
+        <a class="quick-access__card" href="honor.html" data-home-section="honor" aria-label="Abrir Muro de Honor">
           <span class="quick-access__icon" aria-hidden="true">
             <svg viewBox="0 0 48 48" focusable="false"><path d="M16 8h16v8c0 7-3 12-8 14-5-2-8-7-8-14V8z"></path><path d="M16 12H9v5c0 5 3 8 9 9M32 12h7v5c0 5-3 8-9 9M24 30v7M17 41h14M20 37h8"></path></svg>
           </span>
-          <span class="quick-access__copy"><strong class="quick-access__title">Muro de Honor</strong><span class="quick-access__subtitle">TOP 10 · Tanques, misiles y aéreos</span></span>
+          <span class="quick-access__copy"><strong class="quick-access__title">Muro de Honor</strong><span class="quick-access__subtitle">TOP 10 · Tanques, misiles y aéreos</span><span class="home-update" data-home-update></span></span>
           <span class="quick-access__arrow" aria-hidden="true">›</span>
         </a>
 </section>
@@ -1647,6 +1655,7 @@ document.addEventListener('click',function(event){
 <script id="hola-home-hive">
 (()=>{const labels={"es":["Colmena","Mira tu posición en el mapa"],"en":["Hive","See your position on the map"],"fr":["Ruche","Consulte ta position sur la carte"],"de":["Allianznest","Sieh dir deine Position auf der Karte an"],"ro":["Stup","Vezi poziția ta pe hartă"],"pt":["Colmeia","Veja sua posição no mapa"],"uk":["Вулик","Переглянь свою позицію на карті"],"it":["Alveare","Guarda la tua posizione sulla mappa"],"pl":["Ul","Sprawdź swoją pozycję na mapie"],"tr":["Kovan","Haritadaki konumunu gör"],"ru":["Улей","Посмотри свою позицию на карте"]};function update(){const lang=document.documentElement.lang||localStorage.getItem('hola-language')||'en',text=labels[lang]||labels.en;document.querySelectorAll('[data-hive-home]').forEach(el=>el.textContent=text[Number(el.dataset.hiveHome)]);}new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});update();})();
 </script>
+<script src="js/home-updates.js?v=20261015-1"></script>
 </body>
 </html>
 
