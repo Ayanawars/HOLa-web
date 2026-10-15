@@ -433,7 +433,7 @@
   }
 
 
-  let honorMedals=new Map(),honorKillsStarted=false;
+  let honorMedals=new Map(),honorKillsStarted=false,honorKillsPromise=null;
   function honorMedalsHtml(p){
     const helper=window.HolaHonorMedals;if(!helper)return '';
     const medals=honorMedals.get(helper.normalize(p.name))||[];
@@ -445,24 +445,31 @@
       return '<span class="honor-medal honor-medal--'+m.rank+'" title="'+escapeHtml(title)+'" aria-label="'+escapeHtml(title)+'"><svg viewBox="0 0 32 40" aria-hidden="true"><path d="M7 21L4 38l9-4 5 4 2-16M17 22l-1 16 7-4 6 4-5-17" fill="var(--medal-ribbon)"/><circle cx="16" cy="15" r="13" fill="var(--medal-fill)" stroke="var(--medal-edge)" stroke-width="2"/><circle cx="16" cy="15" r="9.5" fill="none" stroke="var(--medal-edge)" stroke-width=".7"/><text x="16" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="var(--medal-ink)">'+m.rank+'</text></svg><span class="honor-medal-label">'+(icons[m.category]?'<img src="'+icons[m.category]+'" alt="" aria-hidden="true">':'')+escapeHtml(label)+'</span></span>';
     }).join('');
   }
+
+  function renderProfileHonorMedals(p){
+    const element=document.getElementById('profileHonorMedals');if(element)element.innerHTML=honorMedalsHtml(p);
+  }
   function updateHonorMedals(kills=[]){
     if(!window.HolaHonorMedals)return;
     honorMedals=window.HolaHonorMedals.build(players,kills);
     for(const element of roster.querySelectorAll('.member-honor-medals')){
       const p=players[Number(element.dataset.honorIndex)];if(p)element.innerHTML=honorMedalsHtml(p);
     }
+    if(currentProfilePlayer&&!profile.hidden)renderProfileHonorMedals(currentProfilePlayer);
   }
   async function loadHonorKills(){
-    if(honorKillsStarted)return;honorKillsStarted=true;
-    let kills=[];
+    if(honorKillsStarted)return honorKillsPromise;honorKillsStarted=true;
+    honorKillsPromise=(async()=>{
+    let kills=[];const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
     try{
-      const response=await fetch(SUPABASE_URL+'/rest/v1/honor_kills?select=players&id=eq.1',{headers:{apikey:SUPABASE_PUBLISHABLE_KEY},cache:'no-store'});
+      const response=await fetch(SUPABASE_URL+'/rest/v1/honor_kills?select=players&id=eq.1',{headers:{apikey:SUPABASE_PUBLISHABLE_KEY},cache:'no-store',signal:controller.signal});
       if(!response.ok)throw Error('Kills unavailable');const rows=await response.json();
       if(!Array.isArray(rows[0]?.players))throw Error('Kills unavailable');kills=rows[0].players;
     }catch{
-      try{const response=await fetch('assets/honor-kills.json',{cache:'no-store'});if(response.ok){const snapshot=await response.json();if(Array.isArray(snapshot.players))kills=snapshot.players}}catch{}
+      try{const response=await fetch('assets/honor-kills.json',{cache:'no-store',signal:controller.signal});if(response.ok){const snapshot=await response.json();if(Array.isArray(snapshot.players))kills=snapshot.players}}catch{}
     }
-    updateHonorMedals(kills);
+    clearTimeout(timer);updateHonorMedals(kills);
+    })();return honorKillsPromise;
   }
 
   function cardHtml(p,index){
@@ -871,6 +878,7 @@
     document.getElementById('profileT10').textContent=p.t10?'T10':'—';
     document.getElementById('profileOverlord').textContent=p.supreme_lord_unlocked?'Overlord':t().noOverlord;
     renderProfileMainSquad(p);
+    renderProfileHonorMedals(p);
     document.getElementById('profileAbout').textContent=(p.about_me&&String(p.about_me).trim())?p.about_me:t().aboutEmpty;
     document.getElementById('profileQuote').textContent=(p.epic_quote&&String(p.epic_quote).trim())?`“${p.epic_quote}”`:`“${t().quoteEmpty}”`;
     translateProfileText(p);
@@ -940,7 +948,7 @@
     const button=document.getElementById('downloadMemberCard'),status=document.getElementById('profileDownloadStatus');
     cardDownloadBusy=true;button.disabled=true;status.textContent=helper.words(currentLang)[1];status.classList.remove('is-error');updateDownloadLabels();
     try{
-      await Promise.all([loadMemberActivity(),loadPlayerAvatar(players.indexOf(player))]);
+      await Promise.all([loadMemberActivity(),loadPlayerAvatar(players.indexOf(player)),loadHonorKills()]);
       const deadline=Date.now()+12000;
       while(player._avatarLoading&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,100));
       if(player._avatarLoading)throw Error('Avatar still loading');

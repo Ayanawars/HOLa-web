@@ -268,3 +268,11 @@ body{
 .profile-main-squad-fallback{font-size:26px;color:#d7e5ef}
 .profile .profile-main-squad b{color:#d6f2ff;text-shadow:0 0 10px #8bd7ff40}
 .profile-main-squad small{display:block;overflow-wrap:anywhere}
+
+/* Honor medals sit immediately under the profile portrait, including PNG export. */
+.profile .profile-honor-medals{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:13px 0 0}
+.profile .profile-honor-medals:empty{display:none}
+.profile-honor-medals .honor-medal{padding:5px 6px;border:1px solid #d9c58b55;border-radius:5px;background:linear-gradient(145deg,#35516b88,#11263a);box-shadow:inset 0 1px 0 #fff0b91c}
+.profile-honor-medals .honor-medal svg{width:27px;height:34px;flex-basis:27px}
+.profile-honor-medals .honor-medal-label{font-size:10px;color:#f5e5b7}
+.profile-honor-medals .honor-medal-label img{width:22px;height:20px}
