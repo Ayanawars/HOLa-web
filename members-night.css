@@ -172,3 +172,81 @@ body{background:radial-gradient(ellipse at 50% 0%,#213b5566,transparent 560px),l
 .profile .portrait-shell--square{background:transparent;outline:none}
 .profile .portrait-shell--square:before,.profile .portrait-shell--square:after{display:none}
 @media(min-width:760px){.hero{background-position:center 12%}}
+
+/* Moonlit royal finish: luminous edges, cool gold and reflective dark surfaces. */
+:root{--member-gold:#e1d198;--member-line:#49637b}
+body{
+  background:
+    radial-gradient(ellipse at 0% 18%,#13729d26,transparent 45%),
+    radial-gradient(ellipse at 100% 48%,#c6a75516,transparent 40%),
+    radial-gradient(ellipse at 50% 0%,#426c9c45,transparent 650px),
+    linear-gradient(180deg,#07111e,#0c1b2e 55%,#07111e);
+}
+.hero{box-shadow:inset 0 1px 0 #c8edff30,0 14px 45px #1495cb13}
+.brand img{filter:drop-shadow(0 2px 7px #010811b0) drop-shadow(0 0 12px #f2dfa434)}
+.title-plaque h1{color:#fff9e9;text-shadow:0 0 22px #e8ca7c55,0 2px 5px #020913}
+.title-plaque p{color:#cde4f4;letter-spacing:.14em}
+.stats{
+  background:radial-gradient(ellipse at 15% 0%,#55b6e822,transparent 60%),linear-gradient(130deg,#213c57,#102237 70%);
+  border-color:#c4b27b;box-shadow:inset 0 1px 0 #fff1bb5c,inset 0 -1px 0 #6ac7ff24,0 0 22px #6aaedd15,0 10px 24px #02081459;
+}
+.stat strong{color:#fff0bc;text-shadow:0 0 14px #ebd7973d}.stat .ico img{filter:drop-shadow(0 0 7px #d7c78b35)}
+.roster-meta b{color:#e7f4ff;text-shadow:0 0 8px #81c5ef30}
+.search,.sort-control,.profession-control,.filter,.refine,.members-more{
+  background:linear-gradient(145deg,#29455e,#142a40 68%);border-color:#56738b;
+  box-shadow:inset 0 1px 0 #d6edff20,0 3px 12px #02081238;
+}
+.search{border-color:#658b9f;box-shadow:inset 0 1px 0 #cdefff24,0 0 18px #55c4f018}
+.glass{color:#9adfff;text-shadow:0 0 10px #5bc7ef80}
+.filter.active,.refine[aria-pressed=true],.profile-tab.active{
+  background:linear-gradient(155deg,#fff5cb 0%,#ded19c 40%,#b8a77b 100%);border-color:#fff1bb;color:#112236;
+  box-shadow:inset 0 1px 0 #fffdf0,0 0 14px #dfce8b2b,0 3px 9px #00000030;
+}
+.roster .member.member--hive{
+  background:linear-gradient(135deg,#d6edff0d,transparent 34%),radial-gradient(ellipse at 5% 0%,#447fa52e,transparent 65%),linear-gradient(155deg,#213d56 0%,#13273d 56%,#0e1e31 100%);
+  border-color:#6b8191;
+  box-shadow:inset 0 1px 0 #c9efff42,inset 0 -1px 0 #355d805c,0 0 15px #64adcf10,0 9px 20px #01081266;
+}
+.roster .member.member--hive::before{
+  content:"";position:absolute;top:0;left:12px;right:12px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,#b9edffb0,transparent);
+}
+.roster .member.member--hive.member--overlord{
+  border-color:#dac68c;
+  background:linear-gradient(132deg,#e8d59514,transparent 34%),radial-gradient(ellipse at 95% 0%,#cbb56b18,transparent 62%),linear-gradient(155deg,#253d52,#13263b 62%,#0c1d2f);
+  box-shadow:inset 0 1px 0 #fff0be73,inset 0 -1px 0 #c5ac6333,0 0 16px #dbbf7018,0 9px 24px #01071170;
+}
+.roster .member.member--hive.member--overlord::before{background:linear-gradient(90deg,transparent,#fff2b9,transparent)}
+.roster .member.member--hive:hover,.roster .member.member--hive:focus-visible{border-color:#c8efff;box-shadow:inset 0 1px 0 #effaff65,0 0 22px #6ac9f52b,0 9px 22px #01071170}
+.member-avatar-frame{filter:drop-shadow(0 0 5px #9beaff55)}
+.member--overlord .member-avatar-frame{filter:drop-shadow(0 0 6px #f8df8c88)}
+.member--hive h3{color:#fffcf4;text-shadow:0 1px 5px #00000080}
+.member-thp{color:#fff0bd;text-shadow:0 0 12px #f6d78238}
+.member--hive .member-main-power{color:#e3f6ff;text-shadow:0 0 10px #85cfff33}
+.member--hive .member-main-squad{border-image:linear-gradient(90deg,#a4d8ef18,#ddca8f85,#a4d8ef18) 1}
+.hq-chip{background:linear-gradient(145deg,#3e6b86,#1d3e59);border-color:#8ccce8;box-shadow:inset 0 1px 0 #ddf7ff45,0 0 9px #71d2fb1c;color:#e9f9ff}
+.t10-chip{background:linear-gradient(145deg,#fff0bc,#cbb985);border-color:#f2e3ad;color:#26313e;box-shadow:inset 0 1px 0 #fffbe8,0 0 9px #f4d77b22}
+.t10-chip.is-pending{background:#26394c;color:#b6c6d5;border-color:#536b80;box-shadow:none}
+.overlord-ribbon{background:linear-gradient(#6a6143,#38372d);border-color:#eee1aa;color:#fff3bd;box-shadow:0 0 9px #e5ce7a30}
+.honor-medal svg{filter:drop-shadow(0 0 4px #ecd08a33)}
+.honor-medal-label{color:#f5e5b7}
+.participation-dot{box-shadow:0 0 0 2px var(--badge-ring,#53677a),0 0 10px var(--badge-dot,#7b8992)}
+.profile-dialog{
+  background:radial-gradient(ellipse at 0% 0%,#4ca9db16,transparent 48%),linear-gradient(150deg,#19334c,#0c1c2e 70%);
+  border-color:#d4c08b;box-shadow:inset 0 1px 0 #fff0bd60,0 0 35px #61b9ed1c,0 20px 75px #000000b3;
+}
+.profile .member-avatar-frame{filter:drop-shadow(0 0 10px #dfd09855)}
+.profile-head h2{color:#fff3cc;text-shadow:0 0 16px #ead59526}
+.profile .tile,.profile-participation,.profile-activity .activity-row,.profile-panel,.profile .progress-card,.profile .about{
+  background:linear-gradient(145deg,#25435d,#142b42 72%);border-color:#506d84;
+  box-shadow:inset 0 1px 0 #b8e9ff20,0 4px 12px #020a1526;
+}
+.profile .tile b,.profile-activity .activity-row strong{color:#fff0bd;text-shadow:0 0 10px #f0d78d24}
+.profile .tile-icon-wrap{background:radial-gradient(circle at 35% 25%,#69839b,#223d55 65%);border-color:#b8c8cb;box-shadow:0 0 12px #8acdec22,inset 0 1px 0 #ebfaff40}
+.profile .tile-icon-wrap.glyph{color:#fff0bc;text-shadow:0 0 12px #ecd18c80}
+.profile .squad,.profile .squad.air,.profile .squad.missile{background:linear-gradient(105deg,#2d4a61,#172f46);border-color:#56738b}
+.profile-tab{background:linear-gradient(145deg,#29455e,#142a40);border-color:#56738b}
+.profile-tab.active{background:linear-gradient(155deg,#fff5cb,#ded19c 40%,#b8a77b);border-color:#fff1bb;color:#112236}
+.profile-close{background:linear-gradient(#37566d,#203c54);border:1px solid #88a5b7;box-shadow:inset 0 1px 0 #dff6ff38}
+.profile .progress-card span,.quote-label,.footer{color:#e9d9a7}
+@media(prefers-reduced-motion:reduce){.roster .member.member--hive{transition:none}}
