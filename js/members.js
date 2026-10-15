@@ -62,6 +62,252 @@
   translations.ru={"membersTitle":"УЧАСТНИКИ","roster":"Состав альянса","members":"участников","surveys":"анкеты","search":"Поиск игрока…","all":"Все","tank":"Танки","air":"Авиация","missile":"Ракеты","loading":"Загрузка участников…","loadError":"Не удалось загрузить участников.","noResults":"Игроки не найдены.","noLocation":"Местоположение не указано","surveyDone":"✓ Анкета заполнена","surveyPending":"○ Анкета не заполнена","squads":"Отряды","about":"Обо мне","aboutEmpty":"Участник ещё не добавил свою историю.","profession":"Профессия","engineer":"Инженер","warlord":"Военачальник","unknown":"—","tankSquad":"Танковый отряд","airSquad":"Авиационный отряд","missileSquad":"Ракетный отряд","hasOverlord":"Overlord","noOverlord":"Без Overlord","myQuote":"Моя фраза","quoteEmpty":"Здесь появится фраза игрока.","tabAbout":"Обо мне","tabSquads":"Отряды","tabProgress":"Прогресс","progressSurvey":"Анкета","progressHQ":"HQ","progressTHP":"THP","progressProfession":"Профессия","progressT10":"T10","progressOverlord":"Overlord","progressRank":"Ранг","showMore":"Показать ещё","footerTagline":"ВМЕСТЕ МЫ ДОСТИГНЕМ БОЛЬШЕГО"};
   const rosterLabels={"es":["THP de la alianza","Ordenar","Nombre","Escuadrón","resultados","Cerrar ficha","Cambiar idioma","Volver","Guerrero"],"en":["Alliance THP","Sort by","Name","Squad","results","Close profile","Change language","Back","Warlord"],"fr":["THP de l’alliance","Trier","Nom","Escouade","résultats","Fermer la fiche","Changer de langue","Retour","Guerrier"],"de":["Allianz-THP","Sortieren","Name","Trupp","Ergebnisse","Profil schließen","Sprache ändern","Zurück","Kriegsherr"],"ro":["THP al alianței","Sortează","Nume","Echipă","rezultate","Închide profilul","Schimbă limba","Înapoi","Războinic"],"pt":["THP da aliança","Ordenar","Nome","Esquadrão","resultados","Fechar perfil","Mudar idioma","Voltar","Guerreiro"],"uk":["THP альянсу","Сортувати","Ім’я","Загін","результатів","Закрити профіль","Змінити мову","Назад","Воєначальник"],"it":["THP dell’alleanza","Ordina","Nome","Squadra","risultati","Chiudi profilo","Cambia lingua","Indietro","Guerriero"],"pl":["THP sojuszu","Sortuj","Nazwa","Oddział","wyników","Zamknij profil","Zmień język","Wstecz","Wódz"],"tr":["İttifak THP","Sırala","Ad","Birlik","sonuç","Profili kapat","Dili değiştir","Geri","Savaş Lordu"],"ru":["THP альянса","Сортировка","Имя","Отряд","результатов","Закрыть профиль","Сменить язык","Назад","Военачальник"]};
   for(const [code,labels] of Object.entries(rosterLabels))Object.assign(translations[code],{allianceThp:labels[0],sortBy:labels[1],sortName:labels[2],sortSquad:labels[3],results:labels[4],closeProfile:labels[5],changeLanguage:labels[6],back:labels[7],warlord:labels[8],sortThp:'THP',sortHq:'HQ'});
+  const pageLabels={
+  "es": [
+    "Miembros de la alianza",
+    "Escuadrones",
+    "Bajas",
+    "Nv.",
+    "Perfil",
+    "Verificando tus avatares…",
+    "Tus avatares",
+    "Avatar subido",
+    "Subido",
+    "Predeterminado",
+    "Usar",
+    "Sin crear",
+    "Crear / editar avatar HOLa",
+    "Solo tú puedes cambiar estos avatares en este navegador verificado.",
+    "Guardando predeterminado…",
+    "Avatar predeterminado actualizado.",
+    "No se pudieron cargar tus avatares. Inténtalo de nuevo.",
+    "No se pudo guardar el avatar. Inténtalo de nuevo.",
+    "Traduciendo el texto…",
+    "No se pudo cargar la traducción. Se muestra el texto original."
+  ],
+  "en": [
+    "Alliance roster",
+    "Squads",
+    "Kills",
+    "Lv.",
+    "Profile",
+    "Checking your avatars…",
+    "Your avatars",
+    "Uploaded avatar",
+    "Uploaded",
+    "Default",
+    "Use",
+    "Not created",
+    "Create / edit HOLa avatar",
+    "Only you can change these avatars in this verified browser.",
+    "Saving default…",
+    "Default avatar updated.",
+    "Could not load your avatars. Please try again.",
+    "Could not save the avatar. Please try again.",
+    "Translating text…",
+    "Could not load the translation. Showing the original text."
+  ],
+  "fr": [
+    "Membres de l’alliance",
+    "Escouades",
+    "Éliminations",
+    "Niv.",
+    "Profil",
+    "Vérification de vos avatars…",
+    "Vos avatars",
+    "Avatar importé",
+    "Importé",
+    "Par défaut",
+    "Utiliser",
+    "Non créé",
+    "Créer / modifier l’avatar HOLa",
+    "Vous seul pouvez modifier ces avatars dans ce navigateur vérifié.",
+    "Enregistrement du choix…",
+    "Avatar par défaut mis à jour.",
+    "Impossible de charger vos avatars. Réessayez.",
+    "Impossible d’enregistrer l’avatar. Réessayez.",
+    "Traduction du texte…",
+    "Traduction indisponible. Le texte original est affiché."
+  ],
+  "de": [
+    "Allianzmitglieder",
+    "Trupps",
+    "Abschüsse",
+    "St.",
+    "Profil",
+    "Deine Avatare werden geprüft…",
+    "Deine Avatare",
+    "Hochgeladener Avatar",
+    "Hochgeladen",
+    "Standard",
+    "Verwenden",
+    "Nicht erstellt",
+    "HOLa-Avatar erstellen / bearbeiten",
+    "Nur du kannst diese Avatare in diesem verifizierten Browser ändern.",
+    "Standard wird gespeichert…",
+    "Standardavatar aktualisiert.",
+    "Avatare konnten nicht geladen werden. Bitte erneut versuchen.",
+    "Avatar konnte nicht gespeichert werden. Bitte erneut versuchen.",
+    "Text wird übersetzt…",
+    "Übersetzung nicht verfügbar. Der Originaltext wird angezeigt."
+  ],
+  "ro": [
+    "Membrii alianței",
+    "Echipe",
+    "Eliminări",
+    "Nv.",
+    "Profil",
+    "Se verifică avatarele tale…",
+    "Avatarele tale",
+    "Avatar încărcat",
+    "Încărcat",
+    "Implicit",
+    "Folosește",
+    "Necreat",
+    "Creează / editează avatarul HOLa",
+    "Doar tu poți schimba aceste avatare în acest browser verificat.",
+    "Se salvează alegerea…",
+    "Avatarul implicit a fost actualizat.",
+    "Avatarele nu au putut fi încărcate. Încearcă din nou.",
+    "Avatarul nu a putut fi salvat. Încearcă din nou.",
+    "Se traduce textul…",
+    "Traducerea nu este disponibilă. Se afișează textul original."
+  ],
+  "pt": [
+    "Membros da aliança",
+    "Esquadrões",
+    "Eliminações",
+    "Nv.",
+    "Perfil",
+    "Verificando os teus avatares…",
+    "Os teus avatares",
+    "Avatar enviado",
+    "Enviado",
+    "Predefinido",
+    "Usar",
+    "Por criar",
+    "Criar / editar avatar HOLa",
+    "Só tu podes alterar estes avatares neste navegador verificado.",
+    "Guardando predefinição…",
+    "Avatar predefinido atualizado.",
+    "Não foi possível carregar os avatares. Tenta novamente.",
+    "Não foi possível guardar o avatar. Tenta novamente.",
+    "Traduzindo o texto…",
+    "Tradução indisponível. A mostrar o texto original."
+  ],
+  "uk": [
+    "Учасники альянсу",
+    "Загони",
+    "Знищення",
+    "Рів.",
+    "Профіль",
+    "Перевірка ваших аватарів…",
+    "Ваші аватари",
+    "Завантажений аватар",
+    "Завантажений",
+    "Основний",
+    "Вибрати",
+    "Не створено",
+    "Створити / змінити аватар HOLa",
+    "Лише ви можете змінювати ці аватари в цьому перевіреному браузері.",
+    "Збереження вибору…",
+    "Основний аватар оновлено.",
+    "Не вдалося завантажити аватари. Спробуйте ще раз.",
+    "Не вдалося зберегти аватар. Спробуйте ще раз.",
+    "Переклад тексту…",
+    "Переклад недоступний. Показано оригінальний текст."
+  ],
+  "it": [
+    "Membri dell’alleanza",
+    "Squadre",
+    "Eliminazioni",
+    "Liv.",
+    "Profilo",
+    "Verifica dei tuoi avatar…",
+    "I tuoi avatar",
+    "Avatar caricato",
+    "Caricato",
+    "Predefinito",
+    "Usa",
+    "Non creato",
+    "Crea / modifica avatar HOLa",
+    "Solo tu puoi modificare questi avatar in questo browser verificato.",
+    "Salvataggio della scelta…",
+    "Avatar predefinito aggiornato.",
+    "Impossibile caricare gli avatar. Riprova.",
+    "Impossibile salvare l’avatar. Riprova.",
+    "Traduzione del testo…",
+    "Traduzione non disponibile. Viene mostrato il testo originale."
+  ],
+  "pl": [
+    "Członkowie sojuszu",
+    "Oddziały",
+    "Eliminacje",
+    "Poz.",
+    "Profil",
+    "Sprawdzanie twoich awatarów…",
+    "Twoje awatary",
+    "Przesłany awatar",
+    "Przesłany",
+    "Domyślny",
+    "Użyj",
+    "Nieutworzony",
+    "Utwórz / edytuj awatar HOLa",
+    "Tylko ty możesz zmieniać te awatary w tej zweryfikowanej przeglądarce.",
+    "Zapisywanie wyboru…",
+    "Domyślny awatar zaktualizowany.",
+    "Nie udało się wczytać awatarów. Spróbuj ponownie.",
+    "Nie udało się zapisać awatara. Spróbuj ponownie.",
+    "Tłumaczenie tekstu…",
+    "Tłumaczenie niedostępne. Wyświetlany jest oryginalny tekst."
+  ],
+  "tr": [
+    "İttifak üyeleri",
+    "Birlikler",
+    "Leşler",
+    "Sv.",
+    "Profil",
+    "Avatarların kontrol ediliyor…",
+    "Avatarların",
+    "Yüklenen avatar",
+    "Yüklenen",
+    "Varsayılan",
+    "Kullan",
+    "Oluşturulmadı",
+    "HOLa avatarı oluştur / düzenle",
+    "Bu avatarları yalnızca sen bu doğrulanmış tarayıcıda değiştirebilirsin.",
+    "Varsayılan kaydediliyor…",
+    "Varsayılan avatar güncellendi.",
+    "Avatarlar yüklenemedi. Tekrar dene.",
+    "Avatar kaydedilemedi. Tekrar dene.",
+    "Metin çevriliyor…",
+    "Çeviri yüklenemedi. Orijinal metin gösteriliyor."
+  ],
+  "ru": [
+    "Участники альянса",
+    "Отряды",
+    "Убийства",
+    "Ур.",
+    "Профиль",
+    "Проверка ваших аватаров…",
+    "Ваши аватары",
+    "Загруженный аватар",
+    "Загружен",
+    "Основной",
+    "Выбрать",
+    "Не создан",
+    "Создать / изменить аватар HOLa",
+    "Только вы можете менять эти аватары в этом подтверждённом браузере.",
+    "Сохранение выбора…",
+    "Основной аватар обновлён.",
+    "Не удалось загрузить аватары. Попробуйте ещё раз.",
+    "Не удалось сохранить аватар. Попробуйте ещё раз.",
+    "Перевод текста…",
+    "Перевод недоступен. Показан исходный текст."
+  ]
+};
+  const pageLabelKeys=["roster","tabSquads","kills","level","profile","avatarChecking","avatarTitle","avatarUploadedAlt","avatarUploaded","avatarDefault","avatarUse","avatarMissing","avatarCreate","avatarOwner","avatarSaving","avatarSaved","avatarLoadError","avatarSaveError","textTranslating","textTranslationError"];
+  for(const [code,values] of Object.entries(pageLabels))pageLabelKeys.forEach((key,index)=>{translations[code][key]=values[index]});
   const COUNTRY_CODES = {
     'españa':'es','spain':'es','rumanía':'ro','romania':'ro','francia':'fr','france':'fr','alemania':'de','germany':'de',
     'reino unido':'gb','united kingdom':'gb','uk':'gb','portugal':'pt','italia':'it','italy':'it','polonia':'pl','poland':'pl',
@@ -203,7 +449,7 @@
     }else if(flagCode){
       country=regionName(flagCode);
       if(storedCode && storedCode!==flagCode) city='';
-    }else if(!country && code){
+    }else if(code){
       country=regionName(code);
     }
 
@@ -269,7 +515,7 @@
     return '<span class="vehicle">—</span>';
   }
   function squadClass(type){ return type==='air'?'air':type==='missile'?'missile':''; }
-  function squadLabel(type){ return type==='tank'?t().tankSquad:type==='air'?t().airSquad:type==='missile'?t().missileSquad:'Squad'; }
+  function squadLabel(type){ return type==='tank'?t().tankSquad:type==='air'?t().airSquad:type==='missile'?t().missileSquad:t().sortSquad; }
   function formatPower(value){
     if(value===null||value===undefined||String(value).trim()==='') return t().unknown;
     const s=String(value).trim();
@@ -437,7 +683,7 @@
   function honorMedalsHtml(p){
     const helper=window.HolaHonorMedals;if(!helper)return '';
     const medals=honorMedals.get(helper.normalize(p.name))||[];
-    const labels={Tank:t().tank,Missile:t().missile,Aircraft:t().air,THP:'THP',Kills:'Kills'};
+    const labels={Tank:t().tank,Missile:t().missile,Aircraft:t().air,THP:'THP',Kills:t().kills};
     const honorTitles={es:'Muro de Honor',en:'Honor Wall',fr:'Mur d’honneur',de:'Ehrenwand',ro:'Zidul de onoare',pt:'Mural de Honra',uk:'Стіна пошани',it:'Muro d’onore',pl:'Ściana chwały',tr:'Onur Duvarı',ru:'Стена славы'};
     const icons={Tank:'assets/icon-tank-custom.png',Missile:'assets/icon-missile-custom.png',Aircraft:'assets/icon-air-custom.png',Kills:'assets/honor-kills.svg'};
     return medals.map(m=>{
@@ -674,8 +920,8 @@
       : `<div class="progress-card survey-progress"><b>${escapeHtml(pendingText)}</b></div>`;
 
     const cards=[
-      [t().progressHQ, p.hq_level ? `Lv. ${p.hq_level}` : t().unknown],
-      [t().progressTHP, p.thp || t().unknown],
+      [t().progressHQ, p.hq_level ? `${t().level} ${p.hq_level}` : t().unknown],
+      [t().progressTHP, displayedThp(p)],
       [t().progressProfession, formatProfession(p.profession)],
       [t().progressT10, p.t10 ? 'T10' : t().unknown],
       [t().progressOverlord, p.supreme_lord_unlocked ? t().hasOverlord : t().noOverlord],
@@ -739,8 +985,8 @@
       return;
     }
     if(staleTurkish)profileTextCache.delete(cacheKey);
-    if(statusEl&&currentLang==='tr'){
-      statusEl.textContent='Türkçeye çevriliyor…';
+    if(statusEl){
+      statusEl.textContent=t().textTranslating;
       statusEl.hidden=false;
     }
     try{
@@ -773,10 +1019,10 @@
       if(requestId!==profileTextRequestId||currentProfilePlayer!==p)return;
       aboutEl.textContent=originalAbout||t().aboutEmpty;
       quoteEl.textContent='“'+(originalQuote||t().quoteEmpty)+'”';
-      if(statusEl&&currentLang==='tr'){
-        statusEl.textContent='Türkçe çeviri şu anda yüklenemedi. Orijinal metin gösteriliyor.';
+      if(statusEl){
+        statusEl.textContent=t().textTranslationError;
         statusEl.hidden=false;
-      }else if(statusEl){statusEl.hidden=true;statusEl.textContent='';}
+      }
     }
   }
 
@@ -791,37 +1037,38 @@
     const box=ensureAvatarManager();
     const session=getIdentitySession(p?.name);
     if(!session){box.hidden=true;box.innerHTML='';return}
-    box.hidden=false;box.innerHTML='<div class="avatar-manager-loading">Verificando tus avatares…</div>';
+    box.hidden=false;box.innerHTML='<div class="avatar-manager-loading">'+escapeHtml(t().avatarChecking)+'</div>';
     try{
       const data=await avatarProfileRequest(p.name,session.token,'get');
+      if(currentProfilePlayer!==p||profile.hidden)return;
       const fallback=FALLBACK_AVATAR;
       const uploaded=data.uploaded_avatar||'';const hola=data.hola_avatar||'';const def=data.default_avatar||'uploaded';
       box.innerHTML=`
-        <div class="avatar-manager-title">✦ Tus avatares</div>
+        <div class="avatar-manager-title">✦ ${escapeHtml(t().avatarTitle)}</div>
         <div class="avatar-dual">
           <button type="button" class="avatar-choice ${def==='uploaded'?'is-default':''}" data-avatar-source="uploaded" ${uploaded?'':'disabled'}>
-            <img src="${escapeHtml(uploaded||fallback)}" alt="Avatar subido"><span>Subido</span><small>${def==='uploaded'?'★ Predeterminado':'Usar'}</small>
+            <img src="${escapeHtml(uploaded||fallback)}" alt="${escapeHtml(t().avatarUploadedAlt)}"><span>${escapeHtml(t().avatarUploaded)}</span><small>${def==='uploaded'?'★ '+escapeHtml(t().avatarDefault):escapeHtml(t().avatarUse)}</small>
           </button>
           <button type="button" class="avatar-choice ${def==='hola'?'is-default':''}" data-avatar-source="hola" ${hola?'':'disabled'}>
-            <img class="avatar-hola-preview" src="${escapeHtml(hola||fallback)}" alt="Avatar HOLa"><span>HOLa</span><small>${def==='hola'?'★ Predeterminado':(hola?'Usar':'Sin crear')}</small>
+            <img class="avatar-hola-preview" src="${escapeHtml(hola||fallback)}" alt="Avatar HOLa"><span>HOLa</span><small>${def==='hola'?'★ '+escapeHtml(t().avatarDefault):(hola?escapeHtml(t().avatarUse):escapeHtml(t().avatarMissing))}</small>
           </button>
         </div>
-        <button type="button" class="avatar-create-btn" id="createHolaAvatar">✨ Crear / editar avatar HOLa</button>
-        <div class="avatar-manager-status" id="avatarManagerStatus">Solo tú puedes cambiar estos avatares en este navegador verificado.</div>`;
+        <button type="button" class="avatar-create-btn" id="createHolaAvatar">✨ ${escapeHtml(t().avatarCreate)}</button>
+        <div class="avatar-manager-status" id="avatarManagerStatus">${escapeHtml(t().avatarOwner)}</div>`;
       box.querySelector('#createHolaAvatar')?.addEventListener('click',()=>{location.href='avatar-maker.html?player='+encodeURIComponent(p.name)});
       box.querySelectorAll('[data-avatar-source]').forEach(btn=>btn.addEventListener('click',async()=>{
         const source=btn.dataset.avatarSource;if(btn.disabled||source===def)return;
-        const status=box.querySelector('#avatarManagerStatus');status.textContent='Guardando predeterminado…';
+        const status=box.querySelector('#avatarManagerStatus');status.textContent=t().avatarSaving;
         try{
           await avatarProfileRequest(p.name,session.token,'set_default',{source});
           p.avatar=source==='hola'?hola:uploaded;p.default_avatar=source;p._avatarLoaded=true;
           applyAvatarToCards(players.indexOf(p));
           const currentImg=document.getElementById('profileImg');currentImg.src=p.avatar||FALLBACK_AVATAR;currentImg.classList.toggle('avatar-hola',source==='hola'&&!!p.avatar);
-          status.textContent='✓ Avatar predeterminado actualizado.';
+          status.textContent='✓ '+t().avatarSaved;
           await renderAvatarManager(p);
-        }catch(e){status.textContent=String(e?.message||e)}
+        }catch(e){status.textContent=t().avatarSaveError}
       }));
-    }catch(e){box.innerHTML=`<div class="avatar-manager-error">${escapeHtml(String(e?.message||e))}</div>`}
+    }catch(e){if(currentProfilePlayer===p&&!profile.hidden)box.innerHTML=`<div class="avatar-manager-error">${escapeHtml(t().avatarLoadError)}</div>`}
   }
 
 
@@ -852,7 +1099,7 @@
     const playerIndex=players.indexOf(p);
     profileImg.dataset.playerIndex = String(playerIndex);
     profileImg.src=p.avatar?avatarSrc(p):FALLBACK_AVATAR;
-    profileImg.alt=p.name||'Perfil';
+    profileImg.alt=p.name||t().profile;
     profileImg.classList.toggle('avatar-fallback',!p.avatar);
     profileImg.classList.toggle('avatar-hola',p.default_avatar==='hola'&&!!p.avatar);
     if(!p._avatarLoaded){
@@ -870,7 +1117,7 @@
     status.classList.toggle('pending',!p.survey_completed);
 
     document.getElementById('profileThp').textContent=displayedThp(p);
-    document.getElementById('profileHq').textContent=p.hq_level?`Lv. ${p.hq_level}`:t().unknown;
+    document.getElementById('profileHq').textContent=p.hq_level?`${t().level} ${p.hq_level}`:t().unknown;
     document.getElementById('profileProfession').textContent=formatProfession(p.profession);
     const professionIcon=document.getElementById('profileProfessionIcon');
     const pKind=professionKind(p.profession);
@@ -905,6 +1152,7 @@
     document.getElementById('filters').setAttribute('aria-label',tx.sortSquad);
     document.getElementById('search').setAttribute('aria-label',tx.search);
     document.documentElement.lang=currentLang;
+    document.querySelectorAll('[data-i18n-alt]').forEach(el=>{el.alt=tx[el.dataset.i18nAlt]||''});
     document.querySelectorAll('[data-i18n]').forEach(el=>{
       const key=el.dataset.i18n;
       if(tx[key]!==undefined) el.textContent=tx[key];
@@ -1019,7 +1267,7 @@
   }
 
   async function loadPlayers(){
-    roster.innerHTML=`<div class="members-message members-loading">${escapeHtml(t().loading)}</div>`;
+    roster.innerHTML=`<div class="members-message members-loading" data-i18n="loading">${escapeHtml(t().loading)}</div>`;
     try{
       const fields=[
         'name','thp','t10','profession',
@@ -1053,7 +1301,7 @@
       loadMemberActivity();
     }catch(err){
       console.error('HOLa members · Supabase:',err);
-      roster.innerHTML=`<div class="members-message members-error">${escapeHtml(t().loadError)}<br><small>${escapeHtml(err?.message||'')}</small></div>`;
+      roster.innerHTML=`<div class="members-message members-error"><span data-i18n="loadError">${escapeHtml(t().loadError)}</span></div>`;
     }
   }
   loadPlayers();

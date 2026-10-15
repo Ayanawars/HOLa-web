@@ -1043,7 +1043,7 @@ body{background-color:#0b1726;color:#f4eee3}
   </div>
   <p id="rosterResults" class="roster-results" role="status" aria-live="polite"></p>
   <section class="roster" id="roster">
-    <div class="members-message members-loading">Cargando miembros...</div>
+    <div class="members-message members-loading" data-i18n="loading">Cargando miembros...</div>
   </section>
 
   <section class="profile" id="profile" hidden role="dialog" aria-modal="true" aria-labelledby="profileName" tabindex="-1">
@@ -1051,7 +1051,7 @@ body{background-color:#0b1726;color:#f4eee3}
     <div class="profile-grid">
       <div class="profile-left">
         <div class="portrait-shell portrait-shell--square member-portrait-framed">
-          <img class="big-portrait" id="profileImg" src="assets/logo-hola-card.webp" alt="Perfil">
+          <img class="big-portrait" id="profileImg" src="assets/logo-hola-card.webp" alt="Perfil" data-i18n-alt="profile">
           <img class="member-avatar-frame" id="profileAvatarFrame" src="assets/member-frame-sky.svg" alt="" aria-hidden="true">
         </div>
         <div class="member-honor-medals profile-honor-medals" id="profileHonorMedals"></div>
@@ -1079,7 +1079,7 @@ body{background-color:#0b1726;color:#f4eee3}
 
         <div class="profile-tabs" id="profileTabs">
           <button class="profile-tab active" type="button" data-tab="about" data-i18n="tabAbout">Sobre mí</button>
-          <button class="profile-tab" type="button" data-tab="squads" data-i18n="tabSquads">Squads</button>
+          <button class="profile-tab" type="button" data-tab="squads" data-i18n="tabSquads">Escuadrones</button>
           <button class="profile-tab" type="button" data-tab="progress" data-i18n="tabProgress">Progreso</button>
         </div>
 
@@ -1123,7 +1123,7 @@ body{background-color:#0b1726;color:#f4eee3}
 <script src="js/member-activity.js?v=20261015-vip-1"></script>
 <script src="js/member-participation.js?v=20261015-badge-1"></script>
 <script src="js/member-card-download.js?v=20261015-1"></script>
-<script src="js/members.js?v=20261015-profile-medals-1"></script>
+<script src="js/members.js?v=20261015-i18n-1"></script>
   <script src="js/hola-language-portal.js"></script>
 </body>
 </html>
