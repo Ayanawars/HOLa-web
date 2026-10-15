@@ -126,7 +126,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <button type="button" class="btn gold" id="teamAAuditOpen">🔎 Ver los jugadores que faltan</button>
 <div id="teamAAuditResult" role="status" aria-live="polite" hidden></div>
 </section>
-<div class="row"><select class="member-entry" id="manualPlayer" aria-label="Miembro para añadir"><option value="">Elegir miembro de HOLa</option></select><button type="button" class="btn outline" id="addPlayer">＋ Añadir jugador</button></div>
+<div class="row"><select class="member-entry" id="manualPlayer" aria-label="Miembro para añadir"><option value="">Elegir miembro de HOLa</option></select><select id="manualRole" aria-label="Tipo de inscripción"><option value="auto">Plaza disponible (automático)</option><option value="starter">Titular</option><option value="sub">Suplente</option></select><button type="button" class="btn outline" id="addPlayer">＋ Añadir jugador</button></div><p id="manualPlayerStatus" role="status" aria-live="polite"></p>
 <div id="rosterList" class="roster-list"></div>
 <div class="row actions"><button type="button" class="btn gold" id="toPlan">Continuar al mapa →</button></div>
 </section>
@@ -160,5 +160,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261010-mirliva-alias"></script>
+<script type="module" src="js/ds-builder.js?v=20261015-manual-role"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>

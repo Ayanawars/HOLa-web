@@ -218,6 +218,25 @@ function addRoster(name,role){
  if(role==="sub"&&count.sub>=10)throw new Error("Ya hay 10 suplentes; no puedes añadir más.");
  state.roster.push({name,role,power:memberTHP(name)});return true;
 }
+function addManualPlayer(){
+ const status=$("manualPlayerStatus");
+ try{
+  const requested=$("manualRole").value;
+  if(!["auto","starter","sub"].includes(requested))throw new Error("Selecciona Titular, Suplente o Plaza disponible.");
+  const name=canonical($("manualPlayer").value),existing=state.roster.find(r=>normal(r.name)===normal(name));
+  const count=counts(),role=requested==="auto"?(existing?.role||(count.starter<20?"starter":"sub")):requested;
+  const added=addRoster(name,role);
+  const message=added?"✓ Añadido: "+name+" · "+(role==="starter"?"Titular":"Suplente")+". THP cargado desde Supabase.":name+" ya está inscrito en este equipo.";
+  renderRoster();mutate();
+  if(added)$("manualPlayer").value="";
+  status.textContent=message;status.className="notice success";
+  notice(message,"success");return added;
+ }catch(error){
+  const message=String(error?.message||error);
+  status.textContent=message;status.className="notice error";
+  notice(message,"error");return false;
+ }
+}
 function renderStats(){
  if(!state)return;
  const {starter,sub}=counts();
@@ -1105,7 +1124,7 @@ function events(){
  $("loadDraft").onclick=()=>loadDraft();$("saveTemplate").onclick=saveTemplate;$("loadTemplate").onclick=loadTemplate;$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
- $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=()=>{try{if(addRoster($("manualPlayer").value,"starter",null)){renderRoster();mutate();notice("Participante añadido. THP cargado desde Supabase; revisa si es titular o suplente.","success");$("manualPlayer").value="";}}catch(e){notice(e.message,"error");}};
+ $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=addManualPlayer;
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
  $("refreshTHP").onclick=async()=>{const button=$("refreshTHP");button.disabled=true;try{const n=await refreshOfficialTHP();notice("✓ THP actualizado desde Supabase: "+n+"/"+state.roster.length+" participantes con datos.","success");}catch(error){notice("No se pudo actualizar THP: "+String(error?.message||error),"error");}finally{button.disabled=false;}};
  $("teamAAuditOpen").onclick=()=>{$("teamAAuditResult").hidden=!$("teamAAuditResult").hidden;renderTeamAAudit();};
