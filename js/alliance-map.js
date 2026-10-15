@@ -1,12 +1,12 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 import {comparePositions,applyPositionReviews} from './map-position-compare.js?v=20261010-manual-red';
-import {marshallError,mapGeometry} from './map-marshall.js?v=20261015-2';
+import {marshallError,mapGeometry} from './map-marshall.js?v=20261015-trim-1';
 const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV');
 const $=id=>document.getElementById(id),admin=document.body.classList.contains('admin');
 let marshall={x:195,y:959},marshallDraft=null,geometry=mapGeometry(marshall);
 const visibleMarshall=()=>marshallDraft||marshall;
 const overlapsMarshall=s=>Math.abs(s.x-visibleMarshall().x)<3&&Math.abs(s.y-visibleMarshall().y)<3;
-function resizeMap(){geometry=mapGeometry(visibleMarshall());W=geometry.width;H=geometry.height;canvas.width=W*2;canvas.height=H*2;ctx.scale(2,2);size();}
+function resizeMap(){geometry=mapGeometry(visibleMarshall(),slots);W=geometry.width;H=geometry.height;canvas.width=W*2;canvas.height=H*2;ctx.scale(2,2);size();}
 let slots=[],revision,selected=null,zoom=1,busy=false,lang=localStorage.getItem('hola-language')||'es';
 const norm=s=>(s||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
 const en=()=>lang!=='es',say=(es,english)=>en()?english:es;

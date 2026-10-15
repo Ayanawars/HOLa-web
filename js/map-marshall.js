@@ -8,7 +8,7 @@ export function marshallError(p,slots=[]){
  if(overlaps(220.5,986.5,229.5,995.5)||overlaps(218.5,971.5,234.5,986.5))return 'terrain';
  return '';
 }
-export function mapGeometry(p){
- const minX=Math.min(192.5,p.x-1.5),maxX=Math.max(256,p.x+1.5),minY=Math.min(931.5,p.y-1.5);
+export function mapGeometry(p,slots=[]){
+ const minX=Math.min(192.5,p.x-1.5),maxX=Math.max(256,p.x+1.5),minY=Math.min(956.5,p.y-1.5,...slots.map(s=>s.y-1.5));
  return {minX,maxX,minY,width:Math.ceil(140+(maxX-minX-.5)*48+36),height:Math.max(2400,Math.ceil(150+(1000-minY)*48+162))};
 }
