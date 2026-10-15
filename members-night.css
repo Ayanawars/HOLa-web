@@ -282,3 +282,17 @@ body{
 .profile .profile-left>.member-portrait-framed{flex:0 0 auto;width:100%;aspect-ratio:1}
 .profile .member-portrait-framed .big-portrait{width:100%;height:100%;max-width:none;margin:0;aspect-ratio:1;object-fit:cover}
 .profile .profile-honor-medals{flex:0 0 auto;width:100%}
+
+/* Let mobile medals use the full profile width instead of the portrait's width. */
+.profile .profile-left{max-width:none}
+.profile .profile-left>.member-portrait-framed{width:180px;max-width:100%}
+.profile .profile-honor-medals{flex-direction:row;align-items:center;justify-content:center;width:100%;max-width:100%;gap:6px}
+.profile-honor-medals .honor-medal{flex:0 0 auto}
+@media(max-width:700px){
+  .profile .profile-left>.member-portrait-framed{width:150px}
+  .profile .profile-honor-medals{margin-top:10px}
+  .profile-honor-medals .honor-medal{padding:4px}
+  .profile-honor-medals .honor-medal svg{width:24px;height:30px;flex-basis:24px}
+  .profile-honor-medals .honor-medal-label{font-size:9px}
+  .profile-honor-medals .honor-medal-label img{width:19px;height:18px}
+}
