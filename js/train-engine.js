@@ -64,7 +64,7 @@ export function buildSchedule({scheduleWeek,vsScores=[],dsScores=[],donations=[]
   const grouped=new Map;
   for(const row of weekVs){const k=normalize(row.player_name);if(!grouped.has(k))grouped.set(k,{player_name:row.player_name,days:new Map});grouped.get(k).days.set(Number(row.day),Number(row.points)||0)}
   const complies=points=>points>=VS_LIMIT;
-  const vsRanking=[...grouped.values()].filter(canDrive).filter(x=>x.days.size===5&&[...x.days.values()].every(complies)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>weekType==='save'?(a.total-b.total||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
+  const vsRanking=[...grouped.values()].filter(canDrive).filter(x=>x.days.size===5&&[...x.days.values()].every(complies)).map(x=>({...x,total:[...x.days.values()].reduce((a,b)=>a+b,0),saveTotal:[1,2,3,4].reduce((sum,day)=>sum+x.days.get(day),0)})).sort((a,b)=>weekType==='save'?(a.saveTotal-b.saveTotal||a.player_name.localeCompare(b.player_name)):(b.total-a.total||a.player_name.localeCompare(b.player_name)));
   const dsWeek=dsScores.filter(x=>String(x.battle_date).slice(0,10)>=sourceWeek&&String(x.battle_date).slice(0,10)<=addDays(sourceWeek,6));
   const teamA=dsWeek.filter(canDrive).filter(x=>String(x.team).toUpperCase()==='A').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
   const teamB=dsWeek.filter(canDrive).filter(x=>String(x.team).toUpperCase()==='B').sort((a,b)=>Number(b.points)-Number(a.points)||Number(a.position)-Number(b.position));
