@@ -258,3 +258,13 @@ body{
 .profile-download-button:disabled{opacity:.65;cursor:wait}
 .profile-download-status{color:#bfd9e9;font:500 11px/1.45 system-ui,sans-serif;overflow-wrap:anywhere}
 .profile-download-status:empty{display:none}.profile-download-status.is-error{color:#ffc1b9}
+
+/* Six profile tiles: the strongest squad fills the third cell of row two. */
+.profile .tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+.profile .tiles .tile:last-child{grid-column:auto}
+.profile-main-squad .tile-icon-wrap{width:76px;max-width:100%;height:56px;border-radius:8px}
+.profile-main-squad .profile-main-squad-icon{width:70px;max-width:100%;height:50px;object-fit:contain}
+.profile-main-squad-icon[hidden]{display:none!important}
+.profile-main-squad-fallback{font-size:26px;color:#d7e5ef}
+.profile .profile-main-squad b{color:#d6f2ff;text-shadow:0 0 10px #8bd7ff40}
+.profile-main-squad small{display:block;overflow-wrap:anywhere}

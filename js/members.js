@@ -817,6 +817,19 @@
     }catch(e){box.innerHTML=`<div class="avatar-manager-error">${escapeHtml(String(e?.message||e))}</div>`}
   }
 
+
+  const mainSquadTitles={es:'Escuadrón principal',en:'Main squad',fr:'Escouade principale',de:'Haupttrupp',ro:'Echipa principală',pt:'Esquadrão principal',uk:'Основний загін',it:'Squadra principale',pl:'Główny oddział',tr:'Ana birlik',ru:'Основной отряд'};
+  function renderProfileMainSquad(p){
+    const squad=strongestSquad(p),title=mainSquadTitles[currentLang]||mainSquadTitles.en;
+    const sources={tank:'assets/icon-tank-custom.png',missile:'assets/icon-missile-custom.png',air:'assets/icon-air-custom.png'};
+    const image=document.getElementById('profileMainSquadIcon'),src=sources[squad.type]||'';
+    image.hidden=!src;if(src)image.src=src;
+    document.getElementById('profileMainSquadFallback').hidden=!!src;
+    document.getElementById('profileMainSquadPower').textContent=compactSquadPower(squad);
+    const label=document.getElementById('profileMainSquadLabel');label.textContent=title;
+    label.closest('.tile').title=title+(squad.type?' · '+(t()[squad.type]||squadLabel(squad.type)):'');
+  }
+
   function openProfile(p, options={}){
     if(!p) return;
     currentProfilePlayer = p;
@@ -857,6 +870,7 @@
     professionIcon.src=pKind==='warlord'?'assets/icon-warlord.png':'assets/icon-engineer.png';
     document.getElementById('profileT10').textContent=p.t10?'T10':'—';
     document.getElementById('profileOverlord').textContent=p.supreme_lord_unlocked?'Overlord':t().noOverlord;
+    renderProfileMainSquad(p);
     document.getElementById('profileAbout').textContent=(p.about_me&&String(p.about_me).trim())?p.about_me:t().aboutEmpty;
     document.getElementById('profileQuote').textContent=(p.epic_quote&&String(p.epic_quote).trim())?`“${p.epic_quote}”`:`“${t().quoteEmpty}”`;
     translateProfileText(p);
