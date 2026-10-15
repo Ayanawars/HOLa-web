@@ -750,7 +750,7 @@
             <option value="save">🛡️ SAVE WEEK</option></select
           ><span class="note"
             >La semana se actualiza automáticamente de lunes a domingo. PUSH y
-            SAVE quedan separados.</span
+            SAVE quedan separados. Tu selección se recuerda por semana en este navegador.</span
           >
         </div>
       </section>
@@ -1147,6 +1147,57 @@
         return `${a} ${months[monday.getMonth()]} AL ${b} ${months[sunday.getMonth()]}`;
       }
 
+      // Each Monday has its own preference; a new week never inherits the old mode.
+      let weekTypePreference = { week: null, value: null };
+      function currentWeekTypeKey() {
+        return "hola-vs-week-type:" + isoDate(getCurrentWeekRange().monday);
+      }
+      function weekTypeMessage(spanish, english) {
+        return (localStorage.getItem("hola-language") || "es") === "es" ? spanish : english;
+      }
+      function showWeekTypeStatus(message) {
+        let note = document.getElementById("weekTypeStatus");
+        if (!note) {
+          note = document.createElement("span");
+          note.id = "weekTypeStatus";
+          note.className = "note";
+          note.setAttribute("role", "status");
+          document.getElementById("weekType").after(note);
+        }
+        note.textContent = message;
+      }
+      function restoreWeekTypePreference() {
+        const week = currentWeekTypeKey();
+        if (weekTypePreference.week === week) return;
+        let saved = null;
+        try { saved = localStorage.getItem(week); } catch (error) { console.warn(error); }
+        const value = saved === "save" || saved === "push" ? saved : null;
+        weekTypePreference = { week, value };
+        document.getElementById("weekType").value = value || "push";
+        showWeekTypeStatus(value ? weekTypeMessage("Tipo guardado: ", "Saved week type: ") + value.toUpperCase() : "");
+      }
+      function changeWeekTypePreference() {
+        const select = document.getElementById("weekType"), proposed = select.value;
+        // Also handle a tab left open over the Sunday/Monday boundary.
+        restoreWeekTypePreference();
+        const previous = weekTypePreference.value;
+        if (proposed !== "save" && proposed !== "push") return;
+        if (previous && proposed !== previous && !window.confirm(weekTypeMessage(
+          "Esta semana está guardada como " + previous.toUpperCase() + ". ¿Quieres cambiarla a " + proposed.toUpperCase() + "? Las próximas puntuaciones se guardarán con el nuevo tipo. Los resultados ya guardados no se modifican.",
+          "This week is saved as " + previous.toUpperCase() + ". Change it to " + proposed.toUpperCase() + "? Future scores will use the new type. Existing results will stay unchanged."
+        ))) { select.value = previous; return; }
+        try {
+          localStorage.setItem(weekTypePreference.week, proposed);
+          weekTypePreference.value = proposed;
+          select.value = proposed;
+          showWeekTypeStatus(weekTypeMessage("Tipo guardado: ", "Saved week type: ") + proposed.toUpperCase());
+        } catch (error) {
+          select.value = previous || "push";
+          showWeekTypeStatus(weekTypeMessage("No se pudo guardar la elección. Vuelve a intentarlo.", "Could not save your choice. Please try again."));
+          console.error(error);
+        }
+      }
+
       function updateWeekTypeLabels() {
         const select = document.getElementById("weekType");
         if (!select) return;
@@ -1209,6 +1260,7 @@
         const now = new Date();
         input.value = isoDate(now);
         updateWeekTypeLabels();
+        restoreWeekTypePreference();
         updateSaveDayOptions();
       }
 
@@ -1222,6 +1274,16 @@
       };
 
       setAutomaticCurrentWeek();
+      document.getElementById("weekType").addEventListener("change", changeWeekTypePreference);
+      window.addEventListener("storage", event => {
+        if (event.key !== null && event.key !== currentWeekTypeKey()) return;
+        weekTypePreference.week = null;
+        restoreWeekTypePreference();
+      });
+      window.addEventListener("pageshow", () => {
+        weekTypePreference.week = null;
+        setAutomaticCurrentWeek();
+      });
 
       function updateDayDateLabel() {
         const info = getDayAndWeekStart(dayDate.value);
