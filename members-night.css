@@ -250,3 +250,11 @@ body{
 .profile-close{background:linear-gradient(#37566d,#203c54);border:1px solid #88a5b7;box-shadow:inset 0 1px 0 #dff6ff38}
 .profile .progress-card span,.quote-label,.footer{color:#e9d9a7}
 @media(prefers-reduced-motion:reduce){.roster .member.member--hive{transition:none}}
+
+/* Member PNG export action; omitted from the downloaded image. */
+.profile-download-tools{margin:12px 0 14px;display:grid;gap:6px}
+.profile-download-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:42px;padding:10px 14px;border:1px solid #a1d6ec;border-radius:6px;background:linear-gradient(145deg,#39647f,#1a3c56);color:#eefbff;box-shadow:inset 0 1px 0 #dff7ff45,0 0 14px #6dc9ed20;font:750 12px/1.35 system-ui,sans-serif;cursor:pointer}
+.profile-download-button:focus-visible{outline:2px solid #fff0bc;outline-offset:3px}
+.profile-download-button:disabled{opacity:.65;cursor:wait}
+.profile-download-status{color:#bfd9e9;font:500 11px/1.45 system-ui,sans-serif;overflow-wrap:anywhere}
+.profile-download-status:empty{display:none}.profile-download-status.is-error{color:#ffc1b9}

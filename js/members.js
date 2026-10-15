@@ -358,7 +358,7 @@
   }
 
 
-  let memberActivity=null,memberActivityStarted=false;
+  let memberActivity=null,memberActivityStarted=false,memberActivityPromise=null;
   const activityLabels={
     es:["VS total","Trenes conducidos","DS · Mejor participación",'días registrados','Sin datos','No disponible','Conducidos'],
     en:["Total VS","Trains driven","DS · Best performance",'days recorded','No data','Unavailable','Times driven'],
@@ -419,7 +419,8 @@
   }
 
   async function loadMemberActivity(){
-    if(memberActivityStarted)return;memberActivityStarted=true;
+    if(memberActivityStarted)return memberActivityPromise;memberActivityStarted=true;
+    memberActivityPromise=(async()=>{
     try{
       if(!window.HolaMemberActivity)throw Error('Activity module unavailable');
       memberActivity=await window.HolaMemberActivity.load({url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY});
@@ -428,6 +429,7 @@
     }
     updateParticipationBadges();
     if(currentProfilePlayer&&!profile.hidden)renderProfileActivity(currentProfilePlayer);
+    })();return memberActivityPromise;
   }
 
 
@@ -818,6 +820,7 @@
   function openProfile(p, options={}){
     if(!p) return;
     currentProfilePlayer = p;
+    if(!cardDownloadBusy)document.getElementById('profileDownloadStatus').textContent='';
     const loc=locationInfo(p);
     const locationBits=[];
     if(loc.country) locationBits.push(`${flagMarkup(loc.code,loc.regionFlag)}<span>${escapeHtml(loc.country)}</span>`);
@@ -873,6 +876,7 @@
     currentLang=translations[lang]?lang:'en';
     const tx=t();
     document.title='HOLa · '+tx.membersTitle;
+    updateDownloadLabels();
     document.getElementById('closeProfile').setAttribute('aria-label',tx.closeProfile);
     document.getElementById('languageToggle').setAttribute('aria-label',tx.changeLanguage);
     document.getElementById('backBtn').setAttribute('aria-label',tx.back);
@@ -911,6 +915,30 @@
     if(key==='t10')onlyT10=!onlyT10;else onlyOverlord=!onlyOverlord;
     e.currentTarget.setAttribute('aria-pressed',String(key==='t10'?onlyT10:onlyOverlord));renderRoster(true);
   });
+
+  let cardDownloadBusy=false;
+  function updateDownloadLabels(){
+    const words=window.HolaMemberCardDownload?.words(currentLang);if(!words)return;
+    document.getElementById('profileDownloadLabel').textContent=words[cardDownloadBusy?1:0];
+  }
+  document.getElementById('downloadMemberCard').addEventListener('click',async()=>{
+    const player=currentProfilePlayer,helper=window.HolaMemberCardDownload;if(!player||!helper||cardDownloadBusy)return;
+    const button=document.getElementById('downloadMemberCard'),status=document.getElementById('profileDownloadStatus');
+    cardDownloadBusy=true;button.disabled=true;status.textContent=helper.words(currentLang)[1];status.classList.remove('is-error');updateDownloadLabels();
+    try{
+      await Promise.all([loadMemberActivity(),loadPlayerAvatar(players.indexOf(player))]);
+      const deadline=Date.now()+12000;
+      while(player._avatarLoading&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,100));
+      if(player._avatarLoading)throw Error('Avatar still loading');
+      if(currentProfilePlayer!==player||profile.hidden)return;
+      await helper.download(profile.querySelector('.profile-dialog'),player.name);
+      if(currentProfilePlayer===player)status.textContent=helper.words(currentLang)[2];
+    }catch(error){
+      console.warn('HOLa member card download:',error);
+      if(currentProfilePlayer===player){status.textContent=helper.words(currentLang)[3];status.classList.add('is-error');}
+    }finally{cardDownloadBusy=false;button.disabled=false;updateDownloadLabels();}
+  });
+
   function closeProfile(){
     profile.hidden=true;document.body.style.overflow=pageOverflow;profileTextRequestId++;
     if(profileReturnFocus?.isConnected)profileReturnFocus.focus();
