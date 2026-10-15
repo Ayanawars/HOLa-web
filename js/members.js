@@ -389,11 +389,12 @@
   }
 
   const passengerLabels={"es": "Como pasajero", "en": "As passenger", "fr": "Comme passager", "de": "Als Fahrgast", "ro": "Ca pasager", "pt": "Como passageiro", "uk": "Як пасажир", "it": "Come passeggero", "pl": "Jako pasażer", "tr": "Yolcu olarak", "ru": "Как пассажир"};
+  const vipGuardianLabels={"es":"VIP–Guardián","en":"VIP–Guardian","fr":"VIP–Gardien","de":"VIP–Wächter","ro":"VIP–Gardian","pt":"VIP–Guardião","uk":"VIP–Охоронець","it":"VIP–Guardiano","pl":"VIP–Strażnik","tr":"VIP–Muhafız","ru":"VIP–Хранитель"};
   function activityDate(value){return new Intl.DateTimeFormat(currentLang,{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))}
   function memberActivityHtml(p){
     const labels=activityLabels[currentLang]||activityLabels.en;
     const member=memberActivity?.members.get(window.HolaMemberActivity?.key(p.name)),available=memberActivity?.available;
-    let vsValue='…',vsNote='',trainValue='…',trainNote=labels[6],dsValue='…',dsNote=labels[2];
+    let vsValue='…',vsNote='',trainValue='…',trainNote=labels[6],trainVipNote='',dsValue='…',dsNote=labels[2];
     if(memberActivity){
       const recorded=member?.vsDays.size||0;
       const vsTotal=recorded?[...member.vsDays.values()].reduce((a,b)=>a+b,0):0;
@@ -402,11 +403,12 @@
       vsNote=!available.vs?labels[5]:recorded?labels[0]+' · '+recorded+' '+labels[3]:labels[4];
       trainValue=available.drivers?String(member?.drivenDates.size||0):'—';
       trainNote=(passengerLabels[currentLang]||passengerLabels.en)+' · '+(available.passengers?String(member?.passengerDates?.size||0):'—');
+      trainVipNote=(vipGuardianLabels[currentLang]||vipGuardianLabels.en)+' · '+(available.passengers?String(member?.vipGuardianDates?.size||0):'—');
       dsValue=available.ds&&member?.ds?new Intl.NumberFormat(currentLang).format(member.ds.points):'—';
       dsNote=!available.ds?labels[5]:member?.ds?activityDate(member.ds.date)+' · '+String(member.ds.team||''):labels[4];
     }
-    const row=(label,value,note,title)=>'<div class="activity-row" title="'+escapeHtml(title)+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
-    return row(labels[0],vsValue,vsNote,labels[0]+(available?.vs&&member?.vsDays.size?' · '+new Intl.NumberFormat(currentLang).format([...member.vsDays.values()].reduce((a,b)=>a+b,0)):''))+row(labels[1],trainValue,trainNote,labels[6])+row(labels[2],dsValue,dsNote,labels[2]);
+    const row=(label,value,note,title,secondary='')=>'<div class="activity-row" title="'+escapeHtml(title)+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+(secondary?'<br>'+escapeHtml(secondary):'')+'</small></div>';
+    return row(labels[0],vsValue,vsNote,labels[0]+(available?.vs&&member?.vsDays.size?' · '+new Intl.NumberFormat(currentLang).format([...member.vsDays.values()].reduce((a,b)=>a+b,0)):''))+row(labels[1],trainValue,trainNote,labels[6],trainVipNote)+row(labels[2],dsValue,dsNote,labels[2]);
   }
 
   function renderProfileActivity(p){
