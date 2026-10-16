@@ -101,11 +101,14 @@
     function isTicketVetoed(name,date){return (data.ticketBans||[]).some(b=>b.active!==false&&normalize(b.player_name)===normalize(name)&&b.incident_date<=date&&((b.selection_role!=='unselected'&&b.week_start===monday(date))||addDays(b.week_start,7)===monday(date)))}
     function playerOptions(item){const frag=document.createDocumentFragment(),empty=document.createElement('option');empty.value='';empty.textContent='— Sin confirmar —';frag.append(empty);const seen=new Set;const add=(name,label,kind)=>{if(!name||seen.has(normalize(name))||(isTicketVetoed(name,item.date)&&normalize(name)!==normalize(item.actual)))return;seen.add(normalize(name));const o=document.createElement('option');o.value=name;o.textContent=label+' · '+name;o.className=kind;if(normalize(name)===normalize(item.actual))o.selected=true;frag.append(o)};add(item.planned,'★ TITULAR','option-titular');(schedule.reservePools[item.source]||[]).forEach((name,i)=>add(name,'SUP '+(i+1),'option-suplente'));if(item.actual&&!seen.has(normalize(item.actual)))add(item.actual,'CONDUCTOR REGISTRADO','option-historico');if(canRecordHistoricalDriver(item))for(const player of players)add(player.name,'CONDUCTOR REAL','option-historico');return frag}
 
-    function passengerKey(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[ᓚᘏᗢ]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,'')}
+    // El símbolo decorativo ᓚᘏᗢ se ignora tanto en OCR como en los nombres
+    // del censo; la asignación siempre devuelve p.name completo.
+    function passengerKey(value){const key=String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[ᓚᘏᗢ]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');return key==='mirliva'?'mirrliva':key}
     function editDistance(a,b){a=String(a||'');b=String(b||'');const dp=Array(b.length+1).fill(0).map((_,i)=>i);for(let i=1;i<=a.length;i++){let prev=dp[0];dp[0]=i;for(let j=1;j<=b.length;j++){const old=dp[j];dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=old}}return dp[b.length]}
     function memberFromOcrLine(raw){
-      const rawKey=passengerKey(String(raw||'').replace(/\[?HOLa\]?/gi,' ').replace(/Heroes of Last Area/gi,' '));
-      const key=rawKey==='mirliva'?'mirrliva':rawKey;
+      // El nivel pertenece a la interfaz, no al nombre. Retirarlo antes de
+      // normalizar permite aplicar los alias también con 'Mirliva Lv.30'.
+      const key=passengerKey(String(raw||'').replace(/\[?\s*HOLa\s*\]?/gi,' ').replace(/Heroes of Last Area/gi,' ').split(/\s*Lv\.?\s*\d{1,2}/i)[0]);
       if(key.length<3)return null;
       let best=null,bestScore=0;
       for(const p of players){
@@ -150,6 +153,8 @@
       for(const p of players){
         const pk=passengerKey(p.name);
         if(pk.length>=4&&full.includes(pk))add(p.name);
+        // Respaldo del alias cuando el OCR mezcla columnas o separa el nivel.
+        if(pk==='mirrliva'&&/(?<![\p{L}\p{N}])mirr?liva(?![\p{L}\p{N}])/iu.test(raw))add(p.name);
       }
       return [...found.values()];
     }
