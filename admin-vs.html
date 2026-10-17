@@ -919,6 +919,10 @@
         // siempre devolver el nombre oficial actual guardado en Supabase.
         const renamedMembers = new Map([
           [normName("TaajB"), "مثالـي25"],
+          [normName("Mirliva"), "Mirliva ᓚᘏᗢ"],
+          [normName("Mirliva ᓚᘏᗢ"), "Mirliva ᓚᘏᗢ"],
+          [normName("Mirrliva"), "Mirliva ᓚᘏᗢ"],
+          [normName("Mirrliva ᓚᘏᗢ"), "Mirliva ᓚᘏᗢ"],
           [normName("Lolo"), "مثالـي25"],
           [normName("Memofex042"), "Memofex042 ᓚᘏᗢ"],
           [normName("Laz Ziyaa"), "Laz Ziyaaa ᓚᘏᗢ"],
@@ -1009,7 +1013,7 @@
       // En la captura se busca JEBRAW, sin el adorno. El nombre completo solo
       // se usa como identidad oficial al asociar los puntos y guardarlos.
       function ocrMatchKey(memberName) {
-        const key = normName(memberName);
+        const key = normName(String(memberName ?? "").replace(/ᓚᘏᗢ/gu, ""));
         if(key === normName("elarâ ᓚᘏᗢ"))return normName("elara");
         return key === normName("JEBRAW ᓚᘏᗢ")
           ? normName("JEBRAW")
@@ -1439,8 +1443,10 @@
       // Lecturas conocidas de OCR para nombres con adornos del juego.
       // El destino siempre se resuelve en la lista actual de la alianza.
       const ocrNameAliases = new Map([
-        [normName("Mirliva"), normName("Mirrliva")],
-        [normName("Mirliva ᓚᘏᗢ"), normName("Mirrliva")],
+        [normName("Mirliva"), normName("Mirliva ᓚᘏᗢ")],
+        [normName("Mirliva ᓚᘏᗢ"), normName("Mirliva ᓚᘏᗢ")],
+        [normName("Mirrliva"), normName("Mirliva ᓚᘏᗢ")],
+        [normName("Mirrliva ᓚᘏᗢ"), normName("Mirliva ᓚᘏᗢ")],
         // Grupo de nombres con el adorno ᓚᘏᗢ.
         // cleanName() retira el adorno de la captura para que el OCR sea estable,
         // y estos alias lo vuelven a enlazar con el nombre oficial de Supabase.
@@ -1463,7 +1469,8 @@
       ]);
 
       const decoratedMemberBases = [
-        { base: "Mirliva", official: "Mirrliva" },
+        { base: "Mirliva", official: "Mirliva ᓚᘏᗢ" },
+        { base: "Mirrliva", official: "Mirliva ᓚᘏᗢ" },
         { base: "Memofex042", official: "Memofex042 ᓚᘏᗢ" },
         { base: "Laz Ziyaaa", official: "Laz Ziyaaa ᓚᘏᗢ" },
         { base: "Judéx", official: "Judéx ᓚᘏᗢ" },
