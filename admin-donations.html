@@ -123,6 +123,23 @@ function parseRowText(text){
   name=name.replace(/^[^A-Za-zÀ-ž0-9]+|[^A-Za-zÀ-ž0-9]+$/g,'').trim();
   return name?{name,points:Number(digits),raw:clean}:null
 }
+function verifiedDonationPoints(candidates,scoreReadings){
+  const values=[...new Set(scoreReadings)];
+  // Two isolated score reads must agree. One isolated read needs agreement from the available full-row reads.
+  if(scoreReadings.length===2&&values.length===1)return values[0];
+  if(scoreReadings.length===1&&candidates.length>0&&candidates.every(x=>x.points===values[0]))return values[0];
+  return null;
+}
+function donationOrderConflicts(rows){
+  const invalid=new Set();
+  for(let i=0;i<rows.length-1;i++){
+    const a=rows[i],b=rows[i+1];
+    if(b.sourceRow!==a.sourceRow+1||a.points===null||b.points===null||a.points>=b.points)continue;
+    // Leave both sides of an inversion for review; never guess which digit is correct.
+    invalid.add(a);invalid.add(b);
+  }
+  return invalid;
+}
 $('clearOcr').addEventListener('click',()=>{if($('read').disabled){status('Espera a que termine la lectura OCR antes de limpiar el formulario.',true);return}$('shots').value='';makeRows(7);status(tr('manual'))});
 
 $('read').addEventListener('click',async()=>{
@@ -134,37 +151,46 @@ $('read').addEventListener('click',async()=>{
     try{
       await worker.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1',tessedit_char_whitelist:''});
       for(let f=0;f<files.length;f++){
-        const img=await loadImage(files[f]);
+        const img=await loadImage(files[f]),fileRows=[];
         for(let row=0;row<7;row++){
           status(tr('reading',{row:row+1}));
-          let chosen=null;
+          const candidates=[],scoreReadings=[];
+          // Read both renderings even when the first name matches: its score may be wrong.
           for(const threshold of [.55,.35]){
             const text=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7))).data.text;
-            const item=parseRowText(text);if(!item)continue;
-            item.player=matchPlayer(item.name);
-            if(!chosen||(!chosen.player&&item.player))chosen=item;
-            if(item.player)break
+            const item=parseRowText(text);
+            if(item){item.player=matchPlayer(item.name);candidates.push(item)}
+            let pointsText;
+            try{
+              await worker.setParameters({tessedit_char_whitelist:'0123456789'});
+              pointsText=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'points'))).data.text;
+            }finally{await worker.setParameters({tessedit_char_whitelist:''})}
+            const digits=String(pointsText||'').replace(/\s+/g,'').trim();
+            if(/^\d{4,7}$/.test(digits))scoreReadings.push(Number(digits));
           }
-          // A large gap between name and score can make single-line OCR omit a field.
-          // Retry each field separately, keeping the score whitelist away from the name.
+          let chosen=candidates.find(item=>item.player)||candidates[0]||null;
           if(!chosen?.player){
             for(const threshold of [.55,.35]){
-              await worker.setParameters({tessedit_char_whitelist:''});
-              const nameText=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'name'))).data.text;
-              let pointsText;
-              try{
-                await worker.setParameters({tessedit_char_whitelist:'0123456789'});
-                pointsText=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'points'))).data.text;
-              }finally{await worker.setParameters({tessedit_char_whitelist:''})}
-              const digits=String(pointsText||'').replace(/\s+/g,'').trim();
-              if(!/^\d{4,7}$/.test(digits))continue;
-              const item=parseRowText(nameText.trim()+' '+digits);if(!item)continue;
+              const nameText=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'name'))).data.text.trim();
+              const item=parseRowText(nameText+' '+(scoreReadings[0]||'0000'));
+              if(!item)continue;
               item.player=matchPlayer(item.name);
               if(item.player){chosen=item;break}
             }
           }
           if(!chosen){warnings.push(tr('noRead',{row:row+1}));continue}
-          detected.push(chosen);if(!chosen.player)warnings.push(tr('reviewName',{name:chosen.name}))
+          const verified=verifiedDonationPoints(candidates,scoreReadings);
+          chosen.points=verified;
+          chosen.sourceRow=row;
+          if(verified===null)warnings.push('Puntos por revisar: '+(chosen.player?.name||chosen.name)+'; lecturas: '+[...new Set([...scoreReadings,...candidates.map(x=>x.points)])].join(' / '));
+          fileRows.push(chosen);
+          if(!chosen.player)warnings.push(tr('reviewName',{name:chosen.name}))
+        }
+        // Check the screenshot's original order before global sorting can hide a bad digit.
+        const invalid=donationOrderConflicts(fileRows);
+        for(const item of fileRows){
+          if(invalid.has(item)){warnings.push('Puntos fuera del orden de la captura: '+(item.player?.name||item.name)+' ('+item.points+'). Corrige sus puntos antes de publicar.');item.points=null}
+          detected.push(item);
         }
       }
     }finally{await worker.terminate()}
@@ -185,16 +211,20 @@ $('read').addEventListener('click',async()=>{
     }
     let added=0,duplicates=0,unmatched=0;
     for(const item of unique){
-      if(!item.player){unmatched++;if(!merged.some(row=>!row.player_name&&Number(row.points)===item.points))merged.push({player_name:'',points:String(item.points)});warnings.push('Revisa y selecciona el nombre de '+item.name+' ('+item.points.toLocaleString('es-ES')+' puntos)');continue}
+      if(!item.player){unmatched++;if(!merged.some(row=>!row.player_name&&Number(row.points)===item.points))merged.push({player_name:'',points:item.points===null?'':String(item.points)});warnings.push('Revisa y selecciona el nombre de '+item.name+' ('+(item.points===null?'por revisar':item.points.toLocaleString('es-ES'))+' puntos)');continue}
       const key=normalize(item.player.name);
       const previous=merged.find(row=>normalize(row.player_name)===key);
       if(previous){
         duplicates++;
-        if(previous.points!==''&&Number(previous.points)!==item.points)
-          warnings.push('Puntuación diferente para '+item.player.name+': se conserva '+Number(previous.points).toLocaleString('es-ES')+'; OCR leyó '+item.points.toLocaleString('es-ES'));
+        if(item.points===null){previous.points='';continue}
+        if(previous.points==='')previous.points=String(item.points);
+        else if(Number(previous.points)!==item.points){
+          warnings.push('Puntos por revisar para '+item.player.name+': formulario '+Number(previous.points).toLocaleString('es-ES')+'; OCR '+item.points.toLocaleString('es-ES')+'. Introduce el valor correcto.');
+          previous.points='';
+        }
         continue;
       }
-      merged.push({player_name:item.player.name,points:String(item.points)});
+      merged.push({player_name:item.player.name,points:item.points===null?'':String(item.points)});
       added++;
     }
     merged.sort((a,b)=>Number(b.points)-Number(a.points));
