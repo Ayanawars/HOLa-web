@@ -92,9 +92,9 @@ function assign(rank,name,points){const row=$('rows').children[rank-1];if(!row)r
 async function init(){try{const {createClient}=await Promise.race([import('https://esm.sh/@supabase/supabase-js@2'),new Promise((_,reject)=>setTimeout(()=>reject(Error('No se pudo cargar Supabase')),12000))]);sb=createClient(SUPABASE_URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data:{session}}=await Promise.race([sb.auth.getSession(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Tiempo de espera agotado al comprobar la sesión')),12000))]);if(!session)throw Error('Sin sesión');const {data:admin,error:ae}=await sb.from('admin_users').select('display_name').eq('user_id',session.user.id).maybeSingle();if(ae||!admin)throw Error('Sin acceso');const {data:p,error:pe}=await sb.from('players').select('name,rank').order('name');if(pe)throw pe;players=p;const officer=p.find(x=>normalize(x.name)===normalize(admin.display_name)&&['R4','R5'].includes(String(x.rank).toUpperCase()));if(!officer)throw Error('No eres R4/R5');await refreshPendingWeek();makeRows();await loadWeek();$('guard').hidden=true;$('app').hidden=false}catch(e){$('guard').textContent='No se pudo comprobar el acceso: '+e.message+'. Abre el centro de administración e inicia sesión de nuevo.';console.error('Donations admin access:',e)}}
 async function loadWeek(){const sunday=$('week').value;if(!sunday)return;const week=monday(sunday);const {data,error}=await sb.from('technology_donations').select('player_name,points,rank').eq('week_start',week).order('rank');if(error){status(error.message,true);return}if(data?.length){await refreshPendingWeek();return loadWeek()}makeRows(Math.max(7,...(data||[]).map(r=>Number(r.rank)||0)));for(const r of data||[])assign(r.rank,r.player_name,Number(r.points));status(data?.length?tr('loaded'):tr('empty'))}
 $('week').addEventListener('change',loadWeek);
-function rowThresholdCanvas(img,index,threshold,rowCount=7){
+function rowThresholdCanvas(img,index,threshold,rowCount=7,field=null){
   const c=document.createElement('canvas'),rowH=img.naturalHeight/rowCount;
-  const sx=0,sw=img.naturalWidth,sy=Math.max(0,Math.round(index*rowH+rowH*.10)),sh=Math.round(rowH*.80),scale=3;
+  const sx=field==='points'?Math.round(img.naturalWidth*.68):0,sw=field==='name'?Math.round(img.naturalWidth*.68):img.naturalWidth-sx,sy=Math.max(0,Math.round(index*rowH+rowH*.10)),sh=Math.round(rowH*.80),scale=3;
   c.width=Math.round(sw*scale);c.height=Math.round(sh*scale);
   const x=c.getContext('2d',{willReadFrequently:true});x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   x.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
@@ -145,6 +145,24 @@ $('read').addEventListener('click',async()=>{
             if(!chosen||(!chosen.player&&item.player))chosen=item;
             if(item.player)break
           }
+          // A large gap between name and score can make single-line OCR omit a field.
+          // Retry each field separately, keeping the score whitelist away from the name.
+          if(!chosen?.player){
+            for(const threshold of [.55,.35]){
+              await worker.setParameters({tessedit_char_whitelist:''});
+              const nameText=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'name'))).data.text;
+              let pointsText;
+              try{
+                await worker.setParameters({tessedit_char_whitelist:'0123456789'});
+                pointsText=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'points'))).data.text;
+              }finally{await worker.setParameters({tessedit_char_whitelist:''})}
+              const digits=String(pointsText||'').replace(/\s+/g,'').trim();
+              if(!/^\d{4,7}$/.test(digits))continue;
+              const item=parseRowText(nameText.trim()+' '+digits);if(!item)continue;
+              item.player=matchPlayer(item.name);
+              if(item.player){chosen=item;break}
+            }
+          }
           if(!chosen){warnings.push(tr('noRead',{row:row+1}));continue}
           detected.push(chosen);if(!chosen.player)warnings.push(tr('reviewName',{name:chosen.name}))
         }
@@ -190,6 +208,6 @@ $('read').addEventListener('click',async()=>{
   }catch(e){status(tr('ocrError',{error:e.message}),true)}
   finally{btn.disabled=false}
 });
-$('save').addEventListener('click',async()=>{const sunday=$('week').value;if(!sunday||new Date(sunday+'T12:00:00Z').getUTCDay()!==0){status('Selecciona un domingo del ranking.',true);return}const week=monday(sunday);const rows=[...$('rows').children].map((r,i)=>({week_start:week,rank:i+1,player_name:r.querySelector('select').value,points:Number(r.querySelector('input').value)}));if(rows.some((r,i)=>!r.player_name||!Number.isSafeInteger(r.points)||r.points<0||$('rows').children[i].querySelector('input').value==='')){status(tr('complete'),true);return}if(new Set(rows.map(r=>r.player_name)).size!==rows.length){status(tr('duplicate'),true);return}if(rows.some((r,i)=>i&&r.points>rows[i-1].points)){status(tr('order'),true);return}if(!confirm('¿Guardar '+rows.length+' puestos del domingo '+sunday+'? El index seguirá mostrando el Top 7 y el tren usará toda la clasificación.'))return;const btn=$('save');btn.disabled=true;try{const {data:saved,error:publishError}=await sb.rpc('publish_technology_donations',{p_week_start:week,p_rows:rows.map(({rank,player_name,points})=>({rank,player_name,points}))});if(publishError)throw publishError;await refreshPendingWeek();$('shots').value='';makeRows(7);status('Guardados '+saved+' jugadores del domingo '+sunday+'. Esa semana ya no aparece en el selector. Ahora se muestra el siguiente domingo pendiente.')}catch(e){status('No se pudo publicar: '+e.message+'. Revisa los datos antes de reintentar.',true)}finally{btn.disabled=false}});
+$('save').addEventListener('click',async()=>{const sunday=$('week').value;if(!sunday||new Date(sunday+'T12:00:00Z').getUTCDay()!==0){status('Selecciona un domingo del ranking.',true);return}const week=monday(sunday);const rows=[...$('rows').children].map((r,i)=>({week_start:week,rank:i+1,player_name:r.querySelector('select').value,points:Number(r.querySelector('input').value)}));if(rows.some((r,i)=>!r.player_name||!Number.isSafeInteger(r.points)||r.points<0||$('rows').children[i].querySelector('input').value==='')){status(tr('complete'),true);return}if(new Set(rows.map(r=>r.player_name)).size!==rows.length){status(tr('duplicate'),true);return}rows.sort((a,b)=>b.points-a.points);rows.forEach((r,i)=>{r.rank=i+1;const row=$('rows').children[i];row.querySelector('select').value=r.player_name;row.querySelector('input').value=r.points});if(!confirm('¿Guardar '+rows.length+' puestos del domingo '+sunday+'? El index seguirá mostrando el Top 7 y el tren usará toda la clasificación.'))return;const btn=$('save');btn.disabled=true;try{const {data:saved,error:publishError}=await sb.rpc('publish_technology_donations',{p_week_start:week,p_rows:rows.map(({rank,player_name,points})=>({rank,player_name,points}))});if(publishError)throw publishError;await refreshPendingWeek();$('shots').value='';makeRows(7);status('Guardados '+saved+' jugadores del domingo '+sunday+'. Esa semana ya no aparece en el selector. Ahora se muestra el siguiente domingo pendiente.')}catch(e){status('No se pudo publicar: '+e.message+'. Revisa los datos antes de reintentar.',true)}finally{btn.disabled=false}});
 const exampleModal=$('exampleModal');$('exampleBtn').addEventListener('click',()=>{exampleModal.hidden=false;document.body.style.overflow='hidden'});function closeExample(){exampleModal.hidden=true;document.body.style.overflow=''}$('exampleClose').addEventListener('click',closeExample);exampleModal.addEventListener('click',e=>{if(e.target===exampleModal)closeExample()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!exampleModal.hidden)closeExample()});setupLanguage();initWeekNavigation();applyLanguage();init();
 </script><script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
