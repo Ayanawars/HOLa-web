@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es">
-<head>
+<head><script src="js/avatar-cache.js?v=20261018-1"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0a6eab">
@@ -240,7 +240,7 @@
 
 <script src="js/ds-poster.js?v=20260925-public-maps-v1"></script>
 <script src="js/ds-plan-view.js?v=20260925-phase-mission-colors-v1"></script>
-<script src="ds-profiles.js?v=20261004-2"></script>
+<script src="ds-profiles.js?v=20261018-1"></script>
 <script>
 const SUPABASE_URL='https://ovybstpiomphrouvqxmf.supabase.co';
 const SUPABASE_KEY='sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV';
@@ -325,7 +325,7 @@ async function loadBattle(){
   lastDsRoster=[];lastDsPlan=null;
   const q=`battle_date=eq.${encodeURIComponent(d)}&team=eq.${encodeURIComponent(chosenTeam)}`;
   const resultTask=loadResults(d,chosenTeam,version);
-  const profilesTask=window.holaDsProfiles.get();
+  window.holaDsProfiles.get();
   try{
     const [rows,contentRows,plans]=await Promise.all([
       rest('desert_storm_participants',`select=player_name&${q}&order=player_name.asc`),
@@ -338,7 +338,7 @@ async function loadBattle(){
     const content=contentRows?.[0]||{};
     renderPlayers(lastDsRoster,window.holaDsProfiles.current());renderContent(content);renderDsPlanProfiles();
     $('loadStatus').textContent=(lastDsRoster.length||lastDsPlan||content.strategy||content.map_data_url)?tr('battleLoaded'):tr('battleEmpty');
-    profilesTask.then(profiles=>{if(version===dsLoadVersion){renderPlayers(lastDsRoster,profiles);renderDsPlanProfiles();}});
+    window.holaDsProfiles.get(lastDsRoster.map(row=>row.player_name)).then(profiles=>{if(version===dsLoadVersion){renderPlayers(lastDsRoster,profiles);renderDsPlanProfiles();}});
   }catch(err){if(version===dsLoadVersion)$('loadStatus').textContent=err?.message||String(err);}
   await resultTask;
 }

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script src="js/avatar-cache.js?v=20261018-1"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>HOLa — Alliance Player Survey</title>
@@ -3754,7 +3754,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
 
     confirmBtn.addEventListener("click", () => {
       if (!source) return;
-      const size = 1200;
+      const size = 768;
       const canvas = document.createElement("canvas");
       canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext("2d");
@@ -3767,7 +3767,7 @@ input::placeholder,textarea::placeholder{color:#93a0a9!important;opacity:1!impor
       const top = (sh - h) / 2 + y;
       const factor = size / sw;
       ctx.drawImage(source, left * factor, top * factor, w * factor, h * factor);
-      preview.src = canvas.toDataURL("image/jpeg", 0.98);
+      preview.src = canvas.toDataURL("image/jpeg", 0.85);
       upload.classList.add("has-image");
       closeEditor();
     });
