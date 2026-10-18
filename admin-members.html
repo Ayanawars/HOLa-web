@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
+<script src="js/media-storage.js?v=20261018-1"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#d9b35f">
@@ -166,6 +167,7 @@
       if(deletingMember||(!selected&&!creatingMember))return; const b=$('saveMember');b.disabled=true;$('reloadMember').disabled=true;setStatus('Guardando…');
       try{
         const wasCompleted=selected?.survey_completed===true, nowCompleted=$('survey_completed').checked;
+        avatarValue=await window.holaStoreMedia(sb,avatarValue);
         const payload={
           rank:cleanText('rank'),hq_level:$('hq_level').value?Number($('hq_level').value):null,profession:cleanText('profession'),t10:$('t10').checked,supreme_lord_unlocked:$('supreme_lord_unlocked').checked,
           thp:cleanPower('thp'),squad1_type:cleanText('squad1_type')||'',squad1_power:cleanPower('squad1_power'),squad2_type:cleanText('squad2_type')||'',squad2_power:cleanPower('squad2_power'),squad3_type:cleanText('squad3_type')||'',squad3_power:cleanPower('squad3_power'),

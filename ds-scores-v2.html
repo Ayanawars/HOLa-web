@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es">
-<head><script src="js/avatar-cache.js?v=20261018-1"></script>
+<head><script src="js/avatar-cache.js?v=20261018-1"></script><script src="js/media-storage.js?v=20261018-1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>HOLa — DS Scores V2 (prueba)</title>
@@ -1412,7 +1412,7 @@ async function loadContent(){
   if(!date) return;
   $("contentStatus").className="status"; $("contentStatus").textContent="⏳ Cargando datos…";
   try{
-    const {data,error}=await supabaseClient.from("desert_storm_content").select("result").eq("battle_date",date).eq("team",contentTeam).maybeSingle();
+    const {data,error}=await supabaseClient.from("desert_storm_content").select("strategy,map_data_url,result").eq("battle_date",date).eq("team",contentTeam).maybeSingle();
     if(error) throw error;
     $("strategyText").value=data?.strategy||"";
     $("battleResult").value=data?.result||"";
@@ -1430,6 +1430,7 @@ $("saveContentBtn").addEventListener("click",async()=>{
   const btn=$("saveContentBtn"); btn.disabled=true;
   $("contentStatus").className="status"; $("contentStatus").textContent="⏳ Guardando…";
   try{
+    contentMapData=await window.holaStoreMedia(supabaseClient,contentMapData);
     const {error}=await supabaseClient.from("desert_storm_content").upsert({battle_date:date,team:contentTeam,strategy:$("strategyText").value.trim(),map_data_url:contentMapData,result:$("battleResult").value||null},{onConflict:"battle_date,team"});
     if(error) throw error;
     $("contentStatus").className="status ok"; $("contentStatus").textContent=`✅ Fuerza Especial ${contentTeam} guardada · ${date}`;
