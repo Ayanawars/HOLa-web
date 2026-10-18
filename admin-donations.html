@@ -3,7 +3,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root{--blue:#087fc5;--navy:#103f69;--gold:#d5a832;--paper:#fffaf0}*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:15px;background:linear-gradient(#87d5eb,#f8e6bd 48%,#efd6a0);font:14px system-ui;color:#183b5c}body:before{content:"";position:fixed;inset:0;z-index:-1;background:url('hola-s3-background-square.png') center/cover;opacity:.25}.wrap{max-width:720px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.lang{width:auto;min-width:105px;padding:10px;border:1px solid #d6ae53;border-radius:24px;background:#fff9ec;font-weight:900;color:var(--navy)}.back{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--navy);font-weight:900;background:#fff9ec;border:1px solid #d6ae53;border-radius:22px;padding:9px 12px;white-space:nowrap;font-size:13px;box-shadow:0 4px 10px #67451418}.logo{width:160px;max-height:90px;object-fit:contain}.panel{background:rgba(255,250,240,.97);border:1px solid #d4ab4c;border-radius:23px;padding:17px;margin:15px 0;box-shadow:0 12px 25px #67451420}h1,h2{color:var(--navy);font-family:Georgia,serif}h1{font-size:25px;margin:5px 0}h2{font-size:19px;margin:0 0 12px}.hint{color:#65788c;line-height:1.5}.eyebrow{font-size:10px;letter-spacing:.2em;font-weight:900;color:#ad812b}label{display:block;font-weight:800;margin:12px 0 6px}input,select{width:100%;padding:11px;border:1px solid #b7c9d5;border-radius:10px;background:white;color:#173d61;font:inherit}input[type=file]{background:#effaff;border:2px dashed #67b6d7}.btn{border:0;border-radius:12px;padding:12px 15px;background:linear-gradient(120deg,#087fc5,#075182);color:white;font-weight:900;cursor:pointer;margin:10px 5px 0 0}.btn:disabled{opacity:.5;cursor:wait}.btn.gold{background:linear-gradient(120deg,#bb8323,#e3b44b);color:#163b5c}.row{display:grid;grid-template-columns:27px minmax(0,1fr) 110px;gap:8px;align-items:end;border:1px solid #e0c58d;background:#fffdf8;border-radius:13px;padding:10px;margin:8px 0}.row label{margin:0;font-size:11px}.row strong{align-self:center;color:#a57524}.row input,.row select{padding:9px;min-width:0}.status{padding:12px;background:#edf8fd;border-radius:12px;white-space:pre-wrap;line-height:1.5}.status.error{background:#ffe9e7;color:#9b2929}.example-link{display:inline-block;border:0;background:none;color:#087fc5;text-decoration:underline;font-weight:900;padding:8px 2px;cursor:pointer}.example-modal{position:fixed;inset:0;z-index:99999;background:#071a2ae8;display:flex;align-items:center;justify-content:center;padding:18px}.example-card{position:relative;max-width:520px;width:100%;max-height:94vh;background:#fffaf0;border:2px solid #d5a832;border-radius:18px;padding:45px 10px 10px;box-shadow:0 20px 60px #0009}.example-card img{display:block;width:100%;max-height:82vh;object-fit:contain;border-radius:10px}.example-close{position:absolute;top:8px;right:9px;border:0;border-radius:20px;background:#103f69;color:white;font-weight:900;padding:9px 14px;cursor:pointer}[hidden]{display:none!important}@media(max-width:420px){.row{grid-template-columns:24px minmax(0,1fr) 95px;gap:5px}.row input,.row select{font-size:12px;padding:7px}}
-.ocr-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.ocr-actions .btn{flex:1 1 190px}.ocr-actions #clearOcr{background:#fff6ed;color:#9b382f;border:1px solid #dca296}
+.needs-review .points{border:2px solid #bb4035;background:#fff0ec}.ocr-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.ocr-actions .btn{flex:1 1 190px}.ocr-actions #clearOcr{background:#fff6ed;color:#9b382f;border:1px solid #dca296}
 .week-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;border:1px solid #d6ae53;border-radius:14px;background:#fffdf8;padding:7px;touch-action:pan-y}.week-arrow{width:44px;min-height:44px;border:1px solid #d6ae53;border-radius:11px;background:#fff3d3;color:var(--navy);font:900 25px system-ui;cursor:pointer}.week-arrow:disabled{opacity:.35;cursor:default}.week-arrow:focus-visible{outline:3px solid #087fc5;outline-offset:2px}.week-date{text-align:center;font-weight:800;line-height:1.4;min-width:0;overflow-wrap:anywhere}@media(max-width:420px){.week-date{font-size:13px}.week-nav{gap:4px}}
 </style></head><body><main class="wrap"><div class="top"><a class="back" id="backText" href="admin-center-hola_login.html">← Admin</a><select id="language" class="lang" aria-label="Idioma"></select><img class="logo" src="hola-s3-logo.png" alt="HOLa"></div><div id="guard" class="panel"><span id="guardText">Comprobando acceso R4/R5…</span><p class="hint" id="guardHint">Si tarda demasiado, vuelve al centro de administración.</p></div><div id="app" hidden><section class="panel"><span class="eyebrow">HOLa · GOLDEN KINGDOM</span><h1 id="titleText">Donaciones a tecnología</h1><p class="hint"><span id="introText">Sube la captura recortada del ranking semanal con solo los siete nombres y puntos. Revisa los datos antes de publicar.</span> <button type="button" class="example-link" id="exampleBtn">Ejemplo</button></p><label for="week" id="weekLabel">Domingo del ranking semanal</label><select id="week" hidden aria-hidden="true" tabindex="-1"></select><div class="week-nav" id="weekNav" role="group" aria-labelledby="weekLabel"><button class="week-arrow" id="weekPrev" type="button">‹</button><span class="week-date" id="weekDate" aria-live="polite"></span><button class="week-arrow" id="weekNext" type="button">›</button></div><label for="shots" id="shotsLabel">Captura del ranking semanal</label><input type="file" id="shots" accept="image/*" multiple><div class="ocr-actions"><button class="btn" id="read">Leer captura con OCR</button><button class="btn" type="button" id="clearOcr">Borrar OCR</button></div><p id="status" class="status" role="status">Puedes completar o corregir todos los campos manualmente.</p></section><section class="panel"><h2 id="reviewTitle">Revisión del Top 7</h2><p class="hint" id="reviewHint">Selecciona el nombre oficial de HOLa para cada puesto. Ningún resultado se publica sin tu confirmación.</p><div id="rows"></div><button class="btn gold" id="save">Publicar ranking semanal</button></section></div></main><div class="example-modal" id="exampleModal" hidden role="dialog" aria-modal="true"><div class="example-card"><button type="button" class="example-close" id="exampleClose">Cerrar</button><img src="assets/donations-ranking-example.jpg" alt="Ejemplo de captura recortada del ranking"></div></div>
 <script>
@@ -82,7 +82,7 @@ function initWeekNavigation(){
  nav.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();moveSunday(event.key==='ArrowLeft'?-1:1)}});
 }
 
-function makeRows(count=7){const box=$('rows');box.replaceChildren();for(let i=1;i<=Math.max(7,count);i++){const row=document.createElement('div');row.className='row';row.innerHTML='<strong>#'+i+'</strong><label>'+tr('player')+'<select class="player"><option value="">'+tr('select')+'</option></select></label><label>'+tr('points')+'<input class="points" inputmode="numeric" type="number" min="0" step="1" placeholder="0"></label>';const select=row.querySelector('select');for(const p of players){const opt=document.createElement('option');opt.value=p.name;opt.textContent=p.name;select.append(opt)}box.append(row)}}
+function makeRows(count=7){const box=$('rows');box.replaceChildren();for(let i=1;i<=Math.max(7,count);i++){const row=document.createElement('div');row.className='row';row.innerHTML='<strong>#'+i+'</strong><label>'+tr('player')+'<select class="player"><option value="">'+tr('select')+'</option></select></label><label>'+tr('points')+'<input class="points" inputmode="numeric" type="number" min="0" step="1" placeholder="—"></label>';const select=row.querySelector('select');for(const p of players){const opt=document.createElement('option');opt.value=p.name;opt.textContent=p.name;select.append(opt)}box.append(row)}}
 function addDonationRow(){const existing=[...$('rows').children].map((r,i)=>({rank:i+1,name:r.querySelector('select').value,points:r.querySelector('input').value}));makeRows(existing.length+1);for(const r of existing){const el=$('rows').children[r.rank-1];el.querySelector('select').value=r.name;el.querySelector('input').value=r.points}}
 const addRowButton=document.createElement('button');addRowButton.type='button';addRowButton.className='btn';addRowButton.textContent='+ Añadir puesto al ranking';addRowButton.addEventListener('click',addDonationRow);$('rows').after(addRowButton);
 function reviewedRows(){return [...$('rows').children].map(row=>({player_name:row.querySelector('select').value,points:row.querySelector('input').value})).filter(row=>row.player_name||(row.points!==''&&Number(row.points)>0))}
@@ -100,7 +100,22 @@ function rowThresholdCanvas(img,index,threshold,rowCount=7,field=null){
   x.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
   const data=x.getImageData(0,0,c.width,c.height),cut=Math.round(255*threshold);
   for(let p=0;p<data.data.length;p+=4){const g=data.data[p]*.299+data.data[p+1]*.587+data.data[p+2]*.114,v=g<cut?0:255;data.data[p]=data.data[p+1]=data.data[p+2]=v;data.data[p+3]=255}
-  x.putImageData(data,0,0);return c
+  x.putImageData(data,0,0);
+  if(field==='points'){
+    // Remove empty margins around the digits so word OCR does not lose the first digit.
+    let left=c.width,top=c.height,right=-1,bottom=-1;
+    for(let py=0;py<c.height;py++)for(let px=0;px<c.width;px++){
+      if(data.data[(py*c.width+px)*4]!==0)continue;
+      left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);
+    }
+    if(right>=left){
+      const tight=document.createElement('canvas'),pad=24;
+      tight.width=right-left+1+pad*2;tight.height=bottom-top+1+pad*2;
+      const ctx=tight.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,tight.width,tight.height);
+      ctx.drawImage(c,left,top,right-left+1,bottom-top+1,pad,pad,right-left+1,bottom-top+1);return tight;
+    }
+  }
+  return c
 }
 async function loadImage(file){return new Promise((resolve,reject)=>{const img=new Image(),url=window.URL.createObjectURL(file);img.onload=()=>{window.URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{window.URL.revokeObjectURL(url);reject(Error('No se pudo abrir la captura'))};img.src=url})}
 function editDistance(a,b){const d=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let prev=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const old=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=old}}return d[b.length]}
@@ -124,10 +139,14 @@ function parseRowText(text){
   return name?{name,points:Number(digits),raw:clean}:null
 }
 function verifiedDonationPoints(candidates,scoreReadings){
-  const values=[...new Set(scoreReadings)];
-  // Two isolated score reads must agree. One isolated read needs agreement from the available full-row reads.
-  if(scoreReadings.length===2&&values.length===1)return values[0];
-  if(scoreReadings.length===1&&candidates.length>0&&candidates.every(x=>x.points===values[0]))return values[0];
+  const votes=new Map();for(const points of scoreReadings)votes.set(points,(votes.get(points)||0)+1);
+  const ranked=[...votes].sort((a,b)=>b[1]-a[1]);
+  const supported=ranked.filter(([points,count])=>count>=2&&candidates.some(x=>x.points===points));
+  if(supported.length===1)return supported[0][0];
+  if(supported.length>1)return null;
+  if(scoreReadings.length>=3&&ranked[0]?.[1]>=2&&(!ranked[1]||ranked[0][1]>ranked[1][1]))return ranked[0][0];
+  if(!candidates.length&&ranked[0]?.[1]>=2&&(!ranked[1]||ranked[0][1]>ranked[1][1]))return ranked[0][0];
+  if(scoreReadings.length===1&&candidates.length>0&&candidates.every(x=>x.points===scoreReadings[0]))return scoreReadings[0];
   return null;
 }
 function donationOrderConflicts(rows){
@@ -167,6 +186,17 @@ $('read').addEventListener('click',async()=>{
             }finally{await worker.setParameters({tessedit_char_whitelist:''})}
             const digits=String(pointsText||'').replace(/\s+/g,'').trim();
             if(/^\d{4,7}$/.test(digits))scoreReadings.push(Number(digits));
+          }
+          // Retry doubtful scores as a tightly cropped word with alternate contrast settings.
+          if(verifiedDonationPoints(candidates,scoreReadings)===null){
+            try{
+              await worker.setParameters({tessedit_pageseg_mode:'8',tessedit_char_whitelist:'0123456789'});
+              for(const threshold of [.45,.65]){
+                const text=(await worker.recognize(rowThresholdCanvas(img,row,threshold,7,'points'))).data.text;
+                const digits=String(text||'').replace(/\s+/g,'').trim();
+                if(/^\d{4,7}$/.test(digits))scoreReadings.push(Number(digits));
+              }
+            }finally{await worker.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:''})}
           }
           let chosen=candidates.find(item=>item.player)||candidates[0]||null;
           if(!chosen?.player){
@@ -233,6 +263,7 @@ $('read').addEventListener('click',async()=>{
       const row=$('rows').children[i];
       row.querySelector('select').value=item.player_name;
       row.querySelector('input').value=item.points;
+      row.classList.toggle('needs-review',!!item.player_name&&item.points==='');
     });
     status('OCR: '+unique.length+' detectados · '+added+' nuevos · '+duplicates+' repetidos · '+unmatched+' por revisar. Filas con puntuación: '+merged.length+'.'+(warnings.length?'\n'+warnings.join('; '):''))
   }catch(e){status(tr('ocrError',{error:e.message}),true)}
