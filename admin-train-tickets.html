@@ -22,7 +22,7 @@
 </div></main>
 <script type="module">
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
-import {addDays,monday,normalize} from './js/train-engine.js?v=20261005-immediate-ticket-veto-1';
+import {addDays,monday,normalize} from './js/train-engine.js?v=20261024-denise-alias';
 const sb=createClient('https://ovybstpiomphrouvqxmf.supabase.co','sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id),roles={driver:'Conductor',substitute:'Suplente',unselected:'No seleccionado'};
 const fmt=value=>new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));

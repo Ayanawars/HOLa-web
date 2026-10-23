@@ -1,7 +1,7 @@
 /* Public activity summaries. Fetch once per roster, never once per card. */
 (function(root){
   'use strict';
-  function key(name){const value=String(name||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');return value==='ir4ul91'?'ir4ul':value}
+  function key(name){const value=String(name||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');if(value.replace(/[ᓚᘏᗢ]/g,'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim()==='denise')return 'denise';return value==='ir4ul91'?'ir4ul':value}
   function summarize({vs=[],drivers=[],ds=[],passengers=[],available={vs:true,drivers:true,ds:true,passengers:true},today=new Date().toISOString().slice(0,10)}){
     const members=new Map(),get=name=>{const id=key(name);if(!members.has(id))members.set(id,{vsDays:new Map(),drivenDates:new Set(),passengerDates:new Set(),vipGuardianDates:new Set(),ds:null});return members.get(id)};
     for(const row of vs){if(!row.vs_date||row.vs_date>today||row.day<1||row.day>6||row.points==null)continue;const points=Number(row.points);if(!Number.isFinite(points)||points<0)continue;get(row.player_name).vsDays.set(row.vs_date+':'+Number(row.day),points)}

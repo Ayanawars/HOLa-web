@@ -914,6 +914,7 @@
       function canonicalMemberName(v) {
         const raw = String(v ?? "").trim();
         const key = normName(raw);
+        if (key === normName("Dènise")) return "Dènise ᓚᘏᗢ";
 
         // Nombres antiguos / lecturas sin el adorno del juego:
         // siempre devolver el nombre oficial actual guardado en Supabase.
@@ -997,6 +998,7 @@
           з: "z",
         };
         let text = String(v ?? "")
+          .replace(/[ᓚᘏᗢ]/g, "")
           .normalize("NFKD")
           .toLowerCase();
         text = [...text].map((ch) => confusables[ch] ?? ch).join("");
@@ -1469,6 +1471,7 @@
       ]);
 
       const decoratedMemberBases = [
+        { base: "Dènise", official: "Dènise ᓚᘏᗢ" },
         { base: "Mirliva", official: "Mirliva ᓚᘏᗢ" },
         { base: "Mirrliva", official: "Mirliva ᓚᘏᗢ" },
         { base: "Memofex042", official: "Memofex042 ᓚᘏᗢ" },

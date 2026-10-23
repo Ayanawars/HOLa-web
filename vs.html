@@ -227,6 +227,7 @@ h2{font:400 26px/1.2 Georgia,serif;margin:30px 0 16px;letter-spacing:-.4px}.wrap
         );
       const key = (s) =>
         String(s || "")
+          .replace(/[ᓚᘏᗢ]/g, "")
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
           .toLowerCase()

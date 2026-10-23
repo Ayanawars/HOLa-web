@@ -17,7 +17,7 @@
   const section=document.getElementById('dsRanking'),launch=document.getElementById('dsRankingOpen');
   if(!section||!launch)return;
   let selectedTeam='B',mode='latest',scores=[],profiles=[],loaded=false,busy=false,failed=false,lastLoadedAt=0;
-  const key=s=>String(s||'').replace(/[\u200B-\u200D\uFEFF]/g,'').trim().replace(/\s+/g,' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const key=s=>String(s||'').replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[ᓚᘏᗢ]/g,'').trim().replace(/\s+/g,' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const language=()=>localStorage.getItem('hola-language')||document.documentElement.lang||'es';
   const t=i=>(dictionaries[language()]||dictionaries.en)[i];
