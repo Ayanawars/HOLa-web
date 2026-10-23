@@ -16,7 +16,7 @@
     const vs=new Map();
     for(const row of source.vs||[]){if(!row.vs_date||row.day<1||row.day>6||row.points==null)continue;const date=shift(row.vs_date,Number(row.day)-1);if(inRange(date)&&Number.isFinite(Number(row.points)))vs.set(date+':'+key(row.player_name),row)}
     const vsMine=[...vs.values()].filter(r=>same(r.player_name)&&Number(r.points)>0);
-    const ds=(source.ds||[]).filter(r=>inRange(r.battle_date)&&r.points!=null&&Number(r.points)>0),dsMine=ds.filter(r=>same(r.player_name));
+    const ds=(source.ds||[]).filter(r=>inRange(r.battle_date)&&r.points!=null&&Number.isFinite(Number(r.points))&&Number(r.points)>=0),dsMine=ds.filter(r=>same(r.player_name));
     const assigned=(source.assignments||[]).filter(r=>inRange(r.battle_date)&&Array.isArray(r.roster)&&r.roster.some(p=>same(p.name)&&p.role==='starter')&&ds.some(s=>s.battle_date===r.battle_date&&s.team===r.team));
     const battles=(source.battles||[]).filter(r=>inRange(r.battle_date)),ids=new Set(battles.map(b=>b.id));
     const arenaMine=(source.arena||[]).filter(r=>ids.has(r.battle_id)&&same(r.player_name));

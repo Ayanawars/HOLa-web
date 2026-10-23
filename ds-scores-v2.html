@@ -1088,7 +1088,9 @@ function dsV2Match(raw,registered){
 function dsV2Points(text){
   const clean=String(text||"").trim().replace(/[Oo]/g,"0").replace(/[Il|]/g,"1")
     .replace(/[.,\s]/g,"");
-  return /^\d{2,10}$/.test(clean)?Number(clean):null;
+  // A visible zero is a valid result and confirms attendance. Keep other
+  // single digits excluded so ranking numbers cannot become scores.
+  return /^(?:0|\d{2,10})$/.test(clean)?Number(clean):null;
 }
 function dsV2Read(engine,registered){
   const lines=(engine.lines||[]).filter(l=>l.text&&Number.isFinite(l.y))
