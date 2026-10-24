@@ -776,6 +776,15 @@
           <div class="status" id="ocrStatus"></div>
         </div>
       </section>
+      <section class="panel" aria-labelledby="textScoresTitle">
+        <h2 id="textScoresTitle">INTRODUCIR PUNTUACIONES POR TEXTO</h2>
+        <p id="textScoresHelp">Escribe o pega un jugador y su puntuación en cada línea. Acepta puntos sin separadores, con puntos o comas de miles, y valores como 7,2M. Los nombres deben pertenecer a la alianza.</p>
+        <label for="textScores" class="note">Jugador y puntuación</label>
+        <textarea id="textScores" rows="7" spellcheck="false" aria-describedby="textScoresHelp" placeholder="Ayana wars 7200000&#10;Dènise ᓚᘏᗢ 7.200.000&#10;Semiramirist 7,2M" style="display:block;width:100%;box-sizing:border-box;resize:vertical;margin-top:8px;padding:13px;border:1px solid var(--line,#31465d);border-radius:11px;background:#fffdf6;color:var(--ink,#173d61);font:inherit;line-height:1.7"></textarea>
+        <button class="btn" id="prepareTextScores" type="button">PREPARAR PUNTUACIONES</button>
+        <div class="status" id="textScoresStatus" role="status" aria-live="polite" style="white-space:pre-line"></div>
+        <p class="note">Se añadirán a la lista de abajo para revisarlas. Si un jugador ya está en la lista, se actualizarán sus puntos. Después pulsa GUARDAR y elige el día.</p>
+      </section>
       <section class="panel">
         <h2>✏️ PUNTUACIONES</h2>
         <div id="rankReviewPanel" role="alert" aria-live="assertive" hidden>
@@ -1365,6 +1374,88 @@
         d.querySelector(".del").onclick = () => d.remove();
         rows.appendChild(d);
       }
+      function textScorePoints(value) {
+        const raw = String(value || "").trim();
+        const compact = raw.match(/^(\d+(?:[.,]\d+)?)\s*([KMB])$/i);
+        let result;
+        if (compact) {
+          result = Math.round(Number(compact[1].replace(",", ".")) *
+            ({ K: 1e3, M: 1e6, B: 1e9 })[compact[2].toUpperCase()]);
+        } else if (/^\d+$/.test(raw) || /^\d{1,3}([., ])\d{3}(?:\1\d{3})*$/.test(raw)) {
+          result = Number(raw.replace(/[., ]/g, ""));
+        } else return null;
+        return Number.isSafeInteger(result) && result >= 0 ? result : null;
+      }
+
+      function parseTextScores(text, members) {
+        const allowed = new Map(members.map(name => [normName(canonicalMemberName(name)), name]));
+        const found = new Map(), errors = [];
+        String(text || "").split(/\r?\n/).forEach((raw, index) => {
+          const line = raw.trim();
+          if (!line) return;
+          let item = null, hasPoints = false;
+          // Test boundaries against the roster so digits inside a nickname
+          // (Andy 3, dAndrei20) never become part of the score.
+          for (const separator of line.matchAll(/\s+|[|;:=]/g)) {
+            const name = line.slice(0, separator.index).replace(/[\s|;:=]+$/, "").trim();
+            const score = line.slice(separator.index + separator[0].length).replace(/^[\s|;:=]+/, "");
+            const value = textScorePoints(score);
+            if (!name || value === null) continue;
+            hasPoints = true;
+            const key = normName(canonicalMemberName(name)), official = allowed.get(key);
+            if (official) { item = { name: official, points: value, key }; break; }
+          }
+          if (!item) {
+            errors.push(`Línea ${index + 1}: ${hasPoints ? "jugador no encontrado en la alianza" : "usa jugador y una puntuación válida"}. ${line}`);
+            return;
+          }
+          if (found.has(item.key) && found.get(item.key).points !== item.points) {
+            errors.push(`Línea ${index + 1}: ${item.name} aparece con dos puntuaciones diferentes.`);
+          } else found.set(item.key, item);
+        });
+        return { entries: [...found.values()], errors };
+      }
+
+      document.getElementById("prepareTextScores").onclick = async () => {
+        const button = document.getElementById("prepareTextScores");
+        const message = document.getElementById("textScoresStatus");
+        const input = document.getElementById("textScores");
+        if (!input.value.trim()) { message.textContent = "Escribe un jugador y su puntuación por línea."; return; }
+        if (ocrBtn.disabled) { message.textContent = "Espera a que termine la lectura de capturas."; return; }
+        button.disabled = true;
+        ocrBtn.disabled = true;
+        message.textContent = "Comprobando jugadores y puntuaciones…";
+        try {
+          await loadMemberNames();
+          const { entries, errors } = parseTextScores(input.value, memberNames);
+          if (errors.length) {
+            message.textContent = "Corrige estas líneas antes de continuar. No se ha añadido ninguna puntuación.\n" + errors.join("\n");
+            return;
+          }
+          if (!entries.length) throw new Error("No hay puntuaciones para preparar.");
+          for (const item of entries) {
+            const existing = [...rows.children].find(row =>
+              normName(canonicalMemberName(row.querySelector(".member-select")?.value || row.querySelector(".n")?.value)) === item.key);
+            if (existing) {
+              const select = existing.querySelector(".member-select");
+              select.value = item.name;
+              select.classList.add("has-selection");
+              const field = existing.querySelector(".p");
+              field.value = formatPoints(item.points);
+              field.dispatchEvent(new Event("input", { bubbles: true }));
+            } else add(item.name, item.points);
+          }
+          updateRankReviewPanel();
+          message.textContent = `✓ ${entries.length} puntuaciones preparadas. Revisa la lista y pulsa GUARDAR para elegir el día.`;
+          status.textContent = "Hay puntuaciones introducidas por texto pendientes de guardar.";
+        } catch (error) {
+          message.textContent = "No se pudieron preparar las puntuaciones: " + (error.message || "error desconocido");
+        } finally {
+          button.disabled = false;
+          ocrBtn.disabled = false;
+        }
+      };
+
       function points(s) {
         let t = String(s).replace(/\s/g, "").replace(/[Oo]/g, "0");
         let m = t.match(/(\d[\d.,]*)([KkMmBb])?/);
