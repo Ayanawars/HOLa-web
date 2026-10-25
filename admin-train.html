@@ -406,13 +406,8 @@
        ...(schedule.cycle.number===4?[
          '🔄 '+say('ÚLTIMA SEMANA DEL CICLO','FINAL WEEK OF THE CYCLE'),
          say('ESTA ES LA ÚLTIMA SEMANA DEL CICLO DE CUATRO SEMANAS. LA PRÓXIMA SEMANA SE REINICIA LA ROTACIÓN: QUIENES YA CONDUJERON PODRÁN VOLVER A SER ELEGIDOS SI CUMPLEN LOS REQUISITOS. LOS RESULTADOS Y EL HISTORIAL SE CONSERVAN.','THIS IS THE FINAL WEEK OF THE FOUR-WEEK CYCLE. NEXT WEEK THE ROTATION RESETS: PREVIOUS DRIVERS CAN BE SELECTED AGAIN IF THEY MEET THE REQUIREMENTS. RESULTS AND HISTORY ARE KEPT.'),''
-       ]:[]),
-       '━━━━━━━━━━━━━━━━━━━━','🎟️ '+say('RECORDATORIO DE TICKETS','TICKET REMINDER'),'',
-       say('🎟 Dona 3 tickets antes de que salga el tren. Si un conductor o suplente intenta subir sin donarlos, pierde su puesto y queda vetado esa semana y la siguiente. Un miembro todavía no seleccionado queda vetado de la siguiente semana.','🎟 Donate 3 tickets before the train departs. Drivers and substitutes who try to board without donating lose their place and are banned for that week and the following week. Members not yet selected are banned from the following week.'),'',
-       '━━━━━━━━━━━━━━━━━━━━','📖 '+say('NORMAS DEL TREN','TRAIN RULES'),
-       'https://ayanawars.github.io/HOLa-web/train.html','',
-       'HOLa · Heroes of Last Area');
-      return lines.join('\n');
+       ]:[]));
+      return lines.join('\n').trimEnd();
     }
     function refreshTrainMail(){
       if(!schedule)return;
