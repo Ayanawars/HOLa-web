@@ -112,12 +112,18 @@
       const {data:officer,error:officerErr}=await sb.from('players').select('name,rank').in('rank',['R4','R5']);if(officerErr)return false;
       return officer.some(p=>normalizeName(p.name)===normalizeName(admin.display_name));
     }
+    const hasSurveyData=p=>p.survey_completed===true
+      && numeric(p.thp)>0 && Number(p.hq_level)>0 && String(p.profession??'').trim()!==''
+      && [1,2,3].every(i=>String(p['squad'+i+'_type']??'').trim()!=='' && numeric(p['squad'+i+'_power'])>0)
+      && typeof p.t10==='boolean' && typeof p.supreme_lord_unlocked==='boolean';
+    const compareSurveyPlayers=(a,b)=>Number(hasSurveyData(b))-Number(hasSurveyData(a))
+      || numeric(b.thp)-numeric(a.thp)||String(a.name).localeCompare(String(b.name),lang);
     async function load(){
       $('status').textContent=t.loading;
       const fields='name,thp,squad1_type,squad1_power,squad2_type,squad2_power,squad3_type,squad3_power,t10,supreme_lord_unlocked,hq_level,profession,survey_completed,survey_completed_at,updated_at,created_at';
       const {data,error}=await sb.from('players').select(fields);
       if(error)throw error;
-      players=(data||[]).sort((a,b)=>numeric(b.thp)-numeric(a.thp)||String(a.name).localeCompare(String(b.name),lang));
+      players=(data||[]).sort(compareSurveyPlayers);
       $('memberCount').textContent=players.length;
       $('surveyCount').textContent=players.filter(p=>p.survey_completed===true).length;
       $('downloadBtn').disabled=false;$('pendingSurveyBtn').disabled=false;$('status').className='status ok';$('status').textContent=t.ready(players.length);
