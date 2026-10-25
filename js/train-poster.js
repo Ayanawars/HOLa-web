@@ -13,7 +13,11 @@ export function posterAward(schedule,entry,lang='es'){
     ||schedule.days.find(day=>day.source===entry.source)?.rankedSource||[];
   const row=rows.find(row=>playerKey(row.player_name)===playerKey(entry.name));
   const raw=entry.source==='VS'?(save?row?.saveTotal:row?.total):row?.points;
-  const score=raw!==null&&raw!==undefined&&raw!==''&&Number.isFinite(Number(raw))?(Number(raw)/1000000).toFixed(2)+'M':null;
+  const score=raw!==null&&raw!==undefined&&raw!==''&&Number.isFinite(Number(raw))
+    ?entry.source==='DONATIONS'
+      ?new Intl.NumberFormat(es?'es-ES':'en-GB',{maximumFractionDigits:0}).format(Number(raw))+say(' PUNTOS',' POINTS')
+      :(Number(raw)/1000000).toFixed(2)+'M'
+    :null;
   const item=schedule.days.find(day=>day.day===entry.day);
   const replacement=!!item?.actual&&playerKey(item.actual)!==playerKey(item.planned);
   const reason=!entry.name?say('PENDIENTE DE ASIGNAR','TO BE ASSIGNED'):replacement
