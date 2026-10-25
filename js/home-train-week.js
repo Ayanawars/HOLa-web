@@ -1,4 +1,4 @@
-import {trainRuleSections} from './train-rules.js?v=20261025-1';
+import {trainRuleSections} from './train-rules.js?v=20261025-i18n';
 
 const WEEK_MS=604800000;
 const anchorWeek='2026-10-19'; // Confirmed PUSH week; the calendar alternates weekly.
