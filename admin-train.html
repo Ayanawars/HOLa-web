@@ -367,7 +367,7 @@
         if(!row)return say('PUNTUACIÓN: ','SCORE: ')+say('Sin puntuación registrada','No recorded score');
         if(source==='VS')return say('TOTAL VS (LUN–VIE): ','VS TOTAL (MON–FRI): ')+millions(row.total)
           +(schedule.weekType==='save'?say(' · SAVE (LUN–JUE): ',' · SAVE (MON–THU): ')+millions(row.saveTotal):'');
-        return (source==='DONATIONS'?say('DONACIONES: ','DONATIONS: '):'DS '+(source==='DS_A'?'A':'B')+': ')+points(row.points)+say(' PUNTOS',' POINTS');
+        return (source==='DONATIONS'?say('DONACIONES: ','DONATIONS: '):'DS '+(source==='DS_A'?'A':'B')+': ')+millions(row.points);
       };
       const reason=source=>({
         VS:schedule.weekType==='save'
