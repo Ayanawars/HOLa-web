@@ -356,14 +356,17 @@
       const points=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))
         ?new Intl.NumberFormat(es?'es-ES':'en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value))
         :say('Sin puntuación registrada','No recorded score');
+      const millions=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))
+        ?(Number(value)/1000000).toFixed(2)+'M'
+        :say('Sin puntuación registrada','No recorded score');
       const key=name=>String(name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
       const ranking=source=>({VS:schedule.vsRanking,DS_B:schedule.teamB,DS_A:schedule.teamA,DONATIONS:schedule.donationRanking}[source]
         ||schedule.days.find(day=>day.source===source)?.rankedSource||[]);
       const score=(name,source)=>{
         const row=ranking(source).find(row=>key(row.player_name)===key(name));
         if(!row)return say('PUNTUACIÓN: ','SCORE: ')+say('Sin puntuación registrada','No recorded score');
-        if(source==='VS')return say('TOTAL VS (LUN–VIE): ','VS TOTAL (MON–FRI): ')+points(row.total)
-          +(schedule.weekType==='save'?say(' · SAVE (LUN–JUE): ',' · SAVE (MON–THU): ')+points(row.saveTotal):'');
+        if(source==='VS')return say('TOTAL VS (LUN–VIE): ','VS TOTAL (MON–FRI): ')+millions(row.total)
+          +(schedule.weekType==='save'?say(' · SAVE (LUN–JUE): ',' · SAVE (MON–THU): ')+millions(row.saveTotal):'');
         return (source==='DONATIONS'?say('DONACIONES: ','DONATIONS: '):'DS '+(source==='DS_A'?'A':'B')+': ')+points(row.points)+say(' PUNTOS',' POINTS');
       };
       const reason=source=>({
@@ -384,7 +387,7 @@
       for(const item of schedule.days){
         const driver=item.actual||item.planned;
         const replacement=!!item.actual&&key(item.actual)!==key(item.planned);
-        lines.push('📅 '+names[item.day]+' · '+date(item.date),'🚂 '+(driver||say('Pendiente de asignar','To be assigned')));
+        lines.push('📅 '+names[item.day]+' · '+date(item.date),(driver||say('Pendiente de asignar','To be assigned')));
         if(driver)lines.push(score(driver,item.source),say('MOTIVO: ','REASON: ')+(replacement
           ?say('SUSTITUCIÓN CONFIRMADA · ','CONFIRMED REPLACEMENT · ')+sources[item.source].toUpperCase()
           :reason(item.source)));
