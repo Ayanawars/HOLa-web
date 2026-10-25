@@ -346,7 +346,7 @@
     }
 
     let mailLanguage=localStorage.getItem('hola-train-mail-language')==='es'?'es':'en';
-    function mailDate(value,language=mailLanguage){return new Intl.DateTimeFormat(language==='es'?'es-ES':'en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))}
+    function mailDate(value,language=mailLanguage){return new Intl.DateTimeFormat(language==='es'?'es-ES':'en-GB',{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))}
     function buildTrainMail(language=mailLanguage){
       if(!schedule)return '';
       const es=language==='es',say=(a,b)=>es?a:b;
