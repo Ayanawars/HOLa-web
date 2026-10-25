@@ -95,7 +95,14 @@
     let players=[];
     const normalizeName=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
     const numeric=value=>{let raw=String(value??'').trim().toUpperCase().replace(/\s/g,'');const suffix=raw.includes('B')?'B':raw.includes('M')?'M':raw.includes('K')?'K':'';raw=raw.replace(/[^0-9.,-]/g,'');const separators=(raw.match(/[.,]/g)||[]).length;if(separators>1)raw=raw.replace(/[.,]/g,'');else raw=raw.replace(',','.');const n=Number(raw);if(!Number.isFinite(n))return 0;const factor=suffix==='B'?1e9:suffix==='M'?1e6:suffix==='K'?1e3:(Math.abs(n)>0&&Math.abs(n)<1000?1e6:1);return n*factor;};
-    const formatPower=value=>{const n=numeric(value);return n?Math.round(n):'';};
+    const powerNumberFormat=new Intl.NumberFormat(lang,{minimumFractionDigits:0,maximumFractionDigits:2});
+    const formatPower=value=>{
+      const n=numeric(value);if(!n)return '';
+      // Choose the unit after rounding so values near a boundary stay compact.
+      const magnitude=Math.round(Math.abs(n)/1e3)*1e3;
+      const [divisor,unit]=magnitude>=1e9?[1e9,'B']:magnitude>=1e6?[1e6,'M']:magnitude>=1e3?[1e3,'K']:[1,''];
+      return powerNumberFormat.format(n/divisor)+(unit?' '+unit:'');
+    };
     const squad=(type,power)=>[type||'',power?formatPower(power):''].filter(Boolean).join(' · ');
     const date=value=>value?new Intl.DateTimeFormat(lang,{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value)):'';
     async function deny(){await sb.auth.signOut().catch(()=>{});location.replace('admin-login.html');}
