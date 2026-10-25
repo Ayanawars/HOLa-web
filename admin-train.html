@@ -353,6 +353,27 @@
       const names=es?dayNames:['','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
       const sources=es?sourceNames:{VS:'Weekly VS',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donations'};
       const date=value=>mailDate(value,language);
+      const points=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))
+        ?new Intl.NumberFormat(es?'es-ES':'en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value))
+        :say('Sin puntuación registrada','No recorded score');
+      const key=name=>String(name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const ranking=source=>({VS:schedule.vsRanking,DS_B:schedule.teamB,DS_A:schedule.teamA,DONATIONS:schedule.donationRanking}[source]
+        ||schedule.days.find(day=>day.source===source)?.rankedSource||[]);
+      const score=(name,source)=>{
+        const row=ranking(source).find(row=>key(row.player_name)===key(name));
+        if(!row)return say('PUNTUACIÓN: ','SCORE: ')+say('Sin puntuación registrada','No recorded score');
+        if(source==='VS')return say('TOTAL VS (LUN–VIE): ','VS TOTAL (MON–FRI): ')+points(row.total)
+          +(schedule.weekType==='save'?say(' · SAVE (LUN–JUE): ',' · SAVE (MON–THU): ')+points(row.saveTotal):'');
+        return (source==='DONATIONS'?say('DONACIONES: ','DONATIONS: '):'DS '+(source==='DS_A'?'A':'B')+': ')+points(row.points)+say(' PUNTOS',' POINTS');
+      };
+      const reason=source=>({
+        VS:schedule.weekType==='save'
+          ?say('VS SAVE: PRIORIDAD POR CERCANÍA AL OBJETIVO DE LUNES A JUEVES, CUMPLIENDO EL MÍNIMO LOS CINCO DÍAS.','VS SAVE: PRIORITY BY CLOSENESS TO THE MONDAY–THURSDAY TARGET, MEETING THE MINIMUM ON ALL FIVE DAYS.')
+          :say('VS PUSH: MAYOR TOTAL DE PUNTOS ENTRE LOS CANDIDATOS DISPONIBLES, CUMPLIENDO EL MÍNIMO LOS CINCO DÍAS.','VS PUSH: HIGHEST TOTAL SCORE AMONG AVAILABLE CANDIDATES, MEETING THE MINIMUM ON ALL FIVE DAYS.'),
+        DS_B:say('DESERT STORM B: PUNTUACIÓN MÁS ALTA ENTRE LOS CANDIDATOS DISPONIBLES.','DESERT STORM B: HIGHEST SCORE AMONG AVAILABLE CANDIDATES.'),
+        DS_A:say('DESERT STORM A: PUNTUACIÓN MÁS ALTA ENTRE LOS CANDIDATOS DISPONIBLES.','DESERT STORM A: HIGHEST SCORE AMONG AVAILABLE CANDIDATES.'),
+        DONATIONS:say('DONACIONES: MAYOR PUNTUACIÓN ENTRE LOS CANDIDATOS DISPONIBLES QUE CUMPLEN EL MÍNIMO VS LOS CINCO DÍAS.','DONATIONS: HIGHEST SCORE AMONG AVAILABLE CANDIDATES WHO MEET THE VS MINIMUM ON ALL FIVE DAYS.')
+      }[source]||String(source).toUpperCase());
       const lines=['🚂 HOLa · '+say('TREN DE LA ALIANZA','ALLIANCE TRAIN'),'━━━━━━━━━━━━━━━━━━━━','',
        '📅 '+say('SEMANA DEL TREN','TRAIN WEEK')+' '+schedule.cycle.number+'/4',
        date(schedule.week)+' - '+date(schedule.weekEnd),'',
@@ -360,17 +381,32 @@
        date(schedule.sourceWeek)+' - '+date(addDays(schedule.sourceWeek,6)),
        say('TIPO DE SEMANA EVALUADA: ','EVALUATED WEEK TYPE: ')+schedule.weekType.toUpperCase(),'',
        '━━━━━━━━━━━━━━━━━━━━','⭐ '+say('CONDUCTORES DE LA SEMANA','THIS WEEK’S DRIVERS'),''];
-      for(const item of schedule.days)lines.push('📅 '+names[item.day]+' · '+date(item.date),'🚂 '+(item.actual||item.planned||say('Pendiente de asignar','To be assigned')),say('Selección: ','Selection: ')+sources[item.source],'');
+      for(const item of schedule.days){
+        const driver=item.actual||item.planned;
+        const replacement=!!item.actual&&key(item.actual)!==key(item.planned);
+        lines.push('📅 '+names[item.day]+' · '+date(item.date),'🚂 '+(driver||say('Pendiente de asignar','To be assigned')));
+        if(driver)lines.push(score(driver,item.source),say('MOTIVO: ','REASON: ')+(replacement
+          ?say('SUSTITUCIÓN CONFIRMADA · ','CONFIRMED REPLACEMENT · ')+sources[item.source].toUpperCase()
+          :reason(item.source)));
+        lines.push('');
+      }
       lines.push('━━━━━━━━━━━━━━━━━━━━','🔄 '+say('SUPLENTES DE LA SEMANA','THIS WEEK’S SUBSTITUTES'),'');
       for(const [key,spanish,english] of [['VS','VS · lunes a jueves','VS · Monday to Thursday'],['DS_B','Desert Storm B · viernes','Desert Storm B · Friday'],['DS_A','Desert Storm A · sábado','Desert Storm A · Saturday'],['DONATIONS','Donaciones · domingo','Donations · Sunday']]){
         lines.push(say(spanish,english));
         const pool=schedule.reservePools[key]||[];
-        lines.push(...(pool.length?pool.map((name,i)=>(i+1)+'. '+name):[say('Pendientes de asignar','To be assigned')]),'');
+        lines.push(...(pool.length?pool.map((name,i)=>(i+1)+'. '+name+' · '+score(name,key)):[say('Pendientes de asignar','To be assigned')]),'');
       }
       lines.push('━━━━━━━━━━━━━━━━━━━━','📌 '+say('SUSTITUCIONES Y ROTACIÓN','REPLACEMENTS AND ROTATION'),'',
        say('Si un titular no puede conducir, se seguirá el orden de los suplentes de su categoría.','If a driver is unavailable, replacements follow the order of the substitutes in their category.'),'',
        say('Ser suplente, o figurar como titular sin llegar a conducir, no consume tu turno ni te excluye de futuras selecciones, siempre que cumplas los requisitos.','Being a substitute, or being listed as a driver without actually driving, does not use your turn or exclude you from future selections, as long as you meet the requirements.'),'',
        say('Solo quien conduce realmente queda excluido durante el resto del ciclo de cuatro semanas.','Only players who actually drive are excluded for the rest of the four-week cycle.'),'',
+       '━━━━━━━━━━━━━━━━━━━━','📊 '+say('CRITERIOS DE SELECCIÓN','SELECTION CRITERIA'),'',
+       say('HABER CONDUCIDO YA EN ESTE CICLO IMPIDE REPETIR. PARA VS Y DONACIONES TAMBIÉN ES OBLIGATORIO ALCANZAR EL MÍNIMO DE 7.200.000,00 PUNTOS CADA UNO DE LOS CINCO DÍAS, DE LUNES A VIERNES. UN SOLO DÍA POR DEBAJO DEL MÍNIMO, O SIN REGISTRAR, DEJA FUERA.','PLAYERS WHO HAVE ALREADY DRIVEN IN THIS CYCLE CANNOT REPEAT. FOR VS AND DONATIONS, THE MINIMUM OF 7,200,000.00 POINTS MUST ALSO BE MET ON EACH OF THE FIVE DAYS, MONDAY TO FRIDAY. ONE DAY BELOW THE MINIMUM, OR WITHOUT A RECORDED SCORE, MEANS EXCLUSION.'),'',
+       say('Entre quienes cumplen, se aplica el orden de puntuación, la prioridad DS y las plazas disponibles. También se respetan las exclusiones de rango R1 y tickets.','Among eligible players, selection follows score order, DS priority and available places. R1 rank and ticket exclusions also apply.'),'',
+       ...(schedule.cycle.number===4?[
+         '🔄 '+say('ÚLTIMA SEMANA DEL CICLO','FINAL WEEK OF THE CYCLE'),
+         say('ESTA ES LA ÚLTIMA SEMANA DEL CICLO DE CUATRO SEMANAS. LA PRÓXIMA SEMANA SE REINICIA LA ROTACIÓN: QUIENES YA CONDUJERON PODRÁN VOLVER A SER ELEGIDOS SI CUMPLEN LOS REQUISITOS. LOS RESULTADOS Y EL HISTORIAL SE CONSERVAN.','THIS IS THE FINAL WEEK OF THE FOUR-WEEK CYCLE. NEXT WEEK THE ROTATION RESETS: PREVIOUS DRIVERS CAN BE SELECTED AGAIN IF THEY MEET THE REQUIREMENTS. RESULTS AND HISTORY ARE KEPT.'),''
+       ]:[]),
        '━━━━━━━━━━━━━━━━━━━━','🎟️ '+say('RECORDATORIO DE TICKETS','TICKET REMINDER'),'',
        say('🎟 Dona 3 tickets antes de que salga el tren. Si un conductor o suplente intenta subir sin donarlos, pierde su puesto y queda vetado esa semana y la siguiente. Un miembro todavía no seleccionado queda vetado de la siguiente semana.','🎟 Donate 3 tickets before the train departs. Drivers and substitutes who try to board without donating lose their place and are banned for that week and the following week. Members not yet selected are banned from the following week.'),'',
        '━━━━━━━━━━━━━━━━━━━━','📖 '+say('NORMAS DEL TREN','TRAIN RULES'),
