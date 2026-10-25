@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#082b43"><title>HOLa · Sugerencias</title><link rel="stylesheet" href="suggestions.css?v=20261025-1"></head>
+<body><main class="wrap">
+<nav class="top"><a class="back" href="index.html">‹ <span data-suggestion-key="back">Volver</span></a><select id="suggestionLanguage" aria-label="Language"></select></nav>
+<header class="hero"><div class="emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v13H4zM4 7l8 6 8-6M8 3h8"/></svg></div><div class="kicker">HOLa · HEROES OF LAST AREA</div><h1 data-suggestion-key="title">Buzón de sugerencias</h1><p data-suggestion-key="intro">¿Qué mejorarías en HOLa? Cuéntanos tu idea.</p></header>
+<form class="panel" id="suggestionForm">
+ <div class="field"><label for="memberName" data-suggestion-key="name">Miembro de HOLa</label><select id="memberName" required disabled aria-describedby="memberHint"><option value="">Cargando…</option></select><p class="hint" id="memberHint" data-suggestion-key="nameHint">Selecciona tu nombre oficial de la alianza.</p><button class="secondary" id="retryMembers" type="button" data-suggestion-key="refresh" hidden>Actualizar</button></div>
+ <div class="field"><label for="suggestionMessage" data-suggestion-key="message">Tu sugerencia</label><textarea id="suggestionMessage" required minlength="10" maxlength="2000" data-suggestion-placeholder="placeholder" aria-describedby="messageCount"></textarea><div class="counter" id="messageCount">0 / 2000</div></div>
+ <div class="trap" aria-hidden="true"><label for="contactWebsite">Website</label><input id="contactWebsite" tabindex="-1" autocomplete="off"></div>
+ <p class="privacy" data-suggestion-key="privacy">Solo los R4/R5 autorizados pueden leer las sugerencias.</p>
+ <button id="sendSuggestion" type="submit" disabled data-suggestion-key="send">Enviar sugerencia</button>
+ <p id="suggestionStatus" class="status" role="status" aria-live="polite"></p>
+</form>
+</main><script type="module" src="js/suggestions.js?v=20261025-1"></script></body></html>
