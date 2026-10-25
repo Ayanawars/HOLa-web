@@ -1676,7 +1676,7 @@ document.addEventListener('click',function(event){
 (()=>{const labels={"es":["Colmena","Mira tu posición en el mapa"],"en":["Hive","See your position on the map"],"fr":["Ruche","Consulte ta position sur la carte"],"de":["Allianznest","Sieh dir deine Position auf der Karte an"],"ro":["Stup","Vezi poziția ta pe hartă"],"pt":["Colmeia","Veja sua posição no mapa"],"uk":["Вулик","Переглянь свою позицію на карті"],"it":["Alveare","Guarda la tua posizione sulla mappa"],"pl":["Ul","Sprawdź swoją pozycję na mapie"],"tr":["Kovan","Haritadaki konumunu gör"],"ru":["Улей","Посмотри свою позицию на карте"]};function update(){const lang=document.documentElement.lang||localStorage.getItem('hola-language')||'en',text=labels[lang]||labels.en;document.querySelectorAll('[data-hive-home]').forEach(el=>el.textContent=text[Number(el.dataset.hiveHome)]);}new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});update();})();
 </script>
 <script src="js/home-updates.js?v=20261015-1"></script>
-<script type="module" src="js/home-train-week.js?v=20261025-1"></script>
+<script type="module" src="js/home-train-week.js?v=20261025-i18n"></script>
 </body>
 </html>
 
