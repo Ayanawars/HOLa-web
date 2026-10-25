@@ -5,6 +5,26 @@ export function posterDrivers(schedule){
     confirmed:!!item.actual,source:item.source
   }));
 }
+const playerKey=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+export function posterAward(schedule,entry,lang='es'){
+  const es=lang==='es',say=(a,b)=>es?a:b,save=schedule.weekType==='save';
+  const category=({VS:'VS '+(save?'SAVE':'PUSH'),DS_B:'DESERT STORM B',DS_A:'DESERT STORM A',DONATIONS:say('DONACIONES','DONATIONS')})[entry.source]||entry.source;
+  const rows=({VS:schedule.vsRanking,DS_B:schedule.teamB,DS_A:schedule.teamA,DONATIONS:schedule.donationRanking})[entry.source]
+    ||schedule.days.find(day=>day.source===entry.source)?.rankedSource||[];
+  const row=rows.find(row=>playerKey(row.player_name)===playerKey(entry.name));
+  const raw=entry.source==='VS'?(save?row?.saveTotal:row?.total):row?.points;
+  const score=raw!==null&&raw!==undefined&&raw!==''&&Number.isFinite(Number(raw))?(Number(raw)/1000000).toFixed(2)+'M':null;
+  const item=schedule.days.find(day=>day.day===entry.day);
+  const replacement=!!item?.actual&&playerKey(item.actual)!==playerKey(item.planned);
+  const reason=!entry.name?say('PENDIENTE DE ASIGNAR','TO BE ASSIGNED'):replacement
+    ?say('SUSTITUCIÓN CONFIRMADA','CONFIRMED REPLACEMENT')
+    :!score?say('SIN PUNTUACIÓN REGISTRADA','NO RECORDED SCORE')
+    :entry.source==='VS'?(save?say('MÁS CERCA DEL OBJETIVO LUN–JUE','CLOSEST TO MON–THU TARGET'):say('MAYOR TOTAL VS DISPONIBLE','HIGHEST AVAILABLE VS TOTAL'))
+    :entry.source==='DONATIONS'?say('MAYOR DONACIÓN DISPONIBLE · CUMPLE VS','HIGHEST AVAILABLE DONATION · VS QUALIFIED')
+    :say('MAYOR PUNTUACIÓN DS DISPONIBLE','HIGHEST AVAILABLE DS SCORE');
+  return {badge:category+(score?' · '+(entry.source==='VS'&&save?say('L–J: ','M–TH: '):'')+score:''),reason,
+    status:entry.confirmed?say('CONFIRMADO','CONFIRMED'):say('PLANIFICADO','PLANNED')};
+}
 async function bounded(task,timeoutMs=12000){
   let timer;try{return await Promise.race([task,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout')),timeoutMs)})])}finally{clearTimeout(timer)}
 }
@@ -22,7 +42,6 @@ export function renderTrainPoster(schedule,{lang='es',avatars=new Map(),logo=nul
   const c=canvas.getContext('2d');if(!c)throw Error('Canvas unavailable');
   const es=lang==='es',say=(a,b)=>es?a:b;
   const days=es?['','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']:['','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-  const sources=es?{VS:'VS semanal',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donaciones'}:{VS:'Weekly VS',DS_B:'Desert Storm B',DS_A:'Desert Storm A',DONATIONS:'Donations'};
   const date=value=>new Intl.DateTimeFormat(es?'es-ES':'en-GB',{day:'2-digit',month:'short',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
   const font=(size,bold=true)=>`${bold?700:500} ${size}px Arial, sans-serif`;
   const fit=(text,width,size,min=23)=>{while(size>min){c.font=font(size);if(c.measureText(text).width<=width)break;size--}c.font=font(size);return size};
@@ -47,8 +66,13 @@ export function renderTrainPoster(schedule,{lang='es',avatars=new Map(),logo=nul
     c.restore();c.strokeStyle='#c99e44';c.lineWidth=4;c.beginPath();c.arc(150,y+96,66,0,Math.PI*2);c.stroke();
     c.textAlign='left';c.fillStyle=accent;c.font=font(27);c.fillText(days[entry.day]+' - '+date(entry.date),245,y+21);
     const name=entry.name||say('Pendiente de asignar','To be assigned');
-    c.fillStyle='#163f59';fit(name,738,44);c.fillText(name,245,y+68,738);
-    c.font=font(23,false);c.fillStyle='#697b86';c.fillText((sources[entry.source]||'')+' / '+(entry.confirmed?say('Confirmado','Confirmed'):say('Planificado','Planned')),245,y+130);
+    c.fillStyle='#163f59';fit(name,738,42);c.fillText(name,245,y+60,738);
+    const award=posterAward(schedule,entry,lang);
+    const badgeColor=entry.source==='DONATIONS'?'#227553':entry.source==='DS_A'||entry.source==='DS_B'?'#405f96':'#087f9d';
+    c.fillStyle=badgeColor;c.beginPath();c.roundRect(245,y+112,758,39,10);c.fill();
+    c.fillStyle='#ffffff';fit(award.badge,728,27,20);c.fillText(award.badge,260,y+119,728);
+    const detail=award.reason+' · '+award.status;
+    c.fillStyle='#244d62';fit(detail,758,19,15);c.fillText(detail,245,y+163,758);
   }
   c.textAlign='center';c.fillStyle='#173f58';c.font=font(29);c.fillText(say('Dona 3 tickets antes de la salida.','Donate 3 tickets before departure.'),540,1770);
   c.font=font(24,false);c.fillText(say('Suplentes y normas en el correo semanal.','Substitutes and rules in the weekly mail.'),540,1816);
