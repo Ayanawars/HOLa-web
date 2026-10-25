@@ -1,0 +1,24 @@
+/* Current week's train criteria, immediately below the home header. */
+.home-train{margin:12px 10px 10px;color:#dff6ff;font-family:inherit}
+.home-train details{overflow:hidden;border:1px solid #4dcdf0;border-radius:19px;background:linear-gradient(125deg,#082e4c,#0d5270);box-shadow:0 7px 22px #083d5428}
+.home-train[data-mode=save] details{background:linear-gradient(125deg,#092f48,#16585b);border-color:#71d8d3}
+.home-train summary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:center;padding:17px 18px;cursor:pointer;list-style:none;touch-action:manipulation}
+.home-train summary::-webkit-details-marker{display:none}
+.home-train summary:focus-visible{outline:3px solid #a4ecff;outline-offset:-5px;border-radius:18px}
+.home-train__label{font-size:11px;font-weight:850;letter-spacing:.11em}
+.home-train__mode{grid-column:2;grid-row:1 / 3;padding:7px 13px;border:1px solid #83e7ff80;border-radius:12px;background:#50c9ef20;color:#b8efff;font-size:29px;font-weight:950;letter-spacing:.03em}
+.home-train[data-mode=save] .home-train__mode{color:#b6fff0;background:#69e4c21a;border-color:#8ff2de80}
+.home-train__dates{font-size:16px;font-weight:750;color:white}
+.home-train__cta{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;padding-top:10px;border-top:1px solid #90dafa38;font-size:13px;font-weight:750;color:#c6f1ff}
+.home-train__arrow{font-size:22px;line-height:1;transition:transform .2s}
+.home-train details[open] .home-train__arrow{transform:rotate(180deg)}
+.home-train__body{padding:18px;background:#f5fcff;color:#193e58;border-top:1px solid #7bd1e2}
+.home-train__body h2{margin:0;font-size:19px;line-height:1.3;color:#104c6a}
+.home-train__note{margin:9px 0 17px;font-size:13px;line-height:1.5;color:#41677c}
+.home-train__body h3{margin:18px 0 8px;font-size:14px;color:#096c89}
+.home-train__body ul{margin:0;padding-left:20px;font-size:13px;line-height:1.65}
+.home-train__body li+li{margin-top:7px}
+.home-train__body a{display:block;margin-top:19px;padding:12px;border-radius:11px;background:#0d607e;color:#fff;text-align:center;text-decoration:none;font-size:13px;font-weight:800}
+.home-train__auto{margin:12px 0 0;text-align:center;font-size:11px;color:#567483}
+@media(max-width:360px){.home-train summary{padding:14px}.home-train__label{font-size:10px;letter-spacing:.04em}.home-train__mode{font-size:25px;padding:7px 10px}.home-train__cta{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.home-train__arrow{transition:none}}
