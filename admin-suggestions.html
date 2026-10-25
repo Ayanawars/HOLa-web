@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#082b43"><title>HOLa · Sugerencias</title><link rel="stylesheet" href="suggestions.css?v=20261025-1"></head>
+<body><main class="wrap admin">
+<nav class="top"><a class="back" href="admin-center-hola_login.html">‹ <span data-suggestion-key="back">Volver</span></a><select id="suggestionLanguage" aria-label="Language"></select></nav>
+<header class="hero"><div class="emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v13H4zM4 7l8 6 8-6M8 3h8"/></svg></div><div class="kicker">HOLa · R4 / R5</div><h1 data-suggestion-key="inbox">Sugerencias de la alianza</h1><p data-suggestion-key="inboxIntro">Lee las ideas recibidas y marca las que ya has revisado.</p></header>
+<section class="panel" id="suggestionGuard"><p id="guardMessage" data-suggestion-key="checking" role="status">Comprobando acceso R4/R5…</p><a class="button" href="admin-login.html" id="suggestionLogin" data-suggestion-key="login" hidden>Iniciar sesión</a></section>
+<section id="suggestionInbox" hidden>
+ <div class="toolbar"><div class="filters" role="group"><button type="button" data-filter="new" aria-pressed="true" data-suggestion-key="new">Nuevas</button><button type="button" data-filter="reviewed" aria-pressed="false" data-suggestion-key="reviewed">Revisadas</button><button type="button" data-filter="all" aria-pressed="false" data-suggestion-key="all">Todas</button></div><button type="button" class="secondary" id="refreshSuggestions" data-suggestion-key="refresh">Actualizar</button></div>
+ <p class="count" id="suggestionsCount" aria-live="polite"></p><p id="inboxStatus" class="status" role="status"></p>
+ <div id="suggestionsList"></div><div class="footer-actions"><button class="secondary" id="moreSuggestions" type="button" data-suggestion-key="more" hidden>Cargar más</button></div>
+</section>
+</main><script type="module" src="js/admin-suggestions.js?v=20261025-1"></script></body></html>
