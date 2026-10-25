@@ -1118,6 +1118,7 @@
     .home-update.has-news .home-update__dot{background:#19ae63;box-shadow:0 0 0 2px #19ae6324}
     .home-update time{white-space:nowrap}
   </style>
+  <link rel="stylesheet" href="home-train-week.css?v=20261025-1">
 </head>
 <body>
   <div class="app">
@@ -1168,6 +1169,25 @@
       </div>
       <div class="hero__edge" aria-hidden="true"></div>
     </header>
+
+    <section class="home-train" id="homeTrainWeek" data-api="https://ovybstpiomphrouvqxmf.supabase.co" data-key="sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV" aria-label="Semana del tren">
+      <details>
+        <summary>
+          <span class="home-train__label" id="homeTrainLabel">TREN · ESTA SEMANA</span>
+          <strong class="home-train__mode" id="homeTrainMode">—</strong>
+          <span class="home-train__dates" id="homeTrainDates">…</span>
+          <span class="home-train__cta"><span id="homeTrainCta">Haz clic aquí para ver las normas</span><span class="home-train__arrow" aria-hidden="true">⌄</span></span>
+        </summary>
+        <div class="home-train__body">
+          <h2 id="homeTrainTitle">Normas de la semana</h2>
+          <p class="home-train__note" id="homeTrainNote"></p>
+          <div id="homeTrainRules"></div>
+          <a id="homeTrainLink" href="train.html">Ver planificación del tren</a>
+          <p class="home-train__auto" id="homeTrainAuto"></p>
+        </div>
+      </details>
+    </section>
+
 
     <section class="web-news" aria-label="Noticias de la web" data-i18n-aria="webNewsAria">
       <a class="web-news__bar" href="avatar-maker.html" aria-label="Crear avatar HOLa" data-i18n-aria="webNewsAvatarAria">
@@ -1656,6 +1676,7 @@ document.addEventListener('click',function(event){
 (()=>{const labels={"es":["Colmena","Mira tu posición en el mapa"],"en":["Hive","See your position on the map"],"fr":["Ruche","Consulte ta position sur la carte"],"de":["Allianznest","Sieh dir deine Position auf der Karte an"],"ro":["Stup","Vezi poziția ta pe hartă"],"pt":["Colmeia","Veja sua posição no mapa"],"uk":["Вулик","Переглянь свою позицію на карті"],"it":["Alveare","Guarda la tua posizione sulla mappa"],"pl":["Ul","Sprawdź swoją pozycję na mapie"],"tr":["Kovan","Haritadaki konumunu gör"],"ru":["Улей","Посмотри свою позицию на карте"]};function update(){const lang=document.documentElement.lang||localStorage.getItem('hola-language')||'en',text=labels[lang]||labels.en;document.querySelectorAll('[data-hive-home]').forEach(el=>el.textContent=text[Number(el.dataset.hiveHome)]);}new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});update();})();
 </script>
 <script src="js/home-updates.js?v=20261015-1"></script>
+<script type="module" src="js/home-train-week.js?v=20261025-1"></script>
 </body>
 </html>
 
