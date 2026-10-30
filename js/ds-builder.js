@@ -1027,9 +1027,12 @@ function autoAssign(){
   const power=new Map(starters.map(r=>[r.name,r.power==null?0:Number(r.power)||0]));
   const strength=k=>state.phase1[k].reduce((sum,name)=>sum+(power.get(name)||0),0);
   const hospitalByStrength=[...HOSP].sort((a,b)=>strength(b)-strength(a));
+  const previousPhase1=state.subs;
+  const followsPhase1=P2.every(k=>JSON.stringify(state.subsPhase2[k]||[])===JSON.stringify(previousPhase1[k]||[]));
   state.subs={H1:[],H2:[],H3:[],H4:[]};
   state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(a.power||0)-Number(b.power||0))
    .forEach((r,i)=>state.subs[hospitalByStrength[i%4]].push(r.name));
+  if(followsPhase1)for(const k of P2)state.subsPhase2[k]=HOSP.includes(k)?[...state.subs[k]]:[];
  }else if(phase==="phase2"){
   for(const k of P2)state.phase2[k]=[];
   state.phase2.SILO=sorted.slice(0,4);
@@ -1063,8 +1066,11 @@ function validate(){
  for(const [key,n]of [["INFO",2],["REF1",1],["REF2",1]])if(state.missions[key].length!==n)errors.push("Misión "+BUILDINGS[key].label+": "+state.missions[key].length+"/"+n+".");
  const missions=assignedNames(state.missions);if(new Set(missions).size!==missions.length)errors.push("Hay un jugador asignado a dos misiones simultáneas en Fase 1.");
  if(missions.some(n=>!HOSP.some(k=>state.phase1[k].includes(n))))errors.push("Las misiones de Info y refinerías deben salir de los hospitales; nadie abandona Science Hub.");
- const subsAssigned=assignedNames(state.subs),subNames=state.roster.filter(r=>r.role==="sub").map(r=>r.name);
- if(subsAssigned.length!==subNames.length||new Set(subsAssigned).size!==subsAssigned.length||subNames.some(n=>!subsAssigned.includes(n)))errors.push("Todos los suplentes deben tener un único hospital asignado.");
+ const subNames=state.roster.filter(r=>r.role==="sub").map(r=>r.name);
+ for(const [field,phaseLabel] of [["subs","Fase 1"],["subsPhase2","Fase 2"]]){
+  const subsAssigned=assignedNames(state[field]);
+  if(subsAssigned.length!==subNames.length||new Set(subsAssigned).size!==subsAssigned.length||subNames.some(n=>!subsAssigned.includes(n)))errors.push("Todos los suplentes deben tener exactamente un destino asignado en "+phaseLabel+".");
+ }
  if(!state.leader||!state.roster.some(r=>r.name===state.leader&&r.role==="starter"))errors.push("Elige un titular como responsable de la palabra clave.");
  if(state.alternate&&(!state.roster.some(r=>r.name===state.alternate&&r.role==="starter")||state.alternate===state.leader))errors.push("El responsable alternativo debe ser otro titular.");
  if(!state.keyword.trim())errors.push("Define la palabra clave del Último Asalto.");
@@ -1074,7 +1080,8 @@ function renderValidation(){if(!state)return;const {errors,warnings}=validate();
 function groupText(phaseKey,lang){
  const obj=state[phaseKey],targets=phaseKey==="phase1"?TARGET1:TARGET2;
  const trLabels={H1:"Saha Hastanesi 1",H2:"Saha Hastanesi 2",H3:"Saha Hastanesi 3",H4:"Saha Hastanesi 4",HUB:"Bilim Merkezi",INFO:"Bilgi Merkezi",SILO:"Nükleer Silo",ARSENAL:"Cephanelik",MERC:"Paralı Asker Fabrikası"};
- return Object.keys(targets).map(k=>(lang==="tr"?trLabels[k]:BUILDINGS[k].label)+": "+(obj[k].join(", ")||"—")+(HOSP.includes(k)&&state.subs[k]?.length?" ["+(lang==="tr"?"YEDEK":lang==="en"?"SUB":"SUPLENTES")+": "+state.subs[k].join(", ")+"]":"")).join("\n");
+ const subMap=phaseKey==="phase1"?state.subs:state.subsPhase2;
+ return Object.keys(targets).map(k=>(lang==="tr"?trLabels[k]:BUILDINGS[k].label)+": "+(obj[k].join(", ")||"—")+(subMap[k]?.length?" ["+(lang==="tr"?"YEDEK":lang==="en"?"SUB":"SUPLENTES")+": "+subMap[k].join(", ")+"]":"")).join("\n");
 }
 function buildMail(){if(!state)return "";const en=state.language==="en",t=state.team,head="HOLa · DESERT STORM · TEAM "+t+"\n"+state.templateName+" · "+state.battle_date+" · "+state.serverTime+" SERVER\n";
  if(state.language==="tr")return head+"\nFAZ 1 (00:00–10:00)\n"+groupText("phase1","tr")+"\n\nÖZEL GÖREVLER (hastanelerden)\nInfo Center: "+state.missions.INFO.join(", ")+"\nPetrol Rafinerisi 1: "+state.missions.REF1.join(", ")+"\nPetrol Rafinerisi 2: "+state.missions.REF2.join(", ")+"\nScience Hub oyuncuları merkezden ayrılmaz.\n\nFAZ 2 (10:00'DAN SONRA)\n"+groupText("phase2","tr")+"\n\nKARŞILIKLI DESTEK\nArsenal ↔ Info Center. Mercenary Factory ↔ Science Hub.\n\nYEDEKLER\nSahada en fazla 20 oyuncu bulunabilir. Asil oyuncular savaştan 5 dakika önce girebilir; yedekler ancak savaş başladıktan sonra boş kontenjan varsa girebilir. Birlikleri biten oyuncu çıkarak yer açabilir. Her yedek, kimin çıktığına bakmadan DOĞRUDAN kendi hastanesine gider. Başka bina seçmeyin.\n\nSON HÜCUM (YALNIZCA EMİRLE)\nKod sözcüğü: "+state.keyword+" · Komut veren: "+(state.leader||"Henüz seçilmedi")+(state.alternate?" · Yedek: "+state.alternate:"")+"\nSavaşın sonuna doğru az farkla gerideysek ve kod sözcüğü yazılırsa: hastaneleri terk edin, tüm uygun oyuncular Nuclear Silo'ya; Info Center'ı ele geçirip tutun.\n\nYayımlanan haritayı HOLa Desert Storm sayfasında inceleyin.";
@@ -1103,7 +1110,7 @@ async function copyPrevious(){
   const old=stateReady(data[0].draft);state.templateName=old.templateName;state.keyword=old.keyword;state.language=old.language;
   // Solo copiamos los destinos de participantes que estén en la convocatoria actual.
   const starters=new Set(state.roster.filter(r=>r.role==="starter").map(r=>r.name)),subs=new Set(state.roster.filter(r=>r.role==="sub").map(r=>r.name));
-  for(const field of ["phase1","phase2","missions","subs"])for(const k of Object.keys(state[field]))state[field][k]=(old[field][k]||[]).filter(n=>(field==="subs"?subs:starters).has(n));
+  for(const field of ["phase1","phase2","missions","subs","subsPhase2"])for(const k of Object.keys(state[field]))state[field][k]=(old[field][k]||[]).filter(n=>(field==="subs"||field==="subsPhase2"?subs:starters).has(n));
   if(starters.has(old.leader))state.leader=old.leader;if(starters.has(old.alternate))state.alternate=old.alternate;
   syncSetup();mutate();notice("Plantilla del "+data[0].battle_date+" copiada. Comprueba los puestos vacíos y asigna los nuevos jugadores.","success");
  }catch(e){notice("No se pudo copiar la anterior: "+e.message,"error");}
@@ -1117,7 +1124,7 @@ async function saveTemplate(){
  if(!state)return;const name=$("templateName").value.trim();
  if(!name){notice("Pon un nombre a la plantilla.","error");return;}
  const errors=validate().errors;if(errors.length){notice("Completa y revisa ambas fases antes de guardar una plantilla. "+errors[0],"error");return;}
- try{const layout={version:1,phase1:state.phase1,phase2:state.phase2,missions:state.missions,subs:state.subs,keyword:state.keyword,leader:state.leader,alternate:state.alternate,serverTime:state.serverTime,language:state.language};
+ try{const layout={version:1,phase1:state.phase1,phase2:state.phase2,missions:state.missions,subs:state.subs,subsPhase2:state.subsPhase2,keyword:state.keyword,leader:state.leader,alternate:state.alternate,serverTime:state.serverTime,language:state.language};
  const {error}=await sb.from("desert_storm_templates").upsert({team:state.team,template_name:name,layout,updated_at:new Date().toISOString()},{onConflict:"team,template_name"});
  if(error)throw error;await loadTemplates();notice("✓ Plantilla «"+name+"» guardada en Supabase. Puedes reutilizarla en futuras jornadas.","success");
  }catch(e){notice("No se pudo guardar la plantilla: "+e.message,"error");}
@@ -1125,10 +1132,11 @@ async function saveTemplate(){
 function loadTemplate(){
  const chosen=$("storedTemplate").value,row=chosen===""?null:storedTemplates[Number(chosen)];if(!row){notice("Elige una plantilla guardada.","error");return;}
  const l=row.layout||{},starters=new Set(state.roster.filter(r=>r.role==="starter").map(r=>r.name)),subs=new Set(state.roster.filter(r=>r.role==="sub").map(r=>r.name));
- for(const field of ["phase1","phase2","missions","subs"]){
+ for(const field of ["phase1","phase2","missions","subs","subsPhase2"]){
   if(!l[field])continue;
-  for(const k of Object.keys(state[field]))state[field][k]=(Array.isArray(l[field][k])?l[field][k]:[]).filter(n=>(field==="subs"?subs:starters).has(n));
+  for(const k of Object.keys(state[field]))state[field][k]=(Array.isArray(l[field][k])?l[field][k]:[]).filter(n=>(field==="subs"||field==="subsPhase2"?subs:starters).has(n));
  }
+ if(!l.subsPhase2&&l.subs)for(const k of P2)state.subsPhase2[k]=HOSP.includes(k)?[...state.subs[k]]:[];
  state.templateName=row.template_name;
  if(typeof l.keyword==="string")state.keyword=l.keyword;
  if(typeof l.language==="string")state.language=l.language;
