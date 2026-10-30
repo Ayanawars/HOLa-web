@@ -970,7 +970,7 @@ function renderMap(){
  if(phase==="final"){$("buildingList").innerHTML='<div class="building"><h3>☢️ Nuclear Silo</h3><p>Todos los jugadores disponibles se concentran para tomar y mantener el Silo.</p></div><div class="building"><h3>📡 Info Center</h3><p>Tomar y mantener para aumentar los puntos del equipo. Abandonar los hospitales.</p></div>';return;}
  $("buildingList").innerHTML=Object.keys(targets).map(k=>{const b=BUILDINGS[k],names=obj[k]||[],unused=freeStarters(obj);return '<article class="building '+(selectedBuilding===k?"target":"")+' '+(names.length!==targets[k]?"missing":"")+'" id="building-'+k+'" data-slot="'+k+'"><div class="building-head"><h3>'+b.icon+' '+esc(b.label)+'</h3><span class="counter '+(names.length!==targets[k]?"warn":"")+'">'+names.length+'/'+targets[k]+'</span></div><div class="people">'+listPersons(names)+'</div><div class="assign-control"><select class="assign-select" aria-label="Asignar jugador a '+esc(b.label)+'"><option value="">Elegir titular libre</option>'+unused.map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+' · '+(r.power==null?"?":number(r.power)+"M")+'</option>').join("")+'</select><button type="button" class="btn small assign-btn">＋</button></div></article>';}).join("");
  if(phase==="phase1")renderSpecials();
- if(phase==="phase2")$("specialList").innerHTML='<div class="building"><h3>↔ Arsenal / Info Center</h3><p>Apoyo mutuo entre ambos edificios cuando sea necesario.</p></div><div class="building"><h3>↔ Mercenary / Science Hub</h3><p>Apoyo mutuo entre ambos edificios cuando sea necesario.</p></div>';
+ if(phase==="phase2")renderPhase2Subs();
 }
 function renderSpecials(){
  const groups=[["INFO","Info Center · 2 misiones",2],["REF1","Refinería 1 · 1 misión",1],["REF2","Refinería 2 · 1 misión",1],...HOSP.map(k=>["SUB:"+k,"Suplentes · "+BUILDINGS[k].label,null])];
@@ -978,6 +978,23 @@ function renderSpecials(){
  const subs=state.roster.filter(r=>r.role==="sub");
  $("specialList").innerHTML=groups.map(([key,title,count])=>{const sub=key.startsWith("SUB:"),slot=sub?key.slice(4):key,names=sub?state.subs[slot]:state.missions[slot],pool=sub?subs:hospitalStarters,already=new Set(Object.values(sub?state.subs:state.missions).flat());
   return '<article class="building" data-special="'+(sub?"SUB":slot)+'" data-slot="'+slot+'"><div class="building-head"><h3>'+esc(title)+'</h3><span class="counter">'+names.length+(count!=null?"/"+count:"")+'</span></div><div class="people">'+listPersons(names,sub?"sub":"mission")+'</div><div class="assign-control"><select class="assign-select" aria-label="Asignar '+esc(title)+'"><option value="">Elegir '+(sub?"suplente":"titular de hospital")+'</option>'+pool.filter(r=>!already.has(r.name)).map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join("")+'</select><button type="button" class="btn small assign-btn">＋</button></div></article>';}).join("");
+}
+function renderPhase2Subs(){
+ const subs=state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(b.power||0)-Number(a.power||0));
+ const assigned=Object.values(state.subsPhase2).flat().length;
+ const cards=subs.map(r=>{
+  const destination=P2.find(k=>state.subsPhase2[k].includes(r.name))||"";
+  return '<div class="phase2-sub-row"><div><strong>'+esc(r.name)+'</strong><small> '+(r.power==null?'THP pendiente':number(r.power)+'M')+'</small></div>'+
+   '<select class="sub-phase2-target" data-sub-player="'+esc(r.name)+'" aria-label="Destino del suplente '+esc(r.name)+'">'+
+   '<option value=""'+(destination?'':' selected')+'>Elegir destino</option>'+
+   P2.map(k=>'<option value="'+k+'"'+(k===destination?' selected':'')+'>'+esc(BUILDINGS[k].label)+'</option>').join('')+
+   '</select></div>';
+ }).join("");
+ $("specialList").innerHTML=
+  '<div class="building phase2-sub-panel"><div class="building-head"><h3>🔵 Destinos de suplentes · Fase 2</h3><span class="counter '+(assigned!==subs.length?'warn':'')+'">'+assigned+'/'+subs.length+'</span></div>'+
+  '<p class="muted">Elige el edificio al que debe ir cada suplente cuando entre desde el minuto 10. Los más fuertes pueden defender Silo, Science Hub, Arsenal, Info Center o Mercenary. No ocupan plazas de titular.</p>'+
+  '<div class="phase2-sub-grid">'+(cards||'<p class="muted">No hay suplentes inscritos.</p>')+'</div></div>'+
+  '<div class="building"><h3>↔ Apoyo entre edificios</h3><p>Arsenal ↔ Info Center</p><p>Mercenary ↔ Science Hub</p><p class="muted">Antes del minuto 10, el suplente sigue el hospital de Fase 1. Al entrar a partir del minuto 10, va al destino de Fase 2.</p></div>';
 }
 function autoAssign(){
  if(!state||phase==="final")return;
@@ -1279,6 +1296,7 @@ function events(){
  $("autoAssign").onclick=autoAssign;$("fillUnassigned").onclick=fillUnassignedSlots;$("clearPhase").onclick=()=>{if(phase==="final")return;for(const k of Object.keys(phaseSlots()))phaseSlots()[k]=[];mutate();};
  $("pins").addEventListener("click",e=>{const k=e.target.closest("[data-building]")?.dataset.building;if(!k)return;selectedBuilding=k;renderMap();$("building-"+k)?.scrollIntoView({behavior:"smooth",block:"center"});});
  $("buildingList").addEventListener("click",e=>{const card=e.target.closest("[data-slot]");if(!card)return;const k=card.dataset.slot;if(e.target.matches("[data-remove]")){removePerson(k,e.target.dataset.remove);return;}if(e.target.closest(".assign-btn")){const select=card.querySelector(".assign-select");assignPerson(k,select?.value);}});
+ $("specialList").addEventListener("change",e=>{if(e.target.matches(".sub-phase2-target"))setPhase2SubDestination(e.target.dataset.subPlayer,e.target.value);});
  $("specialList").addEventListener("click",e=>{const card=e.target.closest("[data-special]");if(!card)return;const type=card.dataset.special,slot=card.dataset.slot;if(e.target.matches("[data-remove]"))removeSpecial(type,slot,e.target.dataset.remove);else if(e.target.closest(".assign-btn")){selectedBuilding=slot;addSpecial(type,card.querySelector(".assign-select")?.value);}});
  $("copyMail").onclick=()=>copyText("mailOutput");$("copyAnnouncement").onclick=()=>copyText("announcement");
  $("announcement").addEventListener("input",updateAnnounceCount);$("refreshAnnouncement").onclick=()=>{$("announcement").value=buildAnnouncement();updateAnnounceCount();};$("refreshMail").onclick=()=>{$("mailOutput").value=buildMail();};
