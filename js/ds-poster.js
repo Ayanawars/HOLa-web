@@ -39,12 +39,12 @@ function posterSubLines(ctx,names,maxWidth){
 }
 function posterCardHeight(ctx,which,k,w){
  const names=state[which][k]||[];
- const subs=HOSP.includes(k)?state.subs[k]||[]:[];
+ const subs=(which==="phase1"?state.subs:state.subsPhase2||state.subs)?.[k]||[];
  const subLines=posterSubLines(ctx,subs,w-40);
  return Math.max(which==="phase1"?166:108,53+Math.max(names.length,1)*23+(subLines.length?13+subLines.length*19:0)+13);
 }
 function posterCard(ctx,which,k,rect,tr,trBuildings,mapTop){
- const b=BUILDINGS[k],names=state[which][k]||[],subs=HOSP.includes(k)?state.subs[k]||[]:[];
+ const b=BUILDINGS[k],names=state[which][k]||[],subs=(which==="phase1"?state.subs:state.subsPhase2||state.subs)?.[k]||[];
  const {x,y,w,h}=rect,Y=mapTop+y;
  const missionFor=which==="phase1"?state.missions:{};
  const blue="#89d4ff",green="#94ffc0",gold="#f4d584";
@@ -111,6 +111,18 @@ async function createPoster(what="phase1"){
     const overflow=bottom-842;if(overflow>0)for(const k of column)layout[k].y-=overflow;
    }
   }
+  if(which==="phase2"){
+   for(const column of [["INFO","H1","H3"],["ARSENAL","SILO","MERC"],["H4","H2","HUB"]]){
+    let last=8;
+    for(const k of column){layout[k].y=Math.max(layout[k].y,last);last=layout[k].y+layout[k].h+9;}
+    const overflow=last-9-842;
+    if(overflow>0){
+     const shift=Math.min(overflow,layout[column[0]].y-8);
+     for(const k of column)layout[k].y-=shift;
+     if(overflow>shift){let top=8;for(const k of column){layout[k].y=top;top+=layout[k].h+9;}}
+    }
+   }
+  }
   if(which==="phase1"){
    posterMission(ctx,"INFO",{x:326,y:73,w:304},tr,trBuildings,mapTop);
    posterMission(ctx,"REF1",{x:20,y:217,w:285},tr,trBuildings,mapTop);
@@ -124,7 +136,7 @@ async function createPoster(what="phase1"){
    posterType(ctx,tr?"Bilgi merkezi ve rafineriler: hastanelerden görevlendirildi.":"Info Center and refineries: missions assigned from hospitals.",34,offset+1112,1005,19,"#d4e9eb",750);
   }else{
    posterType(ctx,"ARSENAL ↔ INFO CENTER",34,offset+1068,1005,23,"#a1e5ce",900);
-   posterType(ctx,tr?"YEDEKLER: KENDİ HASTANELERİNE":"BLUE: SUBSTITUTES · GO TO YOUR ASSIGNED HOSPITAL",34,offset+1112,1005,21,"#89d4ff",900);
+   posterType(ctx,tr?"YEDEKLER: FAZ 2 HEDEFİNE":"BLUE: SUBSTITUTES · GO TO YOUR PHASE 2 DESTINATION",34,offset+1112,1005,21,"#89d4ff",900);
   }
   posterType(ctx,(tr?"SON HÜCUM: ":"FINAL: ")+state.keyword+" · "+(state.leader||(tr?"Komutan belirlenmedi":"Caller TBD"))+" · HOLa",34,offset+1162,1005,23,"#f0d17e",900);
   posterType(ctx,"HEROES OF LAST AREA",35,offset+1191,1005,14,"#90b7c6",850);
