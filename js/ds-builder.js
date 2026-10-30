@@ -197,7 +197,7 @@ async function loadDraft(show=true){
   state.serverTime=src?.serverTime||(t==="A"?"18:00":"09:00");
   phase="phase1";selectedBuilding="H1";
   proposals=[];rejectedOCR=new Map();ocrHasRead=false;
-  syncSetup();renderRoster();renderProposals();mutate();renderSavedDrafts();
+  invalidateBulkRoster();syncSetup();renderRoster();renderProposals();mutate();renderSavedDrafts();
   localStorage.setItem("hola-ds-builder-current",JSON.stringify({battle_date:d,team:t}));
   loadTemplates().catch(e=>console.warn("Plantillas DS:",e));
   if(crossWarning)notice("Jornada recuperada, pero comprueba las inscripciones antes de publicar: "+crossWarning,"error");
@@ -236,6 +236,119 @@ function addManualPlayer(){
   status.textContent=message;status.className="notice error";
   notice(message,"error");return false;
  }
+}
+
+let bulkRosterPreviewSignature="";
+function bulkSignature(){
+ return JSON.stringify({
+  text:$("bulkRosterText").value,replace:$("bulkReplace").checked,
+  date:state?.battle_date,team:state?.team,
+  roster:state?.roster.map(r=>[r.name,r.role]).sort((a,b)=>a[0].localeCompare(b[0])),
+  other:[...rosterOther].sort()
+ });
+}
+function invalidateBulkRoster(){
+ bulkRosterPreviewSignature="";
+ $("bulkApply").disabled=true;
+ $("bulkPreviewPanel").hidden=true;
+ $("bulkStatus").textContent="";
+ $("bulkStatus").className="muted";
+}
+function evaluateBulkRoster(){
+ const errors=[],parsed=[],seen=new Set();
+ const lines=$("bulkRosterText").value.split(/\r?\n/);
+ for(let i=0;i<lines.length;i++){
+  const original=lines[i].trim();
+  if(!original)continue;
+  if(/^(?:fuerza\s+especial\s*[ab]|(?:team|equipo)\s*[ab]|desert\s+storm|(?:titulares?|suplentes?|starters?|substitutes?)\s*(?:\(\s*\d+\s*\))?)\s*[:\-–—]?\s*$/i.test(original))continue;
+  const cleaned=original.replace(/^(?:\d{1,3}[.)]\s*|[-*•]\s*)/,"").trim();
+  const found=cleaned.match(/^(.+?)\s*[-–—:]\s*(titular|suplente|starter|substitute|reserve)\s*\.?$/i);
+  if(!found){errors.push("Línea "+(i+1)+": usa Nombre - Titular o Nombre - Suplente ("+original+").");continue;}
+  const rawName=found[1].trim();
+  const name=canonical(rawName);
+  if(!name){errors.push("Línea "+(i+1)+": «"+rawName+"» no coincide con un miembro actual de HOLa.");continue;}
+  const key=normal(name),role=/^(titular|starter)$/i.test(found[2])?"starter":"sub";
+  if(seen.has(key)){errors.push("Línea "+(i+1)+": «"+name+"» está repetido en el texto.");continue;}
+  seen.add(key);
+  if(rosterOther.has(key)){errors.push("Línea "+(i+1)+": «"+name+"» ya pertenece al otro equipo en esta jornada.");continue;}
+  parsed.push({name,role,line:i+1});
+ }
+ if(!parsed.length)errors.push("No hay participantes válidos para importar.");
+ const replace=$("bulkReplace").checked;
+ const planned=replace?[]:state.roster.map(r=>({...r}));
+ let additions=0,unchanged=0,roleChanges=0,removed=0;
+ for(const person of parsed){
+  const previous=state.roster.find(r=>normal(r.name)===normal(person.name));
+  if(!replace&&previous){
+   if(previous.role!==person.role)errors.push("Línea "+person.line+": «"+person.name+"» ya figura como "+(previous.role==="starter"?"Titular":"Suplente")+". Marca «Reemplazar convocatoria» para cambiarlo.");
+   else unchanged++;
+   continue;
+  }
+  if(replace){
+   if(previous&&previous.role!==person.role)roleChanges++;
+   else if(previous)unchanged++;
+   else additions++;
+   planned.push({name:person.name,role:person.role,power:memberTHP(person.name)});
+  }else{
+   additions++;
+   planned.push({name:person.name,role:person.role,power:memberTHP(person.name)});
+  }
+ }
+ if(replace)removed=state.roster.filter(old=>!planned.some(p=>normal(old.name)===normal(p.name))).length;
+ const starter=planned.filter(r=>r.role==="starter").length,sub=planned.filter(r=>r.role==="sub").length;
+ if(starter>20)errors.push("Demasiados titulares: "+starter+"/20.");
+ if(sub>10)errors.push("Demasiados suplentes: "+sub+"/10.");
+ return {errors,parsed,planned,starter,sub,additions,unchanged,roleChanges,removed,replace};
+}
+function previewBulkRoster(){
+ if(!state)return;
+ const result=evaluateBulkRoster();
+ const box=$("bulkPreviewPanel");
+ box.hidden=false;
+ const summary="<strong>"+result.parsed.length+" reconocidos · "+result.starter+"/20 titulares · "+result.sub+"/10 suplentes</strong>"+
+  "<p class=\"muted\">"+(result.replace?"Reemplazar lista: ":"Añadir a la lista: ")+result.additions+" nuevos, "+result.unchanged+" sin cambios"+
+  (result.replace?", "+result.roleChanges+" cambios de tipo y "+result.removed+" bajas.":".")+"</p>";
+ const problems=result.errors.length?
+  "<div class=\"notice error\"><strong>Corrige estas incidencias antes de importar:</strong><ul>"+
+  result.errors.map(e=>"<li>"+esc(e)+"</li>").join("")+"</ul></div>":
+  "<div class=\"notice success\">✓ Lista válida. Puedes confirmar la importación. El THP se obtiene de Supabase.</div>";
+ const details=result.parsed.length?"<details><summary>Ver los "+result.parsed.length+" jugadores reconocidos</summary><ol>"+
+  result.parsed.map(p=>"<li>"+esc(p.name)+" — "+(p.role==="starter"?"Titular":"Suplente")+"</li>").join("")+
+  "</ol></details>":"";
+ box.innerHTML=summary+problems+details+
+  (!result.errors.length&&(result.starter<20||result.sub<10)?"<p class=\"muted\">Convocatoria incompleta: puedes añadir más jugadores después.</p>":"");
+ $("bulkApply").disabled=!!result.errors.length;
+ bulkRosterPreviewSignature=result.errors.length?"":bulkSignature();
+ $("bulkStatus").textContent=result.errors.length?"No se ha modificado la convocatoria.":"Revisión completa. Confirma para aplicar los cambios.";
+ $("bulkStatus").className="notice "+(result.errors.length?"error":"info");
+}
+function applyBulkRoster(){
+ if(!state||!bulkRosterPreviewSignature||bulkRosterPreviewSignature!==bulkSignature()){
+  invalidateBulkRoster();
+  notice("La convocatoria ha cambiado. Comprueba de nuevo el texto antes de importarlo.","error");return;
+ }
+ const result=evaluateBulkRoster();
+ if(result.errors.length){previewBulkRoster();return;}
+ if(result.replace&&state.roster.length&&!window.confirm(
+  "¿Reemplazar los "+state.roster.length+" participantes actuales por "+result.planned.length+"? Se quitarán las asignaciones de los jugadores eliminados o que cambien de tipo."
+ ))return;
+ if(result.replace){
+  for(const old of state.roster){
+   const next=result.planned.find(p=>normal(p.name)===normal(old.name));
+   if(!next||next.role!==old.role)removeAssignments(old.name);
+  }
+  const starterNames=new Set(result.planned.filter(p=>p.role==="starter").map(p=>normal(p.name)));
+  if(!starterNames.has(normal(state.leader)))state.leader="";
+  if(!starterNames.has(normal(state.alternate)))state.alternate="";
+ }
+ state.roster=result.planned;
+ renderRoster();mutate();
+ bulkRosterPreviewSignature="";
+ $("bulkApply").disabled=true;
+ $("bulkPreviewPanel").hidden=true;
+ $("bulkStatus").textContent="✓ Texto importado: "+result.starter+" titulares, "+result.sub+" suplentes. Guarda el borrador para sincronizarlo con HOLa.";
+ $("bulkStatus").className="notice success";
+ notice("✓ Participantes importados en Team "+state.team+". Guarda el borrador para conservarlos en Supabase.","success");
 }
 function renderStats(){
  if(!state)return;
@@ -1125,6 +1238,8 @@ function events(){
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=addManualPlayer;
+ $("bulkRosterText").addEventListener("input",invalidateBulkRoster);$("bulkReplace").addEventListener("change",invalidateBulkRoster);
+ $("bulkCheck").onclick=previewBulkRoster;$("bulkApply").onclick=applyBulkRoster;
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
  $("refreshTHP").onclick=async()=>{const button=$("refreshTHP");button.disabled=true;try{const n=await refreshOfficialTHP();notice("✓ THP actualizado desde Supabase: "+n+"/"+state.roster.length+" participantes con datos.","success");}catch(error){notice("No se pudo actualizar THP: "+String(error?.message||error),"error");}finally{button.disabled=false;}};
  $("teamAAuditOpen").onclick=()=>{$("teamAAuditResult").hidden=!$("teamAAuditResult").hidden;renderTeamAAudit();};
