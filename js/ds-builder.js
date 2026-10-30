@@ -18,7 +18,7 @@ const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
 function notice(msg,type="info"){$("message").textContent=msg;$("message").className="notice "+type;}
-function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]}};}
+function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]},subsPhase2:{H1:[],H2:[],H3:[],H4:[],SILO:[],ARSENAL:[],MERC:[],HUB:[],INFO:[]}};}
 function canonical(raw){
  const key=normal(raw);
  const aliases={"mirliva":"Mirrliva","lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW","jebraw":"JEBRAWW"};
@@ -98,7 +98,7 @@ function matchMember(raw){
 }
 function levenshtein(a,b){let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){const next=[i+1];for(let j=0;j<b.length;j++)next.push(Math.min(next[j]+1,row[j+1]+1,row[j]+(a[i]===b[j]?0:1)));row=next;}return row[b.length];}
 function playerOption(selected="",empty="Elegir miembro"){return '<option value="">'+esc(empty)+'</option>'+members.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");}
-function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(typeof input.baseMapDataUrl==="string"&&input.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(input.baseMapDataUrl))s.baseMapDataUrl=input.baseMapDataUrl;if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:memberTHP(r.name)}));for(const field of ["phase1","phase2","missions","subs"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}return s;}
+function stateReady(input){const s=fresh();if(input&&typeof input==="object"){for(const key of ["battle_date","team","serverTime","templateName","keyword","leader","alternate","language"])if(typeof input[key]==="string")s[key]=input[key];if(typeof input.baseMapDataUrl==="string"&&input.baseMapDataUrl.length<600000&&/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(input.baseMapDataUrl))s.baseMapDataUrl=input.baseMapDataUrl;if(Array.isArray(input.roster))s.roster=input.roster.filter(r=>r&&typeof r.name==="string").map(r=>({name:canonical(r.name)||r.name,role:r.role==="sub"?"sub":"starter",power:memberTHP(r.name)}));for(const field of ["phase1","phase2","missions","subs","subsPhase2"]){for(const key of Object.keys(s[field]))if(Array.isArray(input[field]?.[key]))s[field][key]=input[field][key].filter(n=>typeof n==="string").map(n=>canonical(n)||n);}}if(!input?.subsPhase2)for(const k of HOSP)s.subsPhase2[k]=[...s.subs[k]];return s;}
 function localKey(){return "hola-ds-builder-v1:"+$("battleDate").value+":"+$("team").value;}
 function storeLocal(){if(state)try{localStorage.setItem(localKey(),JSON.stringify(state));}catch{}}
 function mapSource(){return state?.baseMapDataUrl||"assets/ds-battlefield-real.webp";}
@@ -207,7 +207,7 @@ async function loadDraft(show=true){
 }
 function syncSetup(){for(const key of ["serverTime","templateName","keyword","language"])$(key).value=state[key];updateLeaders();}
 function counts(){return {starter:state.roster.filter(x=>x.role==="starter").length,sub:state.roster.filter(x=>x.role==="sub").length};}
-function removeAssignments(name){for(const field of ["phase1","phase2","missions","subs"])for(const key of Object.keys(state[field]))state[field][key]=state[field][key].filter(n=>n!==name);}
+function removeAssignments(name){for(const field of ["phase1","phase2","missions","subs","subsPhase2"])for(const key of Object.keys(state[field]))state[field][key]=state[field][key].filter(n=>n!==name);}
 function addRoster(name,role){
  name=canonical(name);if(!name)throw new Error("Selecciona un miembro actual de HOLa.");
  if(rosterOther.has(normal(name)))throw new Error(name+" ya está guardado en Team "+(state.team==="A"?"B":"A")+" para esta fecha. Abre «☁ Recuperar DS guardado» y selecciona el equipo correcto.");
@@ -933,10 +933,31 @@ function assignedNames(obj){return Object.values(obj).flat();}
 function freeStarters(obj){const used=new Set(assignedNames(obj));return state.roster.filter(r=>r.role==="starter"&&!used.has(r.name));}
 function assignPerson(slot,name){if(!name)return;if(phase==="final")return;const obj=phaseSlots();if(!obj[slot])return;if(!state.roster.some(r=>r.name===name&&r.role==="starter"))return;for(const k of Object.keys(obj))obj[k]=obj[k].filter(n=>n!==name);obj[slot].push(name);mutate();}
 function removePerson(slot,name){const obj=phaseSlots();if(obj[slot])obj[slot]=obj[slot].filter(n=>n!==name);mutate();}
-function addSpecial(type,name){if(!name)return;if(type==="SUB"){const r=state.roster.find(p=>p.name===name);if(!r||r.role!=="sub")return;for(const k of HOSP)state.subs[k]=state.subs[k].filter(n=>n!==name);state.subs[selectedBuilding].push(name);}
- else{const starters=state.roster.filter(r=>r.role==="starter");if(!starters.some(r=>r.name===name))return;const assignedHospital=HOSP.some(k=>state.phase1[k].includes(name));if(!assignedHospital){notice("La misión especial de Fase 1 debe asignarse a un titular de hospital, no del Science Hub.","error");return;}for(const k of Object.keys(state.missions))state.missions[k]=state.missions[k].filter(n=>n!==name);state.missions[type].push(name);}
- mutate();}
+function addSpecial(type,name){
+ if(!name)return;
+ if(type==="SUB"){
+  const r=state.roster.find(p=>p.name===name);if(!r||r.role!=="sub")return;
+  if(!HOSP.includes(selectedBuilding))return;
+  for(const k of HOSP)state.subs[k]=state.subs[k].filter(n=>n!==name);
+  state.subs[selectedBuilding].push(name);
+ }else{
+  const starters=state.roster.filter(r=>r.role==="starter");if(!starters.some(r=>r.name===name))return;
+  const assignedHospital=HOSP.some(k=>state.phase1[k].includes(name));
+  if(!assignedHospital){notice("La misión especial de Fase 1 debe asignarse a un titular de hospital, no del Science Hub.","error");return;}
+  for(const k of Object.keys(state.missions))state.missions[k]=state.missions[k].filter(n=>n!==name);
+  state.missions[type].push(name);
+ }
+ mutate();
+}
 function removeSpecial(type,slot,name){if(type==="SUB")state.subs[slot]=state.subs[slot].filter(n=>n!==name);else state.missions[type]=state.missions[type].filter(n=>n!==name);mutate();}
+function setPhase2SubDestination(name,slot){
+ if(!P2.includes(slot))return;
+ const player=state.roster.find(r=>r.name===name&&r.role==="sub");
+ if(!player)return;
+ for(const k of P2)state.subsPhase2[k]=state.subsPhase2[k].filter(n=>n!==name);
+ state.subsPhase2[slot].push(name);
+ mutate();
+}
 function listPersons(names,kind="",removable=true){return names.length?names.map(n=>{const r=state.roster.find(x=>x.name===n);return '<div class="person '+esc(kind)+'"><span>'+esc(n)+'</span><span class="power">'+(r?.power==null?"":number(r.power)+"M")+'</span>'+(removable?'<button type="button" data-remove="'+esc(n)+'" aria-label="Quitar '+esc(n)+'">×</button>':"")+'</div>';}).join(""):'<div class="muted">Sin asignar</div>';}
 function renderMap(){
  if(!state)return;const boardImage=document.querySelector("#board > img");const mapSrc=mapSource();if(boardImage&&boardImage.getAttribute("src")!==mapSrc)boardImage.src=mapSrc;document.querySelectorAll("[data-phase]").forEach(b=>b.classList.toggle("active",b.dataset.phase===phase));
