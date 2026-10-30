@@ -11,6 +11,7 @@ HUB:{label:"Science Hub",icon:"🔬",x:71,y:80},INFO:{label:"Info Center",icon:"
 REF1:{label:"Oil Refinery 1",icon:"🛢️",x:22,y:36},REF2:{label:"Oil Refinery 2",icon:"🛢️",x:82,y:65},
 SILO:{label:"Nuclear Silo",icon:"☢️",x:51,y:48},ARSENAL:{label:"Arsenal",icon:"⚔️",x:52,y:20},
 MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
+const SUB_P1=[...P1,"INFO","REF1","REF2"],SUB_P2=[...P2,"REF1","REF2"];
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
 let savedDrafts=[],members=[],memberByKey=new Map(),memberProfiles=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
@@ -18,7 +19,7 @@ const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
 function notice(msg,type="info"){$("message").textContent=msg;$("message").className="notice "+type;}
-function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[]},subsPhase2:{H1:[],H2:[],H3:[],H4:[],SILO:[],ARSENAL:[],MERC:[],HUB:[],INFO:[]}};}
+function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],REF1:[],REF2:[]},subsPhase2:{H1:[],H2:[],H3:[],H4:[],SILO:[],ARSENAL:[],MERC:[],HUB:[],INFO:[],REF1:[],REF2:[]}};}
 function canonical(raw){
  const key=normal(raw);
  const aliases={"mirliva":"Mirrliva","lolo":"مثالـي25","taajb":"مثالـي25","memofex042":"Memofex042 ᓚᘏᗢ","lazziyaa":"Laz Ziyaaa ᓚᘏᗢ","lazziyaaa":"Laz Ziyaaa ᓚᘏᗢ","sinsiflex":"sinsifeX ᓚᘏᗢ","sinsifex":"sinsifeX ᓚᘏᗢ","siniflex":"sinsifeX ᓚᘏᗢ","sinifex":"sinsifeX ᓚᘏᗢ","judex":"Judéx ᓚᘏᗢ","ophicat":"Ophicat ᓚᘏᗢ","jebrawuu":"JEBRAWW","jebraw":"JEBRAWW"};
@@ -935,36 +936,35 @@ function assignPerson(slot,name){if(!name)return;if(phase==="final")return;const
 function removePerson(slot,name){const obj=phaseSlots();if(obj[slot])obj[slot]=obj[slot].filter(n=>n!==name);mutate();}
 function addSpecial(type,name){
  if(!name)return;
- if(type==="SUB"){
-  const r=state.roster.find(p=>p.name===name);if(!r||r.role!=="sub")return;
-  if(!HOSP.includes(selectedBuilding))return;
-  const previousHospital=HOSP.find(k=>state.subs[k].includes(name));
-  const previousPhase2=P2.find(k=>state.subsPhase2[k].includes(name));
-  const followsPhase1=!previousPhase2||previousPhase2===previousHospital;
-  for(const k of HOSP)state.subs[k]=state.subs[k].filter(n=>n!==name);
-  state.subs[selectedBuilding].push(name);
-  if(followsPhase1){
-   for(const k of P2)state.subsPhase2[k]=state.subsPhase2[k].filter(n=>n!==name);
-   state.subsPhase2[selectedBuilding].push(name);
-  }
- }else{
-  const starters=state.roster.filter(r=>r.role==="starter");if(!starters.some(r=>r.name===name))return;
-  const assignedHospital=HOSP.some(k=>state.phase1[k].includes(name));
-  if(!assignedHospital){notice("La misión especial de Fase 1 debe asignarse a un titular de hospital, no del Science Hub.","error");return;}
-  for(const k of Object.keys(state.missions))state.missions[k]=state.missions[k].filter(n=>n!==name);
-  state.missions[type].push(name);
+ if(type==="SUB"){setSubDestination(name,selectedBuilding,"phase1");return;}
+ const starters=state.roster.filter(r=>r.role==="starter");if(!starters.some(r=>r.name===name))return;
+ const assignedHospital=HOSP.some(k=>state.phase1[k].includes(name));
+ if(!assignedHospital){notice("La misión especial de Fase 1 debe asignarse a un titular de hospital, no del Science Hub.","error");return;}
+ for(const k of Object.keys(state.missions))state.missions[k]=state.missions[k].filter(n=>n!==name);
+ state.missions[type].push(name);
+ mutate();
+}
+function removeSpecial(type,slot,name){
+ if(type==="SUB")setSubDestination(name,"","phase1");
+ else{state.missions[type]=state.missions[type].filter(n=>n!==name);mutate();}
+}
+function setSubDestination(name,slot,which){
+ const allowed=which==="phase1"?SUB_P1:SUB_P2;
+ if(slot&&!allowed.includes(slot))return;
+ if(!state.roster.some(r=>r.name===name&&r.role==="sub"))return;
+ const map=which==="phase1"?state.subs:state.subsPhase2;
+ const old=allowed.find(k=>(map[k]||[]).includes(name))||"";
+ const oldPhase2=SUB_P2.find(k=>(state.subsPhase2[k]||[]).includes(name))||"";
+ for(const k of allowed)map[k]=(map[k]||[]).filter(n=>n!==name);
+ if(slot)map[slot].push(name);
+ // Preserve manually customised Phase 2 destinations. Default destinations follow Phase 1.
+ if(which==="phase1"&&(!oldPhase2||oldPhase2===old)){
+  for(const k of SUB_P2)state.subsPhase2[k]=(state.subsPhase2[k]||[]).filter(n=>n!==name);
+  if(slot&&SUB_P2.includes(slot))state.subsPhase2[slot].push(name);
  }
  mutate();
 }
-function removeSpecial(type,slot,name){if(type==="SUB")state.subs[slot]=state.subs[slot].filter(n=>n!==name);else state.missions[type]=state.missions[type].filter(n=>n!==name);mutate();}
-function setPhase2SubDestination(name,slot){
- if(slot&&!P2.includes(slot))return;
- const player=state.roster.find(r=>r.name===name&&r.role==="sub");
- if(!player)return;
- for(const k of P2)state.subsPhase2[k]=state.subsPhase2[k].filter(n=>n!==name);
- if(slot)state.subsPhase2[slot].push(name);
- mutate();
-}
+function setPhase2SubDestination(name,slot){setSubDestination(name,slot,"phase2");}
 function listPersons(names,kind="",removable=true){return names.length?names.map(n=>{const r=state.roster.find(x=>x.name===n);return '<div class="person '+esc(kind)+'"><span>'+esc(n)+'</span><span class="power">'+(r?.power==null?"":number(r.power)+"M")+'</span>'+(removable?'<button type="button" data-remove="'+esc(n)+'" aria-label="Quitar '+esc(n)+'">×</button>':"")+'</div>';}).join(""):'<div class="muted">Sin asignar</div>';}
 function renderMap(){
  if(!state)return;const boardImage=document.querySelector("#board > img");const mapSrc=mapSource();if(boardImage&&boardImage.getAttribute("src")!==mapSrc)boardImage.src=mapSrc;document.querySelectorAll("[data-phase]").forEach(b=>b.classList.toggle("active",b.dataset.phase===phase));
@@ -980,28 +980,34 @@ function renderMap(){
  if(phase==="phase2")renderPhase2Subs();
 }
 function renderSpecials(){
- const groups=[["INFO","Info Center · 2 misiones",2],["REF1","Refinería 1 · 1 misión",1],["REF2","Refinería 2 · 1 misión",1],...HOSP.map(k=>["SUB:"+k,"Suplentes · "+BUILDINGS[k].label,null])];
+ const groups=[["INFO","Info Center · 2 misiones",2],["REF1","Refinería 1 · 1 misión",1],["REF2","Refinería 2 · 1 misión",1]];
  const hospitalStarters=state.roster.filter(r=>r.role==="starter"&&HOSP.some(k=>state.phase1[k].includes(r.name)));
- const subs=state.roster.filter(r=>r.role==="sub");
- $("specialList").innerHTML=groups.map(([key,title,count])=>{const sub=key.startsWith("SUB:"),slot=sub?key.slice(4):key,names=sub?state.subs[slot]:state.missions[slot],pool=sub?subs:hospitalStarters,already=new Set(Object.values(sub?state.subs:state.missions).flat());
-  return '<article class="building" data-special="'+(sub?"SUB":slot)+'" data-slot="'+slot+'"><div class="building-head"><h3>'+esc(title)+'</h3><span class="counter">'+names.length+(count!=null?"/"+count:"")+'</span></div><div class="people">'+listPersons(names,sub?"sub":"mission")+'</div><div class="assign-control"><select class="assign-select" aria-label="Asignar '+esc(title)+'"><option value="">Elegir '+(sub?"suplente":"titular de hospital")+'</option>'+pool.filter(r=>!already.has(r.name)).map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join("")+'</select><button type="button" class="btn small assign-btn">＋</button></div></article>';}).join("");
+ const already=new Set(Object.values(state.missions).flat());
+ $("specialList").innerHTML=groups.map(([slot,title,count])=>{
+  const names=state.missions[slot];
+  return '<article class="building" data-special="'+slot+'" data-slot="'+slot+'"><div class="building-head"><h3>'+esc(title)+'</h3><span class="counter">'+names.length+'/'+count+'</span></div><div class="people">'+listPersons(names,"mission")+'</div><div class="assign-control"><select class="assign-select" aria-label="Asignar '+esc(title)+'"><option value="">Elegir titular de hospital</option>'+hospitalStarters.filter(r=>!already.has(r.name)).map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join("")+'</select><button type="button" class="btn small assign-btn">＋</button></div></article>';
+ }).join("");
+ $("specialList").insertAdjacentHTML("beforeend",renderSubDestinationPanel("phase1"));
 }
 function renderPhase2Subs(){
+ $("specialList").innerHTML=renderSubDestinationPanel("phase2")+
+  '<div class="building"><h3>↔ Apoyo entre edificios</h3><p>Arsenal ↔ Info Center</p><p>Mercenary ↔ Science Hub</p></div>';
+}
+function renderSubDestinationPanel(which){
+ const first=which==="phase1",targetKeys=first?SUB_P1:SUB_P2,map=first?state.subs:state.subsPhase2;
  const subs=state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(b.power||0)-Number(a.power||0));
- const assigned=Object.values(state.subsPhase2).flat().length;
+ const assigned=subs.filter(r=>targetKeys.some(k=>(map[k]||[]).includes(r.name))).length;
  const cards=subs.map(r=>{
-  const destination=P2.find(k=>state.subsPhase2[k].includes(r.name))||"";
+  const destination=targetKeys.find(k=>(map[k]||[]).includes(r.name))||"";
   return '<div class="phase2-sub-row"><div><strong>'+esc(r.name)+'</strong><small> '+(r.power==null?'THP pendiente':number(r.power)+'M')+'</small></div>'+
-   '<select class="sub-phase2-target" data-sub-player="'+esc(r.name)+'" aria-label="Destino del suplente '+esc(r.name)+'">'+
+   '<select class="sub-destination-target" data-sub-phase="'+which+'" data-sub-player="'+esc(r.name)+'" aria-label="Destino del suplente '+esc(r.name)+'">'+
    '<option value=""'+(destination?'':' selected')+'>Elegir destino</option>'+
-   P2.map(k=>'<option value="'+k+'"'+(k===destination?' selected':'')+'>'+esc(BUILDINGS[k].label)+'</option>').join('')+
+   targetKeys.map(k=>'<option value="'+k+'"'+(k===destination?' selected':'')+'>'+esc(BUILDINGS[k].label)+'</option>').join('')+
    '</select></div>';
  }).join("");
- $("specialList").innerHTML=
-  '<div class="building phase2-sub-panel"><div class="building-head"><h3>🔵 Destinos de suplentes · Fase 2</h3><span class="counter '+(assigned!==subs.length?'warn':'')+'">'+assigned+'/'+subs.length+'</span></div>'+
-  '<p class="muted">Elige el edificio al que debe ir cada suplente cuando entre desde el minuto 10. Los más fuertes pueden defender Silo, Science Hub, Arsenal, Info Center o Mercenary. No ocupan plazas de titular.</p>'+
-  '<div class="phase2-sub-grid">'+(cards||'<p class="muted">No hay suplentes inscritos.</p>')+'</div></div>'+
-  '<div class="building"><h3>↔ Apoyo entre edificios</h3><p>Arsenal ↔ Info Center</p><p>Mercenary ↔ Science Hub</p><p class="muted">Antes del minuto 10, el suplente sigue el hospital de Fase 1. Al entrar a partir del minuto 10, va al destino de Fase 2.</p></div>';
+ return '<div class="building phase2-sub-panel"><div class="building-head"><h3>🔵 Destinos manuales de suplentes · '+(first?'Fase 1':'Fase 2')+'</h3><span class="counter '+(assigned!==subs.length?'warn':'')+'">'+assigned+'/'+subs.length+'</span></div>'+
+  '<p class="muted">'+(first?'Elige libremente un hospital, Science Hub, Info Center o una refinería. Silo, Arsenal y Mercenary siguen cerrados durante esta fase.':'Elige cualquier edificio para cada suplente: Silo, Science Hub, Arsenal, Info Center, Mercenary, hospitales o refinerías.')+' Los suplentes no ocupan plazas adicionales; solo entran cuando hay hueco.</p>'+
+  '<div class="phase2-sub-grid">'+(cards||'<p class="muted">No hay suplentes inscritos.</p>')+'</div></div>';
 }
 function autoAssign(){
  if(!state||phase==="final")return;
@@ -1034,12 +1040,18 @@ function autoAssign(){
   const power=new Map(starters.map(r=>[r.name,r.power==null?0:Number(r.power)||0]));
   const strength=k=>state.phase1[k].reduce((sum,name)=>sum+(power.get(name)||0),0);
   const hospitalByStrength=[...HOSP].sort((a,b)=>strength(b)-strength(a));
-  const previousPhase1=state.subs;
-  const followsPhase1=P2.every(k=>JSON.stringify(state.subsPhase2[k]||[])===JSON.stringify(previousPhase1[k]||[]));
-  state.subs={H1:[],H2:[],H3:[],H4:[]};
-  state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(a.power||0)-Number(b.power||0))
-   .forEach((r,i)=>state.subs[hospitalByStrength[i%4]].push(r.name));
-  if(followsPhase1)for(const k of P2)state.subsPhase2[k]=HOSP.includes(k)?[...state.subs[k]]:[];
+  // Auto-arrange unassigned substitutes only: never erase a manual choice in either phase.
+  const subsByPower=state.roster.filter(r=>r.role==="sub").sort((a,b)=>Number(a.power||0)-Number(b.power||0));
+  let nextHospital=0;
+  for(const r of subsByPower){
+   const assigned1=SUB_P1.find(k=>(state.subs[k]||[]).includes(r.name));
+   if(!assigned1){const hospital=hospitalByStrength[nextHospital++%4];state.subs[hospital].push(r.name);}
+   const assigned2=SUB_P2.some(k=>(state.subsPhase2[k]||[]).includes(r.name));
+   if(!assigned2){
+    const dest=SUB_P1.find(k=>(state.subs[k]||[]).includes(r.name));
+    if(dest&&SUB_P2.includes(dest))state.subsPhase2[dest].push(r.name);
+   }
+  }
  }else if(phase==="phase2"){
   for(const k of P2)state.phase2[k]=[];
   state.phase2.SILO=sorted.slice(0,4);
@@ -1074,8 +1086,10 @@ function validate(){
  const missions=assignedNames(state.missions);if(new Set(missions).size!==missions.length)errors.push("Hay un jugador asignado a dos misiones simultáneas en Fase 1.");
  if(missions.some(n=>!HOSP.some(k=>state.phase1[k].includes(n))))errors.push("Las misiones de Info y refinerías deben salir de los hospitales; nadie abandona Science Hub.");
  const subNames=state.roster.filter(r=>r.role==="sub").map(r=>r.name);
- for(const [field,phaseLabel] of [["subs","Fase 1"],["subsPhase2","Fase 2"]]){
-  const subsAssigned=assignedNames(state[field]);
+ for(const [field,phaseLabel,validKeys] of [["subs","Fase 1",SUB_P1],["subsPhase2","Fase 2",SUB_P2]]){
+  const allEntries=Object.entries(state[field]);
+  const subsAssigned=allEntries.flatMap(([,names])=>names);
+  if(allEntries.some(([k,names])=>!validKeys.includes(k)&&names.length))errors.push("Hay suplentes en un edificio cerrado de "+phaseLabel+".");
   if(subsAssigned.length!==subNames.length||new Set(subsAssigned).size!==subsAssigned.length||subNames.some(n=>!subsAssigned.includes(n)))errors.push("Todos los suplentes deben tener exactamente un destino asignado en "+phaseLabel+".");
  }
  if(!state.leader||!state.roster.some(r=>r.name===state.leader&&r.role==="starter"))errors.push("Elige un titular como responsable de la palabra clave.");
@@ -1088,7 +1102,12 @@ function groupText(phaseKey,lang){
  const obj=state[phaseKey],targets=phaseKey==="phase1"?TARGET1:TARGET2;
  const trLabels={H1:"Saha Hastanesi 1",H2:"Saha Hastanesi 2",H3:"Saha Hastanesi 3",H4:"Saha Hastanesi 4",HUB:"Bilim Merkezi",INFO:"Bilgi Merkezi",SILO:"Nükleer Silo",ARSENAL:"Cephanelik",MERC:"Paralı Asker Fabrikası"};
  const subMap=phaseKey==="phase1"?state.subs:state.subsPhase2;
- return Object.keys(targets).map(k=>(lang==="tr"?trLabels[k]:BUILDINGS[k].label)+": "+(obj[k].join(", ")||"—")+(subMap[k]?.length?" ["+(lang==="tr"?"YEDEK":lang==="en"?"SUB":"SUPLENTES")+": "+subMap[k].join(", ")+"]":"")).join("\n");
+ const keys=phaseKey==="phase1"?SUB_P1:SUB_P2;
+ return keys.map(k=>{
+  const names=obj[k]||[],reserve=subMap[k]||[];
+  if(!targets[k]&&!reserve.length)return "";
+  return (lang==="tr"?trLabels[k]||BUILDINGS[k].label:BUILDINGS[k].label)+": "+(names.join(", ")||"—")+(reserve.length?" ["+(lang==="tr"?"YEDEK":lang==="en"?"SUB":"SUPLENTES")+": "+reserve.join(", ")+"]":"");
+ }).filter(Boolean).join("\n");
 }
 function buildMail(){if(!state)return "";const en=state.language==="en",t=state.team,head="HOLa · DESERT STORM · TEAM "+t+"\n"+state.templateName+" · "+state.battle_date+" · "+state.serverTime+" SERVER\n";
  if(state.language==="tr")return head+"\nFAZ 1 (00:00–10:00)\n"+groupText("phase1","tr")+"\n\nÖZEL GÖREVLER (hastanelerden)\nInfo Center: "+state.missions.INFO.join(", ")+"\nPetrol Rafinerisi 1: "+state.missions.REF1.join(", ")+"\nPetrol Rafinerisi 2: "+state.missions.REF2.join(", ")+"\nScience Hub oyuncuları merkezden ayrılmaz.\n\nFAZ 2 (10:00'DAN SONRA)\n"+groupText("phase2","tr")+"\n\nKARŞILIKLI DESTEK\nArsenal ↔ Info Center. Mercenary Factory ↔ Science Hub.\n\nYEDEKLER\nSahada en fazla 20 oyuncu bulunabilir. Asil oyuncular savaştan 5 dakika önce girebilir; yedekler ancak savaş başladıktan sonra boş kontenjan varsa girebilir. Birlikleri biten oyuncu çıkarak yer açabilir. Her yedek, 10. dakikadan önce Faz 1 hastanesine; 10. dakikadan sonra Faz 2 için atanan binaya gider. Çıkan oyuncunun yerine değil, kendi hedefinize gidin.\n\nSON HÜCUM (YALNIZCA EMİRLE)\nKod sözcüğü: "+state.keyword+" · Komut veren: "+(state.leader||"Henüz seçilmedi")+(state.alternate?" · Yedek: "+state.alternate:"")+"\nSavaşın sonuna doğru az farkla gerideysek ve kod sözcüğü yazılırsa: hastaneleri terk edin, tüm uygun oyuncular Nuclear Silo'ya; Info Center'ı ele geçirip tutun.\n\nYayımlanan haritayı HOLa Desert Storm sayfasında inceleyin.";
@@ -1323,7 +1342,7 @@ function events(){
  $("autoAssign").onclick=autoAssign;$("fillUnassigned").onclick=fillUnassignedSlots;$("clearPhase").onclick=()=>{if(phase==="final")return;for(const k of Object.keys(phaseSlots()))phaseSlots()[k]=[];mutate();};
  $("pins").addEventListener("click",e=>{const k=e.target.closest("[data-building]")?.dataset.building;if(!k)return;selectedBuilding=k;renderMap();$("building-"+k)?.scrollIntoView({behavior:"smooth",block:"center"});});
  $("buildingList").addEventListener("click",e=>{const card=e.target.closest("[data-slot]");if(!card)return;const k=card.dataset.slot;if(e.target.matches("[data-remove]")){removePerson(k,e.target.dataset.remove);return;}if(e.target.closest(".assign-btn")){const select=card.querySelector(".assign-select");assignPerson(k,select?.value);}});
- $("specialList").addEventListener("change",e=>{if(e.target.matches(".sub-phase2-target"))setPhase2SubDestination(e.target.dataset.subPlayer,e.target.value);});
+ $("specialList").addEventListener("change",e=>{if(e.target.matches(".sub-destination-target"))setSubDestination(e.target.dataset.subPlayer,e.target.value,e.target.dataset.subPhase);});
  $("specialList").addEventListener("click",e=>{const card=e.target.closest("[data-special]");if(!card)return;const type=card.dataset.special,slot=card.dataset.slot;if(e.target.matches("[data-remove]"))removeSpecial(type,slot,e.target.dataset.remove);else if(e.target.closest(".assign-btn")){selectedBuilding=slot;addSpecial(type,card.querySelector(".assign-select")?.value);}});
  $("copyMail").onclick=()=>copyText("mailOutput");$("copyAnnouncement").onclick=()=>copyText("announcement");
  $("announcement").addEventListener("input",updateAnnounceCount);$("refreshAnnouncement").onclick=()=>{$("announcement").value=buildAnnouncement();updateAnnounceCount();};$("refreshMail").onclick=()=>{$("mailOutput").value=buildMail();};
