@@ -57,7 +57,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .builder-locale-option{display:block;width:100%;padding:9px 11px;border:0;border-radius:8px;background:transparent;color:#fff8e6;text-align:left;font-size:13px;font-weight:800;white-space:nowrap}
 .builder-locale-option:hover,.builder-locale-option:focus-visible{background:#197b9c;outline:2px solid #f0c976}
 .thp-supabase-panel{display:grid;gap:8px;margin:12px 0}.thp-supabase-panel .btn{justify-self:start}
-.phase2-sub-panel{grid-column:1/-1}.phase2-sub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:11px}.phase2-sub-row{background:#f0f8ff;border:1px solid #b6d6f1;border-radius:11px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.phase2-sub-row strong{display:block;color:#1a4d70;font-size:13px;overflow-wrap:anywhere}.phase2-sub-row small{color:#55748b;font-size:11px}.phase2-sub-row select{width:min(100%,245px);min-width:0;min-height:40px;background:white;border:1px solid #86bbdf;border-radius:9px;padding:8px;color:#194766;font-size:12px;font-weight:800}@media(max-width:720px){.phase2-sub-grid{grid-template-columns:1fr}.phase2-sub-row{flex-wrap:wrap}.phase2-sub-row select{width:100%}}
+.sub-building-note{color:#176da4;background:#eaf4ff;padding:7px 9px;border:1px solid #b5d6ef;border-radius:8px;font-size:12px;font-weight:850;overflow-wrap:anywhere}.phase2-sub-panel{grid-column:1/-1}.phase2-sub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:11px}.phase2-sub-row{background:#f0f8ff;border:1px solid #b6d6f1;border-radius:11px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.phase2-sub-row strong{display:block;color:#1a4d70;font-size:13px;overflow-wrap:anywhere}.phase2-sub-row small{color:#55748b;font-size:11px}.phase2-sub-row select{width:min(100%,245px);min-width:0;min-height:40px;background:white;border:1px solid #86bbdf;border-radius:9px;padding:8px;color:#194766;font-size:12px;font-weight:800}@media(max-width:720px){.phase2-sub-grid{grid-template-columns:1fr}.phase2-sub-row{flex-wrap:wrap}.phase2-sub-row select{width:100%}}
 </style>
 </head>
 <body>
@@ -150,7 +150,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="board" id="board"><img src="assets/ds-battlefield-real.webp" alt="Mapa real de Desert Storm con edificios en sus posiciones fijas"><div class="pins" id="pins"></div></div>
 <div id="phaseHelp" class="info-panel"></div>
 <div id="buildingList" class="assignment-grid"></div>
-<div id="specialSection" class="section" style="margin-top:14px;box-shadow:none;background:#f5fffa"><h2>Misiones y suplentes</h2><p class="muted">Las misiones secundarias no duplican una plaza de titular. En Fase 1 cada suplente tendrá un hospital; en Fase 2 podrás elegir su destino entre Silo, Arsenal, Science Hub, Info Center, Mercenary o cualquier hospital. Solo entran cuando se libera una plaza.</p><div id="specialList" class="assignment-grid"></div></div>
+<div id="specialSection" class="section" style="margin-top:14px;box-shadow:none;background:#f5fffa"><h2>Misiones y suplentes</h2><p class="muted">Las misiones secundarias no duplican una plaza de titular. Asigna manualmente cada suplente a cualquier edificio abierto en Fase 1 y Fase 2. Los destinos pueden ser diferentes; solo podrán entrar cuando haya una plaza libre.</p><div id="specialList" class="assignment-grid"></div></div>
 <div id="lastAssault" hidden class="info-panel"><strong>ÚLTIMO ASALTO · ACTIVACIÓN MANUAL</strong><p>Solo el responsable (o el alternativo) escribe la palabra clave en el chat del equipo. Al verla: abandonar hospitales, concentrarse en Nuclear Silo y tomar Info Center. No se activa automáticamente.</p></div>
 <div class="row actions"><button type="button" class="btn" id="saveDraftPlan">💾 Guardar borrador</button><button type="button" class="btn gold" id="toPublish">Revisar y publicar →</button></div>
 </section>
@@ -170,9 +170,9 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-locales-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-locales-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-locales-east.js?v=20260925-all10-v1"></script>
-<script src="js/ds-builder-text-i18n.js?v=20261030-phase2-subs-v2"></script>
+<script src="js/ds-builder-text-i18n.js?v=20261030-manual-both-phases-v3"></script>
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261030-phase2-subs-v2"></script>
+<script type="module" src="js/ds-builder.js?v=20261030-manual-both-phases-v3"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
