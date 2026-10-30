@@ -988,7 +988,7 @@ function renderMap(){
  if(phase==="phase2"){
   const refineryCards=["REF1","REF2"].map(k=>{
    const subs=state.subsPhase2[k]||[];
-   return '<article class="building" data-slot="'+k+'"><h3>'+BUILDINGS[k].icon+' '+esc(BUILDINGS[k].label)+'</h3><div class="people">'+
+   return '<article class="building" id="building-'+k+'" data-slot="'+k+'"><h3>'+BUILDINGS[k].icon+' '+esc(BUILDINGS[k].label)+'</h3><div class="people">'+
     (subs.length?'<div class="sub-building-note">🔵 Suplentes: '+esc(subs.join(", "))+'</div>':'<p class="muted">Sin suplentes destinados.</p>')+
     '</div><p class="muted">Destino de suplentes, sin plazas adicionales de titular.</p></article>';
   }).join("");
@@ -1023,7 +1023,7 @@ function renderSubDestinationPanel(which){
    '</select></div>';
  }).join("");
  return '<div class="building phase2-sub-panel"><div class="building-head"><h3>🔵 Destinos manuales de suplentes · '+(first?'Fase 1':'Fase 2')+'</h3><span class="counter '+(assigned!==subs.length?'warn':'')+'">'+assigned+'/'+subs.length+'</span></div>'+
-  '<p class="muted">'+(first?'Elige libremente un hospital, Science Hub, Info Center o una refinería. Silo, Arsenal y Mercenary siguen cerrados durante esta fase.':'Elige cualquier edificio para cada suplente: Silo, Science Hub, Arsenal, Info Center, Mercenary, hospitales o refinerías.')+' Los suplentes no ocupan plazas adicionales; solo entran cuando hay hueco.</p>'+
+  '<p class="muted"><span>'+(first?'Elige libremente un hospital, Science Hub, Info Center o una refinería. Silo, Arsenal y Mercenary siguen cerrados durante esta fase.':'Elige cualquier edificio para cada suplente: Silo, Science Hub, Arsenal, Info Center, Mercenary, hospitales o refinerías.')+'</span> <span>Los suplentes no ocupan plazas adicionales; solo entran cuando hay hueco.</span></p>'+
   '<div class="phase2-sub-grid">'+(cards||'<p class="muted">No hay suplentes inscritos.</p>')+'</div></div>';
 }
 function autoAssign(){
