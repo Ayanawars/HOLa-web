@@ -1249,11 +1249,13 @@ function posterCard(ctx,which,k,rect,tr,trBuildings,mapTop){
  }
 }
 function posterMission(ctx,k,rect,tr,trBuildings,mapTop){
- const names=state.missions[k]||[],{x,y,w}=rect,h=names.length>1?95:76,Y=mapTop+y;
+ const names=state.missions[k]||[],subs=state.subs?.[k]||[],{x,y,w}=rect;
+ const base=names.length>1?95:76,h=base+(subs.length?26:0),Y=mapTop+y;
  posterBox(ctx,x,Y,w,h,"#7edf9b","rgba(6,53,44,.94)");
  posterType(ctx,"◆ "+(tr?trBuildings[k]||BUILDINGS[k].label:BUILDINGS[k].label),x+14,Y+28,w-29,17,"#c7f9ce",900);
  if(names.length){names.forEach((n,i)=>posterType(ctx,n,x+15,Y+53+i*21,w-28,17,"#fffef1",800));}
  else posterType(ctx,tr?"Görevli yok":"Not assigned",x+15,Y+53,w-28,16,"#d0e5db",650);
+ if(subs.length)posterType(ctx,(tr?"YEDEK: ":"SUB: ")+subs.join(" · "),x+15,Y+h-12,w-28,15,"#89d4ff",850);
 }
 async function createPoster(what="phase1"){
  const isCombined=what==="combined",width=1080,unitHeight=1210,height=isCombined?unitHeight*2:unitHeight;
@@ -1306,11 +1308,14 @@ async function createPoster(what="phase1"){
   ctx.fillStyle="#08283d";ctx.fillRect(0,offset+1024,width,186);
   ctx.fillStyle="#d6af59";ctx.fillRect(0,offset+1024,width,3);
   if(which==="phase1"){
-   posterType(ctx,tr?"YEŞİL: GÖREV  ·  MAVİ: YEDEK":"GREEN: SPECIAL MISSION  ·  BLUE: SUBSTITUTE",34,offset+1068,1005,21,"#9fecc8",850);
-   posterType(ctx,tr?"Bilgi merkezi ve rafineriler: hastanelerden görevlendirildi.":"Info Center and refineries: missions assigned from hospitals.",34,offset+1112,1005,19,"#d4e9eb",750);
+   posterType(ctx,tr?"YEŞİL: GÖREV  ·  MAVİ: YEDEK":"GREEN: SPECIAL MISSION · BLUE: SUBSTITUTE",34,offset+1068,1005,21,"#9fecc8",850);
+   posterType(ctx,tr?"YEDEKLER: ATANDIĞINIZ HEDEFE GİDİN":"SUBSTITUTES: GO TO YOUR PHASE 1 DESTINATION",34,offset+1112,1005,20,"#89d4ff",850);
   }else{
-   posterType(ctx,"ARSENAL ↔ INFO CENTER",34,offset+1068,1005,23,"#a1e5ce",900);
+   posterType(ctx,"ARSENAL ↔ INFO CENTER · MERCENARY ↔ HUB",34,offset+1068,1005,20,"#a1e5ce",900);
    posterType(ctx,tr?"YEDEKLER: FAZ 2 HEDEFİNE":"BLUE: SUBSTITUTES · GO TO YOUR PHASE 2 DESTINATION",34,offset+1112,1005,21,"#89d4ff",900);
+   const refinerySubs=["REF1","REF2"].filter(k=>(state.subsPhase2?.[k]||[]).length)
+    .map(k=>(k==="REF1"?"REF 1: ":"REF 2: ")+state.subsPhase2[k].join(", "));
+   if(refinerySubs.length)posterType(ctx,"🔵 "+refinerySubs.join("  |  "),34,offset+1138,1005,15,"#89d4ff",800);
   }
   posterType(ctx,(tr?"SON HÜCUM: ":"FINAL: ")+state.keyword+" · "+(state.leader||(tr?"Komutan belirlenmedi":"Caller TBD"))+" · HOLa",34,offset+1162,1005,23,"#f0d17e",900);
   posterType(ctx,"HEROES OF LAST AREA",35,offset+1191,1005,14,"#90b7c6",850);
