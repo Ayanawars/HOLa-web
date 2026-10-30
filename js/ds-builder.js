@@ -938,8 +938,15 @@ function addSpecial(type,name){
  if(type==="SUB"){
   const r=state.roster.find(p=>p.name===name);if(!r||r.role!=="sub")return;
   if(!HOSP.includes(selectedBuilding))return;
+  const previousHospital=HOSP.find(k=>state.subs[k].includes(name));
+  const previousPhase2=P2.find(k=>state.subsPhase2[k].includes(name));
+  const followsPhase1=!previousPhase2||previousPhase2===previousHospital;
   for(const k of HOSP)state.subs[k]=state.subs[k].filter(n=>n!==name);
   state.subs[selectedBuilding].push(name);
+  if(followsPhase1){
+   for(const k of P2)state.subsPhase2[k]=state.subsPhase2[k].filter(n=>n!==name);
+   state.subsPhase2[selectedBuilding].push(name);
+  }
  }else{
   const starters=state.roster.filter(r=>r.role==="starter");if(!starters.some(r=>r.name===name))return;
   const assignedHospital=HOSP.some(k=>state.phase1[k].includes(name));
@@ -951,11 +958,11 @@ function addSpecial(type,name){
 }
 function removeSpecial(type,slot,name){if(type==="SUB")state.subs[slot]=state.subs[slot].filter(n=>n!==name);else state.missions[type]=state.missions[type].filter(n=>n!==name);mutate();}
 function setPhase2SubDestination(name,slot){
- if(!P2.includes(slot))return;
+ if(slot&&!P2.includes(slot))return;
  const player=state.roster.find(r=>r.name===name&&r.role==="sub");
  if(!player)return;
  for(const k of P2)state.subsPhase2[k]=state.subsPhase2[k].filter(n=>n!==name);
- state.subsPhase2[slot].push(name);
+ if(slot)state.subsPhase2[slot].push(name);
  mutate();
 }
 function listPersons(names,kind="",removable=true){return names.length?names.map(n=>{const r=state.roster.find(x=>x.name===n);return '<div class="person '+esc(kind)+'"><span>'+esc(n)+'</span><span class="power">'+(r?.power==null?"":number(r.power)+"M")+'</span>'+(removable?'<button type="button" data-remove="'+esc(n)+'" aria-label="Quitar '+esc(n)+'">×</button>':"")+'</div>';}).join(""):'<div class="muted">Sin asignar</div>';}
