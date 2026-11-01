@@ -537,6 +537,8 @@ const dsRegisteredPlayerNames=["Alfonzo04","Álvaro97","Apocallipto","Arturlion"
 function canonicalDSPlayerName(value){
   const raw=String(value||"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/^\s*[*•▪◦]+\s*/,"").replace(/\s+/g," ").trim();
   const key=norm(raw);
+  if(key==="memofex42"||key==="memofex042")return "Memofex042 ᓚᘏᗢ";
+  if(key==="tariix"||key==="tariixx")return "Tariixx";
   if(key==="denise")return "Dènise ᓚᘏᗢ";
   if(key==="mirliva"||key==="mirrliva")return "Mirrliva";
   if(/^jebraw{1,6}$/.test(key))return "JEBRAW ᓚᘏᗢ";
