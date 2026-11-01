@@ -16,9 +16,89 @@ const labels={
 labels.pl={"subtitle":"Importuj i poprawiaj wyniki Desert Storm. Składy i mapy: DS Strategy Builder.","choose":"01 · BITWA I DRUŻYNA","date":"Data bitwy","team":"Drużyna","load":"↻ Wczytaj skład i punkty","manual":"Wprowadź lub popraw wynik","player":"Gracz","points":"Punkty","add":"＋ Dodaj / popraw","saveResult":"💾 Zapisz wynik bitwy"};
 const additionalLanguages={"es":{"help":"Elige una jornada para recuperar la convocatoria y las puntuaciones.","fallback":"No hay convocatoria guardada. Usa una lista temporal sin modificar DS Builder.","useFallback":"Usar lista temporal","manualHelp":"Corrige el OCR o introduce puntos manualmente; revisa antes de guardar.","builderLink":"↗ DS Strategy Builder"},"en":{"help":"Choose a battle to load the roster and saved scores.","fallback":"No saved roster. Use a temporary list without changing DS Builder.","useFallback":"Use temporary list","manualHelp":"Correct OCR or enter points manually; review before saving.","builderLink":"↗ DS Strategy Builder"},"fr":{"help":"Choisissez une bataille pour récupérer l'équipe et les scores.","fallback":"Aucune équipe enregistrée. Une liste temporaire ne modifie pas le plan DS.","useFallback":"Utiliser une liste temporaire","manualHelp":"Corrigez l'OCR ou saisissez les points, puis vérifiez avant d'enregistrer.","builderLink":"↗ DS Strategy Builder"},"de":{"help":"Wähle einen Kampf, um Team und Punkte zu laden.","fallback":"Kein Team gespeichert. Eine temporäre Liste ändert den DS-Plan nicht.","useFallback":"Temporäre Liste nutzen","manualHelp":"Korrigiere OCR oder gib Punkte ein; vor dem Speichern prüfen.","builderLink":"↗ DS Strategy Builder"},"ro":{"help":"Alege o bătălie pentru a încărca echipa și scorurile.","fallback":"Nu există echipă salvată. Lista temporară nu schimbă planul DS.","useFallback":"Folosește lista temporară","manualHelp":"Corectează OCR sau introdu punctele; verifică înainte de salvare.","builderLink":"↗ DS Strategy Builder"},"pt":{"help":"Escolhe uma batalha para carregar a equipa e os pontos.","fallback":"Não existe equipa guardada. A lista temporária não altera o plano DS.","useFallback":"Usar lista temporária","manualHelp":"Corrige o OCR ou introduz pontos; verifica antes de guardar.","builderLink":"↗ DS Strategy Builder"},"uk":{"help":"Оберіть бій, щоб завантажити склад і очки.","fallback":"Склад не збережено. Тимчасовий список не змінює план DS.","useFallback":"Використати тимчасовий список","manualHelp":"Виправте OCR або введіть очки; перевірте перед збереженням.","builderLink":"↗ DS Strategy Builder"},"it":{"help":"Seleziona una battaglia per caricare squadra e punteggi.","fallback":"Nessuna squadra salvata. La lista temporanea non modifica il piano DS.","useFallback":"Usa lista temporanea","manualHelp":"Correggi l'OCR o inserisci punti; controlla prima di salvare.","builderLink":"↗ DS Strategy Builder"},"pl":{"help":"Wybierz bitwę, aby wczytać skład i punkty.","fallback":"Brak zapisanego składu. Lista tymczasowa nie zmieni planu DS.","useFallback":"Użyj listy tymczasowej","manualHelp":"Popraw OCR lub wpisz punkty; sprawdź przed zapisem.","builderLink":"↗ DS Strategy Builder"},"tr":{"help":"Kadroyu ve puanları yüklemek için bir savaş seç.","fallback":"Kayıtlı kadro yok. Geçici liste DS planını değiştirmez.","useFallback":"Geçici listeyi kullan","manualHelp":"OCR sonuçlarını düzelt veya puanları gir; kaydetmeden önce kontrol et.","builderLink":"↗ DS Strategy Builder"}};
 for(const [code,wording] of Object.entries(additionalLanguages))Object.assign(labels[code],wording);
+
+// Bulk text input shares the existing review table and explicit save action.
+const textLabels={
+ es:["Introducir scores por texto","Un jugador por línea: nombre-puntuación. Revisa la lista y pulsa Guardar en Supabase.","Preparar puntuaciones"],
+ en:["Enter scores as text","One player per line: name-score. Review the list, then save to Supabase.","Prepare scores"],
+ fr:["Saisir les scores par texte","Un joueur par ligne : nom-score. Vérifiez la liste avant de l’enregistrer.","Préparer les scores"],
+ de:["Punkte als Text eingeben","Ein Spieler pro Zeile: Name-Punkte. Vor dem Speichern prüfen.","Punkte vorbereiten"],
+ pt:["Inserir pontuações por texto","Um jogador por linha: nome-pontuação. Revê a lista antes de guardar.","Preparar pontuações"],
+ ro:["Introdu scoruri ca text","Un jucător pe linie: nume-scor. Verifică lista înainte de salvare.","Pregătește scorurile"],
+ it:["Inserisci punteggi come testo","Un giocatore per riga: nome-punteggio. Controlla prima di salvare.","Prepara punteggi"],
+ uk:["Ввести очки текстом","Один гравець у рядку: ім’я-очки. Перевірте перед збереженням.","Підготувати очки"],
+ pl:["Wprowadź wyniki tekstem","Jeden gracz w wierszu: nazwa-punkty. Sprawdź przed zapisem.","Przygotuj wyniki"],
+ tr:["Puanları metin olarak gir","Her satıra bir oyuncu: isim-puan. Kaydetmeden önce kontrol et.","Puanları hazırla"],
+ ru:["Ввести очки текстом","Один игрок в строке: имя-очки. Проверьте перед сохранением.","Подготовить очки"]
+};
+function translateTextScores(){
+ const l=textLabels[localStorage.getItem("hola-language")]||textLabels.en;
+ for(const [i,id] of ["scoresTextTitle","scoresTextHelp","scoresTextPrepare"].entries()){
+  if(get(id))get(id).textContent=l[i];
+ }
+}
+function textScorePoints(value){
+ const raw=String(value||"").trim();
+ const compact=raw.match(/^(\d+(?:[.,]\d+)?)\s*([KMB])$/i);
+ let points;
+ if(compact)points=Math.round(Number(compact[1].replace(",","."))*({K:1e3,M:1e6,B:1e9})[compact[2].toUpperCase()]);
+ else if(/^\d+$/.test(raw)||/^\d{1,3}([., \u00a0])\d{3}(?:\1\d{3})*$/.test(raw))points=Number(raw.replace(/[.,\s\u00a0]/g,""));
+ else return null;
+ return Number.isSafeInteger(points)&&points>=0?points:null;
+}
+function parseTextScores(text,names){
+ const key=name=>norm(canonicalDSPlayerName(name)).replace(/ツ/g,"");
+ const allowed=new Map(names.map(name=>[key(name),name]));
+ const found=new Map(),errors=[];
+ String(text||"").split(/\r?\n/).forEach((raw,index)=>{
+  const line=raw.trim();if(!line)return;
+  let item=null;
+  // Match the roster at each boundary: numbers and hyphens in names stay intact.
+  for(const separator of line.matchAll(/\s+|[-–—|;:=]/g)){
+   const name=line.slice(0,separator.index).replace(/[\s–—|;:=]+$/,"").trim();
+   const score=line.slice(separator.index+separator[0].length).replace(/^[\s–—|;:=]+/,"");
+   if(/[-–—]$/.test(name))continue;
+   const points=textScorePoints(score),official=allowed.get(key(name));
+   if(points!==null&&official){item={key:key(official),name:official,points};break;}
+  }
+  if(!item){errors.push("Línea "+(index+1)+": revisa el nombre de la convocatoria y la puntuación. "+line);return;}
+  if(found.has(item.key)&&found.get(item.key).points!==item.points)errors.push("Línea "+(index+1)+": "+item.name+" aparece con puntuaciones diferentes.");
+  else found.set(item.key,item);
+ });
+ return {entries:[...found.values()],errors};
+}
+function prepareTextScores(){
+ const target=get("scoresTextStatus"),names=participants();
+ if(get("scoresLoadBtn").disabled||!names.length){target.textContent="Recupera primero la convocatoria de la jornada y equipo.";return;}
+ const {entries,errors}=parseTextScores(get("scoresTextInput").value,names);
+ if(errors.length){target.textContent="Corrige estas líneas. No se ha añadido ninguna puntuación.\n"+errors.join("\n");return;}
+ if(!entries.length){target.textContent="Escribe un jugador y su puntuación por línea.";return;}
+ for(const item of entries){
+  const existing=detected.find(row=>norm(canonicalDSPlayerName(row.playerName)).replace(/ツ/g,"")===item.key);
+  if(existing){existing.points=item.points;existing.ocrName=item.name;existing.captureTime=null;}
+  else detected.push({position:0,ocrName:item.name,playerName:item.name,points:item.points,captureTime:null});
+ }
+ detected.sort((a,b)=>b.points-a.points);
+ detected.forEach((row,i)=>row.position=i+1);
+ // Keep a subsequent screenshot import in the same battle from clearing these rows.
+ dsScoreEventKey=battleDate+"|"+team;
+ renderResults();
+ target.textContent="✓ "+entries.length+" puntuaciones preparadas. Revisa la lista y pulsa Guardar en Supabase.";
+ get("saveStatus").textContent="Hay puntuaciones introducidas por texto pendientes de guardar.";
+}
+function initTextScores(){
+ const section=document.createElement("section");section.className="scores-manual";
+ section.setAttribute("aria-labelledby","scoresTextTitle");
+ section.innerHTML='<h3 id="scoresTextTitle"></h3><label class="help" id="scoresTextHelp" for="scoresTextInput" style="display:block"></label><textarea id="scoresTextInput" rows="7" spellcheck="false" aria-describedby="scoresTextHelp" placeholder="Ayana wars-12450000&#10;iR4UL — 7,200,000&#10;Jhaizel-0" style="width:100%;box-sizing:border-box;resize:vertical"></textarea><div class="actions"><button id="scoresTextPrepare" type="button" class="btn primary"></button></div><div id="scoresTextStatus" class="status" role="status" aria-live="polite" style="white-space:pre-wrap"></div>';
+ get("scoresManualTitle").closest("section").after(section);
+ get("scoresTextPrepare").addEventListener("click",prepareTextScores);
+ translateTextScores();
+}
+
 let loadVersion=0,initialized=false;
 function local(){return labels[localStorage.getItem("hola-language")]||labels.es;}
 function translate(){
+ translateTextScores();
  const l=local(),f=labels.es;
  document.documentElement.lang=Object.keys(labels).includes(localStorage.getItem("hola-language"))?localStorage.getItem("hola-language"):"es";
  document.title="HOLa — DS Scores";
@@ -66,6 +146,7 @@ async function loadScoreContext(){
  const date=get("scoresDate").value,t=chosenTeam();
  if(!date){get("scoresRosterStatus").textContent="Selecciona una fecha.";return;}
  const run=++loadVersion;
+ if(get("scoresTextStatus"))get("scoresTextStatus").textContent="";
  battleDate=date;team=t;contentTeam=t;contentDateEl.value=date;get("participantDate").value=date;
  updateTeamButtons();updateSelectedEvent();
  try{localStorage.setItem("hola-ds-scores-selection",JSON.stringify({date,team:t}));}catch{}
@@ -156,6 +237,7 @@ async function saveBattleResult(){
 }
 function init(){
  if(initialized)return;initialized=true;
+ initTextScores();
  try{const saved=JSON.parse(localStorage.getItem("hola-ds-scores-selection")||"null");
   if(saved?.date&&/^\d{4}-\d{2}-\d{2}$/.test(saved.date))get("scoresDate").value=saved.date;
   if(saved?.team==="A"||saved?.team==="B")chooseTeam(saved.team);
@@ -178,3 +260,4 @@ document.addEventListener("hola-language-change",translate);
 document.addEventListener("hola-scores-ready",init,{once:true});
 translate();
 })();
+
