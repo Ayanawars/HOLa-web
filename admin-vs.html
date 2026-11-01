@@ -1007,8 +1007,9 @@
           з: "z",
         };
         let text = String(v ?? "")
-          .replace(/[ᓚᘏᗢ]/g, "")
           .normalize("NFKD")
+          // ツ es un adorno del nick de Motaz; conservarlo solo en el nombre oficial.
+          .replace(/[ᓚᘏᗢツ]/g, "")
           .toLowerCase();
         text = [...text].map((ch) => confusables[ch] ?? ch).join("");
         return (
