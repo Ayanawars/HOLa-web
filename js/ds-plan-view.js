@@ -23,19 +23,19 @@ function installStyle(){if($("dsPlanCss"))return;const s=document.createElement(
  ".ds-switch{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border:1px solid #dec38b;background:#f1e3c7;border-radius:13px;padding:4px;margin:10px 0}",
  ".ds-switch button{border:0;background:transparent;padding:9px 4px;border-radius:9px;color:#46677b;font-size:9px;font-weight:900;line-height:1.15}.ds-switch button.active{background:linear-gradient(135deg,#0785ae,#0eb3c6);color:white}.ds-switch button[data-phase=final].active{background:#a13b44}",
  ".ds-help{font-size:11px;line-height:1.5;color:#4e6d7d;background:#eaf8fc;border-left:4px solid #13a8c0;border-radius:9px;padding:10px;margin-bottom:10px}",
- ".ds-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ds-card{padding:9px;border:1px solid #e0c590;border-radius:11px;background:#fffdfa;scroll-margin-top:80px}.ds-card.focus{border:2px solid #0e9fc1}",
+ ".ds-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ds-card{padding:9px;border:1px solid #e0c590;border-radius:11px;background:#fffdfa;scroll-margin-top:80px}.ds-card.focus{border:2px solid #0e9fc1}.ds-card[data-go-map]{cursor:pointer;transition:background .15s}.ds-card[data-go-map]:focus-visible{outline:3px solid #12b4d0;outline-offset:2px}.ds-card[data-go-map]:active{background:#e9f8fa}",
  ".ds-card h3{font-size:10px;color:#165272;margin:0 0 7px}.ds-person{font-size:10px;line-height:1.38;color:#2f5067;font-weight:750;padding:3px 0;overflow-wrap:anywhere}.ds-person.sub{color:#1775b4}.ds-person.mission{color:#15804b}",
  ".ds-brief{border:1px solid #ddbe77;border-radius:11px;background:#fff8e4;padding:10px;margin-top:9px;font-size:11px;line-height:1.55;color:#795924}",
  ".ds-call{border:2px solid #b75b58;background:#fff0e8;color:#803838;border-radius:12px;padding:13px;margin:12px 0;text-align:center}.ds-call strong{display:block;font:bold 26px/1.15 Georgia,serif;letter-spacing:.1em;margin:8px 0}",
  ".map-wrap.ds-public-map{display:block!important;padding:0;min-height:0!important;background:#d89258}.ds-board{position:relative;aspect-ratio:1200/850;width:100%;overflow:hidden}.ds-board img{display:block;width:100%;height:100%;max-height:none!important;object-fit:fill;cursor:default!important}",
- ".ds-pin{position:absolute;transform:translate(-50%,-50%);padding:3px;border-radius:7px;border:1px solid #e9c86c;background:rgba(5,38,59,.94);color:white;font-size:7px;font-weight:900;line-height:1.1;max-width:77px;min-width:42px;z-index:2}.ds-pin.active{background:#087fb2;border:2px solid white}.ds-pin small{display:block;color:#75e6ff;margin-top:2px}.ds-map-hint{background:#0b3452;color:#ebfaff;padding:7px 9px;font-size:9px;text-align:center}",
+ ".ds-pin{position:absolute;transform:translate(-50%,-50%);padding:3px;border-radius:7px;border:1px solid #e9c86c;background:rgba(5,38,59,.94);color:white;font-size:7px;font-weight:900;line-height:1.1;max-width:77px;min-width:42px;z-index:2}.ds-pin.active{background:#087fb2;border:2px solid white;z-index:4}.ds-pin.target{outline:3px solid #09d2f2;outline-offset:3px;border:2px solid #fff4a0;box-shadow:0 0 0 7px rgba(9,212,239,.26),0 0 20px #09314b}.ds-pin small{display:block;color:#75e6ff;margin-top:2px}.ds-map-hint{background:#0b3452;color:#ebfaff;padding:7px 9px;font-size:9px;text-align:center}.ds-map-hint strong{color:#ffefab}",
  ".ds-poster-section{margin-top:13px;padding:10px;background:linear-gradient(140deg,#fff6db,#eff8f9);border:1px solid #dabd76;border-radius:13px}",
  ".ds-poster-title{font-weight:950;font-size:13px;color:#11536d;margin:0 0 9px}",
  ".ds-poster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.ds-poster-card{background:#fff;border:1px solid #d0b87f;border-radius:12px;overflow:hidden;box-shadow:0 5px 13px rgba(15,45,63,.12)}",
  ".ds-poster-card h3{font-size:12px;margin:0;padding:11px;color:#174c66}.ds-poster-card img{display:block;width:100%;height:auto;cursor:zoom-in}",
  ".ds-poster-actions{padding:10px}.ds-poster-actions a{display:inline-block;border-radius:9px;background:#127b92;color:white;text-decoration:none;padding:9px;font-size:11px;font-weight:850}",
  "@media(max-width:680px){.ds-poster-grid{grid-template-columns:1fr}}",
- ".ds-badge{display:inline-block;padding:2px 5px;border-radius:99px;background:#d9efff;color:#0c75a5;font-size:8px;font-weight:900}.ds-badge.sub{background:#e4eeff;color:#305da7}.ds-roster-extra{display:block;font-size:8px;color:#758d9e;margin-top:3px}",
+ ".ds-badge{display:inline-block;padding:2px 5px;border-radius:99px;background:#d9efff;color:#0c75a5;font-size:8px;font-weight:900}.ds-badge.sub{background:#e4eeff;color:#305da7}.ds-roster-extra{display:block;font-size:8px;color:#758d9e;margin-top:3px}.player[data-go-player]{cursor:pointer}.player[data-go-player]:focus-visible{outline:3px solid #0aa5c9;outline-offset:2px;border-radius:8px}",
  "@media(max-width:370px){.ds-grid{grid-template-columns:1fr}.ds-pin{font-size:6px;max-width:68px}}"
  ].join("");document.head.appendChild(s);}
 function normalize(n){return String(n||"").normalize("NFKD").replace(/[\u0300-\u036f\u0640]/g,"").toLowerCase().replace(/[^\p{L}\p{N}]/gu,"");}
@@ -83,7 +83,7 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
    const portrait=avatar
     ?'<span class="player__n player__avatar"><img class="ds-profile-photo" src="'+esc(avatar)+'" alt="" loading="lazy" decoding="async" data-fallback="'+fallback+'"></span>'
     :'<span class="player__n">'+fallback+'</span>';
-   return '<div class="player">'+portrait+'<span class="player__name">'+esc(r.name)+
+   return '<div class="player" data-go-player="'+esc(r.name)+'" role="button" tabindex="0" aria-label="⌖ '+esc(r.name)+' · mapa">'+portrait+'<span class="player__name">'+esc(r.name)+
     '<span class="ds-roster-extra"><span class="ds-badge '+(r.role==="sub"?"sub":"")+'">'+
     esc(r.role==="sub"?t[4]:t[3])+'</span>'+(r.power==null?"":" · "+esc(r.power)+"M")+
     (r.role==="sub"&&subOf.has(normalize(r.name))?" · F1: "+esc(B[subOf.get(normalize(r.name))][0]):"")+
@@ -99,6 +99,37 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
   if($("rosterCount"))$("rosterCount").textContent=plan.roster.length+" "+(options.language==="es"?"jugadores":"players");
  }
  let phase="phase1",focus="H1";
+ function locatePlayer(name,preferred=phase){
+  const key=normalize(name);
+  if(!key)return null;
+  const find=which=>{
+   const groups=which==="phase2"?(plan.phase2||{}):(plan.phase1||{});
+   const subs=which==="phase2"?phase2Subs:(plan.subs||{});
+   const building=Object.keys(groups).find(k=>(groups[k]||[]).some(n=>normalize(n)===key));
+   if(building)return {phase:which,building};
+   const substitute=Object.keys(subs).find(k=>(subs[k]||[]).some(n=>normalize(n)===key));
+   if(substitute)return {phase:which,building:substitute};
+   if(which==="phase1"){
+    const mission=Object.keys(plan.missions||{}).find(k=>(plan.missions[k]||[]).some(n=>normalize(n)===key));
+    if(mission)return {phase:which,building:mission};
+   }
+   return null;
+  };
+  return find(preferred==="phase2"?"phase2":"phase1")||find(preferred==="phase2"?"phase1":"phase2");
+ }
+ function showOnMap(building,which=phase){
+  if(!B[building])return;
+  phase=which==="phase2"?"phase2":which==="final"?"final":"phase1";
+  focus=building;draw();
+  const pin=[...map.querySelectorAll("[data-bld]")].find(el=>el.dataset.bld===building);
+  if(pin){
+   pin.classList.add("target");pin.setAttribute("aria-current","location");
+   const hint=map.querySelector(".ds-map-hint");
+   if(hint)hint.innerHTML="⌖ <strong>"+esc(B[building][0])+"</strong>";
+  }
+  // One-way navigation: strategy or player → map location.
+  ($("map")||map).scrollIntoView({behavior:"smooth",block:"start"});
+ }
  const list=(names,sub,currentPhase)=>names?.length?names.map(n=>'<div class="ds-person '+(sub?"sub":isMission(n,currentPhase)?"mission":"")+'">'+(sub?"(":"")+esc(n)+(sub?")":"")+'</div>').join(""):'<div class="ds-person">'+esc(t[8])+'</div>';
  function draw(){
   const keys=phase==="phase1"?OPEN1:phase==="phase2"?OPEN2:["SILO","INFO"],data=plan[phase]||{},subMap=phase==="phase2"?phase2Subs:plan.subs||{};
@@ -106,7 +137,7 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
   strategy.innerHTML='<div class="ds-head"><strong>'+esc(plan.templateName||"HOLa Strategy")+' · TEAM '+esc(team)+'</strong><small>'+esc(plan.battle_date||"")+' · '+esc(plan.serverTime||"")+" "+esc(t[14])+'</small></div>'+
    '<div class="ds-switch"><button data-phase="phase1" class="'+(phase==="phase1"?"active":"")+'">'+esc(t[0])+'</button><button data-phase="phase2" class="'+(phase==="phase2"?"active":"")+'">'+esc(t[1])+'</button><button data-phase="final" class="'+(phase==="final"?"active":"")+'">'+esc(t[2])+'</button></div><div class="ds-help">'+esc(help)+'</div>'+
    (phase==="final"?'<div class="ds-call">'+esc(t[5])+'<strong>'+esc(plan.keyword||"—")+'</strong>'+esc(t[6])+": "+esc(plan.leader||"—")+(plan.alternate?" · "+esc(t[7])+": "+esc(plan.alternate):"")+'</div>':"")+
-   '<div class="ds-grid">'+keys.map(k=>'<article class="ds-card '+(focus===k?"focus":"")+'" id="ds-card-'+k+'"><h3>'+B[k][1]+" "+esc(B[k][0])+'</h3>'+
+   '<div class="ds-grid">'+keys.map(k=>'<article class="ds-card '+(focus===k?"focus":"")+'" id="ds-card-'+k+'" data-go-map="'+k+'" role="button" tabindex="0" aria-label="⌖ '+esc(B[k][0])+' · mapa"><h3>'+B[k][1]+" "+esc(B[k][0])+'</h3>'+
    (phase==="final"?'<div class="ds-person">'+esc(k==="SILO"?"ALL AVAILABLE PLAYERS":"TAKE AND HOLD")+'</div>':
     phase==="phase1"&&!P1.includes(k)?list(plan.missions?.[k],false,phase):
     P2.includes(k)||P1.includes(k)?list(data[k],false,phase):'<div class="ds-person">—</div>')+
@@ -117,8 +148,36 @@ window.holaRenderDsPublishedPlan=function(plan,options={}){
   strategy.querySelectorAll(".ds-switch button").forEach(b=>b.onclick=()=>{phase=b.dataset.phase;focus=phase==="final"?"SILO":"H1";draw();});
   map.classList.add("ds-public-map");
   map.innerHTML='<div class="ds-board"><img src="'+esc(mapImage)+'" alt="Desert Storm battlefield">'+keys.map(k=>'<button type="button" class="ds-pin '+(focus===k?"active":"")+'" style="left:'+B[k][2]+'%;top:'+B[k][3]+'%" data-bld="'+k+'">'+esc(B[k][0].replace("Field Hospital ","H").replace("Oil Refinery ","Ref "))+'<small>'+(phase==="final"?"!":(phase==="phase1"&&!P1.includes(k)?plan.missions?.[k]?.length||0:data[k]?.length||0)+((subMap[k]||[]).length?" · 🔵"+subMap[k].length:""))+'</small></button>').join("")+'</div><div class="ds-map-hint">'+esc(t[9])+'</div>';
-  map.querySelectorAll("[data-bld]").forEach(b=>b.onclick=()=>{focus=b.dataset.bld;draw();$("ds-card-"+focus)?.scrollIntoView({behavior:"smooth",block:"center"});});
+  strategy.querySelectorAll("[data-go-map]").forEach(card=>{
+   const go=()=>showOnMap(card.dataset.goMap);
+   card.addEventListener("click",go);
+   card.addEventListener("keydown",event=>{
+    if(event.key==="Enter"||event.key===" "){event.preventDefault();go();}
+   });
+  });
+  // Map pins remain clickable, but never jump back to a strategy card.
+  map.querySelectorAll("[data-bld]").forEach(b=>b.onclick=()=>{
+   focus=b.dataset.bld;draw();
+   const selected=[...map.querySelectorAll("[data-bld]")].find(el=>el.dataset.bld===focus);
+   if(selected)selected.classList.add("target");
+  });
   if($("summaryMap"))$("summaryMap").textContent="✓";
+ }
+ if(roster){
+  roster.querySelectorAll("[data-go-player]").forEach(card=>{
+   const go=()=>{
+    const location=locatePlayer(card.dataset.goPlayer);
+    if(location)showOnMap(location.building,location.phase);
+   };
+   card.addEventListener("click",go);
+   card.addEventListener("keydown",event=>{
+    if(event.key==="Enter"||event.key===" "){event.preventDefault();go();}
+   });
+   if(!locatePlayer(card.dataset.goPlayer)){
+    card.removeAttribute("role");card.removeAttribute("tabindex");
+    card.removeAttribute("data-go-player");card.removeAttribute("aria-label");
+   }
+  });
  }
  draw();showPublishedPosters(plan,options.language||"es");return true;
 };
