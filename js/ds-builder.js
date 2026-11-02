@@ -752,11 +752,17 @@ function mergeProposals(rows){
 // Cache OCR power readings; actual Supabase updates require separate consent.
 function rememberOCRPower(name,source){
  const official=canonical(name);
- if(!official||!source?.powerVerified||source.powerConflict||source.nameConflict)return;
+ if(!official||!source)return;
+ const key=normal(official),prior=ocrPowerReadings.get(key);
+ // A disagreement between images, names or THP passes invalidates any
+ // earlier reading, rather than preserving an outdated candidate.
+ if(source.powerConflict||source.nameConflict){
+  ocrPowerReadings.set(key,{value:null,verified:false,conflict:true});
+  return;
+ }
+ if(prior?.conflict||!source.powerVerified)return;
  const value=Number(source.ocrPower);
  if(!Number.isFinite(value)||value<=0||value>9999)return;
- const key=normal(official),prior=ocrPowerReadings.get(key);
- if(prior?.conflict)return;
  if(prior&&Math.abs(prior.value-value)>.05){
   ocrPowerReadings.set(key,{value:null,verified:false,conflict:true});
   return;
