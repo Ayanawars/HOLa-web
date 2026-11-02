@@ -481,81 +481,32 @@ function renderTeamAAudit(){
    esc(extras.map(r=>r.name+" ("+(r.role==="starter"?"titular":"suplente")+")").join(" · "))+'</p>':"")+
   '<p class="muted">La comparación no modifica nada. Cada alta requiere pulsar su botón.</p>';
 }
-function renderRoster(){if(!state)return;const list=$("rosterList");const roster=[...state.roster].sort((a,b)=>a.role.localeCompare(b.role)||Number(b.power||0)-Number(a.power||0));list.innerHTML=roster.length?roster.map(r=>
- '<article class="roster-card" data-name="'+esc(r.name)+'"><div class="person-name"><strong>'+esc(r.name)+'</strong><small>'+esc(r.role==="starter"?"Titular":"Suplente")+' · '+(r.power==null?"THP pendiente en Supabase":number(r.power)+"M")+'</small></div>'+
- '<div class="field"><label>THP · Supabase (solo aumenta)</label><input class="roster-power" inputmode="decimal" type="number" min="0" max="9999" step=".1" value="'+(r.power??"")+'"></div>'+
- '<div class="field role-field"><label>Tipo</label><select class="roster-role"><option value="starter"'+(r.role==="starter"?" selected":"")+'>Titular</option><option value="sub"'+(r.role==="sub"?" selected":"")+'>Suplente</option></select></div>'+
- '<button type="button" class="remove" title="Quitar participante" aria-label="Quitar '+esc(r.name)+'">×</button></article>').join(""):'<p class="muted">Todavía no hay participantes. Sube capturas o añádelos manualmente.</p>';
+
+function renderRoster(){
+ if(!state)return;
+ const list=$("rosterList");
+ const roster=[...state.roster].sort((a,b)=>
+  (a.role===b.role?0:a.role==="starter"?-1:1)||Number(b.power||0)-Number(a.power||0));
+ list.innerHTML=roster.length?roster.map(r=>
+  '<article class="roster-card roster-card-compact" data-name="'+esc(r.name)+'">'+
+  '<div class="person-name"><strong>'+esc(r.name)+'</strong>'+
+  '<small>'+esc(r.role==="starter"?"Titular":"Suplente")+
+  ' · '+(r.power==null?"THP pendiente":number(r.power)+"M")+'</small></div>'+
+  '<button type="button" class="remove" title="Quitar participante" aria-label="Quitar '+esc(r.name)+'">×</button>'+
+  '</article>').join(""):
+  '<p class="muted">Todavía no hay participantes. Sube capturas o añádelos manualmente.</p>';
  renderStats();renderTeamAAudit();
 }
-function exchangeRosterRoles(player,other){
- if(!other||player===other||player.role===other.role)return false;
- const first=player.name,second=other.name;
- // Exchange tactical places together with the roster roles.
- for(const field of ["phase1","phase2","missions","subs"])
-  for(const key of Object.keys(state[field]))
-   state[field][key]=state[field][key].map(name=>name===first?second:name===second?first:name);
- for(const key of ["leader","alternate"])
-  if(state[key]===first)state[key]=second;else if(state[key]===second)state[key]=first;
- const previous=player.role;player.role=other.role;other.role=previous;
- return true;
-}
-function showRoleExchange(card,player,next){
- card.querySelector(".role-exchange")?.remove();
- const panel=document.createElement("div");
- panel.className="role-exchange field";panel.style.gridColumn="1 / -1";
- panel.innerHTML='<label>Grupo completo · Elige con quién intercambiar la plaza</label>'+
-  '<select class="roster-exchange" aria-label="Jugador para intercambiar la plaza"><option value="">Elegir '+(next==="starter"?"titular":"suplente")+'</option>'+
-  state.roster.filter(r=>r.role===next).map(r=>'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>').join("")+'</select>'+
-  '<button type="button" class="btn outline small roster-exchange-cancel">Cancelar intercambio</button>';
- card.append(panel);
- notice("Ya hay "+(next==="starter"?"20 titulares":"10 suplentes")+". Elige en la tarjeta con quién intercambiar la plaza; se conservarán sus puestos en el mapa.","info");
-}
-async function rosterChange(e){
- const card=e.target.closest(".roster-card");if(!card)return;
- const r=state.roster.find(x=>x.name===card.dataset.name);if(!r)return;
- if(e.target.classList.contains("roster-exchange-cancel")){
-  if(e.type!=="click")return;
-  card.querySelector(".roster-role").value=r.role;card.querySelector(".role-exchange")?.remove();return;
- }
- if(e.target.classList.contains("roster-exchange")){
-  if(e.type!=="change"||!e.target.value)return;
-  const other=state.roster.find(x=>x.name===e.target.value);
-  if(!exchangeRosterRoles(r,other)){renderRoster();return;}
-  renderRoster();mutate();
-  notice("✓ Plazas intercambiadas: "+r.name+" · "+(r.role==="starter"?"Titular":"Suplente")+"; "+other.name+" · "+(other.role==="starter"?"Titular":"Suplente")+". Puestos del mapa conservados. Guarda el borrador para conservar el cambio.","success");
-  return;
- }
- if(e.target.classList.contains("remove")){
-  if(e.type!=="click")return;
-  removeAssignments(r.name);state.roster=state.roster.filter(x=>x!==r);renderRoster();mutate();return;
- }
- if(e.target.classList.contains("roster-role")){
-  if(e.type!=="change")return;
-  const next=e.target.value;
-  if(next!==r.role){
-   const count=counts();
-   if(next==="starter"&&count.starter>=20||next==="sub"&&count.sub>=10){
-    e.target.value=r.role;showRoleExchange(card,r,next);return;
-   }
-   removeAssignments(r.name);r.role=next;
-   if(next==="sub"){if(state.leader===r.name)state.leader="";if(state.alternate===r.name)state.alternate="";}
-   renderRoster();mutate();
-   notice("✓ "+r.name+" ahora es "+(next==="starter"?"titular":"suplente")+". Revisa sus asignaciones y guarda el borrador.","success");
-  }
-  return;
- }
- if(e.target.classList.contains("roster-power")&&e.type==="change"){
-  try{
-   const entered=reviewedPower(e.target.value);
-   const result=await ensureHigherTHP(r.name,entered);
-   renderRoster();mutate();
-   notice(result.status==="updated"?"✓ THP actualizado en Supabase: "+r.name+" · "+number(memberTHP(r.name))+"M.":"THP conservado en Supabase: "+r.name+" · "+(memberTHP(r.name)==null?"sin registrar":number(memberTHP(r.name))+"M")+".","success");
-  }catch(error){
-   renderRoster();mutate();
-   notice("No se pudo actualizar THP en Supabase: "+String(error?.message||error),"error");
-  }
- }
+function rosterChange(event){
+ if(event.type!=="click"||!event.target.classList.contains("remove"))return;
+ const card=event.target.closest(".roster-card");
+ if(!card||!state)return;
+ const participant=state.roster.find(p=>p.name===card.dataset.name);
+ if(!participant)return;
+ removeAssignments(participant.name);
+ state.roster=state.roster.filter(p=>p!==participant);
+ ocrPowerReadings.delete(normal(canonical(participant.name)||participant.name));
+ renderRoster();mutate();
 }
 async function importLegacy(){
  try{const {data,error}=await sb.from("desert_storm_participants").select("player_name").eq("battle_date",state.battle_date).eq("team",state.team).order("player_name");if(error)throw error;let n=0;for(const r of data||[]){if(counts().starter>=20)break;try{n+=addRoster(r.player_name,"starter",null)?1:0;}catch{}}
@@ -866,9 +817,13 @@ function renderOCRApprovalRows(){
   '</span><span class="ocr-review-status">'+row.status+'</span></div>'+
   '<div class="ocr-review-fields"><select class="ocr-approve-name" aria-label="Miembro HOLa">'+
   playerOption(row.name,"Elegir miembro HOLa")+'</select>'+
-  '<select class="ocr-approve-role" aria-label="Tipo de inscripción"><option value="">Elegir tipo</option>'+
-  '<option value="starter"'+(row.role==="starter"?' selected':'')+'>Titular</option>'+
-  '<option value="sub"'+(row.role==="sub"?' selected':'')+'>Suplente</option></select></div>'+
+  '<select class="ocr-approve-role" aria-label="Tipo de inscripción">'+
+  (row.role==="starter"?
+   '<option value="starter" selected>Titular</option><option value="sub">Suplente</option>':
+   row.role==="sub"?
+   '<option value="sub" selected>Suplente</option><option value="starter">Titular</option>':
+   '<option value="" selected>Elegir tipo</option><option value="starter">Titular</option><option value="sub">Suplente</option>')+
+  '</select></div>'+
   '<p class="ocr-row-error" role="status"></p></div>').join("");
  $("ocrResultTotal").textContent=String(entries.length);
  $("ocrResultPending").textContent=entries.filter(r=>!r.selected&&!r.already).length+" por corregir";
