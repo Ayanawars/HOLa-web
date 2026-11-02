@@ -16,7 +16,14 @@ let savedDrafts=[],members=[],memberByKey=new Map(),memberProfiles=new Map(),ros
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[ᓚᘏᗢ]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
-function notice(msg,type="info"){$("message").textContent=msg;$("message").className="notice "+type;}
+let noticeTimer=null;
+function notice(msg,type="info"){
+ const item=$("message");if(!item)return;
+ clearTimeout(noticeTimer);
+ if(!msg){item.hidden=true;item.textContent="";return;}
+ item.textContent=msg;item.className="notice app-toast "+type;item.hidden=false;
+ noticeTimer=setTimeout(()=>{item.hidden=true;},type==="error"?11000:6500);
+}
 // Native mobile scrolling list: every option is a Friday.
 function isoLocalDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function parseFridayDate(iso){
@@ -153,7 +160,7 @@ async function verifyAccess(){
   const clean=normal(name.replace(/[ᓚᘏᗢ]/g,""));
   if(clean&&!memberByKey.has(clean))memberByKey.set(clean,name);
  }
- $("gate").hidden=true;$("app").hidden=false;notice("Acceso autorizado · "+officer.name+" · R"+officer.rank.replace(/R/i,"").trim(),"success");return true;
+ $("gate").hidden=true;$("app").hidden=false;return true;
 }
 async function refreshOther(){
  rosterOther=new Set();const d=$("battleDate").value,t=$("team").value==="A"?"B":"A";
@@ -758,7 +765,7 @@ function canAcceptAutomatically(p){
 function ocrCandidateReason(p){
  if(p.note)return String(p.note);
  if(!p.name||!canonical(p.name))return "Selecciona el nombre oficial de HOLa.";
- if(rosterOther.has(normal(canonical(p.name))))return "Ya está guardado en Team "+(state?.team==="A"?"B":"A")+" para esta jornada. Abre «☁ Recuperar DS guardado» para editar su equipo sin repetir el OCR.";
+ if(rosterOther.has(normal(canonical(p.name))))return "Este jugador pertenece al otro equipo en esta jornada.";
  const existing=state?.roster?.find(r=>normal(r.name)===normal(canonical(p.name)));
  if(existing&&existing.role!==p.role)return "Ya está inscrito como "+(existing.role==="starter"?"titular":"suplente")+". Revisa la B.";
  if(!["starter","sub"].includes(p.role))return "No se distingue la B. Indica titular o suplente.";
@@ -777,11 +784,10 @@ function renderProposals(){
  const missingStarters=Math.max(0,20-rosterCounts.starter);
  const needAfterAccept=Math.max(0,missingStarters-newStarters);
  const registeredText=rosterCounts.starter+"/20 titulares · "+rosterCounts.sub+" suplentes";
- $("ocrSummary").innerHTML='<strong>Inscritos en el equipo: '+registeredText+'</strong>'+
+ $("ocrSummary").innerHTML='<strong>'+registeredText+'</strong>'+
   '<div class="ocr-counts">'+
-  '<span>Ya estaban inscritos: '+accepted.length+' lecturas</span>'+
-  '<span>Nuevos identificados: '+toAdd.length+'</span>'+
-  '<span>Revisión de jugadores: '+pendingCount+'</span></div>'+
+  '<span>Nuevos: '+toAdd.length+'</span>'+
+  '<span>Por revisar: '+pendingCount+'</span></div>'+
   (missingStarters?
    '<div class="ocr-needed" role="status"><strong>Faltan '+missingStarters+
    ' titular'+(missingStarters===1?'':'es')+' para completar los 20.</strong>'+
@@ -800,7 +806,7 @@ function renderProposals(){
  bulk.disabled=!toAdd.length||busy||acceptBusy;
  bulk.textContent=acceptBusy?"Comprobando inscripciones…":"✓ Aceptar los "+toAdd.length+" jugadores nuevos";
  $("ocrReviewBox").hidden=!pendingCount;
- $("ocrReviewTitle").textContent="⚠ Jugadores que necesitan revisión · "+pendingCount;
+ $("ocrReviewTitle").textContent="Por revisar · "+pendingCount;
  $("ocrProposals").innerHTML=pending.map(({p,i})=>{
   const roleText=p.role==="starter"?"Titular":p.role==="sub"?"Suplente":"Sin identificar";
   return '<article class="ocr-proposal" data-index="'+i+'">'+
@@ -828,14 +834,34 @@ function renderProposals(){
  const missingSelect=$("ocrMissingPlayer"),selectedMissing=missingSelect.value||"";
  missingSelect.innerHTML=eligibleMemberOptions(selectedMissing,"Elegir miembro que falta");
  const missing=$("ocrMissingDetails");
- if(ocrHasRead&&missingStarters>0&&newStarters===0)missing.open=true;
+ // Manual entry is already visible at the top of this page.
  if(!missingStarters&&missing.open)missing.open=false;
+}
+function showOCRResult({recognized,newPlayers,existing,pending,unmatched,readCount,totalShots,failed}){
+ $("ocrResultTotal").textContent=String(recognized);
+ $("ocrResultNew").textContent=newPlayers+" nuevos";
+ $("ocrResultExisting").textContent=existing+" ya inscritos";
+ $("ocrResultPending").textContent=pending+" por revisar";
+ const details=$("ocrResultAdditional"),notes=[];
+ if(unmatched)notes.push(unmatched+" textos no identificados");
+ if(readCount<totalShots)notes.push(readCount+"/"+totalShots+" capturas procesadas");
+ if(failed)notes.push(failed+" avisos de lectura");
+ details.textContent=notes.join(" · ");details.hidden=!notes.length;
+ const dialog=$("ocrResultDialog");
+ if(!dialog.open){
+  if(typeof dialog.showModal==="function")dialog.showModal();
+  else dialog.setAttribute("open","");
+ }
+}
+function closeOCRResult(){
+ const dialog=$("ocrResultDialog");
+ if(typeof dialog.close==="function")dialog.close();else dialog.removeAttribute("open");
 }
 async function readShots(){
  const shots=[...$("participantShots").files];
  if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
  if(busy||acceptBusy)return;
- busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();ocrHasRead=true;renderProposals();
+ busy=true;$("readShots").disabled=true;$("ocrStatus").hidden=false;proposals=[];rejectedOCR=new Map();ocrHasRead=true;renderProposals();
  const errors=[];let readCount=0;
  try{
   try{await refreshOfficialTHP({render:false});}catch(e){errors.push("THP de Supabase: "+String(e?.message||e));}
@@ -853,19 +879,14 @@ async function readShots(){
   renderRoster();renderProposals();
   const {accepted,toAdd,pending,unmatched}=ocrTriage();
   const {starter,sub}=counts();
-  $("ocrStatus").textContent="Lectura terminada: "+accepted.length+" ya inscritos · "+
-   toAdd.length+" nuevos · "+pending.length+" jugadores por revisar. "+
-   unmatched.length+" fragmentos de OCR opcionales (no son jugadores confirmados). Tesseract: "+
-   readCount+"/"+shots.length+" capturas. THP actualizados: "+powerSync.updated.length+"."+
-   (powerSync.failed.length?" Errores al actualizar THP: "+powerSync.failed.join(" · ")+".":"")+
-   (errors.length?" Avisos: "+errors.join(" · "):"");
-  notice("Equipo: "+starter+"/20 titulares y "+sub+" suplentes. "+
-   (toAdd.length?"Acepta los "+toAdd.length+" nuevos identificados. ":"")+
-   (starter<20?"Faltan "+(20-starter)+" titulares; corrige una lectura o elige el miembro desde la lista.":"Los titulares están completos.")+
-   (pending.length?" Hay "+pending.length+" lecturas identificadas que necesitan revisión.":""),
-   "info");
+  showOCRResult({
+   recognized:accepted.length+toAdd.length+pending.length,
+   newPlayers:toAdd.length,existing:accepted.length,pending:pending.length,
+   unmatched:unmatched.length,readCount,totalShots:shots.length,failed:errors.length
+  });
+  $("ocrStatus").textContent="";
  }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
- finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;renderProposals();}
+ finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;$("ocrStatus").hidden=true;renderProposals();}
 }
 function reviewedPower(value){
  const text=String(value??"").trim().replace(",",".");
@@ -1411,19 +1432,11 @@ function events(){
  $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());
  $("previousFriday").onclick=()=>moveFriday(-1);$("nextFriday").onclick=()=>moveFriday(1);
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
- $("savedDraftsList").addEventListener("click",async e=>{
-  const btn=e.target.closest("[data-restore-date][data-restore-team]");
-  if(!btn||btn.disabled)return;
-  const d=btn.dataset.restoreDate,t=btn.dataset.restoreTeam;
-  if(!savedDrafts.some(r=>r.battle_date===d&&r.team===t))return;
-  if(state?.battle_date===d&&state?.team===t){switchTab("plan");$("savedDraftsPanel").open=false;return;}
-  if(!parseFridayDate(d)){notice("El selector solo permite viernes. El borrador antiguo permanece guardado.","error");return;}
-  btn.disabled=true;populateFridayDates(d);$("team").value=t;
-  if(await loadDraft(true)){switchTab("plan");$("savedDraftsPanel").open=false;}
-  else btn.disabled=false;
- });
  $("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);
- $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
+ $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";$("filesInfo").hidden=!$("participantShots").files.length;};$("readShots").onclick=readShots;
+ $("ocrResultClose").onclick=closeOCRResult;
+ $("ocrResultView").onclick=()=>{closeOCRResult();$("ocrReview").hidden=false;$("ocrReview").scrollIntoView({behavior:"smooth",block:"start"});};
+ $("ocrResultDialog").addEventListener("click",e=>{if(e.target===$("ocrResultDialog"))closeOCRResult();});
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=addManualPlayer;
  $("bulkRosterText").addEventListener("input",invalidateBulkRoster);$("bulkReplace").addEventListener("change",invalidateBulkRoster);
@@ -1460,8 +1473,7 @@ function events(){
   try{await loadSavedDrafts(false);}
   catch(e){console.warn("Recuperación de DS:",e);notice("No se pudo consultar tus borradores: "+e.message,"error");}
   await loadDraft(false);
-  if(state)notice("✓ DS Builder preparado · Team B · "+state.battle_date+
-   ". Fechas: solo viernes. Puedes abrir «☁ Recuperar DS guardado» para editar jornadas anteriores.","success");
+  // No welcome notification: the selected Friday and team are shown in the fields.
  }catch(e){
   $("gate").textContent="No se pudo iniciar el DS Builder: "+e.message;
   $("gate").className="notice error";$("app").hidden=true;console.error(e);
