@@ -250,6 +250,51 @@ function addRoster(name,role){
  if(role==="sub"&&count.sub>=10)throw new Error("Ya hay 10 suplentes; no puedes añadir más.");
  state.roster.push({name,role,power:memberTHP(name)});return true;
 }
+
+function clearTeamRoster(){
+ if(!state||busy||acceptBusy)return false;
+ const total=state.roster.length;
+ const pending=proposals.length+rejectedOCR.size;
+ if(!total&&!pending)return false;
+ const names=[...state.roster.map(player=>player.name)];
+ const yes=window.confirm("¿Borrar los "+total+" jugadores del Team "+state.team+
+  " ("+state.battle_date+") y vaciar sus asignaciones en ambas fases?"+
+  (pending?" También se descartarán los resultados pendientes del OCR.":"")+
+  "\n\nNo se borrarán los miembros HOLa ni sus THP de Supabase. Para conservar el borrado, guarda el borrador.");
+ if(!yes)return false;
+ // Empty all current-team placements, including substitute routes and missions.
+ for(const field of ["phase1","phase2","missions","subs","subsPhase2"]){
+  for(const key of Object.keys(state[field]||{}))state[field][key]=[];
+ }
+ state.roster=[];
+ state.leader="";
+ state.alternate="";
+ proposals=[];
+ rejectedOCR=new Map();
+ ocrPowerReadings=new Map();
+ ocrHasRead=false;
+ $("participantShots").value="";
+ $("filesInfo").textContent="";
+ $("filesInfo").hidden=true;
+ $("ocrStatus").textContent="";
+ $("ocrStatus").hidden=true;
+ $("manualPlayer").value="";
+ $("manualRole").value="auto";
+ $("manualPlayerStatus").textContent="";
+ $("bulkRosterText").value="";
+ invalidateBulkRoster();
+ $("bulkStatus").textContent="";
+ $("thpReviewList").innerHTML="";
+ $("ocrResultList").innerHTML="";
+ if($("ocrResultDialog").open)closeOCRResult();
+ if($("thpReviewDialog").open)closeTHPReview();
+ renderRoster();
+ mutate();
+ notice("Convocatoria vaciada: "+names.length+" jugadores eliminados del Team "+state.team+
+  ". Guarda el borrador para conservar el cambio.","success");
+ return true;
+}
+
 function addManualPlayer(){
  const status=$("manualPlayerStatus");
  try{
@@ -385,6 +430,7 @@ function applyBulkRoster(){
 function renderStats(){
  if(!state)return;
  const {starter,sub}=counts();
+ const clearButton=$("clearTeamRoster");if(clearButton)clearButton.disabled=!(state.roster.length||proposals.length||rejectedOCR.size)||busy||acceptBusy;
  $("starterCount").textContent="Titulares "+starter+"/20";
  $("subCount").textContent="Suplentes "+sub+"/10";
  $("starterCount").classList.toggle("warn",starter>20);
@@ -1430,6 +1476,7 @@ function events(){
  $("bulkRosterText").addEventListener("input",invalidateBulkRoster);$("bulkReplace").addEventListener("change",invalidateBulkRoster);
  $("bulkCheck").onclick=previewBulkRoster;$("bulkApply").onclick=applyBulkRoster;
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
+ $("clearTeamRoster").onclick=clearTeamRoster;
  $("refreshTHP").onclick=openTHPReview;
  $("thpReviewClose").onclick=closeTHPReview;
  $("thpReviewApply").onclick=applyTHPReview;
