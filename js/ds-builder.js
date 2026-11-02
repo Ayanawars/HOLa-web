@@ -24,7 +24,8 @@ function canonical(raw){
  const alias=aliases[key];if(alias&&memberByKey.has(normal(alias)))return memberByKey.get(normal(alias));
  return memberByKey.get(key)||"";
 }
-// Official THP comes from players.thp. OCR may only raise it after matching the member.
+// For OCR, never update THP more than 5M above the official value.
+const MAX_OCR_THP_INCREASE=5;
 function parseOfficialTHP(raw){
  const t=String(raw??"").trim().replace(/\s+/g,"").replace(/(?:millones|million|m)$/i,"");
  if(!/^\d{1,4}(?:[.,]\d{1,3})?$/.test(t))return null;
@@ -59,7 +60,7 @@ async function raiseOfficialTHP(name,ocrValue,{reviewed=false}={}){
  rememberProfile(latest);
  const previous=parseOfficialTHP(latest.thp);
  if(previous!=null&&next<=previous+0.00001){syncLocalMemberTHP(official);return {status:"unchanged",previous,current:previous};}
- if(!reviewed&&previous!=null&&next>previous*1.5)return {status:"review",previous,current:previous};
+ if(!reviewed&&(previous==null||next-previous>MAX_OCR_THP_INCREASE+0.00001))return {status:"ignored",previous,current:previous};
  const stored=String(next)+"M";
  let query=sb.from("players").update({thp:stored}).eq("name",official);
  query=latest.thp==null?query.is("thp",null):query.eq("thp",latest.thp);
@@ -535,7 +536,7 @@ async function ensureHigherTHP(name,value,{reviewed=true}={}){
  if(result.status==="invalid")throw new Error("El THP no es válido.");
  return result;
 }
-function effectiveTHP(name,read){const saved=memberTHP(name);return read==null?saved:saved==null?read:Math.max(saved,read);}
+function effectiveTHP(name,read){return memberTHP(name);}
 function parsePower(raw){const text=String(raw||"").replace(/O(?=\d)|(?<=\d)O/g,"0");const m=text.match(/(\d{1,4}(?:[.,]\d{1,2})?)\s*[mM]\b/);return m?Number(m[1].replace(",",".")):null;}
 
 function parseCandidates(lines,prep){
@@ -623,13 +624,11 @@ async function readPowerCard(worker,prep,p,nextNameY,label,errors){
  }
  if(reads.length===2&&Math.abs(reads[0]-reads[1])<=.05){
   p.ocrPower=reads[0];p.powerVerified=true;
- }else if(reads.length){
-  p.ocrPower=reads.length===1?reads[0]:null;
-  p.powerConflict=reads.length===2;
-  p.requiresTHPReview=true;p.confirmed=false;
-  p.note=[p.note,reads.length===2?"THP contradictorio entre pasadas.":"THP reconocido una sola vez: comprueba la cifra."].filter(Boolean).join(" ");
+ }else{
+  // Ignore inconsistent or missing power; never flag a player for THP.
+  p.ocrPower=null;p.powerVerified=false;
  }
- p.power=effectiveTHP(p.name,p.ocrPower);
+ p.power=memberTHP(p.name);
 }
 async function readTesseractPasses(worker,prep,label,errors){
  const passes=[{image:prep.cropped,mode:"11",label:"nombres color"},{image:contrastOCRImage(prep.cropped),mode:"6",label:"nombres contraste"}];
@@ -660,7 +659,7 @@ function mergeProposals(rows){
   if(!incoming.name)continue;
   const key=normal(incoming.name);
   const old=proposals.find(p=>normal(p.name)===key);
-  if(!old){proposals.push({...incoming,roleConflict:!!incoming.roleConflict,powerConflict:!!incoming.powerConflict});continue;}
+  if(!old){proposals.push({...incoming,roleConflict:!!incoming.roleConflict,powerConflict:false});continue;}
   old.exact=old.exact||incoming.exact;
   if(!old.roleConflict&&old.role&&incoming.role&&old.role!==incoming.role){old.role="";old.roleConflict=true;}
   else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
@@ -669,52 +668,34 @@ function mergeProposals(rows){
   old.requiresTHPReview=!!(old.requiresTHPReview||incoming.requiresTHPReview);
    old.roleConflict=!!(old.roleConflict||incoming.roleConflict);
    old.powerConflict=!!(old.powerConflict||incoming.powerConflict);
-   old.powerVerified=!!(old.powerVerified||incoming.powerVerified);
+   old.powerVerified=!!(old.powerVerified||incoming.powerVerified)&&!old.powerConflict;
    old.power=effectiveTHP(old.name,old.powerConflict?null:old.ocrPower);
   if(!old.ocrName&&incoming.ocrName)old.ocrName=incoming.ocrName;
   const notes=[];
   if(old.roleConflict)notes.push("La B difiere entre lecturas: comprueba titular o suplente.");
-  if(old.powerConflict)notes.push("El THP difiere entre lecturas: comprueba la cifra.");
-  if(old.requiresTHPReview)notes.push("Confirma el THP de la tarjeta antes de actualizar Supabase.");
    if(!old.exact)notes.push("Confirma el nombre del jugador.");
   if(!old.role)notes.push("Selecciona la columna B.");
   old.note=notes.join(" ");
   old.confirmed=!!old.exact&&!!old.role&&!old.note;
  }
 }
-// Only exact, unambiguous OCR readings update profiles. Large jumps need review.
+
+// THP recognition is optional; player recognition/role never depend on it.
 async function applyOCRPowerUpgrades(){
- const outcomes={updated:[],review:[],failed:[]};
+ const outcomes={updated:[],ignored:[],failed:[]};
  for(const p of proposals){
-  p.power=effectiveTHP(p.name,p.powerConflict?null:p.ocrPower);
-  if(!p.exact||!p.role||p.roleConflict||p.powerConflict||p.requiresTHPReview||!p.powerVerified||p.ocrPower==null)continue;
+  p.power=memberTHP(p.name);
+  if(!p.exact||!p.powerVerified||p.powerConflict||p.ocrPower==null)continue;
   const saved=memberTHP(p.name);
-  if(saved!=null&&p.ocrPower<=saved){p.power=saved;continue;}
-   // OCR disagreement or an unusually large jump must never write directly
-   // to the official players table without human review.
-   if(saved==null||p.ocrPower>saved*1.08){
-    p.requiresTHPReview=true;p.manual=true;p.confirmed=false;
-    p.note="Revisa el THP leído ("+p.ocrPower+"M)"+(saved==null?" sin referencia en Supabase":" frente a "+saved+"M guardados")+". No se ha modificado Supabase.";
-    outcomes.review.push(p.name);continue;
-   }
-  try{
-   const result=await raiseOfficialTHP(p.name,p.ocrPower);
-   if(result.status==="updated")outcomes.updated.push(p.name);
-   else if(result.status==="review"){
-    p.requiresTHPReview=true;p.manual=true;p.confirmed=false;
-    p.note="El OCR ha leído "+p.ocrPower+"M, mucho más que "+result.previous+"M en Supabase. Comprueba el THP antes de confirmar.";
-    outcomes.review.push(p.name);
-   }else if(result.status==="changed-elsewhere"){
-    p.requiresTHPReview=true;p.manual=true;p.confirmed=false;
-    p.note="El THP de Supabase cambió mientras se leía la captura. Comprueba la cifra.";
-    outcomes.review.push(p.name);
-   }
-  }catch(error){
-   outcomes.failed.push(p.name+": "+String(error?.message||error));
-   p.manual=true;p.confirmed=false;
-   p.note="No se pudo actualizar el THP de Supabase: "+String(error?.message||error);
+  if(saved==null||p.ocrPower<=saved||p.ocrPower-saved>MAX_OCR_THP_INCREASE+0.00001){
+   outcomes.ignored.push(p.name);continue;
   }
-  p.power=p.requiresTHPReview?effectiveTHP(p.name,p.ocrPower):memberTHP(p.name);
+  try{
+   const result=await raiseOfficialTHP(p.name,p.ocrPower,{reviewed:false});
+   if(result.status==="updated")outcomes.updated.push(p.name);
+   else if(result.status==="ignored")outcomes.ignored.push(p.name);
+  }catch(error){outcomes.failed.push(p.name+": "+String(error?.message||error));}
+  p.power=memberTHP(p.name);
  }
  if(outcomes.updated.length&&state){renderRoster();mutate();}
  return outcomes;
@@ -727,7 +708,7 @@ function ocrTriage(){
  const accepted=[],toAdd=[],pending=[];
  for(let i=0;i<proposals.length;i++){
   const p=proposals[i],existing=existingRosterRecord(p.name);
-  if(existing&&existing.role===p.role&&!p.powerConflict&&!p.requiresTHPReview&&!p.note){accepted.push({p,i});continue;}
+  if(existing&&existing.role===p.role&&!p.note){accepted.push({p,i});continue;}
   if(canAcceptAutomatically(p))toAdd.push({p,i});
   else pending.push({p,i});
  }
@@ -742,7 +723,7 @@ function eligibleMemberOptions(selected="",label="Elegir miembro de HOLa"){
   '<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");
 }
 function canAcceptAutomatically(p){
- if(!p||!p.name||!p.exact||p.manual||p.roleConflict||p.powerConflict||p.requiresTHPReview)return false;
+ if(!p||!p.name||!p.exact||p.manual||p.roleConflict)return false;
  const name=canonical(p.name);
  if(!name||!["starter","sub"].includes(p.role)||rosterOther.has(normal(name)))return false;
  // The OCR result may be from a previous accepted batch. Never offer to
@@ -759,8 +740,6 @@ function ocrCandidateReason(p){
  if(existing&&existing.role!==p.role)return "Ya está inscrito como "+(existing.role==="starter"?"titular":"suplente")+". Revisa la B.";
  if(!["starter","sub"].includes(p.role))return "No se distingue la B. Indica titular o suplente.";
  if(p.roleConflict)return "B contradictoria entre capturas. Elige la columna correcta.";
- if(p.powerConflict)return "THP contradictorio entre capturas. Revisa el valor antes de actualizar Supabase.";
- if(p.requiresTHPReview)return "El THP de la captura supera ampliamente el guardado en Supabase. Confirma la cifra antes de actualizar.";
  if(!p.exact)return "Confirma el nombre que ha propuesto el OCR.";
  return "Comprueba esta lectura y pulsa «Añadir al equipo».";
 }
@@ -855,7 +834,6 @@ async function readShots(){
    toAdd.length+" nuevos · "+pending.length+" jugadores por revisar. "+
    unmatched.length+" fragmentos de OCR opcionales (no son jugadores confirmados). Tesseract: "+
    readCount+"/"+shots.length+" capturas. THP actualizados: "+powerSync.updated.length+"."+
-   (powerSync.review.length?" THP a revisar: "+powerSync.review.join(", ")+".":"")+
    (powerSync.failed.length?" Errores al actualizar THP: "+powerSync.failed.join(" · ")+".":"")+
    (errors.length?" Avisos: "+errors.join(" · "):"");
   notice("Equipo: "+starter+"/20 titulares y "+sub+" suplentes. "+
@@ -907,8 +885,9 @@ async function acceptOneProposal(index){
  acceptBusy=true;
  try{
   await refreshOther();
-  await ensureHigherTHP(name,power);
   const added=addRoster(name,p.role);
+   // THP failure must not prevent registration.
+   try{await ensureHigherTHP(name,power,{reviewed:false});}catch(error){console.warn('THP no actualizado:',error);}
   proposals.splice(index,1);renderRoster();mutate();
   notice((added?"✓ Añadido: ":"✓ Ya inscrito: ")+name+" · "+(p.role==="starter"?"Titular":"Suplente")+
    (memberTHP(name)==null?" · THP pendiente en Supabase.":" · THP sincronizado.") ,"success");
@@ -934,8 +913,8 @@ async function acceptUnmatched(index){
  acceptBusy=true;
  try{
   await refreshOther();
-  await ensureHigherTHP(name,power);
   const added=addRoster(name,role);
+   try{await ensureHigherTHP(name,power);}catch(error){console.warn('THP no actualizado:',error);}
   rejectedOCR.delete(key);renderRoster();mutate();
   notice((added?"✓ Añadido: ":"✓ Ya inscrito: ")+name+" · "+(role==="starter"?"Titular":"Suplente")+".","success");
   return true;
@@ -952,8 +931,8 @@ async function addMissingPlayer(){
  acceptBusy=true;
  try{
   await refreshOther();
-  await ensureHigherTHP(name,power);
   const added=addRoster(name,role);
+   try{await ensureHigherTHP(name,power);}catch(error){console.warn('THP no actualizado:',error);}
   $("ocrMissingPlayer").value="";$("ocrMissingPower").value="";
   renderRoster();mutate();
   notice((added?"✓ Añadido manualmente: ":"✓ Ya inscrito: ")+name+" · "+(role==="starter"?"Titular":"Suplente")+".","success");
@@ -973,7 +952,7 @@ async function acceptProposals(){
   for(const p of proposals){
    const existing=existingRosterRecord(p.name);
    if(existing&&existing.role===p.role){
-    if(p.manual||p.requiresTHPReview||p.powerConflict||p.note){remaining.push(p);continue;}
+    if(p.manual||p.note){remaining.push(p);continue;}
     already++;continue;
    }
    if(!canAcceptAutomatically(p)){
@@ -981,7 +960,6 @@ async function acceptProposals(){
     remaining.push(p);continue;
    }
    try{
-    await ensureHigherTHP(p.name,p.ocrPower,{reviewed:false});
     if(addRoster(p.name,p.role))added++;else already++;
    }catch(e){p.note=String(e?.message||e);p.manual=true;remaining.push(p);rejected.push(p.name+": "+p.note);}
   }
