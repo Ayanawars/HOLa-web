@@ -12,7 +12,7 @@ MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const SUB_P1=[...P1,"INFO","REF1","REF2"],SUB_P2=[...P2,"REF1","REF2"];
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let savedDrafts=[],members=[],memberByKey=new Map(),memberProfiles=new Map(),rosterOther=new Set(),state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
+let savedDrafts=[],members=[],memberByKey=new Map(),memberProfiles=new Map(),rosterOther=new Set(),state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrPowerReadings=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[ᓚᘏᗢ]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -228,7 +228,7 @@ async function loadDraft(show=true){
   state=stateReady(src);state.battle_date=d;state.team=t;
   state.serverTime=teamTime(t);
   phase="phase1";selectedBuilding="H1";
-  proposals=[];rejectedOCR=new Map();ocrHasRead=false;
+  proposals=[];rejectedOCR=new Map();ocrPowerReadings=new Map();ocrHasRead=false;
   invalidateBulkRoster();syncSetup();renderRoster();mutate();
   localStorage.setItem("hola-ds-builder-current",JSON.stringify({battle_date:d,team:t}));
   // Removed the unused template panel from the setup screen.
@@ -749,25 +749,19 @@ function mergeProposals(rows){
  }
 }
 
-// THP recognition is optional; player recognition/role never depend on it.
-async function applyOCRPowerUpgrades(){
- const outcomes={updated:[],ignored:[],failed:[]};
- for(const p of proposals){
-  p.power=memberTHP(p.name);
-  if(!p.exact||p.nameConflict||!p.nameReadExact||!p.powerVerified||p.powerConflict||p.ocrPower==null)continue;
-  const saved=memberTHP(p.name);
-  if(saved==null||p.ocrPower<=saved||p.ocrPower-saved>MAX_OCR_THP_INCREASE+0.00001){
-   outcomes.ignored.push(p.name);continue;
-  }
-  try{
-   const result=await raiseOfficialTHP(p.name,p.ocrPower,{reviewed:false});
-   if(result.status==="updated")outcomes.updated.push(p.name);
-   else if(result.status==="ignored")outcomes.ignored.push(p.name);
-  }catch(error){outcomes.failed.push(p.name+": "+String(error?.message||error));}
-  p.power=memberTHP(p.name);
+// Cache OCR power readings; actual Supabase updates require separate consent.
+function rememberOCRPower(name,source){
+ const official=canonical(name);
+ if(!official||!source?.powerVerified||source.powerConflict||source.nameConflict)return;
+ const value=Number(source.ocrPower);
+ if(!Number.isFinite(value)||value<=0||value>9999)return;
+ const key=normal(official),prior=ocrPowerReadings.get(key);
+ if(prior?.conflict)return;
+ if(prior&&Math.abs(prior.value-value)>.05){
+  ocrPowerReadings.set(key,{value:null,verified:false,conflict:true});
+  return;
  }
- if(outcomes.updated.length&&state){renderRoster();mutate();}
- return outcomes;
+ ocrPowerReadings.set(key,{value,verified:true,source:source.file||"captura"});
 }
 function existingRosterRecord(name){
  const nameKey=normal(canonical(name)||name);
@@ -868,6 +862,7 @@ async function approveOCRPlayers(){
   for(const p of picks){
    try{
     if(addRoster(p.name,p.role))added++;else already++;
+    if(p.source==="proposal")rememberOCRPower(p.name,proposals[p.index]);
     ok.push(p);
    }catch(error){
     const message=String(error?.message||error);
@@ -933,7 +928,8 @@ async function readShots(){
     if(completed)readCount++;
    }catch(e){errors.push(shots[i].name+": "+String(e?.message||e));}
   }
-  const powerSync=await applyOCRPowerUpgrades();
+  // Capture readings for already-inscribed members; never write THP during OCR.
+  for(const p of proposals)if(existingRosterRecord(p.name))rememberOCRPower(p.name,p);
   proposals.sort((a,b)=>a.role===b.role?(Number(b.power||0)-Number(a.power||0)):(a.role==="starter"?-1:1));
   renderRoster();
   const {accepted,toAdd,pending}=ocrTriage();
