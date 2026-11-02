@@ -608,7 +608,7 @@ function powerRowImage(prep,startY,endY){
 async function readPowerCard(worker,prep,p,nextNameY,label,errors){
  // A THP can ONLY come from this card's own vertical slice.
  // Never associate numbers in the following OCR lines with a different player.
- const top=p.rowY-prep.h*.013,end=Math.min(p.rowY+prep.h*.056,nextNameY-prep.h*.006);
+ const top=p.rowY-prep.h*.013,end=Math.min(p.rowY+prep.h*.070,nextNameY-prep.h*.006);
  const image=powerRowImage(prep,top,end);
  if(!image)return;
  const reads=[];
@@ -660,13 +660,15 @@ function mergeProposals(rows){
   if(!incoming.name)continue;
   const key=normal(incoming.name);
   const old=proposals.find(p=>normal(p.name)===key);
-  if(!old){proposals.push({...incoming,roleConflict:false,powerConflict:false});continue;}
+  if(!old){proposals.push({...incoming,roleConflict:!!incoming.roleConflict,powerConflict:!!incoming.powerConflict});continue;}
   old.exact=old.exact||incoming.exact;
   if(!old.roleConflict&&old.role&&incoming.role&&old.role!==incoming.role){old.role="";old.roleConflict=true;}
   else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
   if(!old.powerConflict&&old.ocrPower!=null&&incoming.ocrPower!=null&&Math.abs(old.ocrPower-incoming.ocrPower)>.15){old.ocrPower=null;old.powerConflict=true;}
   else if(!old.powerConflict&&old.ocrPower==null&&incoming.ocrPower!=null)old.ocrPower=incoming.ocrPower;
   old.requiresTHPReview=!!(old.requiresTHPReview||incoming.requiresTHPReview);
+   old.roleConflict=!!(old.roleConflict||incoming.roleConflict);
+   old.powerConflict=!!(old.powerConflict||incoming.powerConflict);
    old.powerVerified=!!(old.powerVerified||incoming.powerVerified);
    old.power=effectiveTHP(old.name,old.powerConflict?null:old.ocrPower);
   if(!old.ocrName&&incoming.ocrName)old.ocrName=incoming.ocrName;
