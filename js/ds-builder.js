@@ -493,11 +493,14 @@ function normalizeOCRLines(data,ox,oy,scale){
  if(!out.length)for(const l of data?.lines||[]){const b=l.bbox||{};out.push({text:String(l.text||"").trim(),x:ox+Number(b.x0||0)/scale,y:oy+Number(b.y0||0)/scale});}
  return out.sort((a,b)=>a.y-b.y);
 }
+
 async function prepareImage(file){
  const img=await new Promise((resolve,reject)=>{const image=new Image(),url=URL.createObjectURL(file);image.onload=()=>{URL.revokeObjectURL(url);resolve(image);};image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("No se pudo abrir "+file.name));};image.src=url;});
  const w=img.naturalWidth,h=img.naturalHeight,original=document.createElement("canvas");original.width=w;original.height=h;
- const ctx=original.getContext("2d",{willReadFrequently:true});ctx.drawImage(img,0,0);
- const x=Math.round(w*.205),y=Math.round(h*.355),cw=Math.round(w*.42),ch=Math.round(h*.465),scale=2.25;
+ original.getContext("2d").drawImage(img,0,0);
+ // Expand the screenshot region: the previous crop stopped at 62.5% of its
+ // width, which cut off part of the displayed THP.
+ const x=Math.round(w*.19),y=Math.round(h*.34),cw=Math.round(w*.52),ch=Math.round(h*.495),scale=2.5;
  const cropped=document.createElement("canvas");cropped.width=Math.round(cw*scale);cropped.height=Math.round(ch*scale);
  cropped.getContext("2d").drawImage(img,x,y,cw,ch,0,0,cropped.width,cropped.height);
  return {original,cropped,ox:x,oy:y,scale,w,h,name:file.name};
@@ -510,10 +513,18 @@ function blueScore(canvas,cx,cy){
  for(let i=0;i<px.length;i+=4){const r=px[i],g=px[i+1],b=px[i+2];if(b>r+20&&b>g+6&&b>118)n++;}
  return n;
 }
+
 function readRole(prep,nameTop){
- const cy=nameTop+prep.h*.029,left=blueScore(prep.original,.649,cy),right=blueScore(prep.original,.794,cy),best=Math.max(left,right),least=Math.min(left,right);
- if(best<45||best<least*1.8)return {role:"",note:"No se distingue con seguridad la B: elige titular o suplente."};
- return {role:left>right?"starter":"sub",note:""};
+ // The B is on the same card as the name; the old code sampled too low.
+ let best={left:0,right:0,score:0};
+ for(const offset of [-.025,-.013,0,.012]){
+  const cy=nameTop+prep.h*offset;
+  const left=blueScore(prep.original,.649,cy),right=blueScore(prep.original,.794,cy);
+  if(Math.max(left,right)>best.score)best={left,right,score:Math.max(left,right)};
+ }
+ const least=Math.min(best.left,best.right);
+ if(best.score<45||best.score<least*1.8)return {role:"",note:"No se distingue con seguridad la B: elige titular o suplente."};
+ return {role:best.left>best.right?"starter":"sub",note:""};
 }
 async function ensureHigherTHP(name,value,{reviewed=true}={}){
  if(value==null)return {status:"missing"};
@@ -526,46 +537,34 @@ async function ensureHigherTHP(name,value,{reviewed=true}={}){
 }
 function effectiveTHP(name,read){const saved=memberTHP(name);return read==null?saved:saved==null?read:Math.max(saved,read);}
 function parsePower(raw){const text=String(raw||"").replace(/O(?=\d)|(?<=\d)O/g,"0");const m=text.match(/(\d{1,4}(?:[.,]\d{1,2})?)\s*[mM]\b/);return m?Number(m[1].replace(",",".")):null;}
+
 function parseCandidates(lines,prep){
- const out=[],maxY=prep.h*.81,minY=prep.h*.39;
+ const out=[],maxY=prep.h*.835,minY=prep.h*.345;
  const generic=/\b(?:poder|power|estrateg|seleccion|fuerza especial|búsqueda|batalla|hero|participantes|suplentes|titulares|total|reservas|buscar|battle|confirmed|squad|alliance)\b/i;
- for(let i=0;i<lines.length;i++){
-  const row=lines[i];
-  if(row.y<minY||row.y>maxY||row.x<prep.w*.19||row.x>prep.w*.57)continue;
+ for(const row of lines){
+  if(row.y<minY||row.y>maxY||row.x<prep.w*.19||row.x>prep.w*.60)continue;
   const raw=String(row.text||"").replace(/^\s*\d{1,3}\s*[.)-]\s*/,"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").replace(/\s{2,}/g," ").trim();
   if(raw.length<3||raw.length>65||generic.test(raw))continue;
   const matched=matchMember(raw);
-  let power=parsePower(raw);
-  for(let j=i+1;j<Math.min(lines.length,i+5)&&power==null;j++){
-   const next=lines[j],dy=next.y-row.y;
-   if(dy>=prep.h*.065)break;
-   if(dy>=0&&matchMember(next.text).name)break;
-   if(dy>=-5)power=parsePower(next.text);
-  }
   const role=readRole(prep,row.y);
   if(!matched.name){
-   // Unrecognized OCR is NOT a player. Show likely game rows in a separate
-   // correction panel, with an official-member picker; ignore screen labels.
-   if(power!=null&&/[\p{L}]{3}/u.test(raw)&&!/^[\d\s.,]+\s*[KMB]$/i.test(raw)){
-    const key=normal(raw);
-    if(key&&!rejectedOCR.has(key)&&rejectedOCR.size<35)
-     rejectedOCR.set(key,{text:raw,file:prep.name,role:role.role,power,note:""});
-    else if(key&&rejectedOCR.has(key)){
-     const old=rejectedOCR.get(key);
-     if(old.role!==role.role){old.role="";old.note="B diferente entre capturas: comprueba si es titular o suplente.";}
-     if(old.power!=null&&Math.abs(old.power-power)>.15){old.power=null;old.note="THP diferente entre capturas: comprueba la cifra.";}
-    }
-   }
+   const key=normal(raw);
+   // Do not require a recognised THP just to show a plausible nickname
+   // for manual identification in the review panel.
+   if(key.length>=4&&key.length<=35&&/\p{L}/u.test(raw)&&!rejectedOCR.has(key)&&rejectedOCR.size<35)
+    rejectedOCR.set(key,{text:raw,file:prep.name,role:role.role,power:null,note:"Posible nombre no reconocido; selecciona el miembro oficial si corresponde."});
    continue;
   }
   const note=!matched.exact?"Comprueba el nombre oficial.":role.note;
-  const confirmed=matched.exact&&!!role.role&&!note;
-  out.push({ocrName:raw,name:matched.name,exact:matched.exact,ocrPower:power,power:effectiveTHP(matched.name,power),role:role.role,confirmed,note,file:prep.name,manual:false});
+  out.push({ocrName:raw,name:matched.name,exact:matched.exact,rowY:row.y,
+   ocrPower:null,power:memberTHP(matched.name),role:role.role,
+   confirmed:matched.exact&&!!role.role&&!note,note,file:prep.name,manual:false,
+   powerVerified:false,requiresTHPReview:false});
  }
  const unique=new Map();
- for(const candidate of out){
-  const key=normal(candidate.name),old=unique.get(key);
-  if(!old||Number(candidate.confirmed)>Number(old.confirmed)||(!old.exact&&candidate.exact))unique.set(key,candidate);
+ for(const p of out){
+  const key=normal(p.name),old=unique.get(key);
+  if(!old||Number(p.confirmed)>Number(old.confirmed)||(!old.exact&&p.exact))unique.set(key,p);
  }
  return [...unique.values()];
 }
@@ -596,17 +595,64 @@ function contrastOCRImage(canvas){
  }
  ctx.putImageData(pixels,0,0);return copy;
 }
+
+function powerRowImage(prep,startY,endY){
+ const top=Math.max(0,Math.round(startY)),bottom=Math.min(prep.h,Math.round(endY));
+ const x=Math.round(prep.w*.19),right=Math.round(prep.w*.71),scale=3;
+ if(bottom-top<5)return null;
+ const strip=document.createElement("canvas");
+ strip.width=Math.round((right-x)*scale);strip.height=Math.round((bottom-top)*scale);
+ strip.getContext("2d").drawImage(prep.original,x,top,right-x,bottom-top,0,0,strip.width,strip.height);
+ return strip;
+}
+async function readPowerCard(worker,prep,p,nextNameY,label,errors){
+ // A THP can ONLY come from this card's own vertical slice.
+ // Never associate numbers in the following OCR lines with a different player.
+ const top=p.rowY-prep.h*.013,end=Math.min(p.rowY+prep.h*.056,nextNameY-prep.h*.006);
+ const image=powerRowImage(prep,top,end);
+ if(!image)return;
+ const reads=[];
+ for(const [mode,canvas,pass] of [["7",image,"color"],["6",contrastOCRImage(image),"contraste"]]){
+  ocrProgress=label+" · "+p.name+" THP "+pass;
+  try{
+   await worker.setParameters({tessedit_pageseg_mode:mode});
+   const result=await worker.recognize(canvas);
+   const value=parsePower(result?.data?.text||"");
+   if(value!=null)reads.push(value);
+  }catch(e){errors.push(prep.name+" · THP "+p.name+" ("+pass+"): "+String(e?.message||e));}
+ }
+ if(reads.length===2&&Math.abs(reads[0]-reads[1])<=.05){
+  p.ocrPower=reads[0];p.powerVerified=true;
+ }else if(reads.length){
+  p.ocrPower=reads.length===1?reads[0]:null;
+  p.powerConflict=reads.length===2;
+  p.requiresTHPReview=true;p.confirmed=false;
+  p.note=[p.note,reads.length===2?"THP contradictorio entre pasadas.":"THP reconocido una sola vez: comprueba la cifra."].filter(Boolean).join(" ");
+ }
+ p.power=effectiveTHP(p.name,p.ocrPower);
+}
 async function readTesseractPasses(worker,prep,label,errors){
- const passes=[{image:prep.cropped,mode:"11",label:"color"},{image:contrastOCRImage(prep.cropped),mode:"6",label:"contraste"}];
- let completed=0;
+ const passes=[{image:prep.cropped,mode:"11",label:"nombres color"},{image:contrastOCRImage(prep.cropped),mode:"6",label:"nombres contraste"}];
+ const perScreenshot=new Map();let completed=0;
  for(const pass of passes){
   ocrProgress=label+" · "+pass.label;$("ocrStatus").textContent=ocrProgress;
   try{
    await worker.setParameters({tessedit_pageseg_mode:pass.mode});
    const {data}=await worker.recognize(pass.image,{}, {text:true,blocks:true});
-   mergeProposals(parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep));completed++;
+   for(const incoming of parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep)){
+    const key=normal(incoming.name),old=perScreenshot.get(key);
+    if(!old){perScreenshot.set(key,incoming);continue;}
+    if(old.role&&incoming.role&&old.role!==incoming.role){
+     old.role="";old.roleConflict=true;old.note="B contradictoria: selecciona titular o suplente.";old.confirmed=false;
+    }else if(!old.role&&!old.roleConflict&&incoming.role)old.role=incoming.role;
+    if(!old.exact&&incoming.exact){old.exact=true;old.rowY=incoming.rowY;old.ocrName=incoming.ocrName;}
+   }
+   completed++;
   }catch(e){errors.push(prep.name+" ("+pass.label+"): "+String(e?.message||e));}
  }
+ const rows=[...perScreenshot.values()].sort((a,b)=>a.rowY-b.rowY);
+ for(let i=0;i<rows.length;i++)await readPowerCard(worker,prep,rows[i],rows[i+1]?.rowY??Infinity,label,errors);
+ mergeProposals(rows);
  return completed;
 }
 function mergeProposals(rows){
@@ -620,12 +666,15 @@ function mergeProposals(rows){
   else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
   if(!old.powerConflict&&old.ocrPower!=null&&incoming.ocrPower!=null&&Math.abs(old.ocrPower-incoming.ocrPower)>.15){old.ocrPower=null;old.powerConflict=true;}
   else if(!old.powerConflict&&old.ocrPower==null&&incoming.ocrPower!=null)old.ocrPower=incoming.ocrPower;
-  old.power=effectiveTHP(old.name,old.powerConflict?null:old.ocrPower);
+  old.requiresTHPReview=!!(old.requiresTHPReview||incoming.requiresTHPReview);
+   old.powerVerified=!!(old.powerVerified||incoming.powerVerified);
+   old.power=effectiveTHP(old.name,old.powerConflict?null:old.ocrPower);
   if(!old.ocrName&&incoming.ocrName)old.ocrName=incoming.ocrName;
   const notes=[];
   if(old.roleConflict)notes.push("La B difiere entre lecturas: comprueba titular o suplente.");
   if(old.powerConflict)notes.push("El THP difiere entre lecturas: comprueba la cifra.");
-  if(!old.exact)notes.push("Confirma el nombre del jugador.");
+  if(old.requiresTHPReview)notes.push("Confirma el THP de la tarjeta antes de actualizar Supabase.");
+   if(!old.exact)notes.push("Confirma el nombre del jugador.");
   if(!old.role)notes.push("Selecciona la columna B.");
   old.note=notes.join(" ");
   old.confirmed=!!old.exact&&!!old.role&&!old.note;
@@ -636,9 +685,16 @@ async function applyOCRPowerUpgrades(){
  const outcomes={updated:[],review:[],failed:[]};
  for(const p of proposals){
   p.power=effectiveTHP(p.name,p.powerConflict?null:p.ocrPower);
-  if(!p.exact||!p.role||p.roleConflict||p.powerConflict||p.ocrPower==null)continue;
+  if(!p.exact||!p.role||p.roleConflict||p.powerConflict||p.requiresTHPReview||!p.powerVerified||p.ocrPower==null)continue;
   const saved=memberTHP(p.name);
   if(saved!=null&&p.ocrPower<=saved){p.power=saved;continue;}
+   // OCR disagreement or an unusually large jump must never write directly
+   // to the official players table without human review.
+   if(saved==null||p.ocrPower>saved*1.08){
+    p.requiresTHPReview=true;p.manual=true;p.confirmed=false;
+    p.note="Revisa el THP leído ("+p.ocrPower+"M)"+(saved==null?" sin referencia en Supabase":" frente a "+saved+"M guardados")+". No se ha modificado Supabase.";
+    outcomes.review.push(p.name);continue;
+   }
   try{
    const result=await raiseOfficialTHP(p.name,p.ocrPower);
    if(result.status==="updated")outcomes.updated.push(p.name);
@@ -684,7 +740,7 @@ function eligibleMemberOptions(selected="",label="Elegir miembro de HOLa"){
   '<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");
 }
 function canAcceptAutomatically(p){
- if(!p||!p.name||!p.exact||p.manual||p.roleConflict||p.powerConflict)return false;
+ if(!p||!p.name||!p.exact||p.manual||p.roleConflict||p.powerConflict||p.requiresTHPReview)return false;
  const name=canonical(p.name);
  if(!name||!["starter","sub"].includes(p.role)||rosterOther.has(normal(name)))return false;
  // The OCR result may be from a previous accepted batch. Never offer to
