@@ -104,25 +104,46 @@ async function raiseOfficialTHP(name,ocrValue,{reviewed=false}={}){
  rememberProfile(updated[0]);syncLocalMemberTHP(official);
  return {status:"updated",previous,current:memberTHP(official)};
 }
+
 function matchMember(raw){
- const text=normal(String(raw||"").replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"").replace(/^\s*(?:R[1-5]\s*)+/i,"").replace(/\s+\d{1,4}(?:[.,]\d+)?\s*[mM]\b.*$/,"").trim());
- if(!text||text.length<3)return {name:"",exact:false};
- const direct=canonical(text)||memberByKey.get(text);
- if(direct)return {name:direct,exact:true};
- // Bracketed tags and decorative glyphs should not create new player IDs.
- const undecorated=text.replace(/[ᓚᘏᗢ]/g,"");
- if(undecorated!==text&&memberByKey.has(undecorated))return {name:memberByKey.get(undecorated),exact:true};
- let best="",distance=99,runnerUp=99;
- for(const member of members){
-  const keys=new Set([normal(member),normal(member.replace(/[ᓚᘏᗢ]/g,""))]);
-  for(const key of keys){
-   if(key.length<4)continue;
-   const d=levenshtein(key,text);
-   if(d<distance){runnerUp=distance;distance=d;best=member;}
-   else if(d<runnerUp&&member!==best)runnerUp=d;
-  }
- }
- return distance<=2&&distance<runnerUp&&distance/Math.max(text.length,5)<.24?{name:best,exact:false}:{name:"",exact:false};
+ const cleaned=String(raw||"")
+  .replace(/(?:\[\s*)?HOLa(?:\s*\])?/gi,"")
+  .replace(/^\s*(?:R[1-5]\s*)+/i,"")
+  .replace(/\s+\d{1,4}(?:[.,]\d+)?\s*[mM]\b.*$/,"").trim();
+ const text=normal(cleaned);
+ if(!text||text.length<3)return {name:"",exact:false,kind:"none"};
+ // Never silently resolve collisions in the official member list.
+ const exactMembers=members.filter(m=>normal(m)===text);
+ if(exactMembers.length>1)return {name:"",exact:false,kind:"ambiguous"};
+ if(exactMembers.length===1)return {name:exactMembers[0],exact:true,kind:"direct"};
+ const alias=canonical(cleaned)||memberByKey.get(text);
+ if(alias)return {name:alias,exact:true,kind:"alias"};
+ // Compare with *every* HOLa member, not just a fixed table of nicknames.
+ // One-character OCR mistakes (lin nino -> Lil Niño) are safe to correct
+ // only when there is no nearby second candidate.
+ const ranked=members.map(member=>{
+  const key=normal(member);
+  return {member,key,distance:levenshtein(key,text)};
+ }).filter(row=>row.key.length>=3)
+  .sort((a,b)=>a.distance-b.distance||a.member.localeCompare(b.member));
+ const best=ranked[0];
+ if(!best)return {name:"",exact:false,kind:"none"};
+ const second=ranked.find(row=>row.member!==best.member);
+ const runnerUp=second?.distance??Infinity;
+ const maxLength=Math.max(text.length,best.key.length);
+ const diff=Math.abs(text.length-best.key.length);
+ const autoLimit=maxLength>=10?2:maxLength>=6?1:0;
+ const closeEnough=best.distance<=autoLimit
+   &&best.distance/maxLength<=.20
+   &&diff<=autoLimit;
+ const unambiguous=runnerUp>=best.distance+2;
+ if(closeEnough&&unambiguous)
+  return {name:best.member,exact:true,kind:"fuzzy"};
+ // Slightly weaker matches are suggestions, never automatic registrations.
+ if(best.distance<=Math.min(3,Math.ceil(maxLength*.27))
+    &&best.distance<runnerUp)
+  return {name:best.member,exact:false,kind:"suggested"};
+ return {name:"",exact:false,kind:"none"};
 }
 function levenshtein(a,b){let row=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){const next=[i+1];for(let j=0;j<b.length;j++)next.push(Math.min(next[j]+1,row[j+1]+1,row[j]+(a[i]===b[j]?0:1)));row=next;}return row[b.length];}
 function playerOption(selected="",empty="Elegir miembro"){return '<option value="">'+esc(empty)+'</option>'+members.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");}
@@ -556,7 +577,7 @@ function parseCandidates(lines,prep){
    continue;
   }
   const note=!matched.exact?"Comprueba el nombre oficial.":role.note;
-  out.push({ocrName:raw,name:matched.name,exact:matched.exact,rowY:row.y,
+  out.push({ocrName:raw,name:matched.name,exact:matched.exact,matchKind:matched.kind,nameReadExact:matched.kind==="direct",rowY:row.y,
    ocrPower:null,power:memberTHP(matched.name),role:role.role,
    confirmed:matched.exact&&!!role.role&&!note,note,file:prep.name,manual:false,
    powerVerified:false,requiresTHPReview:false});
@@ -643,7 +664,8 @@ async function readTesseractPasses(worker,prep,label,errors){
     if(old.role&&incoming.role&&old.role!==incoming.role){
      old.role="";old.roleConflict=true;old.note="B contradictoria: selecciona titular o suplente.";old.confirmed=false;
     }else if(!old.role&&!old.roleConflict&&incoming.role)old.role=incoming.role;
-    if(!old.exact&&incoming.exact){old.exact=true;old.rowY=incoming.rowY;old.ocrName=incoming.ocrName;}
+    if(!old.exact&&incoming.exact){old.exact=true;old.rowY=incoming.rowY;old.ocrName=incoming.ocrName;old.matchKind=incoming.matchKind;}
+    if(incoming.nameReadExact){old.nameReadExact=true;old.matchKind="direct";old.ocrName=incoming.ocrName;}
    }
    completed++;
   }catch(e){errors.push(prep.name+" ("+pass.label+"): "+String(e?.message||e));}
@@ -660,6 +682,8 @@ function mergeProposals(rows){
   const old=proposals.find(p=>normal(p.name)===key);
   if(!old){proposals.push({...incoming,roleConflict:!!incoming.roleConflict,powerConflict:false});continue;}
   old.exact=old.exact||incoming.exact;
+  old.nameReadExact=!!(old.nameReadExact||incoming.nameReadExact);
+  if(incoming.nameReadExact){old.matchKind="direct";old.ocrName=incoming.ocrName;}
   if(!old.roleConflict&&old.role&&incoming.role&&old.role!==incoming.role){old.role="";old.roleConflict=true;}
   else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
   if(!old.powerConflict&&old.ocrPower!=null&&incoming.ocrPower!=null&&Math.abs(old.ocrPower-incoming.ocrPower)>.15){old.ocrPower=null;old.powerConflict=true;}
@@ -684,7 +708,7 @@ async function applyOCRPowerUpgrades(){
  const outcomes={updated:[],ignored:[],failed:[]};
  for(const p of proposals){
   p.power=memberTHP(p.name);
-  if(!p.exact||!p.powerVerified||p.powerConflict||p.ocrPower==null)continue;
+  if(!p.exact||!p.nameReadExact||!p.powerVerified||p.powerConflict||p.ocrPower==null)continue;
   const saved=memberTHP(p.name);
   if(saved==null||p.ocrPower<=saved||p.ocrPower-saved>MAX_OCR_THP_INCREASE+0.00001){
    outcomes.ignored.push(p.name);continue;
@@ -768,7 +792,9 @@ function renderProposals(){
  $("ocrAutoList").innerHTML=toAdd.length?
   '<details><summary>Ver '+toAdd.length+' jugadores nuevos cotejados con HOLa</summary><div>'+
   toAdd.map(({p})=>'<span class="ocr-ready-person">'+esc(canonical(p.name))+
-   ' · '+(p.role==="starter"?"Titular":"Suplente")+(p.power==null?' · THP pendiente':'')+'</span>').join("")+
+   ' · '+(p.role==="starter"?"Titular":"Suplente")+
+   (p.matchKind==="fuzzy"&&normal(p.ocrName)!==normal(p.name)?' (OCR: '+esc(p.ocrName)+')':'')+
+   '</span>').join("")+
   '</div></details>':
   '<p class="muted">No quedan nuevos jugadores identificados para incorporar.</p>';
  const bulk=$("acceptVerified");
