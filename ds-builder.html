@@ -89,8 +89,8 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 </section>
 <section id="tab-roster" class="section" hidden>
 <div class="eyebrow">02 · CONVOCATORIA CERRADA</div><h2>Participantes y suplentes</h2>
-<p class="muted">La B de la izquierda indica titulares y la de la derecha, suplentes. El OCR lee el THP y, si supera el de Supabase, actualiza la ficha. Si no consigue leerlo, utiliza el THP ya guardado. Las cifras dudosas se revisan antes de actualizar.</p>
-<div class="upload"><strong>📸 Importar capturas de «Seleccionar participantes»</strong><br><input type="file" id="participantShots" accept="image/*" multiple><div class="muted" id="filesInfo" style="margin-top:7px">Puedes subir varias capturas solapadas. Tesseract lee nombre y THP por tarjeta y coteja ambas lecturas; las cifras dudosas quedan para revisar antes de modificar Supabase.</div><div class="row actions"><button class="btn" id="readShots" type="button">🔎 Leer participantes con OCR</button><button class="btn outline" id="importLegacy" type="button">Importar nombres del DS anterior</button></div><div class="muted" id="ocrStatus" role="status" aria-live="polite"></div></div>
+<p class="muted">La B de la izquierda indica titulares y la de la derecha, suplentes. Lo principal es leer el nombre y distinguir titulares (B izquierda) de suplentes (B derecha). El THP no afecta a la inscripción: si el OCR lee un valor mayor que el guardado en Supabase y la subida no supera 5M, se actualiza automáticamente. Si no es fiable, se ignora y se conserva el valor guardado.</p>
+<div class="upload"><strong>📸 Importar capturas de «Seleccionar participantes»</strong><br><input type="file" id="participantShots" accept="image/*" multiple><div class="muted" id="filesInfo" style="margin-top:7px">Puedes subir varias capturas solapadas. Tesseract prioriza los nombres y la B. Los THP dudosos se ignoran sin pedir revisión del jugador.</div><div class="row actions"><button class="btn" id="readShots" type="button">🔎 Leer participantes con OCR</button><button class="btn outline" id="importLegacy" type="button">Importar nombres del DS anterior</button></div><div class="muted" id="ocrStatus" role="status" aria-live="polite"></div></div>
 <section class="bulk-roster-import" aria-labelledby="bulkRosterTitle">
  <h3 id="bulkRosterTitle">📝 Importar participantes por texto</h3>
  <p class="muted">Escribe un jugador por línea, con su tipo de inscripción. Puedes incluir la numeración.</p><p class="muted">Ejemplos:</p><div class="bulk-examples"><code>1. ASSASSIN428 - Titular</code><code>21. Arturlion - Suplente</code></div>
@@ -174,5 +174,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-tesseract-row-ocr-v2"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-tesseract-thp5m-v3"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
