@@ -145,6 +145,29 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .roster-heading .roster-clear:not(:disabled):hover{background:#fff0eb}
 .roster-heading .roster-clear:disabled{opacity:.42;cursor:not-allowed}
 
+
+/* Confirmed players are already approved in the OCR dialog; display only a compact roster. */
+.roster-list{gap:7px}
+.roster-card.roster-card-compact{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:10px 12px;min-height:61px;border:1px solid #e3d8be;border-radius:11px;
+ background:#fff;box-shadow:none;
+}
+.roster-card.roster-card-compact .person-name{
+ grid-column:auto;min-width:0;flex:1;
+}
+.roster-card.roster-card-compact strong{
+ margin:0 0 3px;font-size:14px;font-weight:850;line-height:1.3;
+}
+.roster-card.roster-card-compact small{
+ font-size:12px;line-height:1.3;color:#627d8b;
+}
+.roster-card.roster-card-compact .remove{
+ grid-column:auto;grid-row:auto;flex:0 0 34px;width:34px;height:34px;
+ border:0;border-radius:9px;background:#fff0f1;color:#a54047;
+ font-size:20px;font-weight:750;cursor:pointer;
+}
+
 </style>
 </head>
 <body>
@@ -260,5 +283,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-clear-roster-v15"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-compact-roster-detected-role-v16"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
