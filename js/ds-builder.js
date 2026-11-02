@@ -17,6 +17,27 @@ const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
 function notice(msg,type="info"){$("message").textContent=msg;$("message").className="notice "+type;}
+// Native mobile scrolling list: every option is a Friday.
+function isoLocalDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function parseFridayDate(iso){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||"")))return null;
+ const [y,m,day]=iso.split("-").map(Number),date=new Date(y,m-1,day,12);
+ return isoLocalDate(date)===iso&&date.getDay()===5?date:null;
+}
+function nextFriday(){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+(5-d.getDay()+7)%7);return d;}
+function populateFridayDates(selected){
+ const picker=$("battleDate"),friday=nextFriday(),target=parseFridayDate(selected)?selected:isoLocalDate(friday);
+ const dates=new Set();
+ for(let offset=-52;offset<=52;offset++){const d=new Date(friday);d.setDate(friday.getDate()+offset*7);dates.add(isoLocalDate(d));}
+ for(const row of savedDrafts)if(parseFridayDate(row.battle_date))dates.add(row.battle_date);
+ dates.add(target);
+ picker.innerHTML=[...dates].sort().map(date=>'<option value="'+date+'">Viernes · '+date.slice(8,10)+"/"+date.slice(5,7)+"/"+date.slice(0,4)+"</option>").join("");
+ picker.value=target;return target;
+}
+function moveFriday(offset){
+ const date=parseFridayDate($("battleDate").value)||nextFriday();date.setDate(date.getDate()+offset*7);
+ populateFridayDates(isoLocalDate(date));loadDraft();
+}
 function fresh(){return {version:1,battle_date:$("battleDate").value,team:$("team").value,serverTime:$("team").value==="A"?"18:00":"09:00",templateName:"Operación Faraón",keyword:"ANUBIS",leader:$("team").value==="A"?"Ayana wars":"",alternate:"",language:(localStorage.getItem("hola-language")==="tr"?"tr":"en"),baseMapDataUrl:"",roster:[],phase1:{H1:[],H2:[],H3:[],H4:[],HUB:[]},phase2:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],SILO:[],ARSENAL:[],MERC:[]},missions:{INFO:[],REF1:[],REF2:[]},subs:{H1:[],H2:[],H3:[],H4:[],HUB:[],INFO:[],REF1:[],REF2:[]},subsPhase2:{H1:[],H2:[],H3:[],H4:[],SILO:[],ARSENAL:[],MERC:[],HUB:[],INFO:[],REF1:[],REF2:[]}};}
 function canonical(raw){
  const key=normal(raw);
@@ -171,16 +192,18 @@ async function loadSavedDrafts(autoRestore=false){
   .order("updated_at",{ascending:false}).limit(12);
  if(error)throw new Error("No se pudieron consultar tus borradores: "+error.message);
  savedDrafts=(data||[]).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.battle_date)&&["A","B"].includes(r.team));
+ populateFridayDates($("battleDate").value);
  renderSavedDrafts();
  if(!autoRestore||!savedDrafts.length)return false;
  let last=null;try{last=JSON.parse(localStorage.getItem("hola-ds-builder-current")||"null");}catch{}
  const chosen=savedDrafts.find(r=>r.battle_date===last?.battle_date&&r.team===last?.team)||savedDrafts[0];
- $("battleDate").value=chosen.battle_date;$("team").value=chosen.team;
+ if(!parseFridayDate(chosen.battle_date))return false;
+ populateFridayDates(chosen.battle_date);$("team").value=chosen.team;
  return await loadDraft(false);
 }
 async function loadDraft(show=true){
  const d=$("battleDate").value,t=$("team").value;
- if(!d){notice("Selecciona una fecha válida.","error");return false;}
+ if(!parseFridayDate(d)){notice("La fecha de Desert Storm debe ser un viernes.","error");return false;}
  try{
   // Read this saved team before validating the opponent; a roster clash cannot
   // make the user's own saved map inaccessible for editing.
@@ -199,7 +222,7 @@ async function loadDraft(show=true){
   proposals=[];rejectedOCR=new Map();ocrHasRead=false;
   invalidateBulkRoster();syncSetup();renderRoster();renderProposals();mutate();renderSavedDrafts();
   localStorage.setItem("hola-ds-builder-current",JSON.stringify({battle_date:d,team:t}));
-  loadTemplates().catch(e=>console.warn("Plantillas DS:",e));
+  // Removed the unused template panel from the setup screen.
   if(crossWarning)notice("Jornada recuperada, pero comprueba las inscripciones antes de publicar: "+crossWarning,"error");
   else if(show){const c=counts();notice(src?"✓ Recuperado Team "+t+" del "+d+" · "+c.starter+" titulares, "+c.sub+" suplentes y sus mapas. Ya puedes modificarlos.":"Jornada nueva · Team "+t,"success");}
   return true;
@@ -1196,14 +1219,14 @@ function renderOutputs(){if(!state)return;$("mailOutput").value=buildMail();if(d
 function updateAnnounceCount(){const len=$("announcement").value.length;$("announceCount").textContent=len+"/500";$("announceCount").classList.toggle("warn",len>500);$("copyAnnouncement").disabled=len>500||!len;}
 async function copyText(id){const text=$(id).value;try{await navigator.clipboard.writeText(text);notice("Texto copiado al portapapeles.","success");}catch{$(id).focus();$(id).select();notice("Selecciona y copia el texto manualmente: el navegador bloqueó el portapapeles.","info");}}
 async function saveDraft(published=false){
- if(busy)return false;busy=true;for(const b of ["publishPlan","saveDraftTop","saveDraftPlan","saveDraftBottom"])$(b).disabled=true;
+ if(busy)return false;busy=true;for(const b of ["publishPlan","saveDraftPlan","saveDraftBottom"])$(b).disabled=true;
  try{await refreshOther();await refreshOfficialTHP({render:false});if(published){const {errors}=validate();if(errors.length)throw new Error("Revisa los avisos antes de publicar: "+errors[0]);}
   state.battle_date=$("battleDate").value;state.team=$("team").value;state.serverTime=$("serverTime").value;state.templateName=$("templateName").value.trim()||"Operación Faraón";state.keyword=$("keyword").value.trim();state.leader=$("leader").value;state.alternate=$("alternate").value;state.language=$("language").value;
   const payload={battle_date:state.battle_date,team:state.team,draft:JSON.parse(JSON.stringify(state)),updated_at:new Date().toISOString()};
   if(published){payload.published=JSON.parse(JSON.stringify(state));payload.published_at=new Date().toISOString();}
   const {error}=await sb.from("desert_storm_plans").upsert(payload,{onConflict:"battle_date,team"});if(error)throw error;storeLocal();await loadSavedDrafts(false).catch(e=>console.warn('Listado de borradores DS:',e));
   notice(published?"✓ Estrategia publicada para Team "+state.team+". La web DS mostrará esta versión.":"✓ Borrador guardado en Supabase (todavía no publicado).","success");return true;
- }catch(e){notice("No se pudo "+(published?"publicar":"guardar")+": "+e.message,"error");return false;}finally{busy=false;for(const b of ["saveDraftTop","saveDraftPlan","saveDraftBottom"])$(b).disabled=false;renderValidation();}
+ }catch(e){notice("No se pudo "+(published?"publicar":"guardar")+": "+e.message,"error");return false;}finally{busy=false;for(const b of ["publishPlan","saveDraftPlan","saveDraftBottom"])$(b).disabled=false;renderValidation();}
 }
 async function copyPrevious(){
  if(!state)return;try{const {data,error}=await sb.from("desert_storm_plans").select("draft,battle_date").eq("team",state.team).lt("battle_date",state.battle_date).order("battle_date",{ascending:false}).limit(1);if(error)throw error;if(!data?.length){notice("No hay una estrategia anterior de este equipo.","info");return;}
@@ -1385,7 +1408,8 @@ async function createPoster(what="phase1"){
 function renderMain(){renderRoster();mutate();syncSetup();}
 function events(){
  document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
- $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());$("customMap").addEventListener("change",e=>useOriginalMap(e.target.files?.[0]));
+ $("battleDate").addEventListener("change",()=>loadDraft());$("team").addEventListener("change",()=>loadDraft());
+ $("previousFriday").onclick=()=>moveFriday(-1);$("nextFriday").onclick=()=>moveFriday(1);
  for(const key of ["serverTime","templateName","keyword","leader","alternate","language"])$(key).addEventListener("change",()=>{if(!state)return;state[key]=$(key).value;mutate();});
  $("savedDraftsList").addEventListener("click",async e=>{
   const btn=e.target.closest("[data-restore-date][data-restore-team]");
@@ -1393,11 +1417,12 @@ function events(){
   const d=btn.dataset.restoreDate,t=btn.dataset.restoreTeam;
   if(!savedDrafts.some(r=>r.battle_date===d&&r.team===t))return;
   if(state?.battle_date===d&&state?.team===t){switchTab("plan");$("savedDraftsPanel").open=false;return;}
-  btn.disabled=true;$("battleDate").value=d;$("team").value=t;
+  if(!parseFridayDate(d)){notice("El selector solo permite viernes. El borrador antiguo permanece guardado.","error");return;}
+  btn.disabled=true;populateFridayDates(d);$("team").value=t;
   if(await loadDraft(true)){switchTab("plan");$("savedDraftsPanel").open=false;}
   else btn.disabled=false;
  });
- $("loadDraft").onclick=()=>loadDraft();$("saveTemplate").onclick=saveTemplate;$("loadTemplate").onclick=loadTemplate;$("saveDraftTop").onclick=()=>saveDraft();$("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);$("copyPrevious").onclick=copyPrevious;
+ $("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";};$("readShots").onclick=readShots;$("importLegacy").onclick=importLegacy;
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=addManualPlayer;
@@ -1427,4 +1452,18 @@ function events(){
  $("announcement").addEventListener("input",updateAnnounceCount);$("refreshAnnouncement").onclick=()=>{$("announcement").value=buildAnnouncement();updateAnnounceCount();};$("refreshMail").onclick=()=>{$("mailOutput").value=buildMail();};
  for(const [id,kind] of [["poster1","phase1"],["poster2","phase2"],["posterCombined","combined"]])$(id).onclick=()=>createPoster(kind).catch(e=>notice(e.message,"error"));
 }
-(async()=>{try{const today=new Date();const yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,"0"),dd=String(today.getDate()).padStart(2,"0");$("battleDate").value=yyyy+"-"+mm+"-"+dd;$("team").value="A";if(!await verifyAccess())return;events();let restored=false;try{restored=await loadSavedDrafts(true);}catch(e){console.warn("Recuperación de DS:",e);notice("No se pudo consultar tus borradores: "+e.message,"error");}if(restored){const c=counts();notice("✓ Recuperado tu último DS: Team "+state.team+" · "+state.battle_date+" · "+c.starter+" titulares, "+c.sub+" suplentes y mapas de ambas fases. Puedes editarlo.","success");}else if(!state){await loadDraft(false);if(state)notice("DS Builder preparado. Elige Team A o Team B, o abre «☁ Recuperar DS guardado».","info");}}catch(e){$("gate").textContent="No se pudo iniciar el DS Builder: "+e.message;$("gate").className="notice error";$("app").hidden=true;console.error(e);}})();
+(async()=>{
+ try{
+  populateFridayDates();$("team").value="B";$("serverTime").value="09:00";
+  if(!await verifyAccess())return;
+  events();
+  try{await loadSavedDrafts(false);}
+  catch(e){console.warn("Recuperación de DS:",e);notice("No se pudo consultar tus borradores: "+e.message,"error");}
+  await loadDraft(false);
+  if(state)notice("✓ DS Builder preparado · Team B · "+state.battle_date+
+   ". Fechas: solo viernes. Puedes abrir «☁ Recuperar DS guardado» para editar jornadas anteriores.","success");
+ }catch(e){
+  $("gate").textContent="No se pudo iniciar el DS Builder: "+e.message;
+  $("gate").className="notice error";$("app").hidden=true;console.error(e);
+ }
+})();
