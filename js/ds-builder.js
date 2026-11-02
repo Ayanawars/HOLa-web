@@ -943,6 +943,93 @@ async function readShots(){
  }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
  finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;$("ocrStatus").hidden=true;updateOCRApprovalButton();}
 }
+
+function thpComparison(name){
+ const official=canonical(name),saved=memberTHP(official),read=ocrPowerReadings.get(normal(official));
+ const value=read?.verified?read.value:null;
+ if(read?.conflict)return {status:"conflict",saved,value:null,label:"Lecturas distintas: se conserva Supabase",canApply:false};
+ if(value==null)return {status:"missing",saved,value:null,label:"Sin THP fiable en la captura",canApply:false};
+ if(saved!=null&&value<saved-.00001)return {status:"lower",saved,value,label:"THP inferior: conservar Supabase",canApply:false};
+ if(saved!=null&&Math.abs(value-saved)<=.00001)return {status:"same",saved,value,label:"Sin cambios",canApply:false};
+ if(saved!=null&&value-saved>MAX_OCR_THP_INCREASE+.00001)return {status:"too-high",saved,value,label:"Subida superior a 5M: ignorar lectura",canApply:false};
+ return {status:"increase",saved,value,label:saved==null?"Sin THP guardado: confirmar lectura":"Subida válida: +"+number(value-saved)+"M",canApply:true};
+}
+function renderTHPReview(){
+ const players=[...(state?.roster||[])].sort((a,b)=>a.name.localeCompare(b.name));
+ $("thpReviewList").innerHTML=players.map(player=>{
+  const name=canonical(player.name)||player.name,compare=thpComparison(name);
+  return '<label class="thp-review-item" data-name="'+esc(name)+'" data-status="'+compare.status+'">'+
+   '<input type="checkbox" class="thp-approval-check" '+(compare.canApply?'checked':'disabled')+
+   ' aria-label="Actualizar THP de '+esc(name)+'">'+
+   '<div><div class="thp-review-name">'+esc(name)+'</div>'+
+   '<div class="thp-review-values"><span>Supabase: <strong>'+(compare.saved==null?'—':number(compare.saved)+'M')+'</strong></span>'+
+   '<span>OCR: <strong>'+(compare.value==null?'—':number(compare.value)+'M')+'</strong></span></div>'+
+   '<div class="thp-review-status">'+esc(compare.label)+'</div></div></label>';
+ }).join("")||'<p class="muted">Primero acepta jugadores en la convocatoria para comparar sus THP.</p>';
+ updateTHPReviewButton();
+}
+function updateTHPReviewButton(){
+ const n=[...$("thpReviewList").querySelectorAll(".thp-approval-check")]
+  .filter(x=>x.checked&&!x.disabled).length;
+ const btn=$("thpReviewApply");
+ btn.disabled=busy||acceptBusy||n===0;
+ btn.textContent=n?"Actualizar "+n+" THP":"Actualizar subidas";
+}
+function closeTHPReview(){
+ const dialog=$("thpReviewDialog");
+ if(typeof dialog.close==="function")dialog.close();else dialog.removeAttribute("open");
+}
+async function openTHPReview(){
+ if(busy||acceptBusy)return;
+ const btn=$("refreshTHP");btn.disabled=true;
+ try{
+  await refreshOfficialTHP({render:false});
+  renderRoster();renderTHPReview();
+  $("thpReviewFeedback").hidden=true;$("thpReviewFeedback").textContent="";
+  const dialog=$("thpReviewDialog");
+  if(!dialog.open){
+   if(typeof dialog.showModal==="function")dialog.showModal();
+   else dialog.setAttribute("open","");
+  }
+ }catch(error){notice("No se pudo consultar el THP de Supabase: "+String(error?.message||error),"error");}
+ finally{btn.disabled=false;}
+}
+async function applyTHPReview(){
+ if(busy||acceptBusy)return;
+ const rows=[...$("thpReviewList").querySelectorAll(".thp-review-item")]
+  .filter(row=>{const cb=row.querySelector(".thp-approval-check");return cb.checked&&!cb.disabled;});
+ if(!rows.length)return;
+ acceptBusy=true;updateTHPReviewButton();
+ let updated=0,kept=0,failed=0;
+ const feedback=$("thpReviewFeedback");feedback.hidden=false;
+ try{
+  for(const row of rows){
+   const name=row.dataset.name,read=ocrPowerReadings.get(normal(canonical(name)));
+   const current=thpComparison(name);
+   if(!read?.verified||!current.canApply||read.value!==current.value){kept++;continue;}
+   try{
+    // CAS re-reads the current Supabase record and refuses decreases.
+    // The normal <=5M guard applies to previously known THP.
+    const result=await raiseOfficialTHP(name,current.value,{reviewed:current.saved==null});
+    if(result.status==="updated")updated++;
+    else kept++;
+   }catch(error){
+    failed++;row.dataset.status="error";
+    row.querySelector(".thp-review-status").textContent="Error: "+String(error?.message||error);
+   }
+  }
+  await refreshOfficialTHP({render:false});
+  renderRoster();mutate();
+  renderTHPReview();
+  feedback.hidden=false;
+  feedback.textContent="Actualizados: "+updated+" · conservados: "+kept+
+   (failed?" · errores: "+failed:"")+". Ningún THP disminuye.";
+ }catch(error){
+  feedback.hidden=false;
+  feedback.textContent="No se pudo terminar la comparación: "+String(error?.message||error);
+ }finally{acceptBusy=false;updateTHPReviewButton();}
+}
+
 function reviewedPower(value){
  const text=String(value??"").trim().replace(",",".");
  if(!text)return null;
@@ -1334,7 +1421,11 @@ function events(){
  $("bulkRosterText").addEventListener("input",invalidateBulkRoster);$("bulkReplace").addEventListener("change",invalidateBulkRoster);
  $("bulkCheck").onclick=previewBulkRoster;$("bulkApply").onclick=applyBulkRoster;
  $("rosterList").addEventListener("change",rosterChange);$("rosterList").addEventListener("click",rosterChange);
- $("refreshTHP").onclick=async()=>{const button=$("refreshTHP");button.disabled=true;try{const n=await refreshOfficialTHP();notice("✓ THP actualizado desde Supabase: "+n+"/"+state.roster.length+" participantes con datos.","success");}catch(error){notice("No se pudo actualizar THP: "+String(error?.message||error),"error");}finally{button.disabled=false;}};
+ $("refreshTHP").onclick=openTHPReview;
+ $("thpReviewClose").onclick=closeTHPReview;
+ $("thpReviewApply").onclick=applyTHPReview;
+ $("thpReviewList").addEventListener("change",updateTHPReviewButton);
+ $("thpReviewDialog").addEventListener("click",e=>{if(e.target===$("thpReviewDialog"))closeTHPReview();});
  $("teamAAuditOpen").onclick=()=>{$("teamAAuditResult").hidden=!$("teamAAuditResult").hidden;renderTeamAAudit();};
  $("teamAAuditResult").addEventListener("click",event=>{
   const button=event.target.closest("[data-audit-name][data-audit-role]");
