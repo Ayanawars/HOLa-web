@@ -63,6 +63,45 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .builder-locale-option:hover,.builder-locale-option:focus-visible{background:#197b9c;outline:2px solid #f0c976}
 .thp-supabase-panel{display:grid;gap:8px;margin:12px 0}.thp-supabase-panel .btn{justify-self:start}
 .sub-building-note{color:#176da4;background:#eaf4ff;padding:7px 9px;border:1px solid #b5d6ef;border-radius:8px;font-size:12px;font-weight:850;overflow-wrap:anywhere}.phase2-sub-panel{grid-column:1/-1}.phase2-sub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:11px}.phase2-sub-row{background:#f0f8ff;border:1px solid #b6d6f1;border-radius:11px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.phase2-sub-row strong{display:block;color:#1a4d70;font-size:13px;overflow-wrap:anywhere}.phase2-sub-row small{color:#55748b;font-size:11px}.phase2-sub-row select{width:min(100%,245px);min-width:0;min-height:40px;background:white;border:1px solid #86bbdf;border-radius:9px;padding:8px;color:#194766;font-size:12px;font-weight:800}@media(max-width:720px){.phase2-sub-grid{grid-template-columns:1fr}.phase2-sub-row{flex-wrap:wrap}.phase2-sub-row select{width:100%}}
+
+/* Clean participant editor — mobile first */
+.app-toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;width:min(92vw,550px);max-height:36vh;overflow:auto;margin:0;box-shadow:0 12px 30px #0a314333;font-size:13px;font-weight:700}
+.simple-upload{background:rgba(255,255,255,.8);border:1px solid #d7d4c8;padding:14px;box-shadow:none}
+.simple-upload .label{display:block;margin:0 0 7px}
+.simple-upload input[type="file"]{width:100%;font-size:13px;color:#4f6573}
+.simple-upload .actions{margin-top:9px}.simple-upload .btn{width:100%}
+.simple-upload #ocrStatus:not([hidden]){margin-top:9px}
+.manual-entry{margin:15px 0 18px;padding:15px;border:1px solid #dfd5bf;border-radius:14px;background:#fffefa}
+.manual-entry h3,.roster-title{font-size:15px;color:#173f5a;margin:0 0 12px;font-weight:850}
+.manual-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(115px,.7fr) auto;gap:8px;align-items:center}
+.manual-controls select{min-width:0;width:100%;height:44px;background:#fff;border:1px solid #d8c38f;color:#173f5a;border-radius:10px;padding:7px}
+.manual-entry #manualPlayerStatus:empty{display:none}
+.manual-entry #manualPlayerStatus{font-size:12px;margin:8px 0 0}
+.ocr-workflow{padding:13px;border:1px solid #ddcba2;border-radius:14px;background:#fffdf7;box-shadow:none;margin:13px 0}
+.ocr-workflow h3{font-size:15px;margin:0 0 9px}
+.ocr-summary{background:transparent;border:0;padding:2px 0;font-size:12px;font-weight:650}
+.ocr-auto-panel,.ocr-review-box{padding:12px;border-width:1px;box-shadow:none}
+.ocr-needed,.ocr-complete{padding:8px;font-size:12px;font-weight:500;border-width:1px}
+.ocr-needed strong{font-size:12px}
+.roster-stat{margin:14px 0 8px}
+.roster-title{margin:16px 0 10px}
+.mini-status{font-size:12px;color:#657a89;margin:4px 0 8px}
+.mini-status:empty{display:none}
+.compact-details{margin:12px 0;border:1px solid #e0d2b1;background:#fffefa;border-radius:11px;padding:10px 12px}
+.compact-details summary{cursor:pointer;color:#1c566c;font-weight:800;font-size:13px}
+.compact-details .bulk-roster-import{margin:12px 0 0;border:0;background:transparent;padding:0}
+.compact-details .bulk-roster-import h3,.compact-details .bulk-roster-import .muted{font-size:12px}
+.ocr-result-dialog{width:min(92vw,440px);max-height:80vh;overflow:auto;border:1px solid #d7c18a;border-radius:19px;padding:22px;background:#fffdf7;color:#173e58;box-shadow:0 20px 60px #0b344755}
+.ocr-result-dialog::backdrop{background:rgba(7,29,44,.55)}
+.ocr-result-dialog h2{font:800 20px/1.25 system-ui;margin:0 0 12px}
+.ocr-total{margin:3px 0 16px;font-size:15px}
+.ocr-total strong{font-size:35px;color:#0787a1}
+.ocr-dialog-counts{display:flex;gap:7px;flex-wrap:wrap}
+.ocr-dialog-counts span{padding:7px 9px;border-radius:9px;background:#eff5f4;color:#245971;font-size:12px;font-weight:750}
+.ocr-result-dialog .actions{display:flex;justify-content:flex-end;margin-top:20px}
+.ocr-result-dialog .actions .btn{flex:1 1 auto}
+@media(max-width:700px){.manual-controls{grid-template-columns:1fr 1fr}.manual-controls #manualPlayer{grid-column:1/-1}.manual-controls .btn{grid-column:1/-1}.ocr-result-dialog{padding:18px}}
+
 </style>
 </head>
 <body>
@@ -70,13 +109,12 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <main>
 <div id="gate" class="notice info">Comprobando tu acceso al centro de administración…</div>
 <div id="app" hidden>
-<div id="message" class="notice info" role="status" aria-live="polite">Elige equipo y jornada para preparar una estrategia.</div>
-<details id="savedDraftsPanel" class="recovery-panel" hidden><summary id="savedDraftsTitle">☁ Recuperar DS guardado</summary><p class="muted">Tus convocatorias y mapas guardados en Supabase. Abre la jornada correcta para editarla sin volver a pasar las capturas.</p><div id="savedDraftsList" class="saved-draft-list"></div></details>
+<div id="message" class="notice app-toast" role="status" aria-live="polite" hidden></div>
 <nav class="steps" aria-label="Pasos del editor">
 <button type="button" class="active" data-tab="setup">01 · JORNADA</button><button type="button" data-tab="roster">02 · EQUIPO</button><button type="button" data-tab="plan">03 · MAPA</button><button type="button" data-tab="publish">04 · PUBLICAR</button>
 </nav>
 <section id="tab-setup" class="section">
-<div class="eyebrow">01 · CONFIGURACIÓN</div><h2>Preparar jornada</h2><p class="muted">Selecciona el viernes y la fuerza especial. Las jornadas guardadas se pueden recuperar arriba; los borradores se guardan desde el mapa.</p>
+<div class="eyebrow">01 · CONFIGURACIÓN</div><h2>Preparar jornada</h2><p class="muted">Selecciona el viernes y el equipo. Puedes guardar la estrategia desde el mapa.</p>
 <div class="form-grid">
 <div class="field"><label for="battleDate">Fecha de Desert Storm · viernes</label><div class="friday-picker"><button class="friday-step" id="previousFriday" type="button" aria-label="Viernes anterior">‹</button><select id="battleDate" aria-label="Seleccionar fecha: solo viernes"></select><button class="friday-step" id="nextFriday" type="button" aria-label="Viernes siguiente">›</button></div></div>
 <div class="field"><label for="team">Fuerza especial</label><select id="team"><option value="B" selected>Team B · 09:00</option><option value="A">Team A · 18:00</option></select></div>
@@ -90,9 +128,59 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 </section>
 <section id="tab-roster" class="section" hidden>
 <div class="eyebrow">02 · CONVOCATORIA CERRADA</div><h2>Participantes y suplentes</h2>
-<p class="muted">La B de la izquierda indica titulares y la de la derecha, suplentes. Lo principal es leer el nombre y distinguir titulares (B izquierda) de suplentes (B derecha). El THP no afecta a la inscripción: si el OCR lee un valor mayor que el guardado en Supabase y la subida no supera 5M, se actualiza automáticamente. Si no es fiable, se ignora y se conserva el valor guardado.</p>
-<div class="upload"><strong>📸 Importar capturas de «Seleccionar participantes»</strong><br><input type="file" id="participantShots" accept="image/*" multiple><div class="muted" id="filesInfo" style="margin-top:7px">Puedes subir varias capturas solapadas. Tesseract prioriza los nombres y la B. Los THP dudosos se ignoran sin pedir revisión del jugador.</div><div class="row actions"><button class="btn" id="readShots" type="button">🔎 Leer participantes con OCR</button><button class="btn outline" id="importLegacy" type="button">Importar nombres del DS anterior</button></div><div class="muted" id="ocrStatus" role="status" aria-live="polite"></div></div>
-<section class="bulk-roster-import" aria-labelledby="bulkRosterTitle">
+
+<div class="upload simple-upload" aria-label="Importar capturas de participantes">
+  <label for="participantShots" class="label">Capturas DS</label>
+  <input type="file" id="participantShots" accept="image/*" multiple aria-label="Seleccionar capturas DS">
+  <div class="row actions"><button class="btn" id="readShots" type="button">Leer capturas</button></div>
+  <div class="muted" id="filesInfo" aria-live="polite" hidden></div>
+  <div class="muted" id="ocrStatus" role="status" aria-live="polite" hidden></div>
+</div>
+<section class="manual-entry" aria-labelledby="manualEntryTitle">
+  <h3 id="manualEntryTitle">Añadir manualmente</h3>
+  <div class="manual-controls">
+    <select class="member-entry" id="manualPlayer" aria-label="Miembro para añadir"><option value="">Elegir miembro de HOLa</option></select>
+    <select id="manualRole" aria-label="Tipo de inscripción"><option value="auto">Plaza disponible</option><option value="starter">Titular</option><option value="sub">Suplente</option></select>
+    <button type="button" class="btn outline" id="addPlayer">Añadir jugador</button>
+  </div>
+  <p id="manualPlayerStatus" role="status" aria-live="polite"></p>
+</section>
+<div id="ocrReview" class="ocr-workflow" hidden>
+  <h3>Resultado de las capturas</h3>
+  <div id="ocrSummary" class="ocr-summary" role="status" aria-live="polite"></div>
+  <section id="ocrAutoPanel" class="ocr-auto-panel">
+    <h3>✓ Miembros identificados</h3>
+    <div id="ocrAutoList" class="ocr-ready-list"></div>
+    <button type="button" class="btn good ocr-accept-all" id="acceptVerified">✓ Aceptar todos los identificados</button>
+  </section>
+  <section id="ocrReviewBox" class="ocr-review-box" hidden>
+    <h3 id="ocrReviewTitle">⚠ Lecturas por revisar</h3>
+    <div id="ocrProposals" class="ocr-proposals"></div>
+  </section>
+  <details class="ocr-missing" id="ocrMissingDetails" hidden>
+    <summary>Añadir jugador no identificado</summary>
+    <div class="ocr-missing-grid">
+      <div class="field"><label>Miembro de HOLa</label><select id="ocrMissingPlayer"></select></div>
+      <div class="field"><label>Inscripción</label><select id="ocrMissingRole"><option value="starter">B izquierda · Titular</option><option value="sub">B derecha · Suplente</option></select></div>
+      <div class="field"><label>THP (M), opcional</label><input id="ocrMissingPower" type="number" min="0.01" max="9999" step="any" inputmode="decimal" placeholder="Se puede completar después"></div>
+      <button type="button" class="btn outline" id="ocrAddMissing">＋ Añadir jugador que falta</button>
+    </div>
+  </details>
+  <details id="ocrRawDetails" class="ocr-missing" hidden>
+    <summary id="ocrRawSummary">Fragmentos de OCR no reconocidos</summary>
+    <div id="ocrDiscarded" class="ocr-proposals"></div>
+  </details>
+  <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
+</div>
+<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div><div id="rosterAssignmentStatus" class="mini-status" role="status" aria-live="polite"></div><details class="compact-details"><summary>Actualizar THP</summary><div class="thp-supabase-panel"><div id="thpSyncStatus" class="mini-status" role="status" aria-live="polite"></div><button type="button" class="btn outline" id="refreshTHP">Actualizar desde Supabase</button></div></details>
+<section class="team-a-audit" id="teamAAudit" hidden>
+<strong>🧾 Comprobar capturas · Team A · 25/09</strong>
+<p class="muted">Compara los 20 titulares y 10 suplentes de tus capturas con la convocatoria actual del Builder. No hace falta repetir el OCR.</p>
+<button type="button" class="btn gold" id="teamAAuditOpen">🔎 Ver los jugadores que faltan</button>
+<div id="teamAAuditResult" role="status" aria-live="polite" hidden></div>
+</section>
+
+<h3 class="roster-title">Jugadores del equipo</h3><div id="rosterList" class="roster-list"></div><details class="compact-details bulk-tool"><summary>Importar lista por texto</summary><section class="bulk-roster-import" aria-labelledby="bulkRosterTitle">
  <h3 id="bulkRosterTitle">📝 Importar participantes por texto</h3>
  <p class="muted">Escribe un jugador por línea, con su tipo de inscripción. Puedes incluir la numeración.</p><p class="muted">Ejemplos:</p><div class="bulk-examples"><code>1. ASSASSIN428 - Titular</code><code>21. Arturlion - Suplente</code></div>
  <label class="label" for="bulkRosterText">Lista de participantes</label>
@@ -103,45 +191,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
  <div id="bulkPreviewPanel" class="bulk-preview-panel" hidden></div>
  <p class="muted">Solo importa nombres confirmados como miembros de HOLa. No se publica automáticamente: pulsa «Guardar borrador» cuando termines.</p>
 </section>
-<div id="ocrReview" class="section ocr-workflow" hidden style="margin-top:13px;border:2px solid #dfb554;box-shadow:none">
-  <h2>Resultado de las capturas</h2>
-  <p class="muted">Primero acepta los miembros cotejados con HOLa. Después corrige únicamente las lecturas dudosas. Ningún nombre inventado por el OCR se incorpora automáticamente.</p>
-  <div id="ocrSummary" class="ocr-summary" role="status" aria-live="polite"></div>
-  <section id="ocrAutoPanel" class="ocr-auto-panel">
-    <h3>✓ Miembros identificados</h3>
-    <div id="ocrAutoList" class="ocr-ready-list"></div>
-    <button type="button" class="btn good ocr-accept-all" id="acceptVerified">✓ Aceptar todos los identificados</button>
-  </section>
-  <section id="ocrReviewBox" class="ocr-review-box" hidden>
-    <h3 id="ocrReviewTitle">⚠ Lecturas por revisar</h3>
-    <p class="muted">Elige el nombre de la lista oficial, comprueba si la B es de titular o suplente y pulsa «Añadir». Si no aparece el THP en la captura, se utilizará el de Supabase.</p>
-    <div id="ocrProposals" class="ocr-proposals"></div>
-  </section>
-  <details class="ocr-missing" id="ocrMissingDetails">
-    <summary>¿Falta un jugador que no ha leído el OCR? Añádelo desde miembros HOLa</summary>
-    <div class="ocr-missing-grid">
-      <div class="field"><label>Miembro de HOLa</label><select id="ocrMissingPlayer"></select></div>
-      <div class="field"><label>Inscripción</label><select id="ocrMissingRole"><option value="starter">B izquierda · Titular</option><option value="sub">B derecha · Suplente</option></select></div>
-      <div class="field"><label>THP (M), opcional</label><input id="ocrMissingPower" type="number" min="0.01" max="9999" step="any" inputmode="decimal" placeholder="Se puede completar después"></div>
-      <button type="button" class="btn outline" id="ocrAddMissing">＋ Añadir jugador que falta</button>
-    </div>
-  </details>
-  <details id="ocrRawDetails" class="ocr-missing" hidden>
-    <summary id="ocrRawSummary">Fragmentos de OCR no reconocidos</summary>
-    <p class="muted">Estos textos no se cuentan como jugadores. Abre esta sección solo si todavía falta alguien que aparezca en las capturas.</p>
-    <div id="ocrDiscarded" class="ocr-proposals"></div>
-  </details>
-  <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
-</div>
-<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div><div id="rosterAssignmentStatus" class="notice info" role="status" aria-live="polite">La convocatoria y las asignaciones del mapa se cuentan por separado.</div><div class="thp-supabase-panel"><div id="thpSyncStatus" class="notice info" role="status" aria-live="polite">THP: valor de Supabase. Solo se actualiza si la captura confirma una subida máxima de 5M.</div><button type="button" class="btn outline" id="refreshTHP">↻ Actualizar THP desde Supabase</button></div>
-<section class="team-a-audit" id="teamAAudit" hidden>
-<strong>🧾 Comprobar capturas · Team A · 25/09</strong>
-<p class="muted">Compara los 20 titulares y 10 suplentes de tus capturas con la convocatoria actual del Builder. No hace falta repetir el OCR.</p>
-<button type="button" class="btn gold" id="teamAAuditOpen">🔎 Ver los jugadores que faltan</button>
-<div id="teamAAuditResult" role="status" aria-live="polite" hidden></div>
-</section>
-<div class="row"><select class="member-entry" id="manualPlayer" aria-label="Miembro para añadir"><option value="">Elegir miembro de HOLa</option></select><select id="manualRole" aria-label="Tipo de inscripción"><option value="auto">Plaza disponible (automático)</option><option value="starter">Titular</option><option value="sub">Suplente</option></select><button type="button" class="btn outline" id="addPlayer">＋ Añadir jugador</button></div><p id="manualPlayerStatus" role="status" aria-live="polite"></p>
-<div id="rosterList" class="roster-list"></div>
+</details>
 <div class="row actions"><button type="button" class="btn gold" id="toPlan">Continuar al mapa →</button></div>
 </section>
 <section id="tab-plan" class="section" hidden>
@@ -163,6 +213,13 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="section" style="box-shadow:none"><h2>📢 Anuncio del juego</h2><p class="muted">Máximo 500 caracteres. Puedes editarlo; el contador se actualiza en directo.</p><textarea class="output" id="announcement" rows="5" maxlength="800" spellcheck="false"></textarea><div class="row actions"><span class="counter" id="announceCount">0/500</span><button type="button" class="btn outline" id="refreshAnnouncement">↻ Regenerar</button><button type="button" class="btn" id="copyAnnouncement">Copiar anuncio</button></div></div>
 <div class="section" style="box-shadow:none"><h2>🗺 Carteles de estrategia</h2><p class="muted">Genera imágenes verticales con el mapa, titulares, misiones verdes y suplentes azules. No se suben automáticamente al juego.</p><div class="row"><button type="button" class="btn" id="poster1">Descargar Fase 1</button><button type="button" class="btn" id="poster2">Descargar Fase 2</button><button type="button" class="btn outline" id="posterCombined">Ambas fases</button></div><img class="poster-preview" id="posterPreview" hidden alt="Vista previa del cartel generado"></div>
 </section>
+<dialog id="ocrResultDialog" class="ocr-result-dialog" aria-labelledby="ocrResultTitle">
+  <h2 id="ocrResultTitle">Capturas leídas</h2>
+  <p class="ocr-total"><strong id="ocrResultTotal">0</strong> jugadores identificados</p>
+  <div class="ocr-dialog-counts"><span id="ocrResultNew">0 nuevos</span><span id="ocrResultExisting">0 ya inscritos</span><span id="ocrResultPending">0 por revisar</span></div>
+  <p id="ocrResultAdditional" class="muted" hidden></p>
+  <div class="row actions"><button type="button" class="btn outline" id="ocrResultClose">Cerrar</button><button type="button" class="btn" id="ocrResultView">Ver resultados</button></div>
+</dialog>
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
@@ -175,5 +232,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-friday-default-b-v4"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-minimal-roster-v5"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
