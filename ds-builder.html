@@ -80,7 +80,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="form-grid">
 <div class="field"><label for="battleDate">Fecha de Desert Storm · viernes</label><div class="friday-picker"><button class="friday-step" id="previousFriday" type="button" aria-label="Viernes anterior">‹</button><select id="battleDate" aria-label="Seleccionar fecha: solo viernes"></select><button class="friday-step" id="nextFriday" type="button" aria-label="Viernes siguiente">›</button></div></div>
 <div class="field"><label for="team">Fuerza especial</label><select id="team"><option value="B" selected>Team B · 09:00</option><option value="A">Team A · 18:00</option></select></div>
-<div class="field"><label for="serverTime">Hora del servidor</label><input id="serverTime" type="time" value="18:00"></div>
+<div class="field"><label for="serverTime">Hora del servidor</label><input id="serverTime" type="time" value="09:00"></div>
 <div class="field"><label for="templateName">Nombre de la estrategia</label><input id="templateName" value="Operación Faraón" maxlength="64"></div>
 <div class="field"><label for="keyword">Palabra clave · Último Asalto</label><input id="keyword" value="ANUBIS" maxlength="36" autocomplete="off"></div>
 <div class="field"><label for="leader">Responsable de la orden</label><select id="leader"><option value="">Elegir responsable</option></select></div>
@@ -133,7 +133,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
   </details>
   <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
 </div>
-<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div><div id="rosterAssignmentStatus" class="notice info" role="status" aria-live="polite">La convocatoria y las asignaciones del mapa se cuentan por separado.</div><div class="thp-supabase-panel"><div id="thpSyncStatus" class="notice info" role="status" aria-live="polite">THP: de la captura si es mayor; de Supabase si no se lee.</div><button type="button" class="btn outline" id="refreshTHP">↻ Actualizar THP desde Supabase</button></div>
+<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div><div id="rosterAssignmentStatus" class="notice info" role="status" aria-live="polite">La convocatoria y las asignaciones del mapa se cuentan por separado.</div><div class="thp-supabase-panel"><div id="thpSyncStatus" class="notice info" role="status" aria-live="polite">THP: valor de Supabase. Solo se actualiza si la captura confirma una subida máxima de 5M.</div><button type="button" class="btn outline" id="refreshTHP">↻ Actualizar THP desde Supabase</button></div>
 <section class="team-a-audit" id="teamAAudit" hidden>
 <strong>🧾 Comprobar capturas · Team A · 25/09</strong>
 <p class="muted">Compara los 20 titulares y 10 suplentes de tus capturas con la convocatoria actual del Builder. No hace falta repetir el OCR.</p>
