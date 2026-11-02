@@ -356,22 +356,18 @@ function applyBulkRoster(){
 function renderStats(){
  if(!state)return;
  const {starter,sub}=counts();
- $("starterCount").textContent="Titulares inscritos "+starter+"/20";
+ $("starterCount").textContent="Titulares "+starter+"/20";
  $("subCount").textContent="Suplentes "+sub+"/10";
- $("starterCount").classList.toggle("warn",starter!==20);
+ $("starterCount").classList.toggle("warn",starter>20);
  $("subCount").classList.toggle("warn",sub>10);
- $("totalPower").textContent="THP titulares "+number(state.roster.filter(r=>r.role==="starter").reduce((s,r)=>s+Number(r.power||0),0))+"M";
  const missing=state.roster.filter(r=>r.power==null).map(r=>r.name),thpStatus=$("thpSyncStatus");
- if(thpStatus){thpStatus.className="notice "+(missing.length?"info":"success");thpStatus.textContent=!state.roster.length?"El THP viene de Supabase. El OCR puede actualizarlo si encuentra un valor mayor.":missing.length?"Sin THP en Supabase ("+missing.length+"): "+missing.join(" · ")+". Prueba a leer las capturas o actualiza la ficha del miembro.":"✓ THP de "+state.roster.length+" participantes sincronizado con Supabase.";}
- const p1=assignedNames(state.phase1).filter(n=>state.roster.some(r=>r.name===n&&r.role==="starter")).length;
- const p2=assignedNames(state.phase2).filter(n=>state.roster.some(r=>r.name===n&&r.role==="starter")).length;
- const status=$("rosterAssignmentStatus");
- if(status){
-  const registered=starter===20;
-  status.className="notice "+(registered?"success":"info");
-  status.textContent=(registered?"✓ Los 20 titulares ya están inscritos. ":"Convocatoria: "+starter+"/20 titulares inscritos. ")+
-   "Mapa Fase 1: "+p1+"/20 asignados · Mapa Fase 2: "+p2+"/20 asignados."+
-   (registered&&(p1<20||p2<20)?" Las plazas pendientes del mapa no son jugadores que falten en la convocatoria. Puedes usar «Rellenar plazas vacías» en cada fase.":"");
+ if(thpStatus){
+  thpStatus.className="mini-status";
+  thpStatus.textContent=!state.roster.length
+   ?"THP sincronizado desde Supabase."
+   :missing.length
+    ?"Sin THP guardado: "+missing.join(" · ")
+    :"THP de "+state.roster.length+" jugadores sincronizado.";
  }
  updateLeaders();
 }
