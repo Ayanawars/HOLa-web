@@ -140,7 +140,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div class="form-grid">
 <div class="field"><label for="battleDate">Fecha de Desert Storm · viernes</label><div class="friday-picker"><button class="friday-step" id="previousFriday" type="button" aria-label="Viernes anterior">‹</button><select id="battleDate" aria-label="Seleccionar fecha: solo viernes"></select><button class="friday-step" id="nextFriday" type="button" aria-label="Viernes siguiente">›</button></div></div>
 <div class="field"><label for="team">Fuerza especial</label><select id="team"><option value="B" selected>Team B · 09:00</option><option value="A">Team A · 18:00</option></select></div>
-<div class="field"><label for="serverTime">Hora del servidor</label><input id="serverTime" type="time" value="09:00"></div>
+
 <div class="field"><label for="templateName">Nombre de la estrategia</label><input id="templateName" value="Operación Faraón" maxlength="64"></div>
 <div class="field"><label for="keyword">Palabra clave · Último Asalto</label><input id="keyword" value="ANUBIS" maxlength="36" autocomplete="off"></div>
 <div class="field"><label for="leader">Responsable de la orden</label><select id="leader"><option value="">Elegir responsable</option></select></div>
@@ -167,29 +167,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
   </div>
   <p id="manualPlayerStatus" role="status" aria-live="polite"></p>
 </section>
-<div id="ocrReview" class="ocr-workflow" hidden>
-  <h3>Resultado de las capturas</h3>
-  <div id="ocrSummary" class="ocr-summary" role="status" aria-live="polite"></div>
-  <section id="ocrAutoPanel" class="ocr-auto-panel">
-    <h3>✓ Miembros identificados</h3>
-    <div id="ocrAutoList" class="ocr-ready-list"></div>
-    <button type="button" class="btn good ocr-accept-all" id="acceptVerified">✓ Aceptar todos los identificados</button>
-  </section>
-  <section id="ocrReviewBox" class="ocr-review-box" hidden>
-    <h3 id="ocrReviewTitle">⚠ Lecturas por revisar</h3>
-    <div id="ocrProposals" class="ocr-proposals"></div>
-  </section>
-  <details class="ocr-missing" id="ocrMissingDetails" hidden>
-    <summary>Añadir jugador no identificado</summary>
-    <div class="ocr-missing-grid">
-      <div class="field"><label>Miembro de HOLa</label><select id="ocrMissingPlayer"></select></div>
-      <div class="field"><label>Inscripción</label><select id="ocrMissingRole"><option value="starter">B izquierda · Titular</option><option value="sub">B derecha · Suplente</option></select></div>
-      <div class="field"><label>THP (M), opcional</label><input id="ocrMissingPower" type="number" min="0.01" max="9999" step="any" inputmode="decimal" placeholder="Se puede completar después"></div>
-      <button type="button" class="btn outline" id="ocrAddMissing">＋ Añadir jugador que falta</button>
-    </div>
-  </details>
-  <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
-</div>
 <div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span></div><details class="compact-details"><summary>Actualizar THP</summary><div class="thp-supabase-panel"><div id="thpSyncStatus" class="mini-status" role="status" aria-live="polite"></div><button type="button" class="btn outline" id="refreshTHP">Actualizar desde Supabase</button></div></details>
 <section class="team-a-audit" id="teamAAudit" hidden>
 <strong>🧾 Comprobar capturas · Team A · 25/09</strong>
@@ -252,5 +229,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-ocr-four-real-players-v11"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-no-duplicate-review-fixed-times-v12"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
