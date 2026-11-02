@@ -101,30 +101,36 @@
  }
  function processedPower(original,mode){
   const w=original.width,h=original.height,src=original.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h);
-  const gray=new Uint8ClampedArray(w*h);
-  for(let i=0;i<gray.length;i++)gray[i]=Math.round(src.data[i*4]*.299+src.data[i*4+1]*.587+src.data[i*4+2]*.114);
-  const small=document.createElement("canvas");small.width=w;small.height=h;
-  const ctx=small.getContext("2d"),pixels=ctx.createImageData(w,h);
+  const mono=document.createElement("canvas");mono.width=w;mono.height=h;
+  const ctx=mono.getContext("2d"),pixels=ctx.createImageData(w,h);
+  const white=mode.startsWith("white");
+  const threshold=white?Number(mode.slice(5)):0;
+  const gray=white?null:new Uint8ClampedArray(w*h);
+  if(gray)for(let i=0;i<gray.length;i++)
+   gray[i]=Math.round(src.data[i*4]*.299+src.data[i*4+1]*.587+src.data[i*4+2]*.114);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-   const i=y*w+x,g=gray[i];
-   const left=gray[y*w+Math.max(0,x-1)],right=gray[y*w+Math.min(w-1,x+1)];
-   const up=gray[Math.max(0,y-1)*w+x],down=gray[Math.min(h-1,y+1)*w+x];
-   const sharp=5*g-left-right-up-down;
-   const edge=8*g-left-right-up-down-
-    gray[Math.max(0,y-1)*w+Math.max(0,x-1)]-
-    gray[Math.max(0,y-1)*w+Math.min(w-1,x+1)]-
-    gray[Math.min(h-1,y+1)*w+Math.max(0,x-1)]-
-    gray[Math.min(h-1,y+1)*w+Math.min(w-1,x+1)];
-   const v=mode==="edge"?Math.max(0,Math.min(255,edge)):
-    mode==="sharp"?Math.max(0,Math.min(255,sharp)):
-    Math.max(0,Math.min(255,(g-128)*1.65+128));
-   const k=i*4;pixels.data[k]=pixels.data[k+1]=pixels.data[k+2]=v;pixels.data[k+3]=255;
+   const i=y*w+x,k=i*4;
+   let value;
+   if(white){
+    // The game uses WHITE FILLED digits with a thick, nearly black outline.
+    // Reading the outline merges or duplicates digits. Isolate the white
+    // interior instead, on a white background with black text.
+    value=src.data[k]>=threshold&&src.data[k+1]>=threshold&&src.data[k+2]>=threshold?0:255;
+   }else{
+    const g=gray[i],left=gray[y*w+Math.max(0,x-1)],right=gray[y*w+Math.min(w-1,x+1)];
+    const up=gray[Math.max(0,y-1)*w+x],down=gray[Math.min(h-1,y+1)*w+x];
+    const sharpen=5*g-left-right-up-down;
+    value=mode==="sharp"?Math.max(0,Math.min(255,sharpen)):
+     Math.max(0,Math.min(255,(g-128)*1.65+128));
+   }
+   pixels.data[k]=pixels.data[k+1]=pixels.data[k+2]=value;pixels.data[k+3]=255;
   }
   ctx.putImageData(pixels,0,0);
-  const scaled=document.createElement("canvas");
-  scaled.width=w*4;scaled.height=h*4;
-  const sc=scaled.getContext("2d");sc.imageSmoothingEnabled=true;
-  sc.drawImage(small,0,0,scaled.width,scaled.height);
+  const scaled=document.createElement("canvas");scaled.width=w*4;scaled.height=h*4;
+  const out=scaled.getContext("2d");
+  // Nearest-neighbour preserves the tiny internal glyph shapes.
+  out.imageSmoothingEnabled=!white;
+  out.drawImage(mono,0,0,scaled.width,scaled.height);
   return scaled;
  }
  // Recognize thousands-separated squad power rather than other numbers on the wall.
@@ -169,21 +175,21 @@
    if(headers.length<3)throw Error(copy("bad"));
    const tess=await getTesseract();
    worker=await tess.createWorker("eng");
-   await worker.setParameters({tessedit_pageseg_mode:"7",tessedit_char_whitelist:"0123456789,.","preserve_interword_spaces":"0"});
+   await worker.setParameters({tessedit_pageseg_mode:"13",tessedit_char_whitelist:"0123456789,.","preserve_interword_spaces":"0"});
    const powers=[];
    for(let i=0;i<Math.min(headers.length,4);i++){
     const cropped=powerCrop(image,headers[i]),readings=[];
-    for(const mode of ["gray","sharp","edge"]){
+    for(const mode of ["white232","white236","white240"]){
      status(copy("working")+" "+(i+1)+"/"+headers.length);
      const result=await worker.recognize(processedPower(cropped,mode));
      readings.push(result.data?.text||"");
     }
     let outcome=pickPower(readings);
     if(!outcome){
-     // The outlined digits of squad 3 can confuse ordinary Tesseract.
-     // Try a tighter text-only crop before discarding the entire screenshot.
+     // Fallback for compressed screenshots or different game font versions.
+     // These extra passes are only run if the primary white-glyph OCR fails.
      const narrow=powerCrop(image,headers[i],true);
-     for(const mode of ["sharp","edge"]){
+     for(const mode of ["white232","white238","gray"]){
       const fallback=await worker.recognize(processedPower(narrow,mode));
       readings.push(fallback.data?.text||"");
      }
