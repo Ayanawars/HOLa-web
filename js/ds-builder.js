@@ -575,14 +575,10 @@ function parseCandidates(lines,prep){
   if(raw.length<3||raw.length>65||generic.test(raw))continue;
   const matched=matchMember(raw);
   const role=readRole(prep,row.y);
-  if(!matched.name){
-   const key=normal(raw);
-   // Do not require a recognised THP just to show a plausible nickname
-   // for manual identification in the review panel.
-   if(key.length>=4&&key.length<=35&&/\p{L}/u.test(raw)&&!rejectedOCR.has(key)&&rejectedOCR.size<35)
-    rejectedOCR.set(key,{text:raw,file:prep.name,role:role.role,power:null,note:"Posible nombre no reconocido; selecciona el miembro oficial si corresponde."});
-   continue;
-  }
+  // Only official HOLa member matches count as player rows.
+  // Interface labels, scores and stray glyphs are not participants.
+  // Unreadable names can still be entered manually.
+  if(!matched.name)continue;
   const note=!matched.exact?"Comprueba el nombre oficial.":role.note;
   out.push({ocrName:raw,name:matched.name,exact:matched.exact,matchKind:matched.kind,nameReadExact:matched.kind==="direct",rowY:row.y,
    ocrPower:null,power:memberTHP(matched.name),role:role.role,
@@ -698,7 +694,15 @@ async function readTesseractPasses(worker,prep,label,errors){
    completed++;
   }catch(e){errors.push(prep.name+" ("+pass.label+"): "+String(e?.message||e));}
  }
- const rows=[...perScreenshot.values()].sort((a,b)=>a.rowY-b.rowY);
+ // The participant interface shows at most four player cards per image.
+ // Prioritize reliable matches; the limit applies per screenshot, not to the batch.
+ const matchScore=p=>
+  (p.matchKind==="direct"?5:p.matchKind==="alias"?4:p.matchKind==="fuzzy"?3:p.exact?2:1)+
+  (p.role?1:0)-(p.nameConflict?3:0)-(p.roleConflict?1:0);
+ const rows=[...perScreenshot.values()]
+  .sort((a,b)=>matchScore(b)-matchScore(a)||a.rowY-b.rowY)
+  .slice(0,4)
+  .sort((a,b)=>a.rowY-b.rowY);
  for(const p of rows){
   // Rebuild notes AFTER both OCR passes: if one pass proposed a name and
   // the next identified it, the old "review this name" warning disappears.
@@ -869,11 +873,9 @@ function ocrApprovalRows(){
   return {source:"proposal",i,raw:p.ocrName||p.name||"—",name:name||"",role:p.role||"",
    already,selected:ready,status:already?"Ya inscrito":ready?"Detectado":"Por corregir"};
  });
- const unidentified=[...rejectedOCR.entries()]
-  .filter(([key,p])=>p.text&&/[\p{L}]/u.test(p.text)&&normal(p.text).length>=4)
-  .map(([key,p])=>({source:"unknown",key,raw:p.text,name:"",role:p.role||"",already:false,
-   selected:false,status:"Sin identificar"}));
- return [...recognized,...unidentified];
+ // Never show stray OCR text as an unidentified player.
+ // The recognized cards remain editable if a name or role needs correction.
+ return recognized;
 }
 function renderOCRApprovalRows(){
  const entries=ocrApprovalRows();
