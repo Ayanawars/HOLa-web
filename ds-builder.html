@@ -124,6 +124,20 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .ocr-result-dialog .actions .btn{flex:1 1 auto}
 @media(max-width:700px){.manual-controls{grid-template-columns:1fr 1fr}.manual-controls #manualPlayer{grid-column:1/-1}.manual-controls .btn{grid-column:1/-1}.ocr-result-dialog{padding:18px}}
 
+
+.thp-review-dialog{width:min(96vw,700px)}
+.thp-review-intro{font-size:13px;margin:8px 0 13px}
+.thp-review-list{max-height:min(61vh,660px);overflow-y:auto;display:grid;gap:7px;overscroll-behavior:contain}
+.thp-review-item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:9px;padding:11px;border:1px solid #ded6be;border-radius:11px;background:#fff}
+.thp-review-item>input{width:18px;height:18px;accent-color:#18866d;margin:3px 0 0}
+.thp-review-item:has(input:disabled){background:#f6f7f5}
+.thp-review-name{font-size:14px;font-weight:800;color:#16465f;overflow-wrap:anywhere}
+.thp-review-values{display:flex;flex-wrap:wrap;gap:6px 13px;margin-top:5px;font-size:12px;color:#435b67}
+.thp-review-status{font-size:12px;margin-top:6px;font-weight:700;color:#276e59}
+.thp-review-item[data-status="too-high"] .thp-review-status{color:#a16b25}
+.thp-review-item[data-status="lower"] .thp-review-status{color:#577b86}
+.thp-review-item[data-status="error"] .thp-review-status{color:#a43535}
+
 </style>
 </head>
 <body>
@@ -167,7 +181,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
   </div>
   <p id="manualPlayerStatus" role="status" aria-live="polite"></p>
 </section>
-<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span></div><details class="compact-details"><summary>Actualizar THP</summary><div class="thp-supabase-panel"><div id="thpSyncStatus" class="mini-status" role="status" aria-live="polite"></div><button type="button" class="btn outline" id="refreshTHP">Actualizar desde Supabase</button></div></details>
+<div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span></div><details class="compact-details"><summary>Actualizar THP</summary><div class="thp-supabase-panel"><div id="thpSyncStatus" class="mini-status" role="status" aria-live="polite"></div><button type="button" class="btn outline" id="refreshTHP">Comparar THP con Supabase</button></div></details>
 <section class="team-a-audit" id="teamAAudit" hidden>
 <strong>🧾 Comprobar capturas · Team A · 25/09</strong>
 <p class="muted">Compara los 20 titulares y 10 suplentes de tus capturas con la convocatoria actual del Builder. No hace falta repetir el OCR.</p>
@@ -217,6 +231,16 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
   <p id="ocrResultFeedback" class="ocr-result-feedback" role="status" aria-live="polite" hidden></p>
   <div class="row actions ocr-result-actions"><button type="button" class="btn outline" id="ocrResultClose">Cerrar</button><button type="button" class="btn good" id="ocrResultAccept">Añadir seleccionados</button></div>
 </dialog>
+<dialog id="thpReviewDialog" class="ocr-result-dialog thp-review-dialog" aria-labelledby="thpReviewTitle">
+  <h2 id="thpReviewTitle">Comparar THP</h2>
+  <p class="muted thp-review-intro">Compara el THP de las capturas con Supabase. El poder guardado nunca disminuye.</p>
+  <div id="thpReviewList" class="thp-review-list" role="group" aria-label="Comparación de THP por jugador"></div>
+  <p id="thpReviewFeedback" class="ocr-result-feedback" role="status" aria-live="polite" hidden></p>
+  <div class="row actions ocr-result-actions">
+    <button type="button" class="btn outline" id="thpReviewClose">Cerrar</button>
+    <button type="button" class="btn good" id="thpReviewApply">Actualizar subidas</button>
+  </div>
+</dialog>
 <div class="foot">HOLa · Heroes of Last Area · DS Strategy Builder · Solo para administradores R4/R5</div>
 </div>
 </main>
@@ -229,5 +253,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-no-duplicate-review-fixed-times-v12"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-thp-compare-v13"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
