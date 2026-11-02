@@ -860,8 +860,115 @@ function renderProposals(){
  // Manual entry is already visible at the top of this page.
  if(!missingStarters&&missing.open)missing.open=false;
 }
+
+function ocrApprovalRows(){
+ const recognized=proposals.map((p,i)=>{
+  const name=canonical(p.name),existing=name?existingRosterRecord(name):null;
+  const already=!!existing&&existing.role===p.role;
+  const ready=canAcceptAutomatically(p);
+  return {source:"proposal",i,raw:p.ocrName||p.name||"—",name:name||"",role:p.role||"",
+   already,selected:ready,status:already?"Ya inscrito":ready?"Detectado":"Por corregir"};
+ });
+ const unidentified=[...rejectedOCR.entries()]
+  .filter(([key,p])=>p.text&&/[\p{L}]/u.test(p.text)&&normal(p.text).length>=4)
+  .map(([key,p])=>({source:"unknown",key,raw:p.text,name:"",role:p.role||"",already:false,
+   selected:false,status:"Sin identificar"}));
+ return [...recognized,...unidentified];
+}
+function renderOCRApprovalRows(){
+ const entries=ocrApprovalRows();
+ $("ocrResultList").innerHTML=entries.map(row=>
+  '<div class="ocr-review-entry '+(row.already?'ocr-entry-existing':!row.selected?'ocr-entry-doubt':'')+
+  '" data-source="'+row.source+'" '+(row.source==="proposal"?'data-index="'+row.i+'"':'data-key="'+esc(row.key)+'"')+'>'+
+  '<div class="ocr-review-top"><input class="ocr-approve-check" type="checkbox" aria-label="Seleccionar '+esc(row.raw)+
+  '" '+(row.selected?'checked ':'')+(row.already?'disabled ':'')+'>'+
+  '<span class="ocr-review-title">'+esc(row.raw)+
+  (row.name&&normal(row.raw)!==normal(row.name)?' <span class="muted">→ '+esc(row.name)+'</span>':"")+
+  '</span><span class="ocr-review-status">'+row.status+'</span></div>'+
+  '<div class="ocr-review-fields"><select class="ocr-approve-name" aria-label="Miembro HOLa">'+
+  playerOption(row.name,"Elegir miembro HOLa")+'</select>'+
+  '<select class="ocr-approve-role" aria-label="Tipo de inscripción"><option value="">Elegir tipo</option>'+
+  '<option value="starter"'+(row.role==="starter"?' selected':'')+'>Titular</option>'+
+  '<option value="sub"'+(row.role==="sub"?' selected':'')+'>Suplente</option></select></div>'+
+  '<p class="ocr-row-error" role="status"></p></div>').join("");
+ $("ocrResultTotal").textContent=String(entries.length);
+ $("ocrResultPending").textContent=entries.filter(r=>!r.selected&&!r.already).length+" por corregir";
+ $("ocrResultFeedback").textContent="";$("ocrResultFeedback").hidden=true;
+ updateOCRApprovalButton();
+}
+function updateOCRApprovalButton(){
+ const n=[...$("ocrResultList").querySelectorAll(".ocr-approve-check")].filter(el=>el.checked&&!el.disabled).length;
+ const btn=$("ocrResultAccept");
+ btn.disabled=busy||acceptBusy||!n;
+ btn.textContent=n?"Añadir "+n+" seleccionado"+(n===1?"":"s"):"Añadir seleccionados";
+}
+function handleOCRApprovalChange(event){
+ const row=event.target.closest(".ocr-review-entry");
+ if(!row)return;
+ const checked=row.querySelector(".ocr-approve-check"),name=row.querySelector(".ocr-approve-name").value,role=row.querySelector(".ocr-approve-role").value;
+ if(event.target.matches(".ocr-approve-name,.ocr-approve-role")){
+  if(!checked.disabled)checked.checked=!!name&&!!role;
+  row.querySelector(".ocr-row-error").textContent="";
+  row.querySelector(".ocr-review-status").textContent=checked.checked?"Listo":"Por corregir";
+ }
+ row.classList.toggle("ocr-entry-doubt",!checked.checked&&!checked.disabled);
+ updateOCRApprovalButton();
+}
+async function approveOCRPlayers(){
+ if(busy||acceptBusy)return;
+ const rows=[...$("ocrResultList").querySelectorAll(".ocr-review-entry")]
+  .filter(row=>row.querySelector(".ocr-approve-check").checked&&!row.querySelector(".ocr-approve-check").disabled);
+ if(!rows.length)return;
+ const picks=rows.map(row=>({row,name:canonical(row.querySelector(".ocr-approve-name").value),
+  role:row.querySelector(".ocr-approve-role").value,source:row.dataset.source,
+  index:Number(row.dataset.index),key:row.dataset.key}));
+ const names=new Map();
+ for(const p of picks)if(p.name)names.set(normal(p.name),(names.get(normal(p.name))||0)+1);
+ let invalid=false;
+ for(const p of picks){
+  const error=!p.name?"Selecciona un miembro de HOLa.":!["starter","sub"].includes(p.role)?"Selecciona titular o suplente.":
+   names.get(normal(p.name))>1?"El mismo miembro está seleccionado dos veces.":"";
+  if(error){p.row.querySelector(".ocr-row-error").textContent=error;invalid=true;}
+ }
+ if(invalid){$("ocrResultFeedback").hidden=false;$("ocrResultFeedback").textContent="Corrige las filas marcadas.";return;}
+ acceptBusy=true;updateOCRApprovalButton();
+ let added=0,already=0;const ok=[],failed=[];
+ try{
+  await refreshOther();
+  for(const p of picks){
+   try{
+    if(addRoster(p.name,p.role))added++;else already++;
+    ok.push(p);
+   }catch(error){
+    const message=String(error?.message||error);
+    p.row.querySelector(".ocr-row-error").textContent=message;failed.push(message);
+   }
+  }
+  const indexes=[],keys=[];
+  for(const p of ok){
+   p.row.remove();
+   if(p.source==="proposal")indexes.push(p.index);else keys.push(p.key);
+  }
+  [...new Set(indexes)].sort((a,b)=>b-a).forEach(i=>proposals.splice(i,1));
+  keys.forEach(k=>rejectedOCR.delete(k));
+  renderRoster();mutate();
+  const feedback=$("ocrResultFeedback");feedback.hidden=false;
+  feedback.textContent="Añadidos "+added+(already?" · ya inscritos "+already:"")+
+   (failed.length?" · "+failed.length+" por corregir.":" · guarda el borrador para conservarlos.");
+  $("ocrResultNew").textContent=ocrTriage().toAdd.length+" pendientes";
+  updateOCRApprovalButton();
+  if(!$("ocrResultList").querySelector(".ocr-review-entry:not(.ocr-entry-existing)")){
+   closeOCRResult();
+   notice("✓ "+added+" jugadores incorporados. Guarda el borrador.","success");
+  }
+ }catch(error){
+  $("ocrResultFeedback").hidden=false;
+  $("ocrResultFeedback").textContent="No se pudo comprobar el equipo: "+String(error?.message||error);
+ }finally{acceptBusy=false;updateOCRApprovalButton();}
+}
+
 function showOCRResult({recognized,newPlayers,existing,pending,readCount,totalShots,failed}){
- $("ocrResultTotal").textContent=String(recognized);
+ renderOCRApprovalRows();
  $("ocrResultNew").textContent=newPlayers+" nuevos";
  $("ocrResultExisting").textContent=existing+" ya inscritos";
  $("ocrResultPending").textContent=pending+" por revisar";
@@ -908,7 +1015,7 @@ async function readShots(){
   });
   $("ocrStatus").textContent="";
  }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
- finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;$("ocrStatus").hidden=true;renderProposals();}
+ finally{if(ocrWorker){try{await ocrWorker.terminate();}catch{}ocrWorker=null;}busy=false;$("readShots").disabled=false;$("ocrStatus").hidden=true;renderProposals();updateOCRApprovalButton();}
 }
 function reviewedPower(value){
  const text=String(value??"").trim().replace(",",".");
@@ -1391,7 +1498,8 @@ function events(){
  $("saveDraftPlan").onclick=()=>saveDraft();$("saveDraftBottom").onclick=()=>saveDraft();$("publishPlan").onclick=()=>saveDraft(true);
  $("participantShots").onchange=()=>{$("filesInfo").textContent=$("participantShots").files.length+" capturas seleccionadas.";$("filesInfo").hidden=!$("participantShots").files.length;};$("readShots").onclick=readShots;
  $("ocrResultClose").onclick=closeOCRResult;
- $("ocrResultView").onclick=()=>{closeOCRResult();$("ocrReview").hidden=false;$("ocrReview").scrollIntoView({behavior:"smooth",block:"start"});};
+ $("ocrResultList").addEventListener("change",handleOCRApprovalChange);
+ $("ocrResultAccept").onclick=approveOCRPlayers;
  $("ocrResultDialog").addEventListener("click",e=>{if(e.target===$("ocrResultDialog"))closeOCRResult();});
  $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=addManualPlayer;
