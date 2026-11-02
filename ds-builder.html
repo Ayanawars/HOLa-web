@@ -45,7 +45,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .ocr-accept-all{width:100%;min-height:49px;font-size:14px!important}
 .ocr-accept-all:disabled{opacity:.5;cursor:not-allowed}
 .ocr-review-box .ocr-proposals{margin:10px 0}
-.ocr-proposal .proposal-add,.ocr-proposal .ocr-unmatched-add{width:100%;min-height:45px}
+.ocr-proposal .proposal-add{width:100%;min-height:45px}
 .ocr-missing summary{line-height:1.5}
 .ocr-missing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
 .ocr-missing-grid select,.ocr-missing-grid input{width:100%;min-width:0;min-height:42px;border:1px solid #d8ba76;border-radius:9px;background:white;padding:8px;color:#163f5a}
@@ -166,10 +166,6 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
       <button type="button" class="btn outline" id="ocrAddMissing">＋ Añadir jugador que falta</button>
     </div>
   </details>
-  <details id="ocrRawDetails" class="ocr-missing" hidden>
-    <summary id="ocrRawSummary">Fragmentos de OCR no reconocidos</summary>
-    <div id="ocrDiscarded" class="ocr-proposals"></div>
-  </details>
   <button type="button" class="btn outline" id="closeReview">Cerrar revisión</button>
 </div>
 <div class="roster-stat"><span class="counter" id="starterCount">Titulares 0/20</span><span class="counter" id="subCount">Suplentes 0/10</span><span class="counter" id="totalPower">Poder —</span></div><div id="rosterAssignmentStatus" class="mini-status" role="status" aria-live="polite"></div><details class="compact-details"><summary>Actualizar THP</summary><div class="thp-supabase-panel"><div id="thpSyncStatus" class="mini-status" role="status" aria-live="polite"></div><button type="button" class="btn outline" id="refreshTHP">Actualizar desde Supabase</button></div></details>
@@ -232,5 +228,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-minimal-roster-v5"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-no-fragments-v6"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
