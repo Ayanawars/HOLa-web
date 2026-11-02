@@ -80,7 +80,7 @@ async function refreshOfficialTHP({render=true}={}){
  return state?.roster.filter(r=>r.power!=null).length??0;
 }
 // Optimistic compare-and-swap prevents a stale screenshot from overwriting a newer value.
-async function raiseOfficialTHP(name,ocrValue,{reviewed=false}={}){
+async function raiseOfficialTHP(name,ocrValue,{reviewed=false,initializing=false}={}){
  const official=canonical(name),next=Number(ocrValue);
  if(!official||!Number.isFinite(next)||next<=0||next>9999)return {status:"invalid"};
  const {data:latest,error:readError}=await sb.from("players").select("name,thp").eq("name",official).maybeSingle();
@@ -89,7 +89,7 @@ async function raiseOfficialTHP(name,ocrValue,{reviewed=false}={}){
  rememberProfile(latest);
  const previous=parseOfficialTHP(latest.thp);
  if(previous!=null&&next<=previous+0.00001){syncLocalMemberTHP(official);return {status:"unchanged",previous,current:previous};}
- if(!reviewed&&(previous==null||next-previous>MAX_OCR_THP_INCREASE+0.00001))return {status:"ignored",previous,current:previous};
+ if((!reviewed&&previous==null)||(previous!=null&&next-previous>MAX_OCR_THP_INCREASE+0.00001&&(!reviewed||initializing)))return {status:"ignored",previous,current:previous};
  const stored=String(next)+"M";
  let query=sb.from("players").update({thp:stored}).eq("name",official);
  query=latest.thp==null?query.is("thp",null):query.eq("thp",latest.thp);
@@ -1010,7 +1010,7 @@ async function applyTHPReview(){
    try{
     // CAS re-reads the current Supabase record and refuses decreases.
     // The normal <=5M guard applies to previously known THP.
-    const result=await raiseOfficialTHP(name,current.value,{reviewed:current.saved==null});
+    const result=await raiseOfficialTHP(name,current.value,{reviewed:current.saved==null,initializing:current.saved==null});
     if(result.status==="updated")updated++;
     else kept++;
    }catch(error){
