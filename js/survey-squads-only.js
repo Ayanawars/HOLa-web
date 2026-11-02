@@ -90,10 +90,10 @@
    end:Math.round(y*image.height)
   }));
  }
- function powerCrop(image,header){
-  const x=Math.round(image.width*.106),right=Math.round(image.width*.316);
-  const top=Math.max(0,Math.round(header.end+image.height*.004));
-  const bottom=Math.min(image.height,Math.round(header.end+image.height*.036));
+ function powerCrop(image,header,narrow=false){
+  const x=Math.round(image.width*(narrow?.113:.106)),right=Math.round(image.width*(narrow?.280:.316));
+  const top=Math.max(0,Math.round(header.end+image.height*(narrow?.006:.004)));
+  const bottom=Math.min(image.height,Math.round(header.end+image.height*(narrow?.027:.036)));
   const c=document.createElement("canvas");
   c.width=Math.max(1,right-x);c.height=Math.max(1,bottom-top);
   c.getContext("2d",{willReadFrequently:true}).drawImage(image,x,top,c.width,c.height,0,0,c.width,c.height);
@@ -178,10 +178,21 @@
      const result=await worker.recognize(processedPower(cropped,mode));
      readings.push(result.data?.text||"");
     }
-    const outcome=pickPower(readings);
+    let outcome=pickPower(readings);
+    if(!outcome){
+     // The outlined digits of squad 3 can confuse ordinary Tesseract.
+     // Try a tighter text-only crop before discarding the entire screenshot.
+     const narrow=powerCrop(image,headers[i],true);
+     for(const mode of ["sharp","edge"]){
+      const fallback=await worker.recognize(processedPower(narrow,mode));
+      readings.push(fallback.data?.text||"");
+     }
+     outcome=pickPower(readings);
+    }
     if(outcome)powers.push({source:i+1,power:outcome.power});
    }
-   if(powers.length<3)throw Error(copy("bad"));
+   // With four visible squads, all four must be known before the weakest is excluded.
+   if(powers.length<Math.min(headers.length,4))throw Error(copy("bad"));
    powers.sort((a,b)=>b.power-a.power||a.source-b.source);
    const strongest=powers.slice(0,3);
    strongest.forEach(({power},index)=>{
