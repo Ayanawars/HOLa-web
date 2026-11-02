@@ -748,9 +748,9 @@ function ocrCandidateReason(p){
 }
 function renderProposals(){
  if(!$("ocrReview"))return;
- const {accepted,toAdd,pending,unmatched}=ocrTriage();
- const pendingCount=pending.length,unknownCount=unmatched.length;
- $("ocrReview").hidden=!ocrHasRead&&!proposals.length&&!unknownCount;
+ const {accepted,toAdd,pending}=ocrTriage();
+ const pendingCount=pending.length;
+ $("ocrReview").hidden=!ocrHasRead&&!proposals.length;
  const rosterCounts=state?counts():{starter:0,sub:0};
  const newStarters=toAdd.filter(({p})=>p.role==="starter").length;
  const newSubs=toAdd.filter(({p})=>p.role==="sub").length;
@@ -791,32 +791,18 @@ function renderProposals(){
    '<button type="button" class="btn good proposal-add" data-add-index="'+i+'">✓ Añadir al equipo como '+roleText.toLowerCase()+'</button>'+
    '</article>';
  }).join("");
- $("ocrRawDetails").hidden=!unknownCount;
- $("ocrRawSummary").textContent=unknownCount+
-  " fragmentos de texto no reconocidos (opcionales · no cuentan como jugadores)";
- $("ocrDiscarded").innerHTML=unmatched.map(([key,p],i)=>
-  '<article class="ocr-proposal" data-raw-index="'+i+'">'+
-   '<div><strong>Texto OCR: '+esc(p.text)+'</strong><small class="muted"> · '+esc(p.file||"captura")+'</small></div>'+
-   '<div class="review-warn" role="status">'+esc(p.note||"Esta lectura no coincide con un miembro HOLa. Si es un jugador real, selecciónalo; si no, ignórala.")+'</div>'+
-   '<div class="two"><div class="field"><label>Miembro oficial</label><select class="unmatched-name">'+eligibleMemberOptions("","Seleccionar miembro que falta")+'</select></div>'+
-   '<div class="field"><label>B del juego</label><select class="unmatched-role"><option value="">Seleccionar</option><option value="starter"'+(p.role==="starter"?" selected":"")+'>B izquierda · Titular</option><option value="sub"'+(p.role==="sub"?" selected":"")+'>B derecha · Suplente</option></select></div></div>'+
-   '<div class="field"><label>THP en millones (opcional)</label><input class="unmatched-power" type="number" min="0.01" max="9999" step="any" inputmode="decimal" value="'+(p.power??"")+'"></div>'+
-   '<button type="button" class="btn good ocr-unmatched-add">✓ Añadir jugador corregido</button>'+
-   '</article>'
- ).join("");
  const missingSelect=$("ocrMissingPlayer"),selectedMissing=missingSelect.value||"";
  missingSelect.innerHTML=eligibleMemberOptions(selectedMissing,"Elegir miembro que falta");
  const missing=$("ocrMissingDetails");
  // Manual entry is already visible at the top of this page.
  if(!missingStarters&&missing.open)missing.open=false;
 }
-function showOCRResult({recognized,newPlayers,existing,pending,unmatched,readCount,totalShots,failed}){
+function showOCRResult({recognized,newPlayers,existing,pending,readCount,totalShots,failed}){
  $("ocrResultTotal").textContent=String(recognized);
  $("ocrResultNew").textContent=newPlayers+" nuevos";
  $("ocrResultExisting").textContent=existing+" ya inscritos";
  $("ocrResultPending").textContent=pending+" por revisar";
  const details=$("ocrResultAdditional"),notes=[];
- if(unmatched)notes.push(unmatched+" textos no identificados");
  if(readCount<totalShots)notes.push(readCount+"/"+totalShots+" capturas procesadas");
  if(failed)notes.push(failed+" avisos de lectura");
  details.textContent=notes.join(" · ");details.hidden=!notes.length;
@@ -850,12 +836,12 @@ async function readShots(){
   const powerSync=await applyOCRPowerUpgrades();
   proposals.sort((a,b)=>a.role===b.role?(Number(b.power||0)-Number(a.power||0)):(a.role==="starter"?-1:1));
   renderRoster();renderProposals();
-  const {accepted,toAdd,pending,unmatched}=ocrTriage();
+  const {accepted,toAdd,pending}=ocrTriage();
   const {starter,sub}=counts();
   showOCRResult({
    recognized:accepted.length+toAdd.length+pending.length,
    newPlayers:toAdd.length,existing:accepted.length,pending:pending.length,
-   unmatched:unmatched.length,readCount,totalShots:shots.length,failed:errors.length
+   readCount,totalShots:shots.length,failed:errors.length
   });
   $("ocrStatus").textContent="";
  }catch(e){notice("Error de lectura: "+String(e?.message||e),"error");}
@@ -914,30 +900,6 @@ async function acceptOneProposal(index){
   reviewMessage(card,p.note);return false;
  }finally{acceptBusy=false;renderProposals();}
 }
-async function acceptUnmatched(index){
- if(busy||acceptBusy)return false;
- const pair=[...rejectedOCR.entries()][index];if(!pair)return false;
- const [key,item]=pair;
- const card=$("ocrDiscarded").querySelector('[data-raw-index="'+index+'"]');
- const name=canonical(card?.querySelector(".unmatched-name")?.value||"");
- const role=card?.querySelector(".unmatched-role")?.value||"";
- if(!name||!["starter","sub"].includes(role)){
-  reviewMessage(card,"Elige el miembro oficial y si aparece como titular o suplente.");return false;
- }
- let power;
- try{power=reviewedPower(card?.querySelector(".unmatched-power")?.value);}
- catch(e){reviewMessage(card,String(e.message));return false;}
- acceptBusy=true;
- try{
-  await refreshOther();
-  const added=addRoster(name,role);
-   try{await ensureHigherTHP(name,power);}catch(error){console.warn('THP no actualizado:',error);}
-  rejectedOCR.delete(key);renderRoster();mutate();
-  notice((added?"✓ Añadido: ":"✓ Ya inscrito: ")+name+" · "+(role==="starter"?"Titular":"Suplente")+".","success");
-  return true;
- }catch(e){item.note=String(e?.message||e);reviewMessage(card,item.note);return false;}
- finally{acceptBusy=false;renderProposals();}
-}
 async function addMissingPlayer(){
  if(busy||acceptBusy)return false;
  const name=canonical($("ocrMissingPlayer").value),role=$("ocrMissingRole").value;
@@ -981,10 +943,9 @@ async function acceptProposals(){
    }catch(e){p.note=String(e?.message||e);p.manual=true;remaining.push(p);rejected.push(p.name+": "+p.note);}
   }
   proposals=remaining;renderRoster();mutate();
-  const pending=ocrTriage().pending.length,raw=ocrTriage().unmatched.length,actual=counts();
+  const pending=ocrTriage().pending.length,actual=counts();
   notice("✓ Incorporados "+added+" · ya inscritos "+already+" · jugadores por revisar "+pending+
    ". Titulares "+actual.starter+"/20 · suplentes "+actual.sub+"."+
-   (raw?" "+raw+" fragmentos OCR opcionales, no son jugadores confirmados.":"")+
    (rejected.length?" Revisa: "+rejected.join(" · "):""),
    rejected.length?"error":"success");
  }catch(e){notice("No se pudo cotejar el otro equipo: "+String(e?.message||e),"error");}
@@ -1369,7 +1330,7 @@ function events(){
  $("ocrResultClose").onclick=closeOCRResult;
  $("ocrResultView").onclick=()=>{closeOCRResult();$("ocrReview").hidden=false;$("ocrReview").scrollIntoView({behavior:"smooth",block:"start"});};
  $("ocrResultDialog").addEventListener("click",e=>{if(e.target===$("ocrResultDialog"))closeOCRResult();});
- $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("ocrDiscarded").addEventListener("click",e=>{if(e.target.closest(".ocr-unmatched-add"))acceptUnmatched(Number(e.target.closest("[data-raw-index]")?.dataset.rawIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
+ $("ocrProposals").addEventListener("change",proposalChange);$("ocrProposals").addEventListener("input",proposalChange);$("ocrProposals").addEventListener("click",e=>{const b=e.target.closest(".proposal-add");if(b)acceptOneProposal(Number(b.dataset.addIndex));});$("acceptVerified").onclick=acceptProposals;$("ocrAddMissing").onclick=addMissingPlayer;$("closeReview").onclick=()=>{$("ocrReview").hidden=true;};
  $("manualPlayer").innerHTML=playerOption("","Elegir miembro de HOLa");$("addPlayer").onclick=addManualPlayer;
  $("bulkRosterText").addEventListener("input",invalidateBulkRoster);$("bulkReplace").addEventListener("change",invalidateBulkRoster);
  $("bulkCheck").onclick=previewBulkRoster;$("bulkApply").onclick=applyBulkRoster;
