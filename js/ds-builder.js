@@ -116,6 +116,13 @@ function matchMember(raw){
  const exactMembers=members.filter(m=>normal(m)===text);
  if(exactMembers.length>1)return {name:"",exact:false,kind:"ambiguous"};
  if(exactMembers.length===1)return {name:exactMembers[0],exact:true,kind:"direct"};
+ // Known OCR reading: resolve only against the current official member list.
+ const knownReadings={"linnino":"Lil Niño","linnio":"Lil Niño","lilnino":"Lil Niño"};
+ const spelling=knownReadings[text];
+ if(spelling){
+  const official=members.filter(m=>normal(m)===normal(spelling));
+  if(official.length===1)return {name:official[0],exact:true,kind:"alias"};
+ }
  const alias=canonical(cleaned)||memberByKey.get(text);
  if(alias)return {name:alias,exact:true,kind:"alias"};
  // Compare with *every* HOLa member, not just a fixed table of nicknames.
@@ -660,28 +667,49 @@ async function readTesseractPasses(worker,prep,label,errors){
    const {data}=await worker.recognize(pass.image,{}, {text:true,blocks:true});
    for(const incoming of parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep)){
     const key=normal(incoming.name),old=perScreenshot.get(key);
-    // Different matched names at the same image row cannot both be trusted.
+    // Different readings on the SAME image row: prefer a confidently
+    // identified official name over a weaker fuzzy suggestion.
     const conflicting=[...perScreenshot.values()].filter(previous=>
      normal(previous.name)!==key&&Math.abs(previous.rowY-incoming.rowY)<prep.h*.012);
-    if(conflicting.length){
-     incoming.nameConflict=true;incoming.exact=false;incoming.confirmed=false;
-     incoming.note="Dos nombres posibles para esta fila: confirma el jugador.";
-     for(const previous of conflicting){
+    let skipIncoming=false;
+    for(const previous of conflicting){
+     const incomingStrong=incoming.nameReadExact||incoming.matchKind==="alias";
+     const previousStrong=previous.nameReadExact||previous.matchKind==="alias";
+     const incomingWins=(incomingStrong&&!previousStrong)||
+      (incoming.exact&&!previous.exact&&!previousStrong);
+     const previousWins=(previousStrong&&!incomingStrong)||
+      (previous.exact&&!incoming.exact&&!incomingStrong);
+     if(incomingWins)perScreenshot.delete(normal(previous.name));
+     else if(previousWins)skipIncoming=true;
+     else {
+      // Two equally plausible official names really are ambiguous.
+      incoming.nameConflict=true;incoming.exact=false;incoming.confirmed=false;
       previous.nameConflict=true;previous.exact=false;previous.confirmed=false;
-      previous.note="Dos nombres posibles para esta fila: confirma el jugador.";
      }
     }
+    if(skipIncoming)continue;
     if(!old){perScreenshot.set(key,incoming);continue;}
     if(old.role&&incoming.role&&old.role!==incoming.role){
      old.role="";old.roleConflict=true;old.note="B contradictoria: selecciona titular o suplente.";old.confirmed=false;
     }else if(!old.role&&!old.roleConflict&&incoming.role)old.role=incoming.role;
-    if(!old.exact&&incoming.exact){old.exact=true;old.rowY=incoming.rowY;old.ocrName=incoming.ocrName;old.matchKind=incoming.matchKind;}
-    if(incoming.nameReadExact){old.nameReadExact=true;old.matchKind="direct";old.ocrName=incoming.ocrName;}
+    if(!old.exact&&incoming.exact&&!old.nameConflict){old.exact=true;old.rowY=incoming.rowY;old.ocrName=incoming.ocrName;old.matchKind=incoming.matchKind;}
+    if(incoming.nameReadExact&&!old.nameConflict){old.nameReadExact=true;old.matchKind="direct";old.ocrName=incoming.ocrName;}
    }
    completed++;
   }catch(e){errors.push(prep.name+" ("+pass.label+"): "+String(e?.message||e));}
  }
  const rows=[...perScreenshot.values()].sort((a,b)=>a.rowY-b.rowY);
+ for(const p of rows){
+  // Rebuild notes AFTER both OCR passes: if one pass proposed a name and
+  // the next identified it, the old "review this name" warning disappears.
+  const notes=[];
+  if(p.nameConflict)notes.push("Nombres distintos: confirma el jugador.");
+  else if(!p.exact)notes.push("Comprueba el nombre oficial.");
+  if(p.roleConflict)notes.push("B contradictoria: comprueba titular o suplente.");
+  else if(!p.role)notes.push("No se distingue la B: indica titular o suplente.");
+  p.note=notes.join(" ");
+  p.confirmed=!!p.exact&&!!p.role&&!p.note;
+ }
  for(let i=0;i<rows.length;i++)await readPowerCard(worker,prep,rows[i],rows[i+1]?.rowY??Infinity,label,errors);
  mergeProposals(rows);
  return completed;
