@@ -138,6 +138,13 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 .thp-review-item[data-status="lower"] .thp-review-status{color:#577b86}
 .thp-review-item[data-status="error"] .thp-review-status{color:#a43535}
 
+
+.roster-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 10px}
+.roster-heading .roster-title{margin:0}
+.roster-heading .roster-clear{padding:8px 15px;min-height:38px;font-size:13px;font-weight:800;color:#a2383b;border:1px solid #c98e8d;background:#fff9f7;border-radius:10px;box-shadow:none;flex:none}
+.roster-heading .roster-clear:not(:disabled):hover{background:#fff0eb}
+.roster-heading .roster-clear:disabled{opacity:.42;cursor:not-allowed}
+
 </style>
 </head>
 <body>
@@ -189,7 +196,7 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <div id="teamAAuditResult" role="status" aria-live="polite" hidden></div>
 </section>
 
-<h3 class="roster-title">Jugadores del equipo</h3><div id="rosterList" class="roster-list"></div><details class="compact-details bulk-tool"><summary>Importar lista por texto</summary><section class="bulk-roster-import" aria-labelledby="bulkRosterTitle">
+<div class="roster-heading"><h3 class="roster-title">Jugadores del equipo</h3><button type="button" class="btn outline roster-clear" id="clearTeamRoster" disabled aria-label="Borrar todos los jugadores de este equipo">Borrar</button></div><div id="rosterList" class="roster-list"></div><details class="compact-details bulk-tool"><summary>Importar lista por texto</summary><section class="bulk-roster-import" aria-labelledby="bulkRosterTitle">
  <h3 id="bulkRosterTitle">📝 Importar participantes por texto</h3>
  <p class="muted">Escribe un jugador por línea, con su tipo de inscripción. Puedes incluir la numeración.</p><p class="muted">Ejemplos:</p><div class="bulk-examples"><code>1. ASSASSIN428 - Titular</code><code>21. Arturlion - Suplente</code></div>
  <label class="label" for="bulkRosterText">Lista de participantes</label>
@@ -253,5 +260,5 @@ main{max-width:1190px;margin:auto;padding:16px 15px 65px}.notice{border:1px soli
 <script src="js/ds-builder-help-west.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-center.js?v=20260925-all10-v1"></script>
 <script src="js/ds-builder-help-east.js?v=20260925-all10-v1"></script>
-<script type="module" src="js/ds-builder.js?v=20261102-thp-review-final-v14"></script>
+<script type="module" src="js/ds-builder.js?v=20261102-clear-roster-v15"></script>
 <script src="js/hola-russian.js?v=20260927-8"></script>\n</body></html>
