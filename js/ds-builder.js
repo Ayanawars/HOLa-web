@@ -660,6 +660,17 @@ async function readTesseractPasses(worker,prep,label,errors){
    const {data}=await worker.recognize(pass.image,{}, {text:true,blocks:true});
    for(const incoming of parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep)){
     const key=normal(incoming.name),old=perScreenshot.get(key);
+    // Different matched names at the same image row cannot both be trusted.
+    const conflicting=[...perScreenshot.values()].filter(previous=>
+     normal(previous.name)!==key&&Math.abs(previous.rowY-incoming.rowY)<prep.h*.012);
+    if(conflicting.length){
+     incoming.nameConflict=true;incoming.exact=false;incoming.confirmed=false;
+     incoming.note="Dos nombres posibles para esta fila: confirma el jugador.";
+     for(const previous of conflicting){
+      previous.nameConflict=true;previous.exact=false;previous.confirmed=false;
+      previous.note="Dos nombres posibles para esta fila: confirma el jugador.";
+     }
+    }
     if(!old){perScreenshot.set(key,incoming);continue;}
     if(old.role&&incoming.role&&old.role!==incoming.role){
      old.role="";old.roleConflict=true;old.note="B contradictoria: selecciona titular o suplente.";old.confirmed=false;
@@ -681,8 +692,9 @@ function mergeProposals(rows){
   const key=normal(incoming.name);
   const old=proposals.find(p=>normal(p.name)===key);
   if(!old){proposals.push({...incoming,roleConflict:!!incoming.roleConflict,powerConflict:false});continue;}
-  old.exact=old.exact||incoming.exact;
-  old.nameReadExact=!!(old.nameReadExact||incoming.nameReadExact);
+  old.nameConflict=!!(old.nameConflict||incoming.nameConflict);
+  old.exact=(old.exact||incoming.exact)&&!old.nameConflict;
+  old.nameReadExact=!!(old.nameReadExact||incoming.nameReadExact)&&!old.nameConflict;
   if(incoming.nameReadExact){old.matchKind="direct";old.ocrName=incoming.ocrName;}
   if(!old.roleConflict&&old.role&&incoming.role&&old.role!==incoming.role){old.role="";old.roleConflict=true;}
   else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
@@ -695,6 +707,7 @@ function mergeProposals(rows){
    old.power=effectiveTHP(old.name,old.powerConflict?null:old.ocrPower);
   if(!old.ocrName&&incoming.ocrName)old.ocrName=incoming.ocrName;
   const notes=[];
+  if(old.nameConflict)notes.push("Nombres diferentes en la misma fila: comprueba el jugador.");
   if(old.roleConflict)notes.push("La B difiere entre lecturas: comprueba titular o suplente.");
    if(!old.exact)notes.push("Confirma el nombre del jugador.");
   if(!old.role)notes.push("Selecciona la columna B.");
@@ -708,7 +721,7 @@ async function applyOCRPowerUpgrades(){
  const outcomes={updated:[],ignored:[],failed:[]};
  for(const p of proposals){
   p.power=memberTHP(p.name);
-  if(!p.exact||!p.nameReadExact||!p.powerVerified||p.powerConflict||p.ocrPower==null)continue;
+  if(!p.exact||p.nameConflict||!p.nameReadExact||!p.powerVerified||p.powerConflict||p.ocrPower==null)continue;
   const saved=memberTHP(p.name);
   if(saved==null||p.ocrPower<=saved||p.ocrPower-saved>MAX_OCR_THP_INCREASE+0.00001){
    outcomes.ignored.push(p.name);continue;
@@ -746,7 +759,7 @@ function eligibleMemberOptions(selected="",label="Elegir miembro de HOLa"){
   '<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");
 }
 function canAcceptAutomatically(p){
- if(!p||!p.name||!p.exact||p.manual||p.roleConflict)return false;
+ if(!p||!p.name||!p.exact||p.manual||p.roleConflict||p.nameConflict)return false;
  const name=canonical(p.name);
  if(!name||!["starter","sub"].includes(p.role)||rosterOther.has(normal(name)))return false;
  // The OCR result may be from a previous accepted batch. Never offer to
