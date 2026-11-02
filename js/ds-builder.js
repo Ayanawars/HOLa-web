@@ -1,7 +1,5 @@
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
 const sb=createClient("https://ovybstpiomphrouvqxmf.supabase.co","sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV",{auth:{persistSession:true,autoRefreshToken:true}});
-const AZURE_URL="https://ovybstpiomphrouvqxmf.supabase.co/functions/v1/vs-azure-ocr";
-const KEY="sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
 const $=id=>document.getElementById(id);
 const HOSP=["H1","H2","H3","H4"],P1=["H1","H2","H3","H4","HUB"],P2=["H1","H2","H3","H4","SILO","ARSENAL","MERC","HUB","INFO"];
 const BUILDINGS={
@@ -495,7 +493,6 @@ function normalizeOCRLines(data,ox,oy,scale){
  if(!out.length)for(const l of data?.lines||[]){const b=l.bbox||{};out.push({text:String(l.text||"").trim(),x:ox+Number(b.x0||0)/scale,y:oy+Number(b.y0||0)/scale});}
  return out.sort((a,b)=>a.y-b.y);
 }
-function azureOCRLines(data,ox,oy,scale){const result=[];for(const parsed of data?.ParsedResults||[])for(const line of parsed.TextOverlay?.Lines||[]){result.push({text:String(line.LineText||"").trim(),x:ox+Number(line.Words?.[0]?.Left||0)/scale,y:oy+Number(line.MinTop||0)/scale});}return result.sort((a,b)=>a.y-b.y);}
 async function prepareImage(file){
  const img=await new Promise((resolve,reject)=>{const image=new Image(),url=URL.createObjectURL(file);image.onload=()=>{URL.revokeObjectURL(url);resolve(image);};image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("No se pudo abrir "+file.name));};image.src=url;});
  const w=img.naturalWidth,h=img.naturalHeight,original=document.createElement("canvas");original.width=w;original.height=h;
@@ -503,8 +500,7 @@ async function prepareImage(file){
  const x=Math.round(w*.205),y=Math.round(h*.355),cw=Math.round(w*.42),ch=Math.round(h*.465),scale=2.25;
  const cropped=document.createElement("canvas");cropped.width=Math.round(cw*scale);cropped.height=Math.round(ch*scale);
  cropped.getContext("2d").drawImage(img,x,y,cw,ch,0,0,cropped.width,cropped.height);
- const blob=await new Promise(res=>cropped.toBlob(res,"image/jpeg",.94));if(!blob)throw new Error("No se pudo recortar la captura.");
- return {original,blob,ox:x,oy:y,scale,w,h,name:file.name};
+ return {original,cropped,ox:x,oy:y,scale,w,h,name:file.name};
 }
 function blueScore(canvas,cx,cy){
  const ctx=canvas.getContext("2d",{willReadFrequently:true}),w=canvas.width,h=canvas.height;
@@ -542,7 +538,9 @@ function parseCandidates(lines,prep){
   let power=parsePower(raw);
   for(let j=i+1;j<Math.min(lines.length,i+5)&&power==null;j++){
    const next=lines[j],dy=next.y-row.y;
-   if(dy>=-5&&dy<prep.h*.065)power=parsePower(next.text);
+   if(dy>=prep.h*.065)break;
+   if(dy>=0&&matchMember(next.text).name)break;
+   if(dy>=-5)power=parsePower(next.text);
   }
   const role=readRole(prep,row.y);
   if(!matched.name){
@@ -571,11 +569,45 @@ function parseCandidates(lines,prep){
  }
  return [...unique.values()];
 }
-async function getOCRWorker(){if(ocrWorker)return ocrWorker;if(!window.Tesseract?.createWorker)await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";s.onload=res;s.onerror=()=>rej(new Error("No se pudo descargar Tesseract."));document.head.append(s);});ocrWorker=await window.Tesseract.createWorker("eng",1,{logger:m=>{if(m.status==="recognizing text")$("ocrStatus").textContent="Tesseract · "+Math.round((m.progress||0)*100)+"%";}});return ocrWorker;}
-async function azureLines(prep){
- const response=await fetch(AZURE_URL,{method:"POST",headers:{"apikey":KEY,"Content-Type":"image/jpeg"},body:prep.blob});
- const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data?.error||"Azure "+response.status);
- return azureOCRLines(data,prep.ox,prep.oy,prep.scale);
+// Preserve nicknames: dictionary corrections can turn player names into English words.
+async function getOCRWorker(){
+ if(ocrWorker)return ocrWorker;
+ if(!window.Tesseract?.createWorker)await new Promise((res,rej)=>{
+  const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+  script.onload=res;script.onerror=()=>{script.remove();rej(new Error("No se pudo descargar Tesseract. Comprueba la conexión y vuelve a intentarlo."));};document.head.append(script);
+ });
+ ocrWorker=await window.Tesseract.createWorker("eng",1,{
+  logger:m=>{if(m.status==="recognizing text")$("ocrStatus").textContent=ocrProgress+" · "+Math.round((m.progress||0)*100)+"%";}
+ },{load_system_dawg:"0",load_freq_dawg:"0"});
+ await ocrWorker.setParameters({preserve_interword_spaces:"1",user_defined_dpi:"300"});
+ return ocrWorker;
+}
+let ocrProgress="Tesseract";
+function contrastOCRImage(canvas){
+ const copy=document.createElement("canvas");copy.width=canvas.width;copy.height=canvas.height;
+ const ctx=copy.getContext("2d",{willReadFrequently:true});ctx.drawImage(canvas,0,0);
+ const pixels=ctx.getImageData(0,0,copy.width,copy.height),data=pixels.data;
+ // Game text is light on a dark panel. Invert and stretch contrast without
+ // binarizing: hard thresholds can erase thin strokes and decimal separators.
+ for(let i=0;i<data.length;i+=4){
+  const light=.299*data[i]+.587*data[i+1]+.114*data[i+2];
+  const value=255-Math.max(0,Math.min(255,(light-35)*255/185));
+  data[i]=data[i+1]=data[i+2]=value;
+ }
+ ctx.putImageData(pixels,0,0);return copy;
+}
+async function readTesseractPasses(worker,prep,label,errors){
+ const passes=[{image:prep.cropped,mode:"11",label:"color"},{image:contrastOCRImage(prep.cropped),mode:"6",label:"contraste"}];
+ let completed=0;
+ for(const pass of passes){
+  ocrProgress=label+" · "+pass.label;$("ocrStatus").textContent=ocrProgress;
+  try{
+   await worker.setParameters({tessedit_pageseg_mode:pass.mode});
+   const {data}=await worker.recognize(pass.image,{}, {text:true,blocks:true});
+   mergeProposals(parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep));completed++;
+  }catch(e){errors.push(prep.name+" ("+pass.label+"): "+String(e?.message||e));}
+ }
+ return completed;
 }
 function mergeProposals(rows){
  for(const incoming of rows){
@@ -744,27 +776,16 @@ async function readShots(){
  if(!shots.length){notice("Selecciona las capturas del listado del juego.","error");return;}
  if(busy||acceptBusy)return;
  busy=true;$("readShots").disabled=true;proposals=[];rejectedOCR=new Map();ocrHasRead=true;renderProposals();
- const errors=[];let azureUsed=0,worker=null;
+ const errors=[];let readCount=0;
  try{
   try{await refreshOfficialTHP({render:false});}catch(e){errors.push("THP de Supabase: "+String(e?.message||e));}
-  try{worker=await getOCRWorker();}
-  catch(e){errors.push("Tesseract: "+String(e?.message||e)+". Probando Azure.");}
+  const worker=await getOCRWorker();
   for(let i=0;i<shots.length;i++){
    $("ocrStatus").textContent="Leyendo captura "+(i+1)+"/"+shots.length+" · "+shots[i].name;
    try{
     const prep=await prepareImage(shots[i]);
-    // Azure is a second independent reading of EVERY screenshot. A Tesseract
-    // failure must never prevent Azure from finding the missing participant.
-    if(worker){
-     try{
-      const {data}=await worker.recognize(prep.blob,{}, {text:true,blocks:true});
-      mergeProposals(parseCandidates(normalizeOCRLines(data,prep.ox,prep.oy,prep.scale),prep));
-     }catch(e){errors.push("Tesseract "+shots[i].name+": "+String(e?.message||e));}
-    }
-    try{
-     $("ocrStatus").textContent="Cotejando "+shots[i].name+" con Azure…";
-     mergeProposals(parseCandidates(await azureLines(prep),prep));azureUsed++;
-    }catch(e){errors.push("Azure "+shots[i].name+": "+String(e?.message||e));}
+    const completed=await readTesseractPasses(worker,prep,"Captura "+(i+1)+"/"+shots.length,errors);
+    if(completed)readCount++;
    }catch(e){errors.push(shots[i].name+": "+String(e?.message||e));}
   }
   const powerSync=await applyOCRPowerUpgrades();
@@ -774,8 +795,8 @@ async function readShots(){
   const {starter,sub}=counts();
   $("ocrStatus").textContent="Lectura terminada: "+accepted.length+" ya inscritos · "+
    toAdd.length+" nuevos · "+pending.length+" jugadores por revisar. "+
-   unmatched.length+" fragmentos de OCR opcionales (no son jugadores confirmados). Azure: "+
-   azureUsed+"/"+shots.length+" capturas. THP actualizados: "+powerSync.updated.length+"."+
+   unmatched.length+" fragmentos de OCR opcionales (no son jugadores confirmados). Tesseract: "+
+   readCount+"/"+shots.length+" capturas. THP actualizados: "+powerSync.updated.length+"."+
    (powerSync.review.length?" THP a revisar: "+powerSync.review.join(", ")+".":"")+
    (powerSync.failed.length?" Errores al actualizar THP: "+powerSync.failed.join(" · ")+".":"")+
    (errors.length?" Avisos: "+errors.join(" · "):"");
