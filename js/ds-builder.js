@@ -12,7 +12,7 @@ MERC:{label:"Mercenary Factory",icon:"🏭",x:52,y:79}};
 const SUB_P1=[...P1,"INFO","REF1","REF2"],SUB_P2=[...P2,"REF1","REF2"];
 const TARGET1={H1:4,H2:4,H3:4,H4:4,HUB:4};
 const TARGET2={H1:2,H2:2,H3:2,H4:2,SILO:4,ARSENAL:2,MERC:2,HUB:2,INFO:2};
-let savedDrafts=[],members=[],memberByKey=new Map(),memberProfiles=new Map(),rosterOther=new Set(),storedTemplates=[],state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
+let savedDrafts=[],members=[],memberByKey=new Map(),memberProfiles=new Map(),rosterOther=new Set(),state=null,phase="phase1",selectedBuilding="H1",proposals=[],rejectedOCR=new Map(),ocrWorker=null,currentTab="setup",busy=false,acceptBusy=false,ocrHasRead=false;
 const normal=value=>String(value||"").normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f\u0640]/g,"").replace(/[ᓚᘏᗢ]/g,"").replace(/[^\p{L}\p{N}]+/gu,"");
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const number=value=>Number(value||0).toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -174,39 +174,12 @@ async function refreshOther(){
  for(const r of otherRoster)if(r?.name)rosterOther.add(normal(canonical(r.name)||r.name));
  for(const r of legacy||[])if(r?.player_name)rosterOther.add(normal(canonical(r.player_name)||r.player_name));
 }
-function renderSavedDrafts(){
- const panel=$("savedDraftsPanel"),list=$("savedDraftsList"),title=$("savedDraftsTitle");
- if(!panel||!list||!title)return;
- panel.hidden=!savedDrafts.length;
- if(!savedDrafts.length){list.innerHTML="";return;}
- title.textContent="☁ Recuperar DS guardado · "+savedDrafts.length+" jornada"+(savedDrafts.length===1?"":"s");
- list.innerHTML=savedDrafts.map(r=>{
-  const s=r.draft?.roster?.length?r.draft:r.published||r.draft||{};
-  const players=Array.isArray(s.roster)?s.roster.length:0;
-  const count=obj=>Object.values(obj||{}).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0);
-  const current=state?.team===r.team&&state?.battle_date===r.battle_date;
-  const date=String(r.battle_date).split("-").reverse().join("/");
-  return '<div class="saved-draft-card"><div><strong>Team '+esc(r.team)+' · '+esc(date)+'</strong><small>'+
-   players+' jugadores · Fase 1: '+count(s.phase1)+'/20 · Fase 2: '+count(s.phase2)+'/20'+
-   (r.published_at?' · Publicado antes':' · Borrador')+'</small></div>'+
-   '<button type="button" class="btn '+(current?'outline':'gold')+' small" data-restore-date="'+esc(r.battle_date)+
-   '" data-restore-team="'+esc(r.team)+'">'+(current?'↗ Editar mapa':'↻ Recuperar y editar')+'</button></div>';
- }).join("");
-}
-async function loadSavedDrafts(autoRestore=false){
+async function loadSavedDrafts(){
  const {data,error}=await sb.from("desert_storm_plans")
-  .select("battle_date,team,updated_at,draft,published,published_at")
-  .order("updated_at",{ascending:false}).limit(12);
+  .select("battle_date,team,updated_at").order("updated_at",{ascending:false}).limit(12);
  if(error)throw new Error("No se pudieron consultar tus borradores: "+error.message);
  savedDrafts=(data||[]).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.battle_date)&&["A","B"].includes(r.team));
  populateFridayDates($("battleDate").value);
- renderSavedDrafts();
- if(!autoRestore||!savedDrafts.length)return false;
- let last=null;try{last=JSON.parse(localStorage.getItem("hola-ds-builder-current")||"null");}catch{}
- const chosen=savedDrafts.find(r=>r.battle_date===last?.battle_date&&r.team===last?.team)||savedDrafts[0];
- if(!parseFridayDate(chosen.battle_date))return false;
- populateFridayDates(chosen.battle_date);$("team").value=chosen.team;
- return await loadDraft(false);
 }
 async function loadDraft(show=true){
  const d=$("battleDate").value,t=$("team").value;
@@ -227,7 +200,7 @@ async function loadDraft(show=true){
   state.serverTime=src?.serverTime||(t==="A"?"18:00":"09:00");
   phase="phase1";selectedBuilding="H1";
   proposals=[];rejectedOCR=new Map();ocrHasRead=false;
-  invalidateBulkRoster();syncSetup();renderRoster();renderProposals();mutate();renderSavedDrafts();
+  invalidateBulkRoster();syncSetup();renderRoster();renderProposals();mutate();
   localStorage.setItem("hola-ds-builder-current",JSON.stringify({battle_date:d,team:t}));
   // Removed the unused template panel from the setup screen.
   if(crossWarning)notice("Jornada recuperada, pero comprueba las inscripciones antes de publicar: "+crossWarning,"error");
@@ -1245,50 +1218,9 @@ async function saveDraft(published=false){
   state.battle_date=$("battleDate").value;state.team=$("team").value;state.serverTime=$("serverTime").value;state.templateName=$("templateName").value.trim()||"Operación Faraón";state.keyword=$("keyword").value.trim();state.leader=$("leader").value;state.alternate=$("alternate").value;state.language=$("language").value;
   const payload={battle_date:state.battle_date,team:state.team,draft:JSON.parse(JSON.stringify(state)),updated_at:new Date().toISOString()};
   if(published){payload.published=JSON.parse(JSON.stringify(state));payload.published_at=new Date().toISOString();}
-  const {error}=await sb.from("desert_storm_plans").upsert(payload,{onConflict:"battle_date,team"});if(error)throw error;storeLocal();await loadSavedDrafts(false).catch(e=>console.warn('Listado de borradores DS:',e));
+  const {error}=await sb.from("desert_storm_plans").upsert(payload,{onConflict:"battle_date,team"});if(error)throw error;storeLocal();await loadSavedDrafts().catch(e=>console.warn('Listado de borradores DS:',e));
   notice(published?"✓ Estrategia publicada para Team "+state.team+". La web DS mostrará esta versión.":"✓ Borrador guardado en Supabase (todavía no publicado).","success");return true;
  }catch(e){notice("No se pudo "+(published?"publicar":"guardar")+": "+e.message,"error");return false;}finally{busy=false;for(const b of ["publishPlan","saveDraftPlan","saveDraftBottom"])$(b).disabled=false;renderValidation();}
-}
-async function copyPrevious(){
- if(!state)return;try{const {data,error}=await sb.from("desert_storm_plans").select("draft,battle_date").eq("team",state.team).lt("battle_date",state.battle_date).order("battle_date",{ascending:false}).limit(1);if(error)throw error;if(!data?.length){notice("No hay una estrategia anterior de este equipo.","info");return;}
-  const old=stateReady(data[0].draft);state.templateName=old.templateName;state.keyword=old.keyword;state.language=old.language;
-  // Solo copiamos los destinos de participantes que estén en la convocatoria actual.
-  const starters=new Set(state.roster.filter(r=>r.role==="starter").map(r=>r.name)),subs=new Set(state.roster.filter(r=>r.role==="sub").map(r=>r.name));
-  for(const field of ["phase1","phase2","missions","subs","subsPhase2"])for(const k of Object.keys(state[field]))state[field][k]=(old[field][k]||[]).filter(n=>(field==="subs"||field==="subsPhase2"?subs:starters).has(n));
-  if(starters.has(old.leader))state.leader=old.leader;if(starters.has(old.alternate))state.alternate=old.alternate;
-  syncSetup();mutate();notice("Plantilla del "+data[0].battle_date+" copiada. Comprueba los puestos vacíos y asigna los nuevos jugadores.","success");
- }catch(e){notice("No se pudo copiar la anterior: "+e.message,"error");}
-}
-async function loadTemplates(){
- const {data,error}=await sb.from("desert_storm_templates").select("team,template_name,layout").order("team").order("template_name");
- if(error)throw error;storedTemplates=data||[];
- $("storedTemplate").innerHTML='<option value="">Elegir plantilla guardada</option>'+storedTemplates.map((t,i)=>'<option value="'+i+'">TEAM '+esc(t.team)+' · '+esc(t.template_name)+'</option>').join("");
-}
-async function saveTemplate(){
- if(!state)return;const name=$("templateName").value.trim();
- if(!name){notice("Pon un nombre a la plantilla.","error");return;}
- const errors=validate().errors;if(errors.length){notice("Completa y revisa ambas fases antes de guardar una plantilla. "+errors[0],"error");return;}
- try{const layout={version:1,phase1:state.phase1,phase2:state.phase2,missions:state.missions,subs:state.subs,subsPhase2:state.subsPhase2,keyword:state.keyword,leader:state.leader,alternate:state.alternate,serverTime:state.serverTime,language:state.language};
- const {error}=await sb.from("desert_storm_templates").upsert({team:state.team,template_name:name,layout,updated_at:new Date().toISOString()},{onConflict:"team,template_name"});
- if(error)throw error;await loadTemplates();notice("✓ Plantilla «"+name+"» guardada en Supabase. Puedes reutilizarla en futuras jornadas.","success");
- }catch(e){notice("No se pudo guardar la plantilla: "+e.message,"error");}
-}
-function loadTemplate(){
- const chosen=$("storedTemplate").value,row=chosen===""?null:storedTemplates[Number(chosen)];if(!row){notice("Elige una plantilla guardada.","error");return;}
- const l=row.layout||{},starters=new Set(state.roster.filter(r=>r.role==="starter").map(r=>r.name)),subs=new Set(state.roster.filter(r=>r.role==="sub").map(r=>r.name));
- for(const field of ["phase1","phase2","missions","subs","subsPhase2"]){
-  if(!l[field])continue;
-  for(const k of Object.keys(state[field]))state[field][k]=(Array.isArray(l[field][k])?l[field][k]:[]).filter(n=>(field==="subs"||field==="subsPhase2"?subs:starters).has(n));
- }
- if(!l.subsPhase2&&l.subs)for(const k of P2)state.subsPhase2[k]=HOSP.includes(k)?[...state.subs[k]]:[];
- state.templateName=row.template_name;
- if(typeof l.keyword==="string")state.keyword=l.keyword;
- if(typeof l.language==="string")state.language=l.language;
- if(row.team===state.team&&typeof l.serverTime==="string")state.serverTime=l.serverTime;
- if(starters.has(l.leader))state.leader=l.leader;
- if(starters.has(l.alternate))state.alternate=l.alternate;
- syncSetup();mutate();
- notice("Plantilla «"+row.template_name+"» aplicada. Las asignaciones de jugadores que no están en la convocatoria actual han quedado vacías. Revísalas antes de publicar.","success");
 }
 function drawText(ctx,text,x,y,maxWidth,font,color){ctx.font=font;ctx.fillStyle=color;ctx.fillText(String(text),x,y,maxWidth);}
 // The poster uses the same fixed battlefield as the interactive map. All player
