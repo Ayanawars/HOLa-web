@@ -648,9 +648,12 @@ async function readPowerCard(worker,prep,p,nextNameY,label,errors){
  }
  if(reads.length===2&&Math.abs(reads[0]-reads[1])<=.05){
   p.ocrPower=reads[0];p.powerVerified=true;
+ }else if(reads.length===1){
+  // Display single-pass reads as uncertain; never select them automatically.
+  p.ocrPower=reads[0];p.powerVerified=false;
  }else{
-  // Ignore inconsistent or missing power; never flag a player for THP.
   p.ocrPower=null;p.powerVerified=false;
+  if(reads.length===2)p.powerConflict=true;
  }
  p.power=memberTHP(p.name);
 }
@@ -731,7 +734,7 @@ function mergeProposals(rows){
   if(incoming.nameReadExact){old.matchKind="direct";old.ocrName=incoming.ocrName;}
   if(!old.roleConflict&&old.role&&incoming.role&&old.role!==incoming.role){old.role="";old.roleConflict=true;}
   else if(!old.roleConflict&&!old.role&&incoming.role)old.role=incoming.role;
-  if(!old.powerConflict&&old.ocrPower!=null&&incoming.ocrPower!=null&&Math.abs(old.ocrPower-incoming.ocrPower)>.15){old.ocrPower=null;old.powerConflict=true;}
+  if(!old.powerConflict&&old.ocrPower!=null&&incoming.ocrPower!=null&&Math.abs(old.ocrPower-incoming.ocrPower)>.05){old.ocrPower=null;old.powerConflict=true;}
   else if(!old.powerConflict&&old.ocrPower==null&&incoming.ocrPower!=null)old.ocrPower=incoming.ocrPower;
   old.requiresTHPReview=!!(old.requiresTHPReview||incoming.requiresTHPReview);
    old.roleConflict=!!(old.roleConflict||incoming.roleConflict);
@@ -760,14 +763,14 @@ function rememberOCRPower(name,source){
   ocrPowerReadings.set(key,{value:null,verified:false,conflict:true});
   return;
  }
- if(prior?.conflict||!source.powerVerified)return;
+ if(prior?.conflict)return;
  const value=Number(source.ocrPower);
  if(!Number.isFinite(value)||value<=0||value>9999)return;
  if(prior&&Math.abs(prior.value-value)>.05){
   ocrPowerReadings.set(key,{value:null,verified:false,conflict:true});
   return;
  }
- ocrPowerReadings.set(key,{value,verified:true,source:source.file||"captura"});
+ ocrPowerReadings.set(key,{value,verified:!!(source.powerVerified||prior?.verified),source:source.file||"captura"});
 }
 function existingRosterRecord(name){
  const nameKey=normal(canonical(name)||name);
@@ -952,20 +955,20 @@ async function readShots(){
 
 function thpComparison(name){
  const official=canonical(name),saved=memberTHP(official),read=ocrPowerReadings.get(normal(official));
- const value=read?.verified?read.value:null;
+ const value=read?.value??null;
  if(read?.conflict)return {status:"conflict",saved,value:null,label:"Lecturas distintas: se conserva Supabase",canApply:false};
  if(value==null)return {status:"missing",saved,value:null,label:"Sin THP fiable en la captura",canApply:false};
  if(saved!=null&&value<saved-.00001)return {status:"lower",saved,value,label:"THP inferior: conservar Supabase",canApply:false};
  if(saved!=null&&Math.abs(value-saved)<=.00001)return {status:"same",saved,value,label:"Sin cambios",canApply:false};
  if(saved!=null&&value-saved>MAX_OCR_THP_INCREASE+.00001)return {status:"too-high",saved,value,label:"Subida superior a 5M: ignorar lectura",canApply:false};
- return {status:"increase",saved,value,label:saved==null?"Sin THP guardado: confirmar lectura":"Subida válida: +"+number(value-saved)+"M",canApply:true};
+ return {status:read.verified?"increase":"uncertain",saved,value,label:!read.verified?"Solo una lectura · comprueba la cifra":saved==null?"Sin THP guardado: confirmar lectura":"Subida válida: +"+number(value-saved)+"M",canApply:true,verified:!!read.verified};
 }
 function renderTHPReview(){
  const players=[...(state?.roster||[])].sort((a,b)=>a.name.localeCompare(b.name));
  $("thpReviewList").innerHTML=players.map(player=>{
   const name=canonical(player.name)||player.name,compare=thpComparison(name);
   return '<label class="thp-review-item" data-name="'+esc(name)+'" data-status="'+compare.status+'">'+
-   '<input type="checkbox" class="thp-approval-check" '+(compare.canApply?'checked':'disabled')+
+   '<input type="checkbox" class="thp-approval-check" '+(compare.canApply?(compare.verified?'checked':''):'disabled')+
    ' aria-label="Actualizar THP de '+esc(name)+'">'+
    '<div><div class="thp-review-name">'+esc(name)+'</div>'+
    '<div class="thp-review-values"><span>Supabase: <strong>'+(compare.saved==null?'—':number(compare.saved)+'M')+'</strong></span>'+
@@ -1012,7 +1015,7 @@ async function applyTHPReview(){
   for(const row of rows){
    const name=row.dataset.name,read=ocrPowerReadings.get(normal(canonical(name)));
    const current=thpComparison(name);
-   if(!read?.verified||!current.canApply||read.value!==current.value){kept++;continue;}
+   if(read?.value==null||!current.canApply||read.value!==current.value){kept++;continue;}
    try{
     // CAS re-reads the current Supabase record and refuses decreases.
     // The normal <=5M guard applies to previously known THP.
