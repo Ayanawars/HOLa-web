@@ -3286,6 +3286,15 @@
             `✓ OCR completado: ${allFound.length}/${memberNames.length} miembros. ` +
             `Tesseract local: ${afterTesseract}/${memberNames.length} miembros.`;
 
+          const detectedScoreRows = tessByFile.reduce(
+            (sum, image) => sum + Number(image.found?.diagnostics?.scoreRows || 0), 0,
+          );
+          const pairedRows = tessByFile.reduce(
+            (sum, image) => sum + Number(image.found?.diagnostics?.associatedNames || 0), 0,
+          );
+          ocrStatus.textContent +=
+            ` Capturas: ${tessByFile.length} · puntuaciones visibles detectadas: ${detectedScoreRows}` +
+            ` · filas con jugador asociado: ${pairedRows}.`;
           if (zeroPlayers.length) {
             ocrStatus.textContent +=
               ` ${zeroPlayers.length} jugador${zeroPlayers.length === 1 ? "" : "es"} con 0 puntos.`;
