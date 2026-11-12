@@ -2243,7 +2243,9 @@
         const left = Math.round(width * 0.31);
         const right = Math.round(width * 0.72);
         const cropWidth = Math.max(1, right - left);
-        const scale = width < 1600 ? 3 : 1;
+        // Evitamos imágenes de 7000px de alto en móviles de alta resolución.
+        // 3600px de altura bastan para conservar texto legible sin agotar RAM.
+        const scale = Math.min(3, 3600 / height, 1000 / cropWidth);
         const canvas = document.createElement("canvas");
         canvas.width = Math.round(cropWidth * scale);
         canvas.height = Math.round(height * scale);
@@ -2281,7 +2283,9 @@
         const left = Math.round(width * 0.73);
         const right = Math.round(width * 0.99);
         const cropWidth = Math.max(1, right - left);
-        const scale = width < 1600 ? 3 : 1;
+        // Evitamos imágenes de 7000px de alto en móviles de alta resolución.
+        // 3600px de altura bastan para conservar texto legible sin agotar RAM.
+        const scale = Math.min(3, 3600 / height, 1000 / cropWidth);
         const canvas = document.createElement("canvas");
         canvas.width = Math.round(cropWidth * scale);
         canvas.height = Math.round(height * scale);
@@ -2632,7 +2636,7 @@
         for (const psm of ["6", "11"]) {
           await worker.setParameters({ tessedit_pageseg_mode: psm });
           const result = await worker.recognize(
-            selected, {}, { text: true, tsv: true, blocks: true },
+            selected, {}, { text: true, tsv: true, blocks: false, hocr: false },
           );
           const candidate = tesseractDataToParsedResults(result?.data);
           if (candidate[0]?.TextOverlay?.Lines?.length) return candidate;
