@@ -758,9 +758,10 @@
         <h2>📸 SUBIR SCREENSHOTS</h2>
         <p>
           Selecciona todas las capturas del ranking. Primero se procesan
-          localmente con Tesseract.js, sin gastar cuota. Si no llega a todos
-          los miembros, Azure Vision revisa automáticamente solo las capturas
-          necesarias. Lolo se asigna al jugador oficial مثالـي25.
+          localmente con Tesseract.js, sin enviar capturas a servicios OCR externos.
+          Los nombres y los puntos se analizan por separado para mejorar la precisión.
+          Revisa las puntuaciones y completa los jugadores pendientes antes de guardar.
+          Lolo se asigna al jugador oficial مثالـي25.
         </p>
         <div class="drop">
           <b>Capturas del ranking</b><br /><input
@@ -900,10 +901,7 @@
       const SUPABASE_URL = "https://ovybstpiomphrouvqxmf.supabase.co";
       const SUPABASE_PUBLIC_KEY =
         "sb_publishable_gU5Wgy2NhdXcy23_TotF9g_LKthVmKV";
-      const AZURE_OCR_URL =
-        SUPABASE_URL + "/functions/v1/vs-azure-ocr";
       const sb = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
-      const OCR_API_KEY = "K88248924688957";
       const rows = document.getElementById("rows"),
         img = document.getElementById("img"),
         fileLabel = document.getElementById("file"),
@@ -1597,7 +1595,7 @@
           }
 
           // Caso especial frecuente: Laz Ziyaa / Laz Ziyaaa.
-          // En esta fila OCR.space puede pegar también "[HOLa] Heroes of Last Area"
+          // En esta fila servicio OCR antiguo puede pegar también "[HOLa] Heroes of Last Area"
           // o basura equivalente detrás del nombre. Por eso aceptamos cualquier
           // texto extra después de un prefijo suficientemente cercano al nombre base.
           if (entry.base === "Laz Ziyaaa") {
@@ -1760,7 +1758,7 @@
         const result = [];
         for (const pLine of pointLines) {
           const center = pLine.top + pLine.height / 2;
-          // Más tolerante: OCR.space no siempre coloca nombre y puntos exactamente
+          // Más tolerante: servicio OCR antiguo no siempre coloca nombre y puntos exactamente
           // en la misma altura, sobre todo en móvil.
           const rowTolerance = Math.max(45, Math.min(95, pLine.height * 2.1));
 
@@ -1770,7 +1768,7 @@
             const name = cleanName(l.text);
             // En la imagen ya recortada, el nombre está en la parte izquierda/central
             // y los puntos en la derecha. No usamos ninguna zona del avatar porque ya
-            // quedó fuera del canvas antes de enviar la captura a OCR.space.
+            // quedó fuera del canvas antes de enviar la captura a servicio OCR antiguo.
             return (
               distance <= rowTolerance &&
               l.left >= 0 &&
@@ -1820,7 +1818,7 @@
       }
 
 
-      // Recuperación reforzada para filas que OCR.space separa de forma irregular.
+      // Recuperación reforzada para filas que servicio OCR antiguo separa de forma irregular.
       // En vez de exigir una línea 100% numérica, buscamos números grandes dentro
       // de las palabras de la misma fila y los asociamos al miembro oficial por Y.
       function scoreValuesFromText(value) {
@@ -1912,7 +1910,7 @@
           const rowWords = row.words.sort((a, b) => a.left - b.left);
 
           // Dividimos solo cuando hay un salto horizontal enorme.
-          // OCR.space puede separar 26,974,062 en 26,974 + 06 + 2.
+          // servicio OCR antiguo puede separar 26,974,062 en 26,974 + 06 + 2.
           let groups = [];
           let group = [];
           for (const word of rowWords) {
@@ -1979,7 +1977,7 @@
           const prev = current[current.length - 1];
           const gap = word.left - (prev.left + prev.width);
 
-          // OCR.space a veces divide "26,974,062" en "26,974" + "062".
+          // servicio OCR antiguo a veces divide "26,974,062" en "26,974" + "062".
           // Solo unimos trozos muy próximos para no mezclar el puesto del ranking.
           if (gap >= -4 && gap <= 38) {
             current.push(word);
@@ -2067,7 +2065,7 @@
           .filter((line) => line.raw.trim());
 
         // Reconstruimos la columna de puntos con todas las palabras del overlay,
-        // incluso cuando OCR.space parte una cifra en varias líneas/palabras.
+        // incluso cuando servicio OCR antiguo parte una cifra en varias líneas/palabras.
         const scoreCandidates = scoreCandidatesFromOverlay(overlay);
 
         const results = [];
@@ -2129,7 +2127,7 @@
         return [...new Set(values.filter((value) => value >= 1000))];
       }
 
-      /* Respaldo si OCR.space no devuelve coordenadas. */
+      /* Respaldo si servicio OCR antiguo no devuelve coordenadas. */
       function pairs(text) {
         const lines = String(text || "")
           .split(/\r?\n/)
@@ -2194,25 +2192,18 @@
         // El avatar termina aproximadamente en el 30% de la anchura.
         // Empezamos al 30%, dejando un pequeño margen para no cortar el primer carácter del nombre y excluyendo
         // completamente cualquier texto dentro de la foto, como "Sevilla".
-        const left = Math.round(width * 0.3);
+        const left = Math.round(width * 0.25);
         const right = Math.round(width * 0.99);
         const cropWidth = Math.max(1, right - left);
 
         const canvas = document.createElement("canvas");
-        canvas.width = cropWidth;
-        canvas.height = height;
+        const scale = width < 1600 ? 1.5 : 1;
+        canvas.width = Math.round(cropWidth * scale);
+        canvas.height = Math.round(height * scale);
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(
-          source,
-          left,
-          0,
-          cropWidth,
-          height,
-          0,
-          0,
-          cropWidth,
-          height,
-        );
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(source, left, 0, cropWidth, height, 0, 0,
+          canvas.width, canvas.height);
 
         const blob = await new Promise((resolve) =>
           canvas.toBlob(resolve, "image/jpeg", 0.96),
@@ -2225,7 +2216,7 @@
         );
         // Conservamos la altura original para excluir la fila verde fija
         // del jugador propio en la comprobación del orden del ranking.
-        prepared.rankingHeight = height;
+        prepared.rankingHeight = canvas.height;
         return prepared;
       }
 
@@ -2250,26 +2241,18 @@
         // Solo la columna derecha del ranking, donde aparecen los puntos.
         // Al eliminar nombres, puestos y avatares evitamos que números de los
         // nicks (ENIGMA31415, N6C6R6, etc.) contaminen la puntuación.
-        const left = Math.round(width * 0.68);
+        const left = Math.round(width * 0.62);
         const right = Math.round(width * 0.995);
         const cropWidth = Math.max(1, right - left);
 
         const canvas = document.createElement("canvas");
-        canvas.width = cropWidth;
-        canvas.height = height;
+        const scale = width < 1600 ? 1.5 : 1;
+        canvas.width = Math.round(cropWidth * scale);
+        canvas.height = Math.round(height * scale);
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-        ctx.drawImage(
-          source,
-          left,
-          0,
-          cropWidth,
-          height,
-          0,
-          0,
-          cropWidth,
-          height,
-        );
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(source, left, 0, cropWidth, height, 0, 0,
+          canvas.width, canvas.height);
 
         const blob = await new Promise((resolve) =>
           canvas.toBlob(resolve, "image/jpeg", 0.98),
@@ -2288,8 +2271,11 @@
 
         for (const line of overlay?.Lines || []) {
           for (const word of line.Words || []) {
-            const text = String(word.WordText || "").trim();
-            if (!text || !/\d/.test(text) || /[\p{L}]/u.test(text)) continue;
+            const raw = String(word.WordText || "").trim();
+            if (!/\d/.test(raw)) continue;
+            const text = raw.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1")
+              .replace(/[Ss]/g, "5").replace(/[Bb]/g, "8");
+            if (!/^[\d\s.,]+$/.test(text)) continue;
 
             words.push({
               text,
@@ -2337,7 +2323,7 @@
             .join("")
             .replace(/\D/g, "");
 
-          if (digits.length < 5) continue;
+          if (digits.length < 5 && digits !== "0") continue;
 
           const value = Number(digits);
           if (!Number.isFinite(value) || value < 0) continue;
@@ -2358,7 +2344,11 @@
         const seen = new Set();
 
         for (const line of overlay?.Lines || []) {
-          let text = cleanName(String(line.LineText || ""));
+          // No quitar dígitos internos de nicks como ENIGMA31415:
+          // solo eliminar la puntuación final cuando es un campo separado.
+          let text = cleanName(String(line.LineText || "")
+            .replace(/\s+\d{1,3}(?:[.,]\d{3})+\s*$/u, "")
+            .replace(/\s+\d{5,12}\s*$/u, ""));
 
           text = text
             .replace(
@@ -2450,19 +2440,8 @@
         return { found, unmatchedPoints };
       }
 
-      let ocrSpaceBlockedForSession = false;
-      let tesseractWorkerPromise = null;
+      const tesseractWorkerPromises = new Map();
       let tesseractLoaderPromise = null;
-
-      function isOcrSpaceLimitError(status, message) {
-        const text = String(message || "").toLowerCase();
-        return (
-          Number(status) === 429 ||
-          /too many|rate.?limit|quota|maximum.*request|limit.*request|requests.*limit/.test(
-            text,
-          )
-        );
-      }
 
       async function loadTesseractLibrary() {
         if (window.Tesseract?.createWorker) return window.Tesseract;
@@ -2486,43 +2465,45 @@
         return tesseractLoaderPromise;
       }
 
-      async function getTesseractWorker() {
-        if (!tesseractWorkerPromise) {
-          tesseractWorkerPromise = (async () => {
+      async function getTesseractWorker(language = "eng") {
+        const lang = language === "ara" ? "ara" : "eng";
+        if (!tesseractWorkerPromises.has(lang)) {
+          const promise = (async () => {
             const Tesseract = await loadTesseractLibrary();
-            return Tesseract.createWorker("eng", 1, {
+            return Tesseract.createWorker(lang, 1, {
               logger: (message) => {
                 if (!message) return;
                 if (message.status === "recognizing text") {
                   const pct = Math.round((Number(message.progress) || 0) * 100);
                   ocrStatus.textContent =
-                    `🧠 Tesseract local: leyendo captura... ${pct}%`;
+                    `🧠 Tesseract (${lang}): leyendo captura... ${pct}%`;
                 } else if (
                   message.status === "loading language traineddata" ||
                   message.status === "loading tesseract core"
                 ) {
                   ocrStatus.textContent =
-                    "🧠 Preparando Tesseract local por primera vez...";
+                    `🧠 Preparando Tesseract (${lang})...`;
                 }
               },
             });
           })();
+          tesseractWorkerPromises.set(lang, promise);
+          promise.catch(() => {
+            if (tesseractWorkerPromises.get(lang) === promise) {
+              tesseractWorkerPromises.delete(lang);
+            }
+          });
         }
-
-        return tesseractWorkerPromise;
+        return tesseractWorkerPromises.get(lang);
       }
 
       async function releaseTesseractWorker() {
-        if (!tesseractWorkerPromise) return;
-
-        try {
-          const worker = await tesseractWorkerPromise;
+        const pending = [...tesseractWorkerPromises.values()];
+        tesseractWorkerPromises.clear();
+        await Promise.allSettled(pending.map(async (promise) => {
+          const worker = await promise;
           await worker.terminate();
-        } catch (error) {
-          console.warn("No se pudo cerrar Tesseract:", error);
-        } finally {
-          tesseractWorkerPromise = null;
-        }
+        }));
       }
 
       function tesseractDataToParsedResults(data) {
@@ -2596,8 +2577,8 @@
         ];
       }
 
-      async function runTesseractPass(selected) {
-        const worker = await getTesseractWorker();
+      async function runTesseractPass(selected, language = "eng") {
+        const worker = await getTesseractWorker(language);
         const result = await worker.recognize(
           selected,
           {},
@@ -2608,35 +2589,6 @@
         if (!parsed[0]?.TextOverlay?.Lines?.length) {
           throw new Error(
             "Tesseract no pudo obtener filas con coordenadas de esta captura.",
-          );
-        }
-
-        return parsed;
-      }
-
-      async function runAzurePass(selected) {
-        const response = await fetch(AZURE_OCR_URL, {
-          method: "POST",
-          headers: {
-            apikey: SUPABASE_PUBLIC_KEY,
-            "Content-Type": selected.type || "application/octet-stream",
-          },
-          body: selected,
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error ||
-              `Azure Vision respondió con error ${response.status}.`,
-          );
-        }
-
-        const parsed = data?.ParsedResults || [];
-        if (!parsed[0]?.TextOverlay?.Lines?.length) {
-          throw new Error(
-            data?.warning || "Azure Vision no detectó texto en la captura.",
           );
         }
 
@@ -2664,6 +2616,8 @@
 
           const oldDetected = pairsFromOverlay(result.TextOverlay);
           fallback.push(...oldDetected);
+          // Tesseract puede reconocer nombre y puntuación en la misma línea.
+          fallback.push(...pairsFromKnownMembersOverlay(result.TextOverlay));
         }
 
         const byName = new Map();
@@ -2699,114 +2653,37 @@
 
       async function readScreenshotTesseract(selected) {
         const cropped = await cropRankingForOcr(selected);
-        const parsed = await runTesseractPass(cropped);
-        return extractRankingFromParsed(parsed, "Tesseract").map((item) => ({
-          ...item,
-          rankingHeight: cropped.rankingHeight,
-        }));
-      }
+        const parsedNames = await runTesseractPass(cropped);
+        const byName = new Map(
+          extractRankingFromParsed(parsedNames, "Tesseract")
+            .map((item) => [normName(item.name), item]),
+        );
 
-      async function readScreenshotAzure(selected) {
-        const cropped = await cropRankingForOcr(selected);
-        const parsed = await runAzurePass(cropped);
-        return extractRankingFromParsed(parsed, "Azure").map((item) => ({
-          ...item,
-          rankingHeight: cropped.rankingHeight,
-        }));
-      }
-
-      async function runOcrPass(selected, language, engine = "2") {
-        // Tras el primer 429 no volvemos a consultar OCR.space durante esta
-        // sesión de página. Todas las capturas restantes pasan a Tesseract.
-        if (ocrSpaceBlockedForSession) {
-          return runTesseractPass(selected);
-        }
-
-        const fd = new FormData();
-        fd.append("file", selected);
-        fd.append("language", language);
-        fd.append("isOverlayRequired", "true");
-        fd.append("detectOrientation", "true");
-        fd.append("scale", "true");
-        fd.append("OCREngine", engine);
-        fd.append("isTable", "true");
-        fd.append("isCreateSearchablePDF", "false");
-
-        let r;
+        // Segunda lectura Tesseract, aislando la columna de puntuación.
+        // Las dos imágenes tienen idéntica escala y coordenada vertical.
         try {
-          r = await fetch("https://api.ocr.space/parse/image", {
-            method: "POST",
-            headers: { apikey: OCR_API_KEY },
-            body: fd,
-          });
-        } catch (networkError) {
-          // Si OCR.space ni siquiera responde (Failed to fetch, CORS,
-          // conexión caída, bloqueo temporal, etc.), activamos el mismo
-          // cortacircuitos que con el 429: esta captura y todas las siguientes
-          // pasan directamente a Tesseract durante esta sesión.
-          ocrSpaceBlockedForSession = true;
-          ocrStatus.textContent =
-            "⚠ OCR.space no respondió. Cambio automático a Tesseract local; no se harán más peticiones a OCR.space en esta sesión.";
-          showOcrToast(
-            "🧠 Cambio automático a Tesseract",
-            "OCR.space no respondió. Continuamos localmente con esta captura y las siguientes.",
-          );
-          return runTesseractPass(selected);
+          const pointsCrop = await cropPointsForOcr(selected);
+          const parsedScores = await runTesseractPass(pointsCrop);
+          const memberRows = memberRowsFromOverlay(parsedNames[0]?.TextOverlay);
+          const pointRows = numericRowsFromPointsOverlay(parsedScores[0]?.TextOverlay);
+          for (const item of pairMemberRowsWithPoints(memberRows, pointRows).found) {
+            if (Number.isFinite(item.points) && item.points >= 0) {
+              byName.set(normName(item.name), {
+                ...item, source: "Tesseract-points-column",
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("Segunda pasada numérica no disponible:", error);
         }
 
-        let data = null;
-        try {
-          data = await r.json();
-        } catch (_) {}
-
-        const apiMessage = data
-          ? (Array.isArray(data.ErrorMessage)
-              ? data.ErrorMessage.join(" ")
-              : data.ErrorMessage) ||
-            data.ErrorDetails ||
-            ""
-          : "";
-
-        if (
-          isOcrSpaceLimitError(r.status, apiMessage) ||
-          (data?.IsErroredOnProcessing &&
-            isOcrSpaceLimitError(r.status, apiMessage))
-        ) {
-          ocrSpaceBlockedForSession = true;
-          ocrStatus.textContent =
-            "⚠ OCR.space alcanzó el límite. Cambio automático a Tesseract local; no se harán más peticiones a OCR.space en esta sesión.";
-          showOcrToast(
-            "🧠 Cambio automático a Tesseract",
-            "OCR.space devolvió límite/cuota. Las capturas restantes se procesarán localmente.",
-          );
-          return runTesseractPass(selected);
+        if (!byName.size) {
+          throw new Error("Tesseract no reconoció jugadores de la alianza en esta captura.");
         }
 
-        if (!r.ok) {
-          // Cualquier rechazo HTTP de OCR.space activa el respaldo local.
-          // Evitamos seguir gastando peticiones fallidas con las capturas restantes.
-          ocrSpaceBlockedForSession = true;
-          ocrStatus.textContent =
-            `⚠ OCR.space respondió con error ${r.status}. Cambio automático a Tesseract local.`;
-          showOcrToast(
-            "🧠 Cambio automático a Tesseract",
-            `OCR.space respondió con error ${r.status}. Las siguientes capturas ya no usarán la API.`,
-          );
-          return runTesseractPass(selected);
-        }
-
-        if (data?.IsErroredOnProcessing) {
-          ocrSpaceBlockedForSession = true;
-          ocrStatus.textContent =
-            "⚠ OCR.space rechazó la captura. Cambio automático a Tesseract local.";
-          showOcrToast(
-            "🧠 Cambio automático a Tesseract",
-            apiMessage || "OCR.space no pudo procesar la captura.",
-          );
-          return runTesseractPass(selected);
-        }
-
-        return data?.ParsedResults || [];
+        return [...byName.values()].map((item) => ({
+          ...item, rankingHeight: cropped.rankingHeight,
+        }));
       }
 
       function findArabicRowScore(parsed) {
@@ -2848,82 +2725,41 @@
       }
 
       async function readArabicScreenshot(selected) {
-        const cropped = await cropRankingForOcr(selected);
-
-        // Primera pasada: OCR normal para recuperar los demás jugadores visibles.
-        const parsedEng = await runOcrPass(cropped, "eng", "2");
-        const found = extractAndMatchPlayers(parsedEng);
-
-        const arabicMember =
-          memberNames.find((n) => /[\u0600-\u06FF]/u.test(n)) || "مثالـي25";
-        const arabicKey = normName(arabicMember);
-
-        // Segunda pasada específica en árabe. OCR.space puede no admitirla según
-        // la clave/motor, por eso probamos dos motores y, si falla, seguimos con
-        // el OCR inglés como respaldo.
-        let parsedAra = [];
-        try {
-          parsedAra = await runOcrPass(cropped, "ara", "2");
-        } catch (error2) {
-          try {
-            parsedAra = await runOcrPass(cropped, "ara", "1");
-          } catch (error1) {
-            console.warn("OCR árabe no disponible; usando respaldo inglés.", error1);
-          }
-        }
-
-        // Método principal: localizar físicamente la línea que contiene árabe
-        // y tomar la puntuación de la misma fila en la columna derecha.
-        let arabicPoints =
-          findArabicRowScore(parsedAra) ||
-          findArabicRowScore(parsedEng);
-
-        // Si la pasada árabe sí reconoció al jugador por nombre, aceptamos su
-        // puntuación aunque el detector de línea no haya podido enlazarla.
-        if (!arabicPoints && parsedAra.length) {
-          const fromArabicPass = extractAndMatchPlayers(parsedAra).find(
-            (item) =>
-              normName(item.name) === arabicKey &&
-              Number(item.points) > 0,
-          );
-          if (fromArabicPass) arabicPoints = Number(fromArabicPass.points);
-        }
-
-        // Último respaldo: solo asignamos una cifra "sobrante" si existe
-        // exactamente UNA. Nunca elegimos una de varias al azar.
-        if (!arabicPoints) {
-          const used = new Set(
-            found
-              .filter((item) => normName(item.name) !== arabicKey)
-              .map((item) => Number(item.points)),
-          );
-          const candidates = [
-            ...new Set([
-              ...collectScoreCandidates(parsedEng),
-              ...collectScoreCandidates(parsedAra),
-            ]),
-          ].filter((value) => !used.has(Number(value)));
-
-          if (candidates.length === 1) {
-            arabicPoints = Number(candidates[0]);
-          }
-        }
-
-        // Quitamos cualquier lectura previa del árabe y la sustituimos solo
-        // cuando tenemos una puntuación fiable.
-        const withoutArabic = found.filter(
-          (item) => normName(item.name) !== arabicKey,
+        const arabicMember = memberNames.find((name) =>
+          /[\u0600-\u06FF]/u.test(name),
         );
+        if (!arabicMember) return null;
 
-        if (arabicPoints && arabicPoints > 0) {
-          withoutArabic.push({
-            name: arabicMember,
-            points: arabicPoints,
-            score: 1,
-          });
+        const cropped = await cropRankingForOcr(selected);
+        const arabicParsed = await runTesseractPass(cropped, "ara");
+        const arabicLines = (arabicParsed[0]?.TextOverlay?.Lines || [])
+          .filter((line) => /[\u0600-\u06FF]/u.test(line.LineText || ""));
+        if (!arabicLines.length) return null;
+
+        const pointsCrop = await cropPointsForOcr(selected);
+        const scoresParsed = await runTesseractPass(pointsCrop, "eng");
+        const pointRows = numericRowsFromPointsOverlay(scoresParsed[0]?.TextOverlay);
+        let best = null;
+        for (const line of arabicLines) {
+          const top = Number(line.MinTop || 0);
+          const height = Number(line.MaxHeight || 0);
+          const center = top + height / 2;
+          const tolerance = Math.max(40, Math.min(95, height * 2));
+          for (const point of pointRows) {
+            const distance = Math.abs(point.center - center);
+            if (distance > tolerance || (best && distance >= best.distance)) continue;
+            best = { point, distance, top };
+          }
         }
-
-        return withoutArabic;
+        return best
+          ? {
+              name: arabicMember,
+              points: best.point.value,
+              top: best.top,
+              rankingHeight: cropped.rankingHeight,
+              source: "Tesseract-arabic",
+            }
+          : null;
       }
 
       function extractAndMatchPlayers(parsed) {
@@ -2934,7 +2770,7 @@
           if (detected.length) found.push(...detected);
 
           // Segunda lectura por coordenadas, más tolerante con nombres decorados,
-          // texto árabe y cifras que OCR.space mezcla con otros caracteres.
+          // texto árabe y cifras que servicio OCR antiguo mezcla con otros caracteres.
           const recovered = pairsFromKnownMembersOverlay(x.TextOverlay);
           if (recovered.length) found.push(...recovered);
         }
@@ -3017,93 +2853,6 @@
           }
         }
       }
-      async function recoverArabicFromUnassignedScore(
-        selectedFiles,
-        foundByName,
-      ) {
-        const arabicMember = memberNames.find((name) =>
-          /[\u0600-\u06FF]/u.test(name),
-        );
-        if (!arabicMember) return null;
-
-        const arabicKey = normName(arabicMember);
-        if (foundByName.has(arabicKey)) return foundByName.get(arabicKey);
-
-        const usedScores = new Set(
-          [...foundByName.values()]
-            .map((item) => Number(item.points))
-            .filter((value) => Number.isFinite(value)),
-        );
-
-        const frequency = new Map();
-
-        for (let i = 0; i < selectedFiles.length; i++) {
-          ocrBtn.textContent = `🌍 BUSCANDO ÁRABE ${i + 1}/${selectedFiles.length}`;
-          ocrStatus.textContent =
-            `Buscando la puntuación sin asignar en la captura ${i + 1} de ${selectedFiles.length}...`;
-
-          try {
-            const cropped = await cropRankingForOcr(selectedFiles[i]);
-            const parsed = await runOcrPass(cropped, "eng", "2");
-            const candidates = collectScoreCandidates(parsed);
-
-            for (const value of candidates) {
-              const numeric = Number(value);
-              if (!Number.isFinite(numeric)) continue;
-              frequency.set(numeric, (frequency.get(numeric) || 0) + 1);
-            }
-          } catch (error) {
-            console.warn(
-              "No se pudieron extraer puntuaciones de",
-              selectedFiles[i].name,
-              error,
-            );
-          }
-        }
-
-        // Quitamos todas las puntuaciones ya asignadas a los otros 98 jugadores.
-        let remaining = [...frequency.keys()].filter(
-          (value) => !usedScores.has(Number(value)),
-        );
-
-        // Descartamos cifras absurdamente pequeñas que suelen ser puestos/rangos
-        // u otros números del interfaz.
-        remaining = remaining.filter(
-          (value) => Number(value) === 0 || Number(value) >= 100000,
-        );
-
-        if (remaining.length === 1) {
-          return {
-            name: arabicMember,
-            points: Number(remaining[0]),
-            score: 1,
-          };
-        }
-
-        // Si hay varias candidatas por ruido OCR, priorizamos las que aparecen
-        // más de una vez en capturas solapadas.
-        const repeated = remaining
-          .map((value) => ({
-            value: Number(value),
-            count: frequency.get(Number(value)) || 0,
-          }))
-          .filter((item) => item.count >= 2)
-          .sort((a, b) => b.count - a.count);
-
-        if (
-          repeated.length === 1 ||
-          (repeated.length > 1 && repeated[0].count > repeated[1].count)
-        ) {
-          return {
-            name: arabicMember,
-            points: repeated[0].value,
-            score: 0.99,
-          };
-        }
-
-        return null;
-      }
-
       // La puntuación del ranking diario debe ir siempre de mayor a menor
       // según la posición VERTICAL de las filas visibles en cada captura.
       // No dependemos del número del puesto (queda fuera del recorte OCR).
@@ -3124,12 +2873,7 @@
 
         for (const screenshot of screenshots) {
           const perImage = new Map();
-          // Azure sustituye a Tesseract solamente si revisó esta imagen.
-          // Para nombres que Azure no leyó, mantenemos la posición de Tesseract.
-          for (const entry of [
-            ...(screenshot.found || []),
-            ...(screenshot.azureFound || []),
-          ]) {
+          for (const entry of screenshot.found || []) {
             const key = normName(entry.name);
             if (!accepted.has(key) || !ranked.has(key)) continue;
             const top = Number(entry.top);
@@ -3344,7 +3088,6 @@
         const foundByName = new Map();
         const tessByFile = [];
         const errors = [];
-        let azureUsed = 0;
 
         const mergeFound = (items, prefer = false) => {
           for (const item of items || []) {
@@ -3390,44 +3133,28 @@
             }
           }
 
-          const afterTesseract = foundByName.size;
-
-          // FASE 2 — Azure Vision solamente si Tesseract no llegó a todos.
-          // Releemos primero las capturas donde Tesseract encontró menos filas.
-          if (foundByName.size < memberNames.length) {
-            showOcrToast(
-              "☁️ Respaldo Azure Vision",
-              `Tesseract detectó ${foundByName.size}/${memberNames.length}. Azure revisará solo lo necesario.`,
-            );
-
-            const candidates = [...tessByFile].sort(
-              (a, b) => a.count - b.count,
-            );
-
-            for (let i = 0; i < candidates.length; i++) {
-              if (foundByName.size >= memberNames.length) break;
-
-              const item = candidates[i];
-              ocrBtn.textContent =
-                `☁️ AZURE ${i + 1}/${candidates.length}`;
-              ocrStatus.textContent =
-                `☁️ Azure Vision: completando miembros (${foundByName.size}/${memberNames.length}) · ${item.file.name}`;
-
+          // Si el miembro árabe sigue sin aparecer, intentar Tesseract árabe.
+          const arabicMember = memberNames.find((name) =>
+            /[\u0600-\u06FF]/u.test(name),
+          );
+          if (arabicMember && !foundByName.has(normName(arabicMember))) {
+            for (const item of tessByFile) {
+              ocrBtn.textContent = "🧠 TESSERACT ÁRABE";
               try {
-                const found = await readScreenshotAzure(item.file);
-                item.azureFound = found;
-                azureUsed++;
-                // Azure tiene prioridad en las capturas que revisa, por lo que
-                // también puede corregir una puntuación truncada de Tesseract.
-                mergeFound(found, true);
+                const arabicFound = await readArabicScreenshot(item.file);
+                if (arabicFound) {
+                  mergeFound([arabicFound]);
+                  item.found.push(arabicFound);
+                  break;
+                }
               } catch (error) {
-                console.error("Azure OCR error:", item.file.name, error);
-                errors.push(
-                  `Azure · ${item.file.name}: ${error?.message || String(error)}`,
-                );
+                console.warn("Tesseract árabe:", error);
+                errors.push(`Árabe · ${item.file.name}: ${error?.message || String(error)}`);
+                break; // El modelo no está disponible: no repetir descargas fallidas.
               }
             }
           }
+          const afterTesseract = foundByName.size;
 
           // El alias personal Lolo se convierte a مثالـي25 mediante
           // canonicalMemberName/matchMemberName. En Supabase siempre queda el
@@ -3498,8 +3225,7 @@
 
           ocrStatus.textContent =
             `✓ OCR completado: ${allFound.length}/${memberNames.length} miembros. ` +
-            `Tesseract: ${afterTesseract}/${memberNames.length} · ` +
-            `Azure usado en ${azureUsed} captura${azureUsed === 1 ? "" : "s"}.`;
+            `Tesseract local: ${afterTesseract}/${memberNames.length} miembros.`;
 
           if (zeroPlayers.length) {
             ocrStatus.textContent +=
@@ -3543,7 +3269,7 @@
             rankWarnings.length
               ? rankWarnings.length +
                 " puntuación(es) fuera de orden. Comprueba las filas amarillas antes de guardar."
-              : `Tesseract ${afterTesseract}/${memberNames.length} · Azure ${azureUsed} captura${azureUsed === 1 ? "" : "s"} · Resultado ${allFound.length}/${memberNames.length}.`,
+              : `Tesseract local: ${allFound.length}/${memberNames.length} miembros encontrados. Revisa antes de guardar.`,
           );
         } catch (e) {
           console.error(e);
