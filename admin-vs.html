@@ -2953,6 +2953,12 @@
           ...item, rankingHeight: cropped?.rankingHeight || 0,
         }));
         results.diagnostics = {
+          // Ayuda a depurar el caso atEr si su lectura no llega al resultado.
+          atErSeen: byName.has(normName("atEr")),
+          atErRawLines: (parsedNames[0]?.TextOverlay?.Lines || [])
+            .map((line) => String(line.LineText || ""))
+            .filter((line) => /at[e3]r|ater|atcr|aier/iu.test(line))
+            .slice(0, 4),
           scoreRows: pointRows.length,
           associatedNames: results.length,
           rawNameLines: diagnosis.tsvNombres,
@@ -3512,6 +3518,20 @@
           ocrStatus.textContent +=
             ` Capturas: ${tessByFile.length} · puntuaciones visibles detectadas: ${detectedScoreRows}` +
             ` · filas con jugador asociado: ${pairedRows}.`;
+          // Mostrar una pista verificable en el móvil si falta atEr;
+          // no inventamos su puntuación ni la asignamos al segundo puesto.
+          const atErMember = memberNames.find((name) =>
+            normName(name) === normName("atEr"),
+          );
+          if (atErMember && !accepted.has(normName(atErMember))) {
+            const seen = tessByFile.flatMap((item) =>
+              item.found?.diagnostics?.atErRawLines || [],
+            ).slice(0, 3);
+            ocrStatus.textContent += seen.length
+              ? " ⚠ atEr sin asociar; Tesseract leyó: " + seen.join(" / ") + "."
+              : " ⚠ atEr sin asociar; Tesseract no generó ninguna línea parecida a su nombre.";
+          }
+
           if (zeroPlayers.length) {
             ocrStatus.textContent +=
               ` ${zeroPlayers.length} jugador${zeroPlayers.length === 1 ? "" : "es"} con 0 puntos.`;
