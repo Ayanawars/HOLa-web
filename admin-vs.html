@@ -1482,7 +1482,9 @@
           return withoutSuperscript;
         }
         // Evitamos borrar finales "hola" naturales de otros nombres.
-        const withoutLatin = text.replace(/(?:\s+hola|HOL[aA])\s*$/u, "").trim();
+        const withoutLatin = text
+          .replace(/(?:\s+hola|H[oO][lL][aA]|h[oO][lL][aA])\s*$/u, "")
+          .trim();
         return withoutLatin.length >= 2 ? withoutLatin : text;
       }
 
@@ -2391,61 +2393,95 @@
         return out.sort((a, b) => a.center - b.center);
       }
 
+      // Si Tesseract mezcla una línea de nombre con la etiqueta de alianza,
+      // recuperar el nick desde una palabra individual con match EXACTO.
+      // Importante para nicks cortos como atEr + ᴴᴼᴸᵃ.
+      function exactMemberFromOcrWord(wordText) {
+        const cleaned = cleanName(wordText);
+        if (!cleaned || isBadName(cleaned) || normName(cleaned).length < 4) {
+          return null;
+        }
+        const key = normName(cleaned);
+        const official = memberNames.find((name) => ocrMatchKey(name) === key);
+        if (official) return { name: official, score: 1 };
+
+        const aliasKey = ocrNameAliases.get(key);
+        if (aliasKey) {
+          const alias = memberNames.find((name) => normName(name) === aliasKey);
+          if (alias) return { name: alias, score: 1 };
+        }
+        return null;
+      }
+
       function memberRowsFromOverlay(overlay) {
         const out = [];
         const seen = new Set();
 
-        for (const line of overlay?.Lines || []) {
-          // No quitar dígitos internos de nicks como ENIGMA31415:
-          // solo eliminar la puntuación final cuando es un campo separado.
-          let text = cleanName(String(line.LineText || "")
-            .replace(/\s+\d{1,3}(?:[.,]\d{3})+\s*$/u, "")
-            .replace(/\s+\d{5,12}\s*$/u, ""));
-
-          text = text
-            .replace(
-              /\s*\[?h[o0]l[a4]\]?\s*heroes\s+of\s+last\s+area.*$/iu,
-              "",
-            )
-            .replace(/\s*heroes\s+of\s+last\s+area.*$/iu, "")
-            .trim();
-
-          if (!text) continue;
-
-          // Use the name word's coordinates when OCR merges the cat or alliance text.
-          const decoratedWord = (line.Words || []).find(word =>
-            ["JEBRAW","elara"].some(base=>normName(word.WordText)===normName(base)));
-          const officialDecorated = decoratedWord
-            ? memberNames.find(name =>
-                ["JEBRAW ᓚᘏᗢ","elarâ ᓚᘏᗢ"].includes(name) &&
-                ocrMatchKey(name)===normName(decoratedWord.WordText))
-            : null;
-          const match = officialDecorated
-            ? {name:officialDecorated,score:1}
-            : !isBadName(text) ? matchMemberName(text) : null;
-          if(!match)continue;
-          const key=normName(match.name);
-          const top=Number(officialDecorated
-            ? (decoratedWord.Top ?? line.MinTop ?? 0) : (line.MinTop || 0));
-          const height=Number(officialDecorated
-            ? (decoratedWord.Height ?? line.MaxHeight ?? 0) : (line.MaxHeight || 0));
-          const center = top + height / 2;
-
-          // Una misma fila puede salir duplicada en el overlay.
+        function addCandidate(match, top, height) {
+          if (!match) return;
+          const center = Number(top) + Number(height) / 2;
+          if (!Number.isFinite(center)) return;
+          const key = normName(match.name);
           const dedupe = key + "|" + Math.round(center / 12);
-          if (seen.has(dedupe)) continue;
+          if (seen.has(dedupe)) return;
           seen.add(dedupe);
-
           out.push({
             name: match.name,
-            top,
-            height,
+            top: Number(top) || 0,
+            height: Math.max(1, Number(height) || 1),
             center,
             score: match.score,
           });
         }
 
-        return out.sort((a, b) => a.center - b.center);
+        for (const line of overlay?.Lines || []) {
+          let text = cleanName(String(line.LineText || "")
+            .replace(/\s+\d{1,3}(?:[.,]\d{3})+\s*$/u, "")
+            .replace(/\s+\d{5,12}\s*$/u, ""));
+
+          text = text
+            .replace(/\s*\[?h[o0]l[a4]\]?\s*heroes\s+of\s+last\s+area.*$/iu, "")
+            .replace(/\s*heroes\s+of\s+last\s+area.*$/iu, "")
+            .trim();
+
+          const words = line.Words || [];
+          const decoratedWord = words.find((word) =>
+            ["JEBRAW", "elara"].some((base) =>
+              normName(word.WordText) === normName(base)));
+          const officialDecorated = decoratedWord
+            ? memberNames.find((name) =>
+                ["JEBRAW ᓚᘏᗢ", "elarâ ᓚᘏᗢ"].includes(name) &&
+                ocrMatchKey(name) === normName(decoratedWord.WordText))
+            : null;
+          const wholeMatch = officialDecorated
+            ? { name: officialDecorated, score: 1 }
+            : !isBadName(text) ? matchMemberName(text) : null;
+
+          if (wholeMatch) {
+            addCandidate(wholeMatch,
+              officialDecorated ? (decoratedWord.Top ?? line.MinTop) : line.MinTop,
+              officialDecorated ? (decoratedWord.Height ?? line.MaxHeight) : line.MaxHeight);
+          }
+
+          // Incluso cuando se halló una coincidencia aproximada en el texto
+          // completo, priorizamos los nicks exactos presentes en palabras
+          // individuales. El filtro excluye "[HOLa] Heroes of Last Area".
+          for (const word of words) {
+            const exact = exactMemberFromOcrWord(word.WordText);
+            if (!exact) continue;
+            if (wholeMatch && normName(wholeMatch.name) === normName(exact.name)) {
+              continue;
+            }
+            addCandidate(exact,
+              word.Top ?? line.MinTop ?? 0,
+              word.Height ?? line.MaxHeight ?? 1);
+          }
+        }
+
+        // En una misma altura, la coincidencia exacta debe prevalecer sobre
+        // una estimación aproximada, que podría atribuir el punto a otro nick.
+        out.sort((a, b) => a.center - b.center || b.score - a.score);
+        return out;
       }
 
       function pairMemberRowsWithPoints(memberRows, pointRows) {
