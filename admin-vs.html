@@ -2719,6 +2719,89 @@
         return [...byName.values()];
       }
 
+      // Extracción de un nombre desde un OCR de una sola fila.
+      // También probamos palabras individuales si Tesseract mezcla la
+      // decoración ᴴᴼᴸᵃ con otro texto de la interfaz.
+      function nameFromIsolatedOcr(data) {
+        const candidates = new Set([
+          String(data?.text || "").trim(),
+          ...(data?.tsv ? tesseractTsvToOverlay(data.tsv)
+            .flatMap((line) => [
+              line.LineText,
+              ...(line.Words || []).map((word) => word.WordText),
+            ]) : []),
+        ]);
+        for (const candidate of candidates) {
+          const match = matchMemberName(candidate);
+          if (match && match.score >= 0.94) return match;
+        }
+        return null;
+      }
+
+      // Tesseract PSM 7 reintenta SOLO las puntuaciones sin jugador:
+      // el recorte por fila quita el subtítulo [HOLa] Heroes of Last Area.
+      // Nunca se identifica un jugador por su posición/rango.
+      async function recoverMissingTesseractRows(cropped, pointRows, byName) {
+        if (!cropped || !pointRows.length || byName.size >= pointRows.length) {
+          return [];
+        }
+        const source = await new Promise((resolve, reject) => {
+          const img = new Image();
+          const url = URL.createObjectURL(cropped);
+          img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+          img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Recorte ilegible.")); };
+          img.src = url;
+        });
+        const worker = await getTesseractWorker("eng");
+        const assignedValues = new Set(
+          [...byName.values()].map((item) => Number(item.points)),
+        );
+        const recovered = [];
+        const missingRows = pointRows
+          .filter((row) => !assignedValues.has(Number(row.value)))
+          .slice(0, 7);
+
+        for (const row of missingRows) {
+          try {
+            const height = Math.max(12, Number(row.height) || 20);
+            // En el ranking el nombre queda ligeramente por encima de
+            // los puntos. La banda termina antes de la línea de alianza.
+            const top = Math.max(0, Math.floor(Number(row.top) - height * 1.8));
+            const bottom = Math.min(source.naturalHeight,
+              Math.ceil(Number(row.top) + height * 0.5));
+            if (!(bottom > top)) continue;
+            const canvas = document.createElement("canvas");
+            canvas.width = source.naturalWidth + 40;
+            canvas.height = bottom - top + 32;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(source, 0, top, source.naturalWidth, bottom - top,
+              20, 16, source.naturalWidth, bottom - top);
+            await worker.setParameters({ tessedit_pageseg_mode: "7" });
+            const result = await worker.recognize(
+              canvas, {}, { text: true, tsv: true },
+            );
+            const match = nameFromIsolatedOcr(result?.data);
+            if (!match) continue;
+            const key = normName(match.name);
+            if (byName.has(key)) continue;
+            const candidate = {
+              name: match.name,
+              points: Number(row.value),
+              top: top,
+              score: match.score,
+              source: "Tesseract-row-recovery",
+            };
+            byName.set(key, candidate);
+            recovered.push(candidate);
+          } catch (error) {
+            console.warn("Tesseract: no se pudo releer fila aislada", error);
+          }
+        }
+        return recovered;
+      }
+
       async function readScreenshotTesseract(selected) {
         let pointRows = [];
         let pointsError = null;
@@ -2788,7 +2871,21 @@
           });
         }
 
+        // Recuperación opcional de una fila aislada (ej.: atEr ᴴᴼᴸᵃ).
+        // No asignar los puntos del puesto 2 a un nombre predefinido.
+        let recoveredRows = [];
+        if (cropped && pointRows.length && byName.size < pointRows.length) {
+          try {
+            recoveredRows = await recoverMissingTesseractRows(
+              cropped, pointRows, byName,
+            );
+          } catch (error) {
+            console.warn("Relectura por filas no disponible:", error);
+          }
+        }
+
         const diagnosis = {
+          filasRecuperadas: recoveredRows.length,
           puntuaciones: pointRows.length,
           nombres: members.length,
           asociados: byName.size,
