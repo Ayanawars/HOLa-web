@@ -2484,7 +2484,7 @@
           tesseractLoaderPromise = new Promise((resolve, reject) => {
             const script = document.createElement("script");
             script.src =
-              "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+              "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
             script.async = true;
             script.onload = () => {
               if (window.Tesseract?.createWorker) resolve(window.Tesseract);
@@ -2540,104 +2540,108 @@
         }));
       }
 
-      function tesseractDataToParsedResults(data) {
-        const lines = [];
+      // Convertimos el formato TSV oficial de Tesseract a líneas con
+      // coordenadas. Es más estable en el navegador que depender de data.blocks,
+      // cuya presencia/forma varía según la versión y los outputs habilitados.
+      function tesseractTsvToOverlay(tsv) {
+        if (typeof tsv !== "string" || !tsv.trim()) return [];
+        const groups = new Map();
+        const records = tsv.split(/\r?\n/);
+        for (let i = 1; i < records.length; i++) {
+          const fields = records[i].split("\t");
+          if (fields.length < 12 || Number(fields[0]) !== 5) continue;
+          const value = fields.slice(11).join("\t").trim();
+          if (!value) continue;
+          const left = Number(fields[6]);
+          const top = Number(fields[7]);
+          const width = Number(fields[8]);
+          const height = Number(fields[9]);
+          if (![left, top, width, height].every(Number.isFinite)) continue;
+          const key = fields.slice(1, 5).join(":");
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push({
+            WordText: value, Left: left, Top: top, Width: width,
+            Height: Math.max(1, height), Confidence: Number(fields[10]) || 0,
+          });
+        }
+        return [...groups.values()].map((words) => {
+          words.sort((a, b) => a.Left - b.Left);
+          const top = Math.min(...words.map((w) => w.Top));
+          const bottom = Math.max(...words.map((w) => w.Top + w.Height));
+          return {
+            LineText: words.map((w) => w.WordText).join(" "),
+            MinTop: top, MaxHeight: Math.max(1, bottom - top), Words: words,
+          };
+        }).sort((a, b) => a.MinTop - b.MinTop);
+      }
 
-        // Tesseract.js v5/v6: para obtener coordenadas hay que pedir
-        // explícitamente el output "blocks". Recorremos bloques > párrafos >
-        // líneas > palabras y lo convertimos al mismo formato de overlay que
-        // ya usa el resto del detector.
-        for (const block of data?.blocks || []) {
-          for (const paragraph of block?.paragraphs || []) {
-            for (const line of paragraph?.lines || []) {
-              const lineWords = (line?.words || [])
-                .map((word) => {
+      function tesseractDataToParsedResults(data) {
+        const tsvLines = tesseractTsvToOverlay(data?.tsv);
+        const blockLines = [];
+
+        // Respaldo para versiones/entornos que devuelvan bloques en vez de TSV.
+        if (!tsvLines.length) {
+          for (const block of data?.blocks || []) {
+            for (const paragraph of block?.paragraphs || []) {
+              for (const line of paragraph?.lines || []) {
+                const lineWords = (line?.words || []).map((word) => {
                   const box = word?.bbox || {};
-                  const left = Number(box.x0 || 0);
-                  const top = Number(box.y0 || 0);
-                  const right = Number(box.x1 || left);
-                  const bottom = Number(box.y1 || top);
+                  const left = Number(box.x0 ?? 0);
+                  const top = Number(box.y0 ?? 0);
+                  const right = Number(box.x1 ?? left);
+                  const bottom = Number(box.y1 ?? top);
                   return {
                     WordText: String(word?.text || "").trim(),
-                    Left: left,
-                    Top: top,
-                    Width: Math.max(0, right - left),
+                    Left: left, Top: top, Width: Math.max(0, right - left),
                     Height: Math.max(1, bottom - top),
                     Confidence: Number(word?.confidence || 0),
                   };
-                })
-                .filter((word) => word.WordText);
-
-              if (!lineWords.length) continue;
-
-              const lineBox = line?.bbox || {};
-              const minTop = Number(
-                lineBox.y0 ??
-                  Math.min(...lineWords.map((word) => Number(word.Top || 0))),
-              );
-              const bottom = Number(
-                lineBox.y1 ??
-                  Math.max(
-                    ...lineWords.map(
-                      (word) =>
-                        Number(word.Top || 0) + Number(word.Height || 0),
-                    ),
-                  ),
-              );
-
-              lines.push({
-                LineText:
-                  String(line?.text || "").trim() ||
-                  lineWords.map((word) => word.WordText).join(" "),
-                MinTop: minTop,
-                MaxHeight: Math.max(1, bottom - minTop),
-                Words: lineWords,
-              });
+                }).filter((word) => word.WordText);
+                if (!lineWords.length) continue;
+                const top = Number(line?.bbox?.y0 ??
+                  Math.min(...lineWords.map((word) => word.Top)));
+                const bottom = Number(line?.bbox?.y1 ??
+                  Math.max(...lineWords.map((word) => word.Top + word.Height)));
+                blockLines.push({
+                  LineText: String(line?.text || "").trim() ||
+                    lineWords.map((word) => word.WordText).join(" "),
+                  MinTop: top, MaxHeight: Math.max(1, bottom - top),
+                  Words: lineWords,
+                });
+              }
             }
           }
         }
-
-        lines.sort(
-          (a, b) => Number(a.MinTop || 0) - Number(b.MinTop || 0),
-        );
-
-        return [
-          {
-            ParsedText:
-              String(data?.text || "").trim() ||
-              lines.map((line) => line.LineText).join("\n"),
-            TextOverlay: { Lines: lines },
+        const lines = tsvLines.length ? tsvLines : blockLines;
+        lines.sort((a, b) => a.MinTop - b.MinTop);
+        return [{
+          ParsedText: String(data?.text || "").trim() ||
+            lines.map((line) => line.LineText).join("\n"),
+          TextOverlay: { Lines: lines },
+          OcrDebug: {
+            tsvLines: tsvLines.length,
+            blockLines: blockLines.length,
+            characters: String(data?.text || "").length,
           },
-        ];
+        }];
       }
 
       async function runTesseractPass(selected, language = "eng") {
         const worker = await getTesseractWorker(language);
-
-        // Los rankings contienen una columna vertical; PSM 6 segmenta
-        // mejor que el modo automático, especialmente la primera fila.
-        await worker.setParameters({ tessedit_pageseg_mode: "6" });
-        let result = await worker.recognize(
-          selected,
-          {},
-          { text: true, blocks: true },
-        );
-        let parsed = tesseractDataToParsedResults(result?.data);
-
-        // Tesseract puede devolver texto sin bloques posicionales si el
-        // primer análisis no segmentó bien. Intentamos modo disperso sin
-        // abortar por falta de coordenadas.
-        if (!parsed[0]?.TextOverlay?.Lines?.length) {
-          await worker.setParameters({ tessedit_pageseg_mode: "11" });
-          result = await worker.recognize(
-            selected,
-            {},
-            { text: true, blocks: true },
+        let parsed = [];
+        for (const psm of ["6", "11"]) {
+          await worker.setParameters({ tessedit_pageseg_mode: psm });
+          const result = await worker.recognize(
+            selected, {}, { text: true, tsv: true, blocks: true },
           );
-          parsed = tesseractDataToParsedResults(result?.data);
+          const candidate = tesseractDataToParsedResults(result?.data);
+          if (candidate[0]?.TextOverlay?.Lines?.length) return candidate;
+          if (!parsed.length ||
+              (candidate[0]?.ParsedText?.length || 0) >
+              (parsed[0]?.ParsedText?.length || 0)) {
+            parsed = candidate;
+          }
         }
-        // Sin datos devolvemos []: la otra columna y el OCR de respaldo
-        // pueden aportar resultados. Nunca abortar la captura entera aquí.
         return parsed;
       }
 
@@ -2700,9 +2704,10 @@
       async function readScreenshotTesseract(selected) {
         let pointRows = [];
         let pointsError = null;
+        let parsedScores = [];
         try {
           const pointsCrop = await cropPointsForOcr(selected);
-          const parsedScores = await runTesseractPass(pointsCrop);
+          parsedScores = await runTesseractPass(pointsCrop);
           pointRows = numericRowsFromPointsOverlay(parsedScores[0]?.TextOverlay);
         } catch (error) {
           pointsError = error;
@@ -2711,47 +2716,87 @@
 
         let parsedNames = [];
         let cropped = null;
+        let namesError = null;
         try {
           cropped = await cropRankingForOcr(selected);
           parsedNames = await runTesseractPass(cropped);
         } catch (error) {
+          namesError = error;
           console.warn("No se pudo leer la columna de nombres:", error);
         }
 
-        const byName = new Map();
         const members = memberRowsFromOverlay(parsedNames[0]?.TextOverlay);
-        for (const item of pairMemberRowsWithPoints(members, pointRows).found) {
+        const byName = new Map();
+        const matched = pairMemberRowsWithPoints(members, pointRows).found;
+        for (const item of matched) {
           byName.set(normName(item.name), {
-            ...item,
-            source: "Tesseract-columns",
+            ...item, source: "Tesseract-TSV-columns",
           });
         }
 
-        // Respaldo de la lectura OCR completa cuando alguna columna pierde
-        // filas: recupera puntuaciones sin depender del recorte por bandas.
-        if (byName.size < pointRows.length || !pointRows.length) {
+        if (!byName.size && !pointRows.length) {
           for (const item of extractRankingFromParsed(parsedNames, "Tesseract")) {
-            const key = normName(item.name);
-            if (!byName.has(key) && Number.isFinite(Number(item.points))) {
-              byName.set(key, item);
+            if (Number.isFinite(Number(item.points))) {
+              byName.set(normName(item.name), item);
             }
           }
         }
 
+        // Último respaldo: si no se devuelven coordenadas en algún móvil,
+        // cruzar por orden solo cuando ambas columnas tienen el MISMO
+        // número de filas y las cifras son plausibles. Sin asignaciones
+        // arbitrarias: si no cuadran, la puntuación queda pendiente.
+        if (!byName.size && !members.length && !pointRows.length) {
+          const scoreText = parsedScores[0]?.ParsedText || "";
+          const nameText = parsedNames[0]?.ParsedText || "";
+          const values = scoreText.split(/\r?\n/)
+            .map((line) => points(line.trim()))
+            .filter((value) => Number.isFinite(value) && value >= 0);
+          const memberSequence = nameText.split(/\r?\n/)
+            .map((line) => matchMemberName(line))
+            .filter(Boolean);
+          if (values.length >= 2 && values.length === memberSequence.length &&
+              values.every((value, index) =>
+                index === 0 || values[index - 1] >= value)) {
+            memberSequence.forEach((match, index) => {
+              byName.set(normName(match.name), {
+                name: match.name, points: values[index],
+                top: index + 1, source: "Tesseract-ordered-text",
+              });
+            });
+          }
+        }
+
+        const diagnosis = {
+          puntuaciones: pointRows.length,
+          nombres: members.length,
+          asociados: byName.size,
+          tsvNombres: parsedNames[0]?.OcrDebug?.tsvLines || 0,
+          tsvPuntos: parsedScores[0]?.OcrDebug?.tsvLines || 0,
+          caracteresNombres: parsedNames[0]?.OcrDebug?.characters || 0,
+          caracteresPuntos: parsedScores[0]?.OcrDebug?.characters || 0,
+        };
+        console.info("HOLa OCR VS Tesseract", diagnosis);
         if (!byName.size) {
+          const detail = [
+            pointsError?.message,
+            namesError?.message,
+          ].filter(Boolean).join(" / ");
           throw new Error(
-            "Tesseract no consiguió asociar nombres y puntos. " +
-            (pointsError?.message || "Comprueba que la imagen muestra el ranking diario."),
+            "Sin asociaciones. Diagnóstico: " +
+            JSON.stringify(diagnosis) +
+            (detail ? " · " + detail : ""),
           );
         }
 
         const results = [...byName.values()].map((item) => ({
-          ...item,
-          rankingHeight: cropped?.rankingHeight || 0,
+          ...item, rankingHeight: cropped?.rankingHeight || 0,
         }));
         results.diagnostics = {
           scoreRows: pointRows.length,
           associatedNames: results.length,
+          rawNameLines: diagnosis.tsvNombres,
+          rawPointLines: diagnosis.tsvPuntos,
         };
         return results;
       }
