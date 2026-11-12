@@ -1023,7 +1023,7 @@
       // En la captura se busca JEBRAW, sin el adorno. El nombre completo solo
       // se usa como identidad oficial al asociar los puntos y guardarlos.
       function ocrMatchKey(memberName) {
-        const key = normName(String(memberName ?? "").replace(/ᓚᘏᗢ/gu, ""));
+        const key = normName(stripHolaSuffix(String(memberName ?? "").replace(/ᓚᘏᗢ/gu, "")));
         if(key === normName("elarâ ᓚᘏᗢ"))return normName("elara");
         return key === normName("JEBRAW ᓚᘏᗢ")
           ? normName("JEBRAW")
@@ -1472,8 +1472,22 @@
         return Number(n.replace(/[.,]/g, ""));
       }
 
+      // Sufijo decorativo de la alianza: ᴴᴼᴸᵃ.
+      // Tesseract puede convertir el superíndice en HOLa o HOLA.
+      // Nunca modifica el nombre oficial de Supabase.
+      function stripHolaSuffix(value) {
+        const text = String(value ?? "").trim();
+        const withoutSuperscript = text.replace(/\s*ᴴ\s*ᴼ\s*ᴸ\s*ᵃ\s*$/u, "").trim();
+        if (withoutSuperscript && withoutSuperscript !== text) {
+          return withoutSuperscript;
+        }
+        // Evitamos borrar finales "hola" naturales de otros nombres.
+        const withoutLatin = text.replace(/(?:\s+hola|HOL[aA])\s*$/u, "").trim();
+        return withoutLatin.length >= 2 ? withoutLatin : text;
+      }
+
       function cleanName(s) {
-        return String(s)
+        return stripHolaSuffix(s)
           .replace(/^[#\-\.\s]+/, "")
           // El juego puede anteponer la etiqueta de la alianza: [HOLa]Nombre.
           // La retiramos antes de validar para conservar nombres Unicode reales.
