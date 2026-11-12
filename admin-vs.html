@@ -2742,29 +2742,32 @@
           }
         }
 
-        // Último respaldo: si no se devuelven coordenadas en algún móvil,
-        // cruzar por orden solo cuando ambas columnas tienen el MISMO
-        // número de filas y las cifras son plausibles. Sin asignaciones
-        // arbitrarias: si no cuadran, la puntuación queda pendiente.
-        if (!byName.size && !members.length && !pointRows.length) {
-          const scoreText = parsedScores[0]?.ParsedText || "";
-          const nameText = parsedNames[0]?.ParsedText || "";
-          const values = scoreText.split(/\r?\n/)
-            .map((line) => points(line.trim()))
-            .filter((value) => Number.isFinite(value) && value >= 0);
-          const memberSequence = nameText.split(/\r?\n/)
-            .map((line) => matchMemberName(line))
-            .filter(Boolean);
-          if (values.length >= 2 && values.length === memberSequence.length &&
-              values.every((value, index) =>
-                index === 0 || values[index - 1] >= value)) {
-            memberSequence.forEach((match, index) => {
-              byName.set(normName(match.name), {
+        // Último respaldo: las columnas conservan el orden vertical del ranking.
+        // Recuperar nombres perdidos por el parser posicional siempre que ambas
+        // columnas tengan el mismo número de filas, sin asumir posiciones de
+        // jugadores que no hayan sido reconocidos.
+        const scoreText = parsedScores[0]?.ParsedText || "";
+        const nameText = parsedNames[0]?.ParsedText || "";
+        const values = scoreText.split(/\r?\n/)
+          .map((line) => points(line.trim()))
+          .filter((value) => Number.isFinite(value) && value >= 0);
+        const memberSequence = nameText.split(/\r?\n/)
+          .map((line) => matchMemberName(line))
+          .filter(Boolean);
+        const uniqueSequence = new Set(memberSequence.map((x) => normName(x.name)));
+        if (values.length >= 2 && values.length === memberSequence.length &&
+            uniqueSequence.size === memberSequence.length &&
+            values.every((value, index) =>
+              index === 0 || values[index - 1] >= value)) {
+          memberSequence.forEach((match, index) => {
+            const key = normName(match.name);
+            if (!byName.has(key)) {
+              byName.set(key, {
                 name: match.name, points: values[index],
                 top: index + 1, source: "Tesseract-ordered-text",
               });
-            });
-          }
+            }
+          });
         }
 
         const diagnosis = {
@@ -2782,10 +2785,16 @@
             pointsError?.message,
             namesError?.message,
           ].filter(Boolean).join(" / ");
+          const sampleNames = (parsedNames[0]?.TextOverlay?.Lines || [])
+            .map((line) => line.LineText).filter(Boolean).slice(0, 9).join(" / ");
+          const samplePoints = (parsedScores[0]?.TextOverlay?.Lines || [])
+            .map((line) => line.LineText).filter(Boolean).slice(0, 9).join(" / ");
           throw new Error(
             "Sin asociaciones. Diagnóstico: " +
             JSON.stringify(diagnosis) +
-            (detail ? " · " + detail : ""),
+            (detail ? " · " + detail : "") +
+            (sampleNames ? " · Nombres OCR: " + sampleNames : "") +
+            (samplePoints ? " · Puntos OCR: " + samplePoints : ""),
           );
         }
 
