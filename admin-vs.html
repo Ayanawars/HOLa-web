@@ -2680,10 +2680,13 @@
         }];
       }
 
-      async function runTesseractPass(selected, language = "eng") {
+      async function runTesseractPass(selected, language = "eng", mode = "standard") {
         const worker = await getTesseractWorker(language);
+        // PSM 6 lee columnas completas; PSM 11 recupera palabras
+        // dispersas que pueden faltar en la primera pasada (atEr).
+        const modes = mode === "sparse" ? ["11"] : ["6", "11"];
         let parsed = [];
-        for (const psm of ["6", "11"]) {
+        for (const psm of modes) {
           await worker.setParameters({ tessedit_pageseg_mode: psm });
           const result = await worker.recognize(
             selected, {}, { text: true, tsv: true, blocks: false, hocr: false },
@@ -2871,6 +2874,31 @@
           });
         }
 
+        // PSM 6 puede reconocer la línea [HOLa] y omitir el nombre corto.
+        // No damos por buena la imagen solo porque haya texto: intentamos
+        // PSM 11 si quedan puntuaciones sin miembro reconocido.
+        let sparseParsed = [];
+        let sparseRecovered = 0;
+        if (cropped && pointRows.length && byName.size < pointRows.length) {
+          try {
+            sparseParsed = await runTesseractPass(cropped, "eng", "sparse");
+            const sparseMembers = memberRowsFromOverlay(sparseParsed[0]?.TextOverlay);
+            const sparseFound = pairMemberRowsWithPoints(sparseMembers, pointRows).found;
+            const occupiedValues = new Set(
+              [...byName.values()].map((row) => Number(row.points)),
+            );
+            for (const item of sparseFound) {
+              const key = normName(item.name);
+              if (byName.has(key) || occupiedValues.has(Number(item.points))) continue;
+              byName.set(key, { ...item, source: "Tesseract-PSM11-recovery" });
+              occupiedValues.add(Number(item.points));
+              sparseRecovered++;
+            }
+          } catch (error) {
+            console.warn("Tesseract PSM11 de recuperación no disponible:", error);
+          }
+        }
+
         if (!byName.size && !pointRows.length) {
           for (const item of extractRankingFromParsed(parsedNames, "Tesseract")) {
             if (Number.isFinite(Number(item.points))) {
@@ -2922,6 +2950,7 @@
 
         const diagnosis = {
           filasRecuperadas: recoveredRows.length,
+          filasRecuperadasPSM11: sparseRecovered,
           puntuaciones: pointRows.length,
           nombres: members.length,
           asociados: byName.size,
@@ -2955,7 +2984,10 @@
         results.diagnostics = {
           // Ayuda a depurar el caso atEr si su lectura no llega al resultado.
           atErSeen: byName.has(normName("atEr")),
-          atErRawLines: (parsedNames[0]?.TextOverlay?.Lines || [])
+          atErRawLines: [
+            ...(parsedNames[0]?.TextOverlay?.Lines || []),
+            ...(sparseParsed[0]?.TextOverlay?.Lines || []),
+          ]
             .map((line) => String(line.LineText || ""))
             .filter((line) => /at[e3]r|ater|atcr|aier/iu.test(line))
             .slice(0, 4),
