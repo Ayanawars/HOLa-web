@@ -762,6 +762,7 @@
           Los nombres y los puntos se analizan por separado para mejorar la precisión.
           Revisa las puntuaciones y completa los jugadores pendientes antes de guardar.
           Lolo se asigna al jugador oficial مثالـي25.
+          <strong>Motor OCR: Tesseract 2026.11.12c</strong>.
         </p>
         <div class="drop">
           <b>Capturas del ranking</b><br /><input
@@ -2821,7 +2822,40 @@
             const result = await worker.recognize(
               canvas, {}, { text: true, tsv: true },
             );
-            const match = nameFromIsolatedOcr(result?.data);
+            let match = nameFromIsolatedOcr(result?.data);
+            if (!match) {
+              // Repetir únicamente las filas fallidas con contraste local.
+              // Los nombres cortos (atEr) se pierden en fondos azulados.
+              const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              let low = 255, high = 0;
+              const data = pixels.data;
+              for (let p = 0; p < data.length; p += 4) {
+                const value = Math.round(
+                  0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2],
+                );
+                if (value < 248) {
+                  low = Math.min(low, value);
+                  high = Math.max(high, value);
+                }
+              }
+              if (high > low + 12) {
+                const ceiling = Math.min(245, high + 20);
+                for (let p = 0; p < data.length; p += 4) {
+                  const value = Math.round(
+                    0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2],
+                  );
+                  const contrast = Math.round(
+                    Math.max(0, Math.min(255, (value - low) * 255 / (ceiling - low))),
+                  );
+                  data[p] = data[p + 1] = data[p + 2] = contrast;
+                }
+                ctx.putImageData(pixels, 0, 0);
+                const retry = await worker.recognize(
+                  canvas, {}, { text: true, tsv: true },
+                );
+                match = nameFromIsolatedOcr(retry?.data);
+              }
+            }
             if (!match) continue;
             const key = normName(match.name);
             if (byName.has(key)) continue;
